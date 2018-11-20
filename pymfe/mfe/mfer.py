@@ -1,14 +1,31 @@
+# -*- coding: utf-8 -*-
+"""Meta-feature extractor wrapper for MFE R package.
+
+This module is a wrapper to MFE package. MFE is a meta-feature extractor
+package building in R.
+
+Example:
+    TODO
+        $ python example_google.py
+
+Todo:
+    * Create an simple example
+    * Create a method to extract meta-features from csv files
+    * You have to also use ``sphinx.ext.todo`` extension
+
+"""
 
 import pandas as pd
 import numpy as np
-from pymfe.exceptions.mfe_error import RLibNotFound, MfeOption
+from pymfe.exceptions.exceptions import RLibNotFound, MfeOption
 from rpy2.robjects.packages import isinstalled, importr
-    @staticmethod
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.vectors import StrVector
 
 
 class MetaFeatureExtractorR:
+    """The class used to extract meta-features from R MFE package.
+    """
 
     rmfe_groups = {"general", "statistical", "infotheo", "model.based", "landmarking"}
     rmfe_summary = {"min", "max", "quantile", "mean", "sd", "var", "median"}
