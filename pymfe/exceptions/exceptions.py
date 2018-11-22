@@ -10,7 +10,8 @@ class RLibNotFound(MfeError):
             """
             The library %s was not found.
             Please check if this library was installed.
-            You can use pymfe.util.check() and pymfe.util.install()
+            You can use Install.installed(...) and Install.installR(...) from
+            pymfe.utils.install module.
             """ % lib
         )
         self. lib = lib
