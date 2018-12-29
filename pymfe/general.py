@@ -11,7 +11,8 @@ References:
 from typing import Union, Iterable
 
 
-class MFEGeneral(object):
+class MFEGeneral:
+    """General-type Metafeature extractor."""
 
     def __init__(self, features: Union[str, Iterable[str]] = "all") -> None:
         """Extracts general metafeatures from datasets.
@@ -23,6 +24,6 @@ class MFEGeneral(object):
         """
         self.features = features
 
-    def inst_num(df):
+    def inst_num(self, dataframe):
         """Returns number of instances (rows) in DataFrame."""
-        return df.shape[0]
+        return dataframe.shape[0]
