@@ -9,19 +9,19 @@ Attributes:
     DATASET_LIST (list): Contains all test data used in test procedures.
 """
 import os
+import sys
+
 import pandas as pd
 
-import sys
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import mfe  # noqa: E402, F401
+import pymfe  # noqa: E402, F401
 
 
 def _get_test_data(path):
     """Load test datasets."""
     test_dataset_list = os.listdir(path)
-    print(test_dataset_list)
 
     test_data = []
     for dataset_name in test_dataset_list:
