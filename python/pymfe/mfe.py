@@ -1,78 +1,44 @@
 """Main module for extracting metafeatures from datasets.
 
 Todo:
-    - Improve documentation.
-    - Implement MFE class.
+    * Improve documentation.
+    * Implement MFE class.
 """
-import collections
+import _internal
 
 
 class MFE:
     """Core class for metafeature extraction."""
-    VALID_GROUPS = (
-        "landmarking",
-        "general",
-        "statistical",
-        "model-based",
-        "info-theory",
-    )
 
-    def __init__(self, groups="all", features="all"):
+    def __init__(self, groups="all", features="all", summary="all"):
         """To do this documentation."""
 
-        self.groups = MFE._process_groups(groups)
-        self.features = features
+        self.groups = _internal.process_groups(groups)
+        self.features = _internal.process_features(features)
+        self.summary = _internal.process_summary(summary)
+        self.X = None
+        self.y = None
 
-    @classmethod
-    def _process_groups(cls, groups):
-        """Check if "groups" parameter is correct.
+    def fit(self, X, y, splits=None):
+        """Fits dataset into the MFE model.
 
         Args:
-            groups (:obj:`str` or :obj:`Iterable` of :obj:`str`): a single
-                string or a iterable with group identifiers to be processed.
-                It must assume or contain the following values:
-                    - 'landmarking': Landmarking metafeatures.
-                    - 'general': General and Simple metafeatures.
-                    - 'statistical': Statistical metafeatures.
-                    - 'model-based': Metafeatures from machine learning models.
-                    - 'info-theory': Information Theory metafeatures.
-
-        Returns:
-            A tuple containing all valid group lower-cased identifiers.
+            X (:obj:`list` or :obj:`numpy.array`): predictive attributes of
+                the dataset.
+            y (:obj:`list` or :obj:`numpy.array`): target attributes of the
+                dataset.
+            splits (:obj:`Iterable` of :obj:`ints`, optional): iterable which
+                contains K-Fold Cross Validation index splits to use mainly in
+                landmarking metafeatures. If not given, each metafeature will
+                be extracted a single time.
 
         Raises:
-            AttributeError: if `groups` is not "all", a Iterable
-                containing valid group identifiers as strings, is None or
-                is a empty Iterable.
-            ValueError: if a unknown group identifier is given.
+            ValueError: if number of rows of X and y does not match.
+            TypeError: if X or y (or both) is neither a :obj:`list` or
+                a :obj:`np.array` object.
         """
-        unknown_groups = None
 
-        if groups is None or not groups:
-            raise AttributeError('"Groups" can not be None nor empty.')
+        self.X, self.y = _internal.check_data(X, y)
 
-        if isinstance(groups, str):
-            groups = groups.lower()
-            if groups == "all":
-                return MFE.VALID_GROUPS
-
-            if groups in MFE.VALID_GROUPS:
-                return (groups,)
-
-            unknown_groups = {groups}
-
-        elif isinstance(groups, collections.Iterable):
-            groups = set(map(str.lower, groups))
-
-            if "all" in groups:
-                return MFE.VALID_GROUPS
-
-            if groups.issubset(MFE.VALID_GROUPS):
-                return tuple(groups)
-
-            unknown_groups = groups.difference(MFE.VALID_GROUPS)
-
-        if unknown_groups is not None:
-            raise ValueError("Unknown groups: {0}".format(unknown_groups))
-
-        raise AttributeError('"Groups" parameter type is not consistent.')
+    def extract(self):
+        """Extracts metafeatures from fitted dataset."""
