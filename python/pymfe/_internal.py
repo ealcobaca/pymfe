@@ -5,11 +5,21 @@ Attributes:
         metafeatures of pymfe.
     VALID_SUMMARY (:obj:`tuple` of :obj:`str`): Supported summary
         functions to combine metafeature values.
+    VALID_MFECLASSES (:obj:`tuple): Metafeature extractors classes.
+
+Todo:
+    * Implement "check_features" function
 """
+from typing import Union, Tuple, Iterable
 import collections
 
 import numpy as np
 
+import general
+import statistical
+import info_theory
+import landmarking
+import model_based
 
 VALID_GROUPS = (
     "landmarking",
@@ -17,26 +27,36 @@ VALID_GROUPS = (
     "statistical",
     "model-based",
     "info-theory",
-)
+)  # type: Tuple[str, ...]
 
 VALID_SUMMARY = (
     "mean",
     "sd",
-)
+)  # type: Tuple[str, ...]
+
+VALID_MFECLASSES = (
+    general.MFEGeneral,
+    statistical.MFEStatistical,
+    info_theory.MFEInfoTheory,
+    landmarking.MFELandmarking,
+    model_based.MFEModelBased,
+)  # type: Tuple
 
 
-def _check_value_in_group(value, group, wildcard="all"):
-    """Checks if a given value (or a collection) are in a group.
+def _check_value_in_group(
+        value: Union[str, Iterable[str]],
+        group: Iterable[str],
+        wildcard: str = "all") -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
+    """Checks if a value is in a set or a set of values is a subset of a set.
 
     Args:
-        value (:obj:`Iterable` of :obj:`str` or :obj:`str`): value(s)
-            to be checked if are in the given group of strings.
-        group (:obj:`Iterable` of :obj:`str`): a group of strings.
+        value: value(s) to be checked if are in the given group of strings.
+        group: a group of strings.
 
     Returns:
-        Tuples: in_group and not_in_group containing, respectivelly,
-        values that are in the given group and those that are not.
-        If no value is in either group, then this group will be None.
+        A pair of tuples containing, respectivelly, values that are in
+        the given group and those that are not. If no value is in either
+        group, then this group will be None.
 
     Raises:
         TypeError: if 'value' is not a Iterable type or some of its
@@ -44,35 +64,37 @@ def _check_value_in_group(value, group, wildcard="all"):
     """
 
     if not isinstance(value, collections.Iterable):
-        raise TypeError("Parameter type is not consistent.")
+        raise TypeError("Parameter type is not "
+                        "consistent ({0}).".format(type(value)))
 
-    in_group, not_in_group = None, None
+    in_group = tuple()  # type: Tuple[str, ...]
+    not_in_group = tuple()  # type: Tuple[str, ...]
 
     if isinstance(value, str):
         value = value.lower()
         if value == wildcard:
-            in_group = group
+            in_group = tuple(group)
 
         elif value in group:
-            in_group = (value,)
+            in_group = (value, )
 
         else:
-            not_in_group = (value,)
+            not_in_group = (value, )
 
-    elif isinstance(value, collections.Iterable):
-        value = set(map(str.lower, value))
+    else:
+        value_set = set(map(str.lower, value))
 
-        if wildcard in value:
-            in_group = group
+        if wildcard in value_set:
+            in_group = tuple(group)
 
         else:
-            in_group = value.intersection(group)
-            not_in_group = value.difference(group)
+            in_group = tuple(value_set.intersection(group))
+            not_in_group = tuple(value_set.difference(group))
 
     return in_group, not_in_group
 
 
-def process_groups(groups):
+def process_groups(groups: Union[Iterable[str], str]) -> Tuple[str, ...]:
     """Check if 'groups' argument from MFE.__init__ is correct.
 
     Args:
@@ -105,7 +127,7 @@ def process_groups(groups):
     return in_group
 
 
-def process_summary(summary):
+def process_summary(summary: Union[str, Iterable[str]]) -> Tuple[str, ...]:
     """Check if 'summary' argument from MFE.__init__ is correct.
     Args:
         summary (:obj:`Iterable` of :obj:`str` or a :obj:`str`): a
@@ -136,15 +158,16 @@ def process_summary(summary):
     return in_group
 
 
-def process_features(features):
+def process_features(features: Union[str, Iterable[str]]) -> Tuple[str, ...]:
     """Check if 'features' argument from MFE.__init__ is correct.
 
-    Needs to be implemented.
+    Needs to be properly implemented.
     """
-    return features
+    return tuple(features)
 
 
-def check_data(X, y):
+def check_data(X: Union[np.array, list],
+               y: Union[np.array, list]) -> Tuple[np.array, np.array]:
     """Checks received data type and shape.
 
     Args:
