@@ -1,4 +1,4 @@
-# MFE: Metafeature Extractor for Metalearning Tasks
+# pyMFE: Python Metafeature Extractor
 Description about the package comes here.
 Todo: Improve README.
 
