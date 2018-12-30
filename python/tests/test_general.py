@@ -9,4 +9,4 @@ class TestGeneral:
     def test_dataset_0_inst_num(self):
         """Test method for dataset #0 and metafeature "inst_num"."""
         dataset = context.DATASET_LIST[0]
-        assert MFEGeneral.inst_num(dataset) == 1000
+        assert MFEGeneral.ft_nr_inst(dataset) == 1000
