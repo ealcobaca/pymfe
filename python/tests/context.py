@@ -13,8 +13,11 @@ import sys
 
 import pandas as pd
 
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+IMPORT_PATH_TUPLE = ("..", "../pymfe")
+
+for path in IMPORT_PATH_TUPLE:
+    sys.path.insert(
+        0, os.path.abspath(os.path.join(os.path.dirname(__file__), path)))
 
 import pymfe  # noqa: E402, F401
 
