@@ -20,20 +20,6 @@ import numpy as np
 class MFEGeneral:
     """General-type Metafeature extractor."""
 
-    FEATURES = (
-        "attr_to_inst",
-        "cat_to_num",
-        "freq_class",
-        "inst_to_attr",
-        "nr_attr",
-        "nr_bin",
-        "nr_cat",
-        "nr_class",
-        "nr_inst",
-        "nr_num",
-        "num_to_cat",
-    )
-
     def __init__(self, features: Union[str, Iterable[str]] = "all") -> None:
         """Extracts general metafeatures from datasets.
 
