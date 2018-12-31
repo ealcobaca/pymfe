@@ -44,7 +44,7 @@ class MFEGeneral:
         """
         self.features = features
 
-    @staticmethod
-    def ft_nr_inst(X: np.array) -> int:
+    @classmethod
+    def ft_nr_inst(cls, X: np.array) -> int:
         """Returns number of instances (rows) in dataset."""
         return X.shape[0]

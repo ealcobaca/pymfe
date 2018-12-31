@@ -16,8 +16,7 @@ import _internal
 # import landmarking
 # import model_based
 
-TYPE_NUMERIC = TypeVar(int, float)
-TYPE_MFECLASSES = TypeVar(_internal.VALID_MFECLASSES)
+TypeNumeric = TypeVar("TypeNumeric", int, float)
 
 
 class MFE:
@@ -32,14 +31,14 @@ class MFE:
         self.groups = _internal.process_groups(groups)
         self.features = _internal.process_features(features)
         self.summary = _internal.process_summary(summary)
-        self.X = None
-        self.y = None
-        self.cv_splits = None
+        self.X = None  # type: Optional[Sequence]
+        self.y = None  # type: Optional[Sequence]
+        self.cv_splits = None  # type: Optional[Iterable[int]]
 
     def fit(self,
             X: Sequence,
             y: Sequence,
-            splits: Optional[Iterable] = None) -> None:
+            splits: Optional[Iterable[int]] = None) -> None:
         """Fits dataset into the MFE model.
 
         Args:
@@ -57,7 +56,8 @@ class MFE:
 
         self.X, self.y = _internal.check_data(X, y)
 
-        if not isinstance(splits, collections.Iterable):
+        if (splits is not None and
+                not isinstance(splits, collections.Iterable)):
             raise TypeError('"splits" argument must be a iterable.')
 
         self.cv_splits = splits
@@ -76,8 +76,8 @@ class MFE:
 
     @staticmethod
     def _call_feature(feature: str,
-                      group_class: TYPE_MFECLASSES,
-                      **kwargs) -> Sequence[TYPE_NUMERIC]:
+                      group_class,
+                      **kwargs) -> Sequence[TypeNumeric]:
         """Calls a specific feature-related method from class 'group_class'.
 
         Args:
