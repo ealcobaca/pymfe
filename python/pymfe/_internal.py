@@ -6,13 +6,12 @@ Attributes:
     VALID_SUMMARY (:obj:`tuple` of :obj:`str`): Supported summary
         functions to combine metafeature values.
     VALID_MFECLASSES (:obj:`tuple`): Metafeature extractors classes.
-
-Todo:
-    * Implement "check_features" function
 """
-from typing import Union, Tuple, Iterable, Generic, List, Dict
+from typing import Union, Tuple, Iterable, \
+    Generic, List, Dict, Callable, NewType, Optional, Sequence
 import inspect
 import collections
+import operator
 
 import numpy as np
 
@@ -52,6 +51,12 @@ VALID_MFECLASSES = (
     model_based.MFEModelBased,
     info_theory.MFEInfoTheory,
 )  # type: Tuple
+
+MTF_PREFIX = "ft_"
+"""Prefix which is that metafeat. extraction related methods starts with."""
+
+MethodTuple = NewType("MethodTuple", Tuple[str, Callable])
+"""Type annotation which describes the a metafeature method tuple."""
 
 
 def _check_value_in_group(
@@ -112,11 +117,11 @@ def process_groups(groups: Union[Iterable[str], str]) -> Tuple[str, ...]:
         groups (:obj:`str` or :obj:`Iterable` of :obj:`str`): a single
             string or a iterable with group identifiers to be processed.
             It must assume or contain the following values:
-                - 'landmarking': Landmarking metafeatures.
-                - 'general': General and Simple metafeatures.
-                - 'statistical': Statistical metafeatures.
-                - 'model-based': Metafeatures from machine learning models.
-                - 'info-theory': Information Theory metafeatures.
+                1. 'landmarking': Landmarking metafeatures.
+                2. 'general': General and Simple metafeatures.
+                3. 'statistical': Statistical metafeatures.
+                4. 'model-based': Metafeatures from machine learning models.
+                5. 'info-theory': Information Theory metafeatures.
 
     Returns:
         A tuple containing all valid group lower-cased identifiers.
@@ -145,26 +150,26 @@ def process_summary(summary: Union[str, Iterable[str]]) -> Tuple[str, ...]:
         summary (:obj:`Iterable` of :obj:`str` or a :obj:`str`): a
             summary function or a list of these, which are used to
             combine different calculations of the same metafeature.
-            Check out reference [1] for more information.
+            Check out reference `Rivolli et al.`_ for more information.
             The values must be one of the following:
-                - 'mean': Average of the values.
-                - 'sd': Standard deviation of the values.
-                - 'count': Computes the cardinality of the measure.
+                1. 'mean': Average of the values.
+                2. 'sd': Standard deviation of the values.
+                3. 'count': Computes the cardinality of the measure.
                     Suitable for variable cardinality.
-                - 'histogram': Describes the distribution of the mea-
+                4. 'histogram': Describes the distribution of the mea-
                     sure values. Suitable for high cardinality.
-                - 'iq_range': Computes the interquartile range of the
+                5. 'iq_range': Computes the interquartile range of the
                     measure values.
-                - 'kurtosis': Describes the shape of the measures values
+                6. 'kurtosis': Describes the shape of the measures values
                     distribution.
-                - 'max': Resilts in the maximum vlaues of the measure.
-                - 'median': Results in the central value of the measure.
-                - 'min': Results in the minimum value of the measure.
-                - 'quartiles': Results in the minimum, first quartile,
+                7. 'max': Resilts in the maximum vlaues of the measure.
+                8. 'median': Results in the central value of the measure.
+                9. 'min': Results in the minimum value of the measure.
+                10. 'quartiles': Results in the minimum, first quartile,
                     median, third quartile and maximum of the measure
                     values.
-                - 'range': Computes the ranfe of the measure values.
-                - 'skewness': Describes the shaoe of the measure values
+                11. 'range': Computes the ranfe of the measure values.
+                12. 'skewness': Describes the shaoe of the measure values
                     distribution in terms of symmetry.
 
     Raises:
@@ -177,8 +182,9 @@ def process_summary(summary: Union[str, Iterable[str]]) -> Tuple[str, ...]:
         A tuple containing all valid lower-cased summary functions.
 
     References:
-        [1] "Towards Reproducible Empirical Research in Meta-Learning",
-                Rivolli et al. URL: https://arxiv.org/abs/1808.10406
+        .. _Rivolli et al.:
+            "Towards Reproducible Empirical Research in Meta-Learning",
+            Rivolli et al. URL: https://arxiv.org/abs/1808.10406
     """
     if not summary:
         raise ValueError('"Summary" can not be None nor empty.')
@@ -191,12 +197,63 @@ def process_summary(summary: Union[str, Iterable[str]]) -> Tuple[str, ...]:
     return in_group
 
 
-def process_features(features: Union[str, Iterable[str]]) -> Tuple[str, ...]:
+def _filter_method_dict(
+        ft_methods_dict: Dict[str, List[MethodTuple]],
+        groups: Optional[Tuple[str, ...]]) -> Sequence[Sequence[MethodTuple]]:
+    """To do this docs."""
+
+    if groups:
+        ft_methods_filtered = operator.itemgetter(*groups)(ft_methods_dict)
+
+        if len(groups):
+            ft_methods_filtered = [ft_methods_filtered]
+
+    else:
+        ft_methods_filtered = ft_methods_dict.values()
+
+    return ft_methods_filtered
+
+
+def process_features(
+        features: Union[str, Iterable[str]],
+        groups: Optional[Tuple[str, ...]] = None) -> Tuple[MethodTuple, ...]:
     """Check if 'features' argument from MFE.__init__ is correct.
 
-    Needs to be properly implemented.
+    Args:
+        features: ...
+        groups: ...
+
+    Returns:
+        ...
     """
-    return tuple(features)
+
+    if not isinstance(features, str):
+        # Remove possible repeated features
+        features = list(set(features))
+
+    ft_methods_dict = get_all_ft_methods()  # type: Dict[List[MethodTuple]]
+
+    ft_methods_filtered = _filter_method_dict(ft_methods_dict, groups)
+
+    MTF_PREFIX_LEN = len(MTF_PREFIX)
+
+    ft_method_processed = []
+
+    for ft_method_list_by_groups in ft_methods_filtered:
+        for ft_method_tuple in ft_method_list_by_groups:
+            ft_method_name, _ = ft_method_tuple
+
+            if not isinstance(features, str):
+                if ft_method_name[MTF_PREFIX_LEN:] in features:
+                    ft_method_processed.append(ft_method_tuple)
+
+            else:
+                # In this case, user is only interested in a single
+                # metafeature
+                if ft_method_name[MTF_PREFIX_LEN:] == features:
+                    return (ft_method_tuple, )
+
+    return tuple(ft_method_processed)
 
 
 def check_data(X: Union[np.array, list],
@@ -235,7 +292,7 @@ def get_feature_methods(
     """Get feature-extraction related methods from a given MFE Class.
 
     Methods related with feature extraction is assumed to be prefixed
-    with "ft_".
+    with "MTF_PREFIX".
 
     Args:
         class_address: Class address from which the feature methods
@@ -244,22 +301,22 @@ def get_feature_methods(
     Returns:
         A list of tuples in the form ('method_name', 'method_address')
         which contains all methods associated with feature extraction
-        (prefixed with "ft_").
+        (prefixed with "MTF_PREFIX").
     """
     feature_method_list = inspect.getmembers(class_address,
                                              predicate=inspect.ismethod)
 
     # It is assumed that all feature-extraction related methods
-    # name are all prefixed with "ft_".
+    # name are all prefixed with "MTF_PREFIX".
     feature_method_list = [
         ft_method for ft_method in feature_method_list
-        if ft_method[0].startswith("ft_")
+        if ft_method[0].startswith(MTF_PREFIX)
     ]
 
     return feature_method_list
 
 
-def get_all_feature_methods() -> Dict[str, List[Tuple[str, Generic]]]:
+def get_all_ft_methods() -> Dict[str, List[MethodTuple]]:
     """Get all feature-extraction related methods from all Classes.
 
     Returns:
@@ -289,6 +346,10 @@ def get_all_feature_methods() -> Dict[str, List[Tuple[str, Generic]]]:
     feature_method_dict = {
         ft_type_id: get_feature_methods(mfe_class)
         for ft_type_id, mfe_class in zip(VALID_GROUPS, VALID_MFECLASSES)
-    }  # type: Dict[str, List[Tuple[str, Generic]]]
+    }  # type: Dict[str, List[MethodTuple]]
 
     return feature_method_dict
+
+
+if __name__ == "__main__":
+    print(process_features(["nr_inst", "blah"], groups=("general",)))
