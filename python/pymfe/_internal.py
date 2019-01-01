@@ -197,65 +197,6 @@ def process_summary(summary: Union[str, Iterable[str]]) -> Tuple[str, ...]:
     return in_group
 
 
-def _filter_method_dict(
-        ft_methods_dict: Dict[str, List[MethodTuple]],
-        groups: Optional[Tuple[str, ...]]) -> Sequence[Sequence[MethodTuple]]:
-    """To do this docs."""
-
-    if groups:
-        ft_methods_filtered = operator.itemgetter(*groups)(ft_methods_dict)
-
-        if len(groups):
-            ft_methods_filtered = [ft_methods_filtered]
-
-    else:
-        ft_methods_filtered = ft_methods_dict.values()
-
-    return ft_methods_filtered
-
-
-def process_features(
-        features: Union[str, Iterable[str]],
-        groups: Optional[Tuple[str, ...]] = None) -> Tuple[MethodTuple, ...]:
-    """Check if 'features' argument from MFE.__init__ is correct.
-
-    Args:
-        features: ...
-        groups: ...
-
-    Returns:
-        ...
-    """
-
-    if not isinstance(features, str):
-        # Remove possible repeated features
-        features = list(set(features))
-
-    ft_methods_dict = get_all_ft_methods()  # type: Dict[List[MethodTuple]]
-
-    ft_methods_filtered = _filter_method_dict(ft_methods_dict, groups)
-
-    MTF_PREFIX_LEN = len(MTF_PREFIX)
-
-    ft_method_processed = []
-
-    for ft_method_list_by_groups in ft_methods_filtered:
-        for ft_method_tuple in ft_method_list_by_groups:
-            ft_method_name, _ = ft_method_tuple
-
-            if not isinstance(features, str):
-                if ft_method_name[MTF_PREFIX_LEN:] in features:
-                    ft_method_processed.append(ft_method_tuple)
-
-            else:
-                # In this case, user is only interested in a single
-                # metafeature
-                if ft_method_name[MTF_PREFIX_LEN:] == features:
-                    return (ft_method_tuple, )
-
-    return tuple(ft_method_processed)
-
-
 def check_data(X: Union[np.array, list],
                y: Union[np.array, list]) -> Tuple[np.array, np.array]:
     """Checks received data type and shape.
@@ -303,7 +244,7 @@ def get_feature_methods(
         which contains all methods associated with feature extraction
         (prefixed with "MTF_PREFIX").
     """
-    feature_method_list = inspect.getmembers(class_address,
+    feature_method_list = inspect.getmembers(class_address(),
                                              predicate=inspect.ismethod)
 
     # It is assumed that all feature-extraction related methods
@@ -351,5 +292,115 @@ def get_all_ft_methods() -> Dict[str, List[MethodTuple]]:
     return feature_method_dict
 
 
+def _filter_method_dict(
+        ft_methods_dict: Dict[str, List[MethodTuple]],
+        groups: Optional[Tuple[str, ...]]) -> Sequence[Sequence[MethodTuple]]:
+    """Filter return of 'get_all_ft_methods' method based on given groups.
+
+    Args:
+        ft_methods_dict: return value of 'get_all_ft_methods'.
+        groups (optional): a tuple of feature group names. It can assume
+            value None, which is interpreted as "no filter" (i.e. all
+            features of all groups will be returned).
+
+    Returns:
+        A sequence containing the only values of input 'ft_methods_dict'
+        dictionary related to the given 'groups'.
+    """
+
+    if groups:
+        ft_methods_filtered = operator.itemgetter(*groups)(ft_methods_dict)
+
+        if len(groups) == 1:
+            ft_methods_filtered = [ft_methods_filtered]
+
+    else:
+        ft_methods_filtered = ft_methods_dict.values()
+
+    return ft_methods_filtered
+
+
+def _remove_redundancy(
+        features: Union[str, Iterable[str]]) -> Union[str, List[str]]:
+    """If features is a iterable, remove repeated elements."""
+    if not isinstance(features, str):
+        return list(set(features))
+
+    return features
+
+
+def process_features(
+        features: Union[str, Iterable[str]],
+        groups: Optional[Tuple[str, ...]] = None,
+        wildcard: str = "all") -> Tuple[MethodTuple, ...]:
+    """Check if 'features' argument from MFE.__init__ is correct.
+
+    This function is expected to be used after 'process_groups' method.
+
+    Args:
+        features: Iterable containing a group of features or a string
+            containing a single feature. Note that only features that
+            are in the given 'groups' will be returned.
+        groups: Sequence containing one or more group identifiers.
+        wildcard: value to be used as 'select all features' for 'features'
+            argument.
+
+    Returns:
+        A tuple containing tuples in the following format:
+
+            ('method_name', 'method_callable')
+
+        i.e., the first tuple item field is a string containing the name
+        of a feature-extraction related method, and the second field is
+        a callable object for the corresponding method.
+    """
+
+    features = _remove_redundancy(features)  # type: Union[str, List[str]]
+
+    ft_methods_dict = get_all_ft_methods()  # type: Dict[List[MethodTuple]]
+
+    ft_methods_filtered = _filter_method_dict(ft_methods_dict, groups)
+
+    ft_method_processed = []
+
+    if isinstance(features, str) and features == wildcard:
+
+        for ft_method_list_by_groups in ft_methods_filtered:
+            if ft_method_list_by_groups:
+                ft_method_processed.append(*ft_method_list_by_groups)
+
+        return tuple(ft_method_processed)
+
+    MTF_PREFIX_LEN = len(MTF_PREFIX)
+
+    for ft_method_list_by_groups in ft_methods_filtered:
+        for ft_method_tuple in ft_method_list_by_groups:
+            ft_method_name, _ = ft_method_tuple
+
+            method_name_without_prefix = ft_method_name[MTF_PREFIX_LEN:]
+
+            if not isinstance(features, str):
+                if method_name_without_prefix in features:
+                    ft_method_processed.append(ft_method_tuple)
+
+            else:
+                # In this case, user is only interested in a single
+                # metafeature
+                if method_name_without_prefix == features:
+                    return (ft_method_tuple, )
+
+    return tuple(ft_method_processed)
+
+
 if __name__ == "__main__":
-    print(process_features(["nr_inst", "blah"], groups=("general",)))
+    print(process_features("all",
+          groups=("general", "landmarking")))
+    print(process_features(["nr_inst", "blah"],
+          groups=("general", "landmarking")))
+    print(process_features(["nr_inst", "blah"],
+          groups=("landmarking",)))
+    print(process_features(["nr_inst", "blah"],
+          groups=("general", "statistical")))
+    print(process_features(["nr_inst", "blah"],
+          groups=("general", "statistical")))
+    print(process_features("all"))
