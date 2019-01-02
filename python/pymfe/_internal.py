@@ -12,6 +12,7 @@ from typing import Union, Tuple, Iterable, \
 import inspect
 import collections
 import operator
+import warnings
 
 import numpy as np
 
@@ -406,11 +407,20 @@ def process_features(
             if not isinstance(processed_ft, str):
                 if method_name_without_prefix in processed_ft:
                     ft_method_processed.append(ft_method_tuple)
+                    processed_ft.remove(method_name_without_prefix)
 
             else:
                 # In this case, user is only interested in a single
                 # metafeature
                 if method_name_without_prefix == processed_ft:
                     return (ft_method_tuple, )
+
+    if not isinstance(processed_ft, str):
+        for unknown_ft in processed_ft:
+            warnings.warn(
+                'Unknown feature "{0}"'.format(unknown_ft), UserWarning)
+    else:
+        warnings.warn(
+            'Unknown feature "{0}"'.format(processed_ft), UserWarning)
 
     return tuple(ft_method_processed)
