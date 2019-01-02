@@ -8,7 +8,7 @@ Attributes:
     VALID_MFECLASSES (:obj:`tuple`): Metafeature extractors classes.
 """
 from typing import Union, Tuple, Iterable, \
-    List, Dict, Callable, NewType, Optional, Sequence
+    List, Dict, Callable, Optional, Sequence, Any
 import inspect
 import collections
 import operator
@@ -55,7 +55,7 @@ VALID_MFECLASSES = (
 MTF_PREFIX = "ft_"
 """Prefix which is that metafeat. extraction related methods starts with."""
 
-MethodTuple = NewType("MethodTuple", Tuple[str, Callable])
+MethodTuple = Tuple[str, Callable[[], Any]]
 """Type annotation which describes the a metafeature method tuple."""
 
 
@@ -245,7 +245,7 @@ def get_feature_methods(
         (prefixed with "MTF_PREFIX").
     """
     feature_method_list = inspect.getmembers(
-        class_address(),
+        class_address,
         predicate=inspect.ismethod)  # type: List[Tuple[str, Callable]]
 
     # It is assumed that all feature-extraction related methods
@@ -313,10 +313,12 @@ def _filter_method_dict(
         ft_methods_filtered = operator.itemgetter(*groups)(ft_methods_dict)
 
         if len(groups) == 1:
-            ft_methods_filtered = [ft_methods_filtered]
+            ft_methods_filtered = (ft_methods_filtered, )
+        else:
+            ft_methods_filtered = tuple(ft_methods_filtered)
 
     else:
-        ft_methods_filtered = ft_methods_dict.values()
+        ft_methods_filtered = tuple(ft_methods_dict.values())
 
     return ft_methods_filtered
 
@@ -412,17 +414,3 @@ def process_features(
                     return (ft_method_tuple, )
 
     return tuple(ft_method_processed)
-
-
-if __name__ == "__main__":
-    print(process_features("all",
-                           groups=("general", "landmarking")))
-    print(process_features(["nr_inst", "blah"],
-                           groups=("general", "landmarking")))
-    print(process_features(["nr_inst", "blah"],
-                           groups=("landmarking",)))
-    print(process_features(["nr_inst", "blah"],
-                           groups=("general", "statistical")))
-    print(process_features(["nr_inst", "blah"],
-                           groups=("general", "statistical")))
-    print(process_features("all"))
