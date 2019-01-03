@@ -36,9 +36,9 @@ class MFE:
 
     @classmethod
     def _summarize(cls,
-                   features: Union[np.array, Sequence],
+                   features: Union[np.ndarray, Sequence],
                    sum_callable: Callable,
-                   remove_nan: bool = True) -> Optional[_internal.TypeNumeric]:
+                   remove_nan: bool = True) -> _internal.TypeNumeric:
         """Returns summarized features, if needed, or feature otherwise.
 
         Args:
@@ -56,7 +56,7 @@ class MFE:
         Raises:
             AttributeError: if 'sum_callable' is invalid.
         """
-        if isinstance(features, (np.array, collections.Sequence)):
+        if isinstance(features, (np.ndarray, collections.Sequence)):
 
             processed_feat = np.array(features)
 
@@ -73,7 +73,11 @@ class MFE:
 
         else:
             # Equivalent to identity summary function: f(x) = x
-            metafeature = features
+            if _internal.isnumeric(features):
+                metafeature = features
+
+            else:
+                metafeature = np.nan
 
         return metafeature
 
@@ -107,7 +111,7 @@ class MFE:
     def _build_ft_mtd_args(self,
                            ft_mtd_name: str,
                            ft_mtd_args: Iterable[str],
-                           user_custom_args: Dict[str, Any],
+                           user_custom_args: Optional[Dict[str, Any]],
                            suppress_warnings=False) -> Dict[str, Any]:
         """Build a 'kwargs' dict for a feature-extraction callable.
 
@@ -125,11 +129,15 @@ class MFE:
             callable only has at maximum "X" and "y" user-independent
             obligatory arguments.
         """
-        callable_args = {
-            custom_arg: user_custom_args[custom_arg]
-            for custom_arg in user_custom_args
-            if custom_arg in ft_mtd_args
-        }
+        if user_custom_args:
+            callable_args = {
+                custom_arg: user_custom_args[custom_arg]
+                for custom_arg in user_custom_args
+                if custom_arg in ft_mtd_args
+            }
+
+        else:
+            callable_args = dict()
 
         if not suppress_warnings:
             unknown_arg_set = (
@@ -153,8 +161,7 @@ class MFE:
 
     def extract(self,
                 suppress_warnings: bool = False,
-                **kwargs) -> Tuple[List[str],
-                                   List[Union[np.nan, _internal.TypeNumeric]]]:
+                **kwargs) -> Tuple[List[str], List[float]]:
         """Extracts metafeatures from previously fitted dataset.
 
         Args:
@@ -172,17 +179,17 @@ class MFE:
             raise TypeError("Fitted data not found. Call "
                             '"fit" method before "extract".')
 
-        if (not isinstance(self.X, np.array) or
-                not isinstance(self.y, np.array)):
+        if (not isinstance(self.X, np.ndarray) or
+                not isinstance(self.y, np.ndarray)):
             self.X, self.y = _internal.check_data(self.X, self.y)
 
-        metafeat_vals = []  # type: List[Union[int, float, np.nan]]
+        metafeat_vals = []  # type: List[Union[int, float]]
         metafeat_names = []  # type: List[str]
         for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self.features:
 
             mtd_args_pack = self._build_ft_mtd_args(ft_mtd_name,
                                                     ft_mtd_args,
-                                                    kwargs[ft_mtd_name],
+                                                    kwargs.get(ft_mtd_name),
                                                     suppress_warnings)
 
             try:
@@ -190,11 +197,10 @@ class MFE:
 
             except TypeError as type_e:
                 if not suppress_warnings:
-                    warnings.warn("Error extracting {0}: {1}. "
-                                  "Will set it as 'np.nan' for "
-                                  "all summary functions.".format(
-                                      ft_mtd_name,
-                                      repr(type_e)), RuntimeWarning)
+                    warnings.warn(
+                        "Error extracting {0}: \n{1}.\nWill set it "
+                        "as 'np.nan' for all summary functions.".format(
+                            ft_mtd_name, repr(type_e)), RuntimeWarning)
                 features = np.nan
 
             for sum_mtd_name, sum_mtd_callable in self.summary:
