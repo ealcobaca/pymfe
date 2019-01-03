@@ -8,7 +8,7 @@ Attributes:
     VALID_MFECLASSES (:obj:`tuple`): Metafeature extractors classes.
 """
 from typing import Union, Tuple, Iterable, \
-    List, Dict, Callable, Optional, Sequence, Any
+    List, Dict, Callable, Optional, Sequence, Any, TypeVar
 import inspect
 import collections
 import operator
@@ -16,6 +16,7 @@ import warnings
 
 import numpy as np
 
+import _summary
 import general
 import statistical
 import info_theory
@@ -31,18 +32,7 @@ VALID_GROUPS = (
 )  # type: Tuple[str, ...]
 
 VALID_SUMMARY = (
-    "mean",
-    "sd",
-    "count",
-    "histogram",
-    "iq_range",
-    "kurtosis",
-    "max",
-    "median",
-    "min",
-    "quartiles",
-    "range",
-    "skewness",
+    *_summary.SUMMARY_METHODS,
 )  # type: Tuple[str, ...]
 
 VALID_MFECLASSES = (
@@ -56,8 +46,14 @@ VALID_MFECLASSES = (
 MTF_PREFIX = "ft_"
 """Prefix which is that metafeat. extraction related methods starts with."""
 
-MethodTuple = Tuple[str, Callable[[], Any]]
+TypeMtdTuple = Tuple[str, Callable[[], Any]]
 """Type annotation which describes the a metafeature method tuple."""
+
+TypeExtFeatTuple = Tuple[str, Callable[[], Any], Sequence]
+"""Type annotation which extends TypeMtdTuple with extra field (for 'Args')"""
+
+TypeNumeric = TypeVar("TypeNumeric", int, float)
+"""Typing alias for both 'int' and 'float' types."""
 
 
 def _check_value_in_group(
@@ -69,6 +65,9 @@ def _check_value_in_group(
     Args:
         value: value(s) to be checked if are in the given group of strings.
         group: a group of strings.
+        wildcard: a value which represent 'all values'. The case is ignored,
+            so, for example, both values 'all', 'ALL' and any mix of cases
+            are considered to be the same wildcard token.
 
     Returns:
         A pair of tuples containing, respectivelly, values that are in
@@ -144,7 +143,8 @@ def process_groups(groups: Union[Iterable[str], str]) -> Tuple[str, ...]:
     return in_group
 
 
-def process_summary(summary: Union[str, Iterable[str]]) -> Tuple[str, ...]:
+def process_summary(
+        summary: Union[str, Iterable[str]]) -> Tuple[TypeMtdTuple, ...]:
     """Check if 'summary' argument from MFE.__init__ is correct.
 
     Args:
@@ -195,7 +195,12 @@ def process_summary(summary: Union[str, Iterable[str]]) -> Tuple[str, ...]:
     if not_in_group:
         raise ValueError("Unknown groups: {0}".format(not_in_group))
 
-    return in_group
+    summary_methods = tuple(
+        (summary_func, _summary.SUMMARY_METHODS[summary_func])
+        for summary_func in in_group
+    )  # type: Tuple[TypeMtdTuple, ...]
+
+    return summary_methods
 
 
 def check_data(X: Union[np.array, list],
@@ -203,10 +208,10 @@ def check_data(X: Union[np.array, list],
     """Checks received data type and shape.
 
     Args:
-        Check "mfe.fit" method for more information.
+        Check 'mfe.fit' method for more information.
 
     Raises:
-        Check "mfe.fit" method for more information.
+        Check 'mfe.fit' method for more information.
 
     Returns:
         X and y both casted to a numpy.array.
@@ -230,7 +235,7 @@ def check_data(X: Union[np.array, list],
 
 
 def get_feature_methods(
-        class_address: Callable) -> List[MethodTuple]:
+        class_address: Callable) -> List[TypeMtdTuple]:
     """Get feature-extraction related methods from a given MFE Class.
 
     Methods related with feature extraction is assumed to be prefixed
@@ -247,7 +252,7 @@ def get_feature_methods(
     """
     feature_method_list = inspect.getmembers(
         class_address,
-        predicate=inspect.ismethod)  # type: List[Tuple[str, Callable]]
+        predicate=inspect.ismethod)  # type: List[TypeMtdTuple]
 
     # It is assumed that all feature-extraction related methods
     # name are all prefixed with "MTF_PREFIX".
@@ -259,7 +264,7 @@ def get_feature_methods(
     return feature_method_list
 
 
-def get_all_ft_methods() -> Dict[str, List[MethodTuple]]:
+def get_all_ft_methods() -> Dict[str, List[TypeMtdTuple]]:
     """Get all feature-extraction related methods from all Classes.
 
     Returns:
@@ -267,36 +272,35 @@ def get_all_ft_methods() -> Dict[str, List[MethodTuple]]:
         i.e. the keys are the names of feature groups (e.g. 'general' or
         'landmarking') and values are lists of tuples which first entry are
         feature-extraction related method names and the second entry are its
-        correspondent address.
+        correspondent address. For example:
 
-    Example:
-        {
-            'general': [
-                ('ft_nr_num', <method_address>),
-                ('ft_nr_inst', <method_address>),
+            {
+                'general': [
+                    ('ft_nr_num', <method_address>),
+                    ('ft_nr_inst', <method_address>),
+                    ...
+                ],
+
+                'statistical': [
+                    ('ft_mean', <method_address>),
+                    ('ft_max', <method_address>),
+                    ...
+                ],
+
                 ...
-            ],
-
-            'statistical': [
-                ('ft_mean', <method_address>),
-                ('ft_max', <method_address>),
-                ...
-            ],
-
-            ...
-        }
+            }
     """
     feature_method_dict = {
         ft_type_id: get_feature_methods(mfe_class)
         for ft_type_id, mfe_class in zip(VALID_GROUPS, VALID_MFECLASSES)
-    }  # type: Dict[str, List[MethodTuple]]
+    }  # type: Dict[str, List[TypeMtdTuple]]
 
     return feature_method_dict
 
 
 def _filter_method_dict(
-        ft_methods_dict: Dict[str, List[MethodTuple]],
-        groups: Optional[Tuple[str, ...]]) -> Sequence[Sequence[MethodTuple]]:
+        ft_methods_dict: Dict[str, List[TypeMtdTuple]],
+        groups: Optional[Tuple[str, ...]]) -> Sequence[TypeMtdTuple]:
     """Filter return of 'get_all_ft_methods' method based on given groups.
 
     Args:
@@ -306,7 +310,7 @@ def _filter_method_dict(
             features of all groups will be returned).
 
     Returns:
-        A sequence containing the only values of input 'ft_methods_dict'
+        A sequence containing only values of input 'ft_methods_dict'
         dictionary related to the given 'groups'.
     """
 
@@ -315,11 +319,15 @@ def _filter_method_dict(
 
         if len(groups) == 1:
             ft_methods_filtered = (ft_methods_filtered, )
-        else:
-            ft_methods_filtered = tuple(ft_methods_filtered)
 
     else:
         ft_methods_filtered = tuple(ft_methods_dict.values())
+
+    ft_methods_filtered = tuple(
+        mtd_tuple
+        for ft_group in ft_methods_filtered
+        for mtd_tuple in ft_group
+    )
 
     return ft_methods_filtered
 
@@ -333,30 +341,65 @@ def _preprocess_ft_arg(
     return features.lower()
 
 
+def _extract_method_args(ft_method_callable: Callable) -> Sequence[str]:
+    """Extracts arguments from given method.
+
+    Args:
+        ft_method_callable: a Callable related to a feature extraction.
+
+    Returns:
+        A sequence containing the name of arguments of the given
+        Callable.
+
+    Raises:
+        TypeError: if 'ft_method_callable' is not a valid Callable.
+    """
+    ft_method_signature = inspect.signature(ft_method_callable)
+    method_callable_args = list(ft_method_signature.parameters.keys())
+    return method_callable_args
+
+
 def _check_ft_wildcard(
-        processed_ft: Union[str, Iterable[str]],
-        ft_methods_filtered: Sequence[Sequence[MethodTuple]],
-        wildcard: str = "all") -> Optional[Tuple[MethodTuple, ...]]:
-    """Returns all features if feature wildcard matches, None otherwise."""
+        features: Union[str, Iterable[str]],
+        ft_methods: Sequence[TypeMtdTuple],
+        wildcard: str = "all") -> Optional[Tuple[TypeExtFeatTuple, ...]]:
+    """Returns all features if feature wildcard matches, None otherwise.
 
-    if (isinstance(processed_ft, str) and
-            processed_ft.lower() == wildcard.lower()):
+    Args:
+        features: a feature or a Iterable with feature names.
+        ft_methods: Sequence containing tuples in the form
+            ('method_name', 'method_callable).
+    """
 
-        ft_method_processed = []  # type: List[MethodTuple]
+    if (isinstance(features, str) and
+            features.lower() == wildcard.lower()):
 
-        for ft_method_list_by_groups in ft_methods_filtered:
-            if ft_method_list_by_groups:
-                ft_method_processed.append(*ft_method_list_by_groups)
+        ext_ft_methods = tuple(
+            (mtd_name, mtd_callable, _extract_method_args(mtd_callable))
+            for mtd_name, mtd_callable in ft_methods
+        )
 
-        return tuple(ft_method_processed)
+        return ext_ft_methods
 
     return None
+
+
+def _process_features_warnings(unknown_feats: Sequence[str]) -> None:
+    """Warns for unknown features detected in 'process_features' function."""
+    if not isinstance(unknown_feats, str):
+        for unknown_ft in unknown_feats:
+            warnings.warn(
+                'Unknown feature "{0}"'.format(unknown_ft), UserWarning)
+    else:
+        warnings.warn(
+            'Unknown feature "{0}"'.format(unknown_feats), UserWarning)
 
 
 def process_features(
         features: Union[str, Iterable[str]],
         groups: Optional[Tuple[str, ...]] = None,
-        wildcard: str = "all") -> Tuple[MethodTuple, ...]:
+        wildcard: str = "all",
+        suppress_warnings=False) -> Tuple[TypeExtFeatTuple, ...]:
     """Check if 'features' argument from MFE.__init__ is correct.
 
     This function is expected to be used after 'process_groups' method.
@@ -379,48 +422,49 @@ def process_features(
         a callable object for the corresponding method.
     """
 
+    if not features:
+        return tuple()
+
     processed_ft = _preprocess_ft_arg(features)  # type: Union[str, List[str]]
 
-    ft_methods_dict = get_all_ft_methods()  \
-        # type: Dict[str, List[MethodTuple]]
-
-    ft_methods_filtered = _filter_method_dict(ft_methods_dict, groups)
+    ft_methods_filtered = _filter_method_dict(
+        get_all_ft_methods(),
+        groups)  # type: Sequence[TypeMtdTuple]
 
     all_features_ret = _check_ft_wildcard(
-        processed_ft=processed_ft,
-        ft_methods_filtered=ft_methods_filtered,
-        wildcard=wildcard)
+        features=processed_ft,
+        ft_methods=ft_methods_filtered,
+        wildcard=wildcard)  # type: Optional[Tuple[TypeExtFeatTuple, ...]]
 
     if all_features_ret:
         return all_features_ret
 
-    ft_method_processed = []  # type: List[MethodTuple]
+    ft_method_processed = []  # type: List[TypeExtFeatTuple]
 
     mtf_prefix_len = len(MTF_PREFIX)
 
-    for ft_method_list_by_groups in ft_methods_filtered:
-        for ft_method_tuple in ft_method_list_by_groups:
-            ft_method_name, _ = ft_method_tuple
+    for ft_method_tuple in ft_methods_filtered:
+        ft_method_name, ft_method_callable = ft_method_tuple
 
-            method_name_without_prefix = ft_method_name[mtf_prefix_len:]
+        method_name_without_prefix = ft_method_name[mtf_prefix_len:]
 
-            if not isinstance(processed_ft, str):
-                if method_name_without_prefix in processed_ft:
-                    ft_method_processed.append(ft_method_tuple)
-                    processed_ft.remove(method_name_without_prefix)
+        method_callable_args = _extract_method_args(ft_method_callable)
 
-            else:
-                # In this case, user is only interested in a single
-                # metafeature
-                if method_name_without_prefix == processed_ft:
-                    return (ft_method_tuple, )
+        extended_item = (*ft_method_tuple,
+                         method_callable_args)  # type: TypeExtFeatTuple
 
-    if not isinstance(processed_ft, str):
-        for unknown_ft in processed_ft:
-            warnings.warn(
-                'Unknown feature "{0}"'.format(unknown_ft), UserWarning)
-    else:
-        warnings.warn(
-            'Unknown feature "{0}"'.format(processed_ft), UserWarning)
+        if not isinstance(processed_ft, str):
+            if method_name_without_prefix in processed_ft:
+                ft_method_processed.append(extended_item)
+                processed_ft.remove(method_name_without_prefix)
+
+        else:
+            # In this case, user is only interested in a single
+            # metafeature
+            if method_name_without_prefix == processed_ft:
+                return (extended_item, )
+
+    if not suppress_warnings:
+        _process_features_warnings(processed_ft)
 
     return tuple(ft_method_processed)
