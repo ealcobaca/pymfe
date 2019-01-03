@@ -9,4 +9,6 @@ Todo:
 class MFEInfoTheory:
     """To do this documentation."""
 
-    # To do.
+    @classmethod
+    def ft_test_infotheory(cls):
+        return 0.0
