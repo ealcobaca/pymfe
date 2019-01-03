@@ -52,8 +52,25 @@ TypeMtdTuple = Tuple[str, Callable[[], Any]]
 TypeExtFeatTuple = Tuple[str, Callable[[], Any], Sequence]
 """Type annotation which extends TypeMtdTuple with extra field (for 'Args')"""
 
-TypeNumeric = TypeVar("TypeNumeric", int, float)
-"""Typing alias for both 'int' and 'float' types."""
+_TypeNumeric = (
+    int,
+    float,
+    np.int32,
+    np.float32,
+    np.float64,
+    np.int64,
+)
+
+TypeNumeric = TypeVar(
+    "TypeNumeric",
+    int,
+    float,
+    np.int32,
+    np.float32,
+    np.float64,
+    np.int64,
+)
+"""Typing alias for both numeric types."""
 
 
 def _check_value_in_group(
@@ -203,8 +220,8 @@ def process_summary(
     return summary_methods
 
 
-def check_data(X: Union[np.array, list],
-               y: Union[np.array, list]) -> Tuple[np.array, np.array]:
+def check_data(X: Union[np.ndarray, list],
+               y: Union[np.ndarray, list]) -> Tuple[np.ndarray, np.ndarray]:
     """Checks received data type and shape.
 
     Args:
@@ -216,16 +233,16 @@ def check_data(X: Union[np.array, list],
     Returns:
         X and y both casted to a numpy.array.
     """
-    if not isinstance(X, (np.array, list)):
+    if not isinstance(X, (np.ndarray, list)):
         raise TypeError('"X" is neither "list" nor "np.array".')
 
-    if not isinstance(y, (np.array, list)):
+    if not isinstance(y, (np.ndarray, list)):
         raise TypeError('"y" is neither "list" nor "np.array".')
 
-    if not isinstance(X, np.array):
+    if not isinstance(X, np.ndarray):
         X = np.array(X)
 
-    if not isinstance(y, np.array):
+    if not isinstance(y, np.ndarray):
         y = np.array(y)
 
     if X.shape[0] != y.shape[0]:
@@ -468,3 +485,8 @@ def process_features(
         _process_features_warnings(processed_ft)
 
     return tuple(ft_method_processed)
+
+
+def isnumeric(x):
+    """Checks if 'x' is a Numeric Type."""
+    return isinstance(x, _TypeNumeric)
