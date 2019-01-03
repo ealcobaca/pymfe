@@ -1,4 +1,3 @@
-# -*- conding: utf-8 -*-
 """Setup for pymfe package."""
 import setuptools
 
@@ -13,7 +12,7 @@ setuptools.setup(
     description="Metafeature extractor",
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
-    url="https://github.com/.../pyMFE",
+    url="https://github.com/ealcobaca/pyMFE",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
