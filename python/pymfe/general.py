@@ -2,10 +2,11 @@
 
 Notes:
     More description about the metafeatures implemented here,
-    check out [1].
+    check out `Rivolli et al.`_.
 
 References:
-    [1] "Towards Reproducible Empirical Research in Meta-Learning",
+    .. _Rivolli et al.:
+        "Towards Reproducible Empirical Research in Meta-Learning",
         Rivolli et al. URL: https://arxiv.org/abs/1808.10406
 
 Todo:
