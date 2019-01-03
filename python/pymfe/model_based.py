@@ -9,4 +9,6 @@ Todo:
 class MFEModelBased:
     """To do this documentation."""
 
-    # To do.
+    @classmethod
+    def ft_test_model_based(cls):
+        return 0.0

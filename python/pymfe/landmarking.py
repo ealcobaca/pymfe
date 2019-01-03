@@ -9,4 +9,6 @@ Todo:
 class MFELandmarking:
     """To do this documentation."""
 
-    # To do.
+    @classmethod
+    def ft_test_landmarking(cls):
+        return 0.0

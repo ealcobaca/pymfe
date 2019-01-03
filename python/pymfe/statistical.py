@@ -9,4 +9,6 @@ Todo:
 class MFEStatistical:
     """To do this documentation."""
 
-    # To do.
+    @classmethod
+    def ft_test_statistical(cls):
+        return 0.0
