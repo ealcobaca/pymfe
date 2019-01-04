@@ -22,14 +22,17 @@ class MFE:
     def __init__(self,
                  groups: Union[str, Iterable[str]] = "all",
                  features: Union[str, Iterable[str]] = "all",
-                 summary: Union[str, Iterable[str]] = "all") -> None:
+                 summary: Union[str, Iterable[str]] = ("mean", "sd")) -> None:
         """To do this documentation."""
 
         self.groups = _internal.process_groups(groups)
         self.features = _internal.process_features(features)  \
             # type: Sequence[Tuple[str, Callable, Sequence]]
+
+
         self.summary = _internal.process_summary(summary)  \
             # type: Sequence[Tuple[str, Callable]]
+
         self.X = None  # type: Optional[np.array]
         self.y = None  # type: Optional[np.array]
         self.cv_splits = None  # type: Optional[Iterable[int]]
@@ -102,8 +105,8 @@ class MFE:
 
         self.X, self.y = _internal.check_data(X, y)
 
-        if (splits is not None and
-                not isinstance(splits, collections.Iterable)):
+        if (splits is not None
+                and not isinstance(splits, collections.Iterable)):
             raise TypeError('"splits" argument must be a iterable.')
 
         self.cv_splits = splits
@@ -132,24 +135,22 @@ class MFE:
         if user_custom_args:
             callable_args = {
                 custom_arg: user_custom_args[custom_arg]
-                for custom_arg in user_custom_args
-                if custom_arg in ft_mtd_args
+                for custom_arg in user_custom_args if custom_arg in ft_mtd_args
             }
 
         else:
             callable_args = dict()
 
         if not suppress_warnings:
-            unknown_arg_set = (
-                unknown_arg for unknown_arg in callable_args.keys()
-                if unknown_arg not in ft_mtd_args
-            )  # type: Generator[str, None, None]
+            unknown_arg_set = (unknown_arg
+                               for unknown_arg in callable_args.keys()
+                               if unknown_arg not in ft_mtd_args
+                               )  # type: Generator[str, None, None]
 
             for unknown_arg in unknown_arg_set:
                 warnings.warn(
                     "Unknown argument {0} for method {1}.".format(
-                        unknown_arg,
-                        ft_mtd_name), UserWarning)
+                        unknown_arg, ft_mtd_name), UserWarning)
 
         if "X" in ft_mtd_args:
             callable_args["X"] = self.X
@@ -159,8 +160,29 @@ class MFE:
 
         return callable_args
 
-    def extract(self,
-                suppress_warnings: bool = False,
+    @staticmethod
+    def _get_feat_value(method_name: str,
+                        method_args: Dict[str, Any],
+                        method_callable: Callable,
+                        suppress_warnings: bool = False
+                        ) -> Union[_internal.TypeNumeric, np.ndarray]:
+        """Extract feat. from 'method_callable' with 'method_args' as args."""
+
+        try:
+            features = method_callable(**method_args)
+
+        except TypeError as type_e:
+            if not suppress_warnings:
+                warnings.warn(
+                    "Error extracting {0}: \n{1}.\nWill set it "
+                    "as 'np.nan' for all summary functions.".format(
+                        method_name, repr(type_e)), RuntimeWarning)
+
+            features = np.nan
+
+        return features
+
+    def extract(self, suppress_warnings: bool = False,
                 **kwargs) -> Tuple[List[str], List[float]]:
         """Extracts metafeatures from previously fitted dataset.
 
@@ -179,41 +201,40 @@ class MFE:
             raise TypeError("Fitted data not found. Call "
                             '"fit" method before "extract".')
 
-        if (not isinstance(self.X, np.ndarray) or
-                not isinstance(self.y, np.ndarray)):
+        if (not isinstance(self.X, np.ndarray)
+                or not isinstance(self.y, np.ndarray)):
             self.X, self.y = _internal.check_data(self.X, self.y)
 
         metafeat_vals = []  # type: List[Union[int, float]]
         metafeat_names = []  # type: List[str]
         for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self.features:
 
-            mtd_args_pack = self._build_ft_mtd_args(ft_mtd_name,
-                                                    ft_mtd_args,
-                                                    kwargs.get(ft_mtd_name),
-                                                    suppress_warnings)
+            mtd_args_pack = self._build_ft_mtd_args(
+                ft_mtd_name, ft_mtd_args, kwargs.get(ft_mtd_name),
+                suppress_warnings)  # type: Dict[str, Any]
 
-            try:
-                features = ft_mtd_callable(**mtd_args_pack)
+            features = MFE._get_feat_value(
+                ft_mtd_name,
+                mtd_args_pack,
+                ft_mtd_callable,
+                suppress_warnings)  \
+                # type: Union[np.ndarray, Sequence, float, int]
 
-            except TypeError as type_e:
-                if not suppress_warnings:
-                    warnings.warn(
-                        "Error extracting {0}: \n{1}.\nWill set it "
-                        "as 'np.nan' for all summary functions.".format(
-                            ft_mtd_name, repr(type_e)), RuntimeWarning)
-                features = np.nan
+            if isinstance(features, (np.ndarray, collections.Sequence)):
+                for sum_mtd_name, sum_mtd_callable in self.summary:
+                    summarized_val = MFE._summarize(features, sum_mtd_callable)
+                    metafeat_vals.append(summarized_val)
+                    metafeat_names.append("{0}.{1}".format(
+                        ft_mtd_name, sum_mtd_name))
 
-            for sum_mtd_name, sum_mtd_callable in self.summary:
-                summarized_val = MFE._summarize(features, sum_mtd_callable)
-                metafeat_vals.append(summarized_val)
-                metafeat_names.append(
-                    "{0}.{1}".format(ft_mtd_name, sum_mtd_name))
+            else:
+                metafeat_vals.append(features)
+                metafeat_names.append(ft_mtd_name)
 
         return metafeat_names, metafeat_vals
 
     @staticmethod
-    def _call_feature(feature: str,
-                      group_class,
+    def _call_feature(feature: str, group_class,
                       **kwargs) -> Sequence[_internal.TypeNumeric]:
         """Calls a specific feature-related method from class 'group_class'.
 
@@ -239,3 +260,19 @@ class MFE:
                 by this method.
         """
         return getattr(group_class, "ft_{0}".format(feature))(**kwargs)
+
+
+X = np.array([
+    [1, 2, 3, 4],
+    [0, 0, 1, 1],
+    [2, 2, 1, 1],
+    [1, 1, 1, 1],
+])
+
+y = np.array([1, 1, 0, 0])
+
+m = MFE()
+m.fit(X=X, y=y)
+names, vals = m.extract()
+for n, v in zip(names, vals):
+    print(n, v)
