@@ -49,7 +49,7 @@ TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 TypeExtMtdTuple = t.Tuple[str, t.Callable[[], t.Any], t.Sequence]
 """Type annotation which extends TypeMtdTuple with extra field (for 'Args')"""
 
-_TypeNumeric = (
+_TYPE_NUMERIC = (
     int,
     float,
     np.int32,
@@ -152,13 +152,16 @@ def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
     in_group, not_in_group = _check_value_in_group(groups, VALID_GROUPS)
 
     if not_in_group:
-        raise ValueError("Unknown groups: {0}".format(not_in_group))
+        raise ValueError(
+            "Unknown groups: {0}. "
+            "Please select values in {1}.".format(not_in_group, VALID_GROUPS))
 
     return in_group
 
 
 def process_summary(
-        summary: t.Union[str, t.Iterable[str]]) -> t.Tuple[TypeMtdTuple, ...]:
+        summary: t.Union[str, t.Iterable[str]]
+        ) -> t.Tuple[TypeExtMtdTuple, ...]:
     """Check if 'summary' argument from MFE.__init__ is correct.
 
     Args:
@@ -184,7 +187,7 @@ def process_summary(
                     median, third quartile and maximum of the measure
                     values.
                 11. 'range': Computes the ranfe of the measure values.
-                12. 'skewness': Describes the shaoe of the measure values
+                12. 'skewness': Describes the shape of the measure values
                     distribution in terms of symmetry.
 
     Raises:
@@ -207,13 +210,20 @@ def process_summary(
     in_group, not_in_group = _check_value_in_group(summary, VALID_SUMMARY)
 
     if not_in_group:
-        raise ValueError("Unknown groups: {0}".format(not_in_group))
+        raise ValueError(
+            "Unknown summary: {0}. "
+            "Please select values in {1}.".format(not_in_group, VALID_SUMMARY))
 
-    summary_methods = []  # type: t.Sequence[TypeExtMtdTuple]
+    summary_methods = []  # type: t.List[TypeExtMtdTuple]
 
     for summary_func in in_group:
         summary_mtd_callable = _summary.SUMMARY_METHODS[summary_func]
-        summary_mtd_args = _extract_method_args(summary_mtd_callable)
+
+        try:
+            summary_mtd_args = _extract_method_args(summary_mtd_callable)
+
+        except ValueError:
+            summary_mtd_args = []
 
         summary_mtd_pack = (
             summary_func,
@@ -487,9 +497,9 @@ def process_features(
     return tuple(ft_method_processed)
 
 
-def isnumeric(x: t.Any) -> bool:
+def isnumeric(value: t.Any) -> bool:
     """Checks if 'x' is a Numeric Type."""
-    return isinstance(x, _TypeNumeric)
+    return isinstance(value, _TYPE_NUMERIC)
 
 
 def remove_mtd_prefix(method_name: str) -> str:
