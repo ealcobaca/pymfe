@@ -55,7 +55,7 @@ class MFE:
         Raises:
             AttributeError: if 'sum_callable' is invalid.
         """
-        if isinstance(features, (np.ndarray, collections.t.Sequence)):
+        if isinstance(features, (np.ndarray, collections.Sequence)):
 
             processed_feat = np.array(features)
 
@@ -173,7 +173,7 @@ class MFE:
         self.X, self.y = _internal.check_data(X, y)
 
         if (splits is not None
-                and not isinstance(splits, collections.t.Iterable)):
+                and not isinstance(splits, collections.Iterable)):
             raise TypeError('"splits" argument must be a iterable.')
 
         self.cv_splits = splits
@@ -216,7 +216,7 @@ class MFE:
                 suppress_warnings)  \
                 # type: t.Union[np.ndarray, t.Sequence, float, int]
 
-            if isinstance(features, (np.ndarray, collections.t.Sequence)):
+            if isinstance(features, (np.ndarray, collections.Sequence)):
                 for sum_mtd_name, sum_mtd_callable in self.summary:
                     summarized_val = MFE._summarize(features, sum_mtd_callable)
                     metafeat_vals.append(summarized_val)
