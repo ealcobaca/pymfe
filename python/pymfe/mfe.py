@@ -24,29 +24,52 @@ class MFE:
         """To do this documentation."""
 
         self.groups = _internal.process_groups(groups)
+        """To do."""
+
         self.features = _internal.process_features(features)  \
             # type: t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
+        """To do."""
 
         self.summary = _internal.process_summary(summary)  \
             # type: t.Sequence[t.Tuple[str, t.Callable]]
+        """To do."""
 
         self.X = None  # type: t.Optional[np.array]
+        """To do."""
+
         self.y = None  # type: t.Optional[np.array]
-        self.cv_splits = None  # type: t.Optional[t.Iterable[int]]
+        """To do."""
+
+        self.splits = None  # type: t.Optional[t.Iterable[int]]
+        """To do."""
+
+        self._custom_args_sum = None  # type: t.Optional[t.Dict[str, t.Any]]
+        """To do."""
+
+        self._custom_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
+        """To do."""
 
     @staticmethod
     def _summarize(features: t.Union[np.ndarray, t.Sequence],
-                   sum_callable: t.Callable,
-                   remove_nan: bool = True) -> _internal.TypeNumeric:
+                   feature_name: str,
+                   callable_name: str,
+                   callable_sum: t.Callable,
+                   callable_args: t.Optional[t.Dict[str, t.Any]],
+                   remove_nan: bool = True,
+                   suppress_warnings: bool = False) -> _internal.TypeNumeric:
         """Returns summarized features, if needed, or feature otherwise.
 
         Args:
             features: t.Sequence containing values to summarize.
-            sum_callable: t.Callable of the method which implements the desired
+            feature_name: name of the feature to be summarized.
+            callable_name: name of the summary function.
+            callable_sum: t.Callable of the method which implements the desired
                 summary function.
+            callable_args: arguments to the summary function.
             remove_nan: check and remove all elements in 'features' which are
                 not numeric ('int' or 'float' types). Note that :obj:`np.inf`
                 is still considered numeric.
+            suppress_warnings: if True, do not show any warnings.
 
         Returns:
             Float value of summarized feature values if possible. May return
@@ -64,8 +87,11 @@ class MFE:
                 processed_feat = processed_feat[numeric_vals]
                 processed_feat = processed_feat.astype(np.float32)
 
+            if callable_args is None:
+                callable_args = {}
+
             try:
-                metafeature = sum_callable(processed_feat)
+                metafeature = callable_sum(processed_feat, **callable_args)
 
             except TypeError:
                 metafeature = np.nan
@@ -77,6 +103,11 @@ class MFE:
 
             else:
                 metafeature = np.nan
+
+        if np.isnan(metafeature) and not suppress_warnings:
+            warnings.warn(
+                "Failed to summarize {0} with {1}.".format(
+                    feature_name, callable_name), RuntimeWarning)
 
         return metafeature
 
@@ -102,52 +133,56 @@ class MFE:
 
         return features
 
-    def _build_ft_mtd_args(self,
-                           ft_mtd_name: str,
-                           ft_mtd_args: t.Iterable[str],
-                           user_custom_args: t.Optional[t.Dict[str, t.Any]],
-                           suppress_warnings=False) -> t.Dict[str, t.Any]:
+    def _build_mtd_args(
+            self,
+            method_name: str,
+            method_args: t.Iterable[str],
+            inner_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
+            user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
+            suppress_warnings: bool = False) -> t.Dict[str, t.Any]:
         """Build a 'kwargs' dict for a feature-extraction callable.
 
         Args:
-            ft_mtd_args: t.Iterable containing the name of all arguments of
+            method_name: name of the method.
+            method_args: Iterable containing the name of all arguments of
                 the feature-extraction callable.
-            user_custom_args: t.Dict in the form {'arg': value} given by
+            inner_custom_args: custom arguments for inner usage.
+            user_custom_args: Dict in the form {'arg': value} given by
                 user to customize the given feature-extraction callable.
             suppress_warnings: do not show any warnings about unknown
                 parameters.
 
         Returns:
             A t.Dict which is a ready-to-use kwargs for the correspondent
-            callable. Note that is expected that the feature-extraction
-            callable only has at maximum "X" and "y" user-independent
-            obligatory arguments.
+            callable.
         """
-        if user_custom_args:
-            callable_args = {
-                custom_arg: user_custom_args[custom_arg]
-                for custom_arg in user_custom_args if custom_arg in ft_mtd_args
-            }
 
-        else:
-            callable_args = dict()
+        if user_custom_args is None:
+            user_custom_args = {}
+
+        if inner_custom_args is None:
+            inner_custom_args = {}
+
+        combined_args = {
+            **user_custom_args,
+            **inner_custom_args,
+        }
+
+        callable_args = {
+            custom_arg: combined_args[custom_arg]
+            for custom_arg in combined_args if custom_arg in method_args
+        }
 
         if not suppress_warnings:
             unknown_arg_set = (unknown_arg
-                               for unknown_arg in callable_args.keys()
-                               if unknown_arg not in ft_mtd_args
+                               for unknown_arg in user_custom_args.keys()
+                               if unknown_arg not in method_args
                                )  # type: t.Generator[str, None, None]
 
             for unknown_arg in unknown_arg_set:
                 warnings.warn(
-                    "Unknown argument {0} for method {1}.".format(
-                        unknown_arg, ft_mtd_name), UserWarning)
-
-        if "X" in ft_mtd_args:
-            callable_args["X"] = self.X
-
-        if "y" in ft_mtd_args:
-            callable_args["y"] = self.y
+                    'Unknown argument "{0}" for method "{1}".'.format(
+                        unknown_arg, method_name), UserWarning)
 
         return callable_args
 
@@ -176,13 +211,25 @@ class MFE:
                 and not isinstance(splits, collections.Iterable)):
             raise TypeError('"splits" argument must be a iterable.')
 
-        self.cv_splits = splits
+        self.splits = splits
 
-    def extract(self, suppress_warnings: bool = False,
+        self._custom_args_ft = {
+            "X": self.X,
+            "y": self.y,
+            "splits": self.splits,
+        }
+
+        self._custom_args_sum = None
+
+    def extract(self,
+                remove_nan: bool = True,
+                suppress_warnings: bool = False,
                 **kwargs) -> t.Tuple[t.List[str], t.List[float]]:
         """Extracts metafeatures from previously fitted dataset.
 
         Args:
+            remove_nan: if True, remove any non-numeric values features
+                before summarizing then.
             suppress_warnings: do not show warnings about unknown user
                 custom parameters.
 
@@ -203,29 +250,49 @@ class MFE:
 
         metafeat_vals = []  # type: t.List[t.Union[int, float]]
         metafeat_names = []  # type: t.List[str]
+
         for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self.features:
 
-            mtd_args_pack = self._build_ft_mtd_args(
-                ft_mtd_name, ft_mtd_args, kwargs.get(ft_mtd_name),
-                suppress_warnings)  # type: t.Dict[str, t.Any]
+            ft_name_without_prefix = _internal.remove_mtd_prefix(ft_mtd_name)
+
+            ft_mtd_args_pack = self._build_mtd_args(
+                method_name=ft_name_without_prefix,
+                method_args=ft_mtd_args,
+                user_custom_args=kwargs.get(ft_name_without_prefix),
+                inner_custom_args=self._custom_args_ft,
+                suppress_warnings=suppress_warnings)
 
             features = MFE._get_feat_value(
                 ft_mtd_name,
-                mtd_args_pack,
+                ft_mtd_args_pack,
                 ft_mtd_callable,
-                suppress_warnings)  \
-                # type: t.Union[np.ndarray, t.Sequence, float, int]
+                suppress_warnings)
 
             if isinstance(features, (np.ndarray, collections.Sequence)):
-                for sum_mtd_name, sum_mtd_callable in self.summary:
-                    summarized_val = MFE._summarize(features, sum_mtd_callable)
+                for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self.summary:
+
+                    sm_mtd_args_pack = self._build_mtd_args(
+                        method_name=sm_mtd_name,
+                        method_args=sm_mtd_args,
+                        user_custom_args=kwargs.get(sm_mtd_name),
+                        inner_custom_args=self._custom_args_sum,
+                        suppress_warnings=suppress_warnings)
+
+                    summarized_val = MFE._summarize(
+                        features=features,
+                        feature_name=ft_mtd_name,
+                        callable_name=sm_mtd_name,
+                        callable_sum=sm_mtd_callable,
+                        callable_args=sm_mtd_args_pack,
+                        remove_nan=remove_nan)
+
                     metafeat_vals.append(summarized_val)
                     metafeat_names.append("{0}.{1}".format(
-                        ft_mtd_name, sum_mtd_name))
+                        ft_name_without_prefix, sm_mtd_name))
 
             else:
                 metafeat_vals.append(features)
-                metafeat_names.append(ft_mtd_name)
+                metafeat_names.append(ft_name_without_prefix)
 
         return metafeat_names, metafeat_vals
 
@@ -241,6 +308,6 @@ y = np.array([1, 1, 0, 0])
 
 m = MFE()
 m.fit(X=X, y=y)
-names, vals = m.extract()
+names, vals = m.extract(**{"sd": {"blah": 5}})
 for n, v in zip(names, vals):
     print(n, v)
