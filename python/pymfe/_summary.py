@@ -5,22 +5,20 @@ Attributes:
         function names as keys with methods Callables which imple-
         ments then as values.
 """
-import typing as tp
+import typing as t
 
 from scipy import stats
 import numpy as np
 
-TypeNumeric = tp.TypeVar("TypeNumeric", int, float)
+TypeNumeric = t.TypeVar("TypeNumeric", int, float)
 """Type annotation for a Numeric type (int or float)."""
 
-TypeValList = tp.Iterable[TypeNumeric]
+TypeValList = t.Iterable[TypeNumeric]
 """Type annotation for a Iterable of a Numeric type (int or float)."""
 
 
-def sum_histogram(
-        values: TypeValList,
-        bins: int = 5,
-        normalize: bool = False) -> TypeValList:
+def sum_histogram(values: TypeValList, bins: int = 5,
+                  normalize: bool = False) -> TypeValList:
     """Returns a list of frequencies/density of a histogram of given values.
 
     Args:

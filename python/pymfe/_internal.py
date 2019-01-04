@@ -7,8 +7,7 @@ Attributes:
         functions to combine metafeature values.
     VALID_MFECLASSES (:obj:`tuple`): Metafeature extractors classes.
 """
-from typing import Union, Tuple, Iterable, \
-    List, Dict, Callable, Optional, Sequence, Any, TypeVar
+import typing as t
 import inspect
 import collections
 import operator
@@ -29,11 +28,9 @@ VALID_GROUPS = (
     "statistical",
     "model-based",
     "info-theory",
-)  # type: Tuple[str, ...]
+)  # type: t.Tuple[str, ...]
 
-VALID_SUMMARY = (
-    *_summary.SUMMARY_METHODS,
-)  # type: Tuple[str, ...]
+VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
 
 VALID_MFECLASSES = (
     landmarking.MFELandmarking,
@@ -41,15 +38,15 @@ VALID_MFECLASSES = (
     statistical.MFEStatistical,
     model_based.MFEModelBased,
     info_theory.MFEInfoTheory,
-)  # type: Tuple
+)  # type: t.Tuple
 
 MTF_PREFIX = "ft_"
 """Prefix which is that metafeat. extraction related methods starts with."""
 
-TypeMtdTuple = Tuple[str, Callable[[], Any]]
+TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
 
-TypeExtFeatTuple = Tuple[str, Callable[[], Any], Sequence]
+TypeExtFeatTuple = t.Tuple[str, t.Callable[[], t.Any], t.Sequence]
 """Type annotation which extends TypeMtdTuple with extra field (for 'Args')"""
 
 _TypeNumeric = (
@@ -61,7 +58,7 @@ _TypeNumeric = (
     np.int64,
 )
 
-TypeNumeric = TypeVar(
+TypeNumeric = t.TypeVar(
     "TypeNumeric",
     int,
     float,
@@ -73,10 +70,10 @@ TypeNumeric = TypeVar(
 """Typing alias for both numeric types."""
 
 
-def _check_value_in_group(
-        value: Union[str, Iterable[str]],
-        group: Iterable[str],
-        wildcard: str = "all") -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
+def _check_value_in_group(value: t.Union[str, t.Iterable[str]],
+                          group: t.Iterable[str],
+                          wildcard: str = "all"
+                          ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[str, ...]]:
     """Checks if a value is in a set or a set of values is a subset of a set.
 
     Args:
@@ -92,16 +89,16 @@ def _check_value_in_group(
         group, then this group will be None.
 
     Raises:
-        TypeError: if 'value' is not a Iterable type or some of its
+        TypeError: if 'value' is not a t.Iterable type or some of its
             elements are not a 'str' type.
     """
 
-    if not isinstance(value, collections.Iterable):
+    if not isinstance(value, collections.t.Iterable):
         raise TypeError("Parameter type is not "
                         "consistent ({0}).".format(type(value)))
 
-    in_group = tuple()  # type: Tuple[str, ...]
-    not_in_group = tuple()  # type: Tuple[str, ...]
+    in_group = tuple()  # type: t.Tuple[str, ...]
+    not_in_group = tuple()  # type: t.Tuple[str, ...]
 
     if isinstance(value, str):
         value = value.lower()
@@ -127,11 +124,11 @@ def _check_value_in_group(
     return in_group, not_in_group
 
 
-def process_groups(groups: Union[Iterable[str], str]) -> Tuple[str, ...]:
+def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
     """Check if 'groups' argument from MFE.__init__ is correct.
 
     Args:
-        groups (:obj:`str` or :obj:`Iterable` of :obj:`str`): a single
+        groups (:obj:`str` or :obj:`t.Iterable` of :obj:`str`): a single
             string or a iterable with group identifiers to be processed.
             It must assume or contain the following values:
                 1. 'landmarking': Landmarking metafeatures.
@@ -144,9 +141,9 @@ def process_groups(groups: Union[Iterable[str], str]) -> Tuple[str, ...]:
         A tuple containing all valid group lower-cased identifiers.
 
     Raises:
-        TypeError: if 'groups' is neither a string 'all' nor a Iterable
+        TypeError: if 'groups' is neither a string 'all' nor a t.Iterable
             containing valid group identifiers as strings.
-        ValueError: if 'groups' is None or is a empty Iterable or
+        ValueError: if 'groups' is None or is a empty t.Iterable or
             if a unknown group identifier is given.
     """
     if not groups:
@@ -161,11 +158,11 @@ def process_groups(groups: Union[Iterable[str], str]) -> Tuple[str, ...]:
 
 
 def process_summary(
-        summary: Union[str, Iterable[str]]) -> Tuple[TypeMtdTuple, ...]:
+        summary: t.Union[str, t.Iterable[str]]) -> t.Tuple[TypeMtdTuple, ...]:
     """Check if 'summary' argument from MFE.__init__ is correct.
 
     Args:
-        summary (:obj:`Iterable` of :obj:`str` or a :obj:`str`): a
+        summary (:obj:`t.Iterable` of :obj:`str` or a :obj:`str`): a
             summary function or a list of these, which are used to
             combine different calculations of the same metafeature.
             Check out reference `Rivolli et al.`_ for more information.
@@ -191,9 +188,9 @@ def process_summary(
                     distribution in terms of symmetry.
 
     Raises:
-        TypeError: if 'summary' is neither a string 'all' nor a Iterable
+        TypeError: if 'summary' is neither a string 'all' nor a t.Iterable
             containing valid group identifiers as strings.
-        ValueError: if 'summary' is None or is a empty Iterable or
+        ValueError: if 'summary' is None or is a empty t.Iterable or
             if a unknown group identifier is given.
 
     Returns:
@@ -214,14 +211,13 @@ def process_summary(
 
     summary_methods = tuple(
         (summary_func, _summary.SUMMARY_METHODS[summary_func])
-        for summary_func in in_group
-    )  # type: Tuple[TypeMtdTuple, ...]
+        for summary_func in in_group)  # type: t.Tuple[TypeMtdTuple, ...]
 
     return summary_methods
 
 
-def check_data(X: Union[np.ndarray, list],
-               y: Union[np.ndarray, list]) -> Tuple[np.ndarray, np.ndarray]:
+def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
+               ) -> t.Tuple[np.ndarray, np.ndarray]:
     """Checks received data type and shape.
 
     Args:
@@ -251,8 +247,7 @@ def check_data(X: Union[np.ndarray, list],
     return X, y
 
 
-def get_feature_methods(
-        class_address: Callable) -> List[TypeMtdTuple]:
+def get_feature_methods(class_address: t.Callable) -> t.List[TypeMtdTuple]:
     """Get feature-extraction related methods from a given MFE Class.
 
     Methods related with feature extraction is assumed to be prefixed
@@ -269,7 +264,7 @@ def get_feature_methods(
     """
     feature_method_list = inspect.getmembers(
         class_address,
-        predicate=inspect.ismethod)  # type: List[TypeMtdTuple]
+        predicate=inspect.ismethod)  # type: t.List[TypeMtdTuple]
 
     # It is assumed that all feature-extraction related methods
     # name are all prefixed with "MTF_PREFIX".
@@ -281,11 +276,11 @@ def get_feature_methods(
     return feature_method_list
 
 
-def get_all_ft_methods() -> Dict[str, List[TypeMtdTuple]]:
+def get_all_ft_methods() -> t.Dict[str, t.List[TypeMtdTuple]]:
     """Get all feature-extraction related methods from all Classes.
 
     Returns:
-        Dict in the form {'group_name': [('method_name', 'method_address')]},
+        t.Dict in the form {'group_name': [('method_name', 'method_address')]},
         i.e. the keys are the names of feature groups (e.g. 'general' or
         'landmarking') and values are lists of tuples which first entry are
         feature-extraction related method names and the second entry are its
@@ -310,14 +305,14 @@ def get_all_ft_methods() -> Dict[str, List[TypeMtdTuple]]:
     feature_method_dict = {
         ft_type_id: get_feature_methods(mfe_class)
         for ft_type_id, mfe_class in zip(VALID_GROUPS, VALID_MFECLASSES)
-    }  # type: Dict[str, List[TypeMtdTuple]]
+    }  # type: t.Dict[str, t.List[TypeMtdTuple]]
 
     return feature_method_dict
 
 
 def _filter_method_dict(
-        ft_methods_dict: Dict[str, List[TypeMtdTuple]],
-        groups: Optional[Tuple[str, ...]]) -> Sequence[TypeMtdTuple]:
+        ft_methods_dict: t.Dict[str, t.List[TypeMtdTuple]],
+        groups: t.Optional[t.Tuple[str, ...]]) -> t.Sequence[TypeMtdTuple]:
     """Filter return of 'get_all_ft_methods' method based on given groups.
 
     Args:
@@ -340,17 +335,14 @@ def _filter_method_dict(
     else:
         ft_methods_filtered = tuple(ft_methods_dict.values())
 
-    ft_methods_filtered = tuple(
-        mtd_tuple
-        for ft_group in ft_methods_filtered
-        for mtd_tuple in ft_group
-    )
+    ft_methods_filtered = tuple(mtd_tuple for ft_group in ft_methods_filtered
+                                for mtd_tuple in ft_group)
 
     return ft_methods_filtered
 
 
 def _preprocess_ft_arg(
-        features: Union[str, Iterable[str]]) -> Union[str, List[str]]:
+        features: t.Union[str, t.Iterable[str]]) -> t.Union[str, t.List[str]]:
     """Remove repeated elements or cast to lower-case a single feature name."""
     if not isinstance(features, str):
         return list(set(features))
@@ -358,18 +350,18 @@ def _preprocess_ft_arg(
     return features.lower()
 
 
-def _extract_method_args(ft_method_callable: Callable) -> Sequence[str]:
+def _extract_method_args(ft_method_callable: t.Callable) -> t.Sequence[str]:
     """Extracts arguments from given method.
 
     Args:
-        ft_method_callable: a Callable related to a feature extraction.
+        ft_method_callable: a t.Callable related to a feature extraction.
 
     Returns:
         A sequence containing the name of arguments of the given
-        Callable.
+        t.Callable.
 
     Raises:
-        TypeError: if 'ft_method_callable' is not a valid Callable.
+        TypeError: if 'ft_method_callable' is not a valid t.Callable.
     """
     ft_method_signature = inspect.signature(ft_method_callable)
     method_callable_args = list(ft_method_signature.parameters.keys())
@@ -377,55 +369,53 @@ def _extract_method_args(ft_method_callable: Callable) -> Sequence[str]:
 
 
 def _check_ft_wildcard(
-        features: Union[str, Iterable[str]],
-        ft_methods: Sequence[TypeMtdTuple],
-        wildcard: str = "all") -> Optional[Tuple[TypeExtFeatTuple, ...]]:
+        features: t.Union[str, t.Iterable[str]],
+        ft_methods: t.Sequence[TypeMtdTuple],
+        wildcard: str = "all") -> t.Optional[t.Tuple[TypeExtFeatTuple, ...]]:
     """Returns all features if feature wildcard matches, None otherwise.
 
     Args:
-        features: a feature or a Iterable with feature names.
-        ft_methods: Sequence containing tuples in the form
+        features: a feature or a t.Iterable with feature names.
+        ft_methods: t.Sequence containing tuples in the form
             ('method_name', 'method_callable).
     """
 
-    if (isinstance(features, str) and
-            features.lower() == wildcard.lower()):
+    if (isinstance(features, str) and features.lower() == wildcard.lower()):
 
-        ext_ft_methods = tuple(
-            (mtd_name, mtd_callable, _extract_method_args(mtd_callable))
-            for mtd_name, mtd_callable in ft_methods
-        )
+        ext_ft_methods = tuple((mtd_name, mtd_callable,
+                                _extract_method_args(mtd_callable))
+                               for mtd_name, mtd_callable in ft_methods)
 
         return ext_ft_methods
 
     return None
 
 
-def _process_features_warnings(unknown_feats: Sequence[str]) -> None:
+def _process_features_warnings(unknown_feats: t.Sequence[str]) -> None:
     """Warns for unknown features detected in 'process_features' function."""
     if not isinstance(unknown_feats, str):
         for unknown_ft in unknown_feats:
-            warnings.warn(
-                'Unknown feature "{0}"'.format(unknown_ft), UserWarning)
+            warnings.warn('Unknown feature "{0}"'.format(unknown_ft),
+                          UserWarning)
     else:
-        warnings.warn(
-            'Unknown feature "{0}"'.format(unknown_feats), UserWarning)
+        warnings.warn('Unknown feature "{0}"'.format(unknown_feats),
+                      UserWarning)
 
 
 def process_features(
-        features: Union[str, Iterable[str]],
-        groups: Optional[Tuple[str, ...]] = None,
+        features: t.Union[str, t.Iterable[str]],
+        groups: t.Optional[t.Tuple[str, ...]] = None,
         wildcard: str = "all",
-        suppress_warnings=False) -> Tuple[TypeExtFeatTuple, ...]:
+        suppress_warnings=False) -> t.Tuple[TypeExtFeatTuple, ...]:
     """Check if 'features' argument from MFE.__init__ is correct.
 
     This function is expected to be used after 'process_groups' method.
 
     Args:
-        features: Iterable containing a group of features or a string
+        features: t.Iterable containing a group of features or a string
             containing a single feature. Note that only features that
             are in the given 'groups' will be returned.
-        groups: Sequence containing one or more group identifiers.
+        groups: t.Sequence containing one or more group identifiers.
         wildcard: value to be used as 'select all features' for 'features'
             argument.
 
@@ -442,21 +432,21 @@ def process_features(
     if not features:
         return tuple()
 
-    processed_ft = _preprocess_ft_arg(features)  # type: Union[str, List[str]]
+    processed_ft = _preprocess_ft_arg(features)  \
+        # type: t.Union[str, t.List[str]]
 
     ft_methods_filtered = _filter_method_dict(
-        get_all_ft_methods(),
-        groups)  # type: Sequence[TypeMtdTuple]
+        get_all_ft_methods(), groups)  # type: t.Sequence[TypeMtdTuple]
 
     all_features_ret = _check_ft_wildcard(
         features=processed_ft,
         ft_methods=ft_methods_filtered,
-        wildcard=wildcard)  # type: Optional[Tuple[TypeExtFeatTuple, ...]]
+        wildcard=wildcard)  # type: t.Optional[t.Tuple[TypeExtFeatTuple, ...]]
 
     if all_features_ret:
         return all_features_ret
 
-    ft_method_processed = []  # type: List[TypeExtFeatTuple]
+    ft_method_processed = []  # type: t.List[TypeExtFeatTuple]
 
     mtf_prefix_len = len(MTF_PREFIX)
 
@@ -487,6 +477,6 @@ def process_features(
     return tuple(ft_method_processed)
 
 
-def isnumeric(x):
+def isnumeric(x: t.Any) -> bool:
     """Checks if 'x' is a Numeric Type."""
     return isinstance(x, _TypeNumeric)

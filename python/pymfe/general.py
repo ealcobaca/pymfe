@@ -14,14 +14,15 @@ Todo:
     * Improve documentation.
 
 """
-from typing import Union, Iterable
+import typing as t
 import numpy as np
 
 
 class MFEGeneral:
     """General-type Metafeature extractor."""
 
-    def __init__(self, features: Union[str, Iterable[str]] = "all") -> None:
+    def __init__(self,
+                 features: t.Union[str, t.Iterable[str]] = "all") -> None:
         """Extracts general metafeatures from datasets.
 
         Args:
