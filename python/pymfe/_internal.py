@@ -46,7 +46,7 @@ MTF_PREFIX = "ft_"
 TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
 
-TypeExtFeatTuple = t.Tuple[str, t.Callable[[], t.Any], t.Sequence]
+TypeExtMtdTuple = t.Tuple[str, t.Callable[[], t.Any], t.Sequence]
 """Type annotation which extends TypeMtdTuple with extra field (for 'Args')"""
 
 _TypeNumeric = (
@@ -209,11 +209,21 @@ def process_summary(
     if not_in_group:
         raise ValueError("Unknown groups: {0}".format(not_in_group))
 
-    summary_methods = tuple(
-        (summary_func, _summary.SUMMARY_METHODS[summary_func])
-        for summary_func in in_group)  # type: t.Tuple[TypeMtdTuple, ...]
+    summary_methods = []  # type: t.Sequence[TypeExtMtdTuple]
 
-    return summary_methods
+    for summary_func in in_group:
+        summary_mtd_callable = _summary.SUMMARY_METHODS[summary_func]
+        summary_mtd_args = _extract_method_args(summary_mtd_callable)
+
+        summary_mtd_pack = (
+            summary_func,
+            summary_mtd_callable,
+            summary_mtd_args,
+        )
+
+        summary_methods.append(summary_mtd_pack)
+
+    return tuple(summary_methods)
 
 
 def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
@@ -371,7 +381,7 @@ def _extract_method_args(ft_method_callable: t.Callable) -> t.Sequence[str]:
 def _check_ft_wildcard(
         features: t.Union[str, t.Iterable[str]],
         ft_methods: t.Sequence[TypeMtdTuple],
-        wildcard: str = "all") -> t.Optional[t.Tuple[TypeExtFeatTuple, ...]]:
+        wildcard: str = "all") -> t.Optional[t.Tuple[TypeExtMtdTuple, ...]]:
     """Returns all features if feature wildcard matches, None otherwise.
 
     Args:
@@ -406,7 +416,7 @@ def process_features(
         features: t.Union[str, t.Iterable[str]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
         wildcard: str = "all",
-        suppress_warnings=False) -> t.Tuple[TypeExtFeatTuple, ...]:
+        suppress_warnings=False) -> t.Tuple[TypeExtMtdTuple, ...]:
     """Check if 'features' argument from MFE.__init__ is correct.
 
     This function is expected to be used after 'process_groups' method.
@@ -441,12 +451,12 @@ def process_features(
     all_features_ret = _check_ft_wildcard(
         features=processed_ft,
         ft_methods=ft_methods_filtered,
-        wildcard=wildcard)  # type: t.Optional[t.Tuple[TypeExtFeatTuple, ...]]
+        wildcard=wildcard)  # type: t.Optional[t.Tuple[TypeExtMtdTuple, ...]]
 
     if all_features_ret:
         return all_features_ret
 
-    ft_method_processed = []  # type: t.List[TypeExtFeatTuple]
+    ft_method_processed = []  # type: t.List[TypeExtMtdTuple]
 
     mtf_prefix_len = len(MTF_PREFIX)
 
@@ -458,7 +468,7 @@ def process_features(
         method_callable_args = _extract_method_args(ft_method_callable)
 
         extended_item = (*ft_method_tuple,
-                         method_callable_args)  # type: TypeExtFeatTuple
+                         method_callable_args)  # type: TypeExtMtdTuple
 
         if not isinstance(processed_ft, str):
             if method_name_without_prefix in processed_ft:
@@ -480,3 +490,11 @@ def process_features(
 def isnumeric(x: t.Any) -> bool:
     """Checks if 'x' is a Numeric Type."""
     return isinstance(x, _TypeNumeric)
+
+
+def remove_mtd_prefix(method_name: str) -> str:
+    """Remove feature-extraction method prefix from its name."""
+    if method_name.startswith(MTF_PREFIX):
+        return method_name[len(MTF_PREFIX):]
+
+    return method_name
