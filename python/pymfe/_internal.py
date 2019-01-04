@@ -93,7 +93,7 @@ def _check_value_in_group(value: t.Union[str, t.Iterable[str]],
             elements are not a 'str' type.
     """
 
-    if not isinstance(value, collections.t.Iterable):
+    if not isinstance(value, collections.Iterable):
         raise TypeError("Parameter type is not "
                         "consistent ({0}).".format(type(value)))
 
