@@ -102,7 +102,13 @@ class MFE:
                         method_callable: t.Callable,
                         suppress_warnings: bool = False
                         ) -> t.Union[_internal.TypeNumeric, np.ndarray]:
-        """Extract feat. from 'method_callable' with 'method_args' as args."""
+        """Extract feat. from 'method_callable' with 'method_args' as args.
+
+        Args:
+
+        Returns:
+
+        """
 
         try:
             features = method_callable(**method_args)
@@ -209,6 +215,12 @@ class MFE:
             value: t.Union[_internal.TypeNumeric, t.Sequence, np.ndarray],
             name_feature: str,
             name_summary: str) -> None:
+        """Check if there's :obj:`np.nan` within summarized values.
+
+        Args:
+
+        Returns:
+        """
 
         if not isinstance(value, collections.Iterable):
             value = [value]
@@ -218,6 +230,50 @@ class MFE:
                 "Failed to summarize {0} with {1}. "
                 "(generated NaN).".format(name_feature,
                                           name_summary), RuntimeWarning)
+
+    def _call_summary_methods(
+                self,
+                feature_values: t.Sequence[_internal.TypeNumeric],
+                feature_name: str,
+                remove_nan: bool = True,
+                suppress_warnings: bool = False,
+                **kwargs
+                ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]]]:
+        """Invoke summary functions loaded in model on given feature values.
+
+        Args:
+
+        Returns:
+        """
+        metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
+        metafeat_names = []  # type: t.List[str]
+
+        for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self.summary:
+
+            sm_mtd_args_pack = MFE._build_mtd_args(
+                method_name=sm_mtd_name,
+                method_args=sm_mtd_args,
+                user_custom_args=kwargs.get(sm_mtd_name),
+                inner_custom_args=None,
+                suppress_warnings=suppress_warnings)
+
+            summarized_val = MFE._summarize(
+                features=feature_values,
+                callable_sum=sm_mtd_callable,
+                callable_args=sm_mtd_args_pack,
+                remove_nan=remove_nan)
+
+            if not suppress_warnings:
+                MFE._check_summary_warnings(
+                    value=summarized_val,
+                    name_feature=feature_name,
+                    name_summary=sm_mtd_name)
+
+            metafeat_vals.append(summarized_val)
+            metafeat_names.append("{0}.{1}".format(
+                feature_name, sm_mtd_name))
+
+        return metafeat_names, metafeat_vals
 
     def extract(self,
                 remove_nan: bool = True,
@@ -268,30 +324,15 @@ class MFE:
                 suppress_warnings)
 
             if isinstance(features, (np.ndarray, collections.Sequence)):
-                for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self.summary:
+                summarized_names, summarized_vals = self._call_summary_methods(
+                    feature_values=features,
+                    feature_name=ft_name_without_prefix,
+                    remove_nan=remove_nan,
+                    suppress_warnings=suppress_warnings,
+                    **kwargs)
 
-                    sm_mtd_args_pack = MFE._build_mtd_args(
-                        method_name=sm_mtd_name,
-                        method_args=sm_mtd_args,
-                        user_custom_args=kwargs.get(sm_mtd_name),
-                        inner_custom_args=None,
-                        suppress_warnings=suppress_warnings)
-
-                    summarized_val = MFE._summarize(
-                        features=features,
-                        callable_sum=sm_mtd_callable,
-                        callable_args=sm_mtd_args_pack,
-                        remove_nan=remove_nan)
-
-                    if not suppress_warnings:
-                        MFE._check_summary_warnings(
-                            value=summarized_val,
-                            name_feature=ft_mtd_name,
-                            name_summary=sm_mtd_name)
-
-                    metafeat_vals.append(summarized_val)
-                    metafeat_names.append("{0}.{1}".format(
-                        ft_name_without_prefix, sm_mtd_name))
+                metafeat_vals += summarized_vals
+                metafeat_names += summarized_names
 
             else:
                 metafeat_vals.append(features)
@@ -310,11 +351,11 @@ if __name__ == "__main__":
 
     labels = np.array([1, 1, 0, 0])
 
-    MODEL = MFE(groups="all")
+    MODEL = MFE(groups="all", features="attr_ent")
     MODEL.fit(X=attr, y=labels)
     names, vals = MODEL.extract(
         suppress_warnings=False,
-        remove_nan=True, **{"sd": {"addof": 3}})
+        remove_nan=True, **{"sd": {"ddof": 1}})
 
     for n, v in zip(names, vals):
         print(n, v)
