@@ -12,9 +12,13 @@ import numpy as np
 
 import _internal
 
+_TypeSeqExt = t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
+"""Type annotation for a sequence of TypeExtMtdTuple objects."""
+
 
 class MFE:
     """Core class for metafeature extraction."""
+    # pylint: disable=R0902
 
     def __init__(self,
                  groups: t.Union[str, t.Iterable[str]] = "all",
@@ -23,35 +27,78 @@ class MFE:
                  wildcard: str = "all",
                  suppress_warnings: bool = False
                  ) -> None:
-        """To do this documentation."""
+        """
+        Provides easy access for metafeature extraction from structured
+        datasets. It expected that user first calls `fit` method after
+        instantiation and then `extract` for effectively extract the se-
+        lected metafeatures.
+
+        Attributes:
+            groups (:obj:`Iterable` of :obj:`str` or `str`): a collection
+                or a single metafeature group name representing the desired
+                group of metafeatures for extraction. The supported groups
+                are:
+
+                    1. `general`: general/simples metafeatures.
+                    2. `statistical`: statistical metafeatures.
+                    3. `info-theory`: information-theoretic type of metafea-
+                        ture.
+                    4. `model-based`: metafeatures based on machine learning
+                        model characteristics.
+                    5. `landmarking`: metafeatures representing performance
+                        metrics from simple machine learning models or machi-
+                        ne learning models induced with sampled data.
+
+                The special value provided by the argument `wildcard` can be
+                used to rapidly select all metafeature groups.
+
+            features (:obj:`Iterable` of :obj:`str` or `str`, optional): a col-
+                lection or a single metafeature name desired for extraction.
+                Keep in mind that only features in the selected `groups` will
+                be used. Check `feature` attribute in order to get a list of
+                available metafeatures from the selected groups.
+
+                The special value provided by the argument `wildcard` can be
+                used to rapidly select all features from the selected groups.
+
+            summary (:obj:`Iterable` of :obj:`str` or `str`, optional): a
+                collection or a single summary function to summarize a group
+                of metafeature measures into a fixed-length group of value,
+                typically a single value.
+
+                If more than one summary function is selected, then all multi-
+                valued metafeatures extracted will be summarized with each
+                summary function.
+
+                The special value provided by the argument `wildcard` can be
+                used to rapidly select all summary functions.
+
+            wildcard (:obj:`str`, optional): value used as `select all` for
+                `groups`, `features` and `summary` arguments.
+
+            suppress_warnings (:obj:`bool`, optional): if True, than all warn-
+                ings invoked at the instantiation time will be ignored.
+        """
         # pylint: disable=R0913
 
-        self.groups = _internal.process_groups(groups)
-        """To do."""
+        self.groups = _internal.process_groups(groups)  # type: t.Sequence[str]
 
-        self.features = _internal.process_features(
+        self.features, self._ft_mtd_metadata = _internal.process_features(
             features=features,
             groups=self.groups,
             wildcard=wildcard,
             suppress_warnings=suppress_warnings)  \
-            # type: t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
-        """To do."""
+            # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
-        self.summary = _internal.process_summary(summary)  \
-            # type: t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
-        """To do."""
+        self.summary = _internal.process_summary(
+            summary)  # type: t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
 
         self.X = None  # type: t.Optional[np.array]
-        """To do."""
-
         self.y = None  # type: t.Optional[np.array]
-        """To do."""
 
         self.splits = None  # type: t.Optional[t.Iterable[int]]
-        """To do."""
 
         self._custom_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
-        """To do."""
 
     @staticmethod
     def _summarize(features: t.Union[np.ndarray, t.Sequence],
@@ -306,7 +353,7 @@ class MFE:
         metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
         metafeat_names = []  # type: t.List[str]
 
-        for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self.features:
+        for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._ft_mtd_metadata:
 
             ft_name_without_prefix = _internal.remove_mtd_prefix(ft_mtd_name)
 
@@ -351,7 +398,8 @@ if __name__ == "__main__":
 
     labels = np.array([1, 1, 0, 0])
 
-    MODEL = MFE(groups="all", features="attr_ent")
+    MODEL = MFE(groups="all", features="all")
+    print(MODEL.features)
     MODEL.fit(X=attr, y=labels)
     names, vals = MODEL.extract(
         suppress_warnings=False,
