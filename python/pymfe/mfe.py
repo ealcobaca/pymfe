@@ -1,9 +1,4 @@
-"""Main module for extracting metafeatures from datasets.
-
-Todo:
-    * Improve documentation.
-    * Implement MFE class.
-"""
+"""Main module for extracting metafeatures from datasets."""
 import typing as t
 import collections
 import warnings
@@ -99,31 +94,40 @@ class MFE:
         self.splits = None  # type: t.Optional[t.Iterable[int]]
 
         self._custom_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
+        self._custom_args_sum = None  # type: t.Optional[t.Dict[str, t.Any]]
 
     @staticmethod
     def _summarize(features: t.Union[np.ndarray, t.Sequence],
                    callable_sum: t.Callable,
-                   callable_args: t.Optional[t.Dict[str, t.Any]],
+                   callable_args: t.Optional[t.Dict[str, t.Any]] = None,
                    remove_nan: bool = True,
                    ) -> t.Union[t.Sequence, _internal.TypeNumeric]:
-        """Returns feature summarized by 'callable_sum'.
+        """Returns feature summarized by `callable_sum`.
 
         Args:
-            features: t.Sequence containing values to summarize.
-            callable_sum: t.Callable of the method which implements the desired
-                summary function.
-            callable_args: arguments to the summary function.
-            remove_nan: check and remove all elements in 'features' which are
-                not numeric ('int' or 'float' types). Note that :obj:`np.inf`
-                is still considered numeric.
+            features (:obj:`Sequence` of numerics): Sequence containing values
+                to summarize.
+
+            callable_sum (:obj:`Callable`): Callable of the method which im-
+                plements the desired summary function.
+
+            callable_args (:obj:`Dict`, optional): arguments to the summary
+                function. The expected dictionary format is the following:
+                {`argument_name`: value}. In order to know the summary func-
+                tion arguments you need to check out the documentation of
+                the method which implements it.
+
+            remove_nan (:obj:`bool`, optional): check and remove all elements
+                in `features` which are not numeric. Note that :obj:`np.inf`
+                is still considered numeric (:obj:`float` type).
 
         Returns:
-            Float value of summarized feature values if possible. May return
-            :obj:`np.nan` if summary function call invokes TypeError.
+            float: value of summarized feature values if possible. May
+            return :obj:`np.nan` if summary function call invokes TypeError.
 
         Raises:
-            AttributeError: if 'sum_callable' is invalid.
-            TypeError: if 'features' is not a sequence.
+            AttributeError: if `callable_sum` is invalid.
+            TypeError: if `features`  is not a sequence.
         """
         processed_feat = np.array(features)
 
@@ -149,12 +153,29 @@ class MFE:
                         method_callable: t.Callable,
                         suppress_warnings: bool = False
                         ) -> t.Union[_internal.TypeNumeric, np.ndarray]:
-        """Extract feat. from 'method_callable' with 'method_args' as args.
+        """Extract feat. from `method_callable` with `method_args` as args.
 
         Args:
+            method_name (:obj:`str`): name of the feature-extraction method
+                to be invoked.
+
+            method_args (:obj:`Dic`): arguments of method to be invoked. The
+                expected format of the arguments is {`argument_name`: value}.
+                In order to know the method arguments available, you need to
+                check its documentation.
+
+            method_callable(:obj:`Callable`): callable of the feature-extra-
+                ction method.
+
+            suppress_warnings(:obj:`bool`): if True, all warnings invoked whi-
+                before invoking the method (or after) will be ignored. The me-
+                thod itself may still invoke warnings.
 
         Returns:
+            numeric or array: return value of the feature-extraction method.
 
+        Raises:
+            AttributeError: if `method_callable` is not valid.
         """
 
         try:
@@ -178,21 +199,33 @@ class MFE:
             inner_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
             user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
             suppress_warnings: bool = False) -> t.Dict[str, t.Any]:
-        """Build a 'kwargs' dict for a feature-extraction callable.
+        """Build a `kwargs` (:obj:`Dict`) for a feature-extraction :obj:`Callable`.
 
         Args:
-            method_name: name of the method.
-            method_args: Iterable containing the name of all arguments of
-                the feature-extraction callable.
-            inner_custom_args: custom arguments for inner usage.
-            user_custom_args: Dict in the form {'arg': value} given by
-                user to customize the given feature-extraction callable.
-            suppress_warnings: do not show any warnings about unknown
-                parameters.
+            method_name (:obj:`str`): name of the method.
+
+            method_args (:obj:`Iterable` of :obj:`str`): Iterable containing
+                the name of all arguments of the callable.
+
+            inner_custom_args (:obj:`Dict`, optional): custom arguments for
+                inner usage, for example, to pass ``X``, ``y`` or other user-
+                independent arguments necessary for the callable. The expected
+                format of this dict is {`argument_name`: value}.
+
+            user_custom_args (:obj:`Dict`, optional): assumes the same model
+                as the dict above, but this one is dedicated to keep user-dep-
+                endent arguments for method callable, for example, number of
+                bins of a histogram-like metafeature or degrees of freedom of
+                a standard deviation-related metafeature. The name of the ar-
+                guments must be verified in its correspondent method documen-
+                tation.
+
+            suppress_warnings(:obj:`bool`, optional): if True, will not show
+                any warnings about unknown callable parameters.
 
         Returns:
-            A t.Dict which is a ready-to-use kwargs for the correspondent
-            callable.
+            dict: a ready-to-use `kwargs` for the correspondent callable. The
+                format is {`argument_name`: value}.
         """
 
         if user_custom_args is None:
@@ -224,49 +257,21 @@ class MFE:
 
         return callable_args
 
-    def fit(self,
-            X: t.Sequence,
-            y: t.Sequence,
-            splits: t.Optional[t.Iterable[int]] = None) -> None:
-        """Fits dataset into the MFE model.
-
-        Args:
-            X: predictive attributes of the dataset.
-            y: target attributes of the dataset.
-            splits: iterable which contains K-Fold Cross Validation index
-                splits to use mainly in landmarking metafeatures. If not
-                given, each metafeature will be extracted a single time.
-
-        Raises:
-            ValueError: if number of rows of X and y does not match.
-            TypeError: if X or y (or both) is neither a :obj:`list` or
-                a :obj:`np.array` object.
-        """
-
-        self.X, self.y = _internal.check_data(X, y)
-
-        if (splits is not None
-                and not isinstance(splits, collections.Iterable)):
-            raise TypeError('"splits" argument must be a iterable.')
-
-        self.splits = splits
-
-        self._custom_args_ft = {
-            "X": self.X,
-            "y": self.y,
-            "splits": self.splits,
-        }
-
     @staticmethod
     def _check_summary_warnings(
             value: t.Union[_internal.TypeNumeric, t.Sequence, np.ndarray],
             name_feature: str,
             name_summary: str) -> None:
-        """Check if there's :obj:`np.nan` within summarized values.
+        """Check if there is :obj:`np.nan` within summarized values.
 
         Args:
+            value (numeric or :obj:`Sequence`): summarized values.
 
-        Returns:
+            name_feature (:obj:`str`): name of the feature-extraction
+                method used to generate the values which was summarized.
+
+            name_summary (:obj:`str`): name of the summary method
+                used to produce `value`.
         """
 
         if not isinstance(value, collections.Iterable):
@@ -289,8 +294,33 @@ class MFE:
         """Invoke summary functions loaded in model on given feature values.
 
         Args:
+            feature_values (:obj:`Sequence` of numerics): sequence containing
+                values from feature-extraction methods.
+
+            feature_name (:obj:`str`): name of the feature method used for
+                produce the `feature_value`.
+
+            remove_nan (:obj:`bool`): if True, all non-numeric values will
+                be removed from `feature_values` before calling each summary
+                method. Note that the summary method itself may still remove
+                non-numeric values and, in this case, user must suppress this
+                using a built-in argument of the summary method via **kwargs.
 
         Returns:
+            tuple(list, list): a tuple containing two lists. The first field
+                is the identifiers of each summarized value in the form
+                `feature_name.summary_method_name` (i.e. the feature-extrac-
+                tion name concatenated by the summary method name, separated
+                by a dot). The second field is the summarized values. Both
+                lists has a 1-1 correspondence by the index of each element
+                (i.e. the value at index `i` in the second list has its iden-
+                tifier at the same index in the first list and vice-versa).
+
+            Example:
+                ([`attr_ent.mean`, `attr_ent.sd`], [0.983459, 0.344361]) is
+                the return value for the feature `attr_end` summarized by
+                both `mean` and `sd` (standard deviation), giving the values
+                0.983469 and 0.344361, respectively.
         """
         metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
         metafeat_names = []  # type: t.List[str]
@@ -301,7 +331,7 @@ class MFE:
                 method_name=sm_mtd_name,
                 method_args=sm_mtd_args,
                 user_custom_args=kwargs.get(sm_mtd_name),
-                inner_custom_args=None,
+                inner_custom_args=self._custom_args_sum,
                 suppress_warnings=suppress_warnings)
 
             summarized_val = MFE._summarize(
@@ -322,6 +352,51 @@ class MFE:
 
         return metafeat_names, metafeat_vals
 
+    def fit(self,
+            X: t.Sequence,
+            y: t.Sequence,
+            splits: t.Optional[t.Iterable[int]] = None) -> "MFE":
+        """Fits dataset into the a MFE model.
+
+        Args:
+            X (:obj:`Sequence`): predictive attributes of the dataset.
+
+            y (:obj:`Sequence`): target attributes of the dataset, assuming
+                that it's a supervised task.
+
+            splits (:obj:`Iterable`, optional): iterable which contains K-Fold
+                Cross Validation index splits to use mainly in landmarking
+                metafeatures. If not given, each metafeature will be extra-
+                cted a single time, which may give poor results.
+
+        Raises:
+            ValueError: if number of rows of X and y does not match.
+            TypeError: if X or y (or both) is neither a :obj:`list` or
+                a :obj:`np.array` object.
+
+        Returns:
+            MFE: the instance itself, to permit inline instantiation-and-fit
+                code like MFE(...).fit(...).
+        """
+
+        self.X, self.y = _internal.check_data(X, y)
+
+        if (splits is not None
+                and not isinstance(splits, collections.Iterable)):
+            raise TypeError('"splits" argument must be a iterable.')
+
+        self.splits = splits
+
+        self._custom_args_ft = {
+            "X": self.X,
+            "y": self.y,
+            "splits": self.splits,
+        }
+
+        self._custom_args_sum = None
+
+        return self
+
     def extract(self,
                 remove_nan: bool = True,
                 suppress_warnings: bool = False,
@@ -330,17 +405,61 @@ class MFE:
         """Extracts metafeatures from previously fitted dataset.
 
         Args:
-            remove_nan: if True, remove any non-numeric values features
-                before summarizing then.
-            suppress_warnings: do not show warnings about unknown user
-                custom parameters.
+            remove_nan(:obj:`bool`, optional): if True, remove any non-numeric
+                values features before summarizing values from feature-extrac-
+                tion methods. Note that the summary methods may still remove
+                non-numeric values by itself. In this case, the user will need
+                to modify this behavior using built-in summary method arguments
+                via this method **kwargs, if possible.
+
+            suppress_warnings(:obj:`bool`, optional): if True, do not show
+                warnings about unknown user custom parameters for feature-
+                extraction and summary methods passed via **kwargs. Note that
+                both feature-extraction and summary methods may still raise
+                warnings by itself. In this case, just like the `remove_nan`
+                situation, user will need to suppress they by built-in args
+                from these methods via **kwargs, if possible.
+
+            **kwargs: used to pass custom arguments for both feature-extrac-
+                tion and summary methods. The expected format is the follow-
+                ing:
+
+                    {`method_name`: {`arg_name`: value, ...}, ...}
+
+                In words, the key values of `**kwargs` should be the target
+                methods to pass the custom arguments, and each method has
+                another dict containing each method argument to be modified
+                as keys and their correspondent values. See ``Examples`` sub-
+                section for a clearer explanation.
+
+                Example:
+                    args = {
+                        `sd`: {`ddof`: 2},
+                        `1NN`: {`metric`: `minkowski`, `p`: 2},
+                        `leaves`: {`max_depth`: 4},
+                    }
+
+                    res = MFE().fit(X=data, y=labels).extract(**args)
 
         Returns:
-            t.List containing all metafeatures summarized by all summary
-            functions loaded in the model.
+            tuple(list, list): a tuple containing two lists. The first field
+                is the identifiers of each summarized value in the form
+                `feature_name.summary_method_name` (i.e. the feature-extrac-
+                tion name concatenated by the summary method name, separated
+                by a dot). The second field is the summarized values. Both
+                lists has a 1-1 correspondence by the index of each element
+                (i.e. the value at index `i` in the second list has its iden-
+                tifier at the same index in the first list and vice-versa).
+
+            Example:
+                ([`attr_ent.mean`, `attr_ent.sd`], [0.983459, 0.344361]) is
+                the return value for the feature `attr_end` summarized by
+                both `mean` and `sd` (standard deviation), giving the values
+                0.983469 and 0.344361, respectively.
 
         Raises:
-            TypeError: if calling 'extract' method before 'fit' method.
+            TypeError: if calling `extract(...)` method before `fit(...)`
+                method.
         """
         if self.X is None or self.y is None:
             raise TypeError("Fitted data not found. Call "
