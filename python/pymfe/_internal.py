@@ -132,7 +132,7 @@ def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
             string or a iterable with group identifiers to be processed.
             It must assume or contain the following values:
                 1. 'landmarking': Landmarking metafeatures.
-                2. 'general': General and Simple metafeatures.
+                2. 'general': General/simple metafeatures.
                 3. 'statistical': Statistical metafeatures.
                 4. 'model-based': Metafeatures from machine learning models.
                 5. 'info-theory': Information Theory metafeatures.
@@ -261,8 +261,14 @@ def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
     if not isinstance(y, np.ndarray):
         y = np.array(y)
 
+    y = y.flatten()
+
+    if len(X.shape) == 1:
+        X = X.reshape(*X.shape, -1)
+
     if X.shape[0] != y.shape[0]:
-        raise ValueError('"X" and "y" shapes (number of rows) do not match.')
+        raise ValueError('"X" number of rows and "y" '
+                         "length shapes do not match.")
 
     return X, y
 
@@ -391,7 +397,9 @@ def _extract_method_args(ft_method_callable: t.Callable) -> t.Sequence[str]:
 def _check_ft_wildcard(
         features: t.Union[str, t.Iterable[str]],
         ft_methods: t.Sequence[TypeMtdTuple],
-        wildcard: str = "all") -> t.Optional[t.Tuple[TypeExtMtdTuple, ...]]:
+        wildcard: str = "all"
+        ) -> t.Optional[t.Tuple[t.Tuple[str, ...],
+                                t.Tuple[TypeExtMtdTuple, ...]]]:
     """Returns all features if feature wildcard matches, None otherwise.
 
     Args:
@@ -406,7 +414,11 @@ def _check_ft_wildcard(
                                 _extract_method_args(mtd_callable))
                                for mtd_name, mtd_callable in ft_methods)
 
-        return ext_ft_methods
+        all_ft_names = tuple((
+            remove_mtd_prefix(mtd_name)
+            for mtd_name, _ in ft_methods))
+
+        return all_ft_names, ext_ft_methods
 
     return None
 
@@ -426,7 +438,8 @@ def process_features(
         features: t.Union[str, t.Iterable[str]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
         wildcard: str = "all",
-        suppress_warnings=False) -> t.Tuple[TypeExtMtdTuple, ...]:
+        suppress_warnings=False
+        ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
     """Check if 'features' argument from MFE.__init__ is correct.
 
     This function is expected to be used after 'process_groups' method.
@@ -450,10 +463,10 @@ def process_features(
     """
 
     if not features:
-        return tuple()
+        return tuple(), tuple()
 
-    processed_ft = _preprocess_ft_arg(features)  \
-        # type: t.Union[str, t.List[str]]
+    processed_ft = _preprocess_ft_arg(
+        features)  # type: t.Union[str, t.List[str]]
 
     ft_methods_filtered = _filter_method_dict(
         get_all_ft_methods(), groups)  # type: t.Sequence[TypeMtdTuple]
@@ -461,19 +474,18 @@ def process_features(
     all_features_ret = _check_ft_wildcard(
         features=processed_ft,
         ft_methods=ft_methods_filtered,
-        wildcard=wildcard)  # type: t.Optional[t.Tuple[TypeExtMtdTuple, ...]]
+        wildcard=wildcard)
 
     if all_features_ret:
         return all_features_ret
 
+    available_feat_names = []  # type: t.List[str]
     ft_method_processed = []  # type: t.List[TypeExtMtdTuple]
-
-    mtf_prefix_len = len(MTF_PREFIX)
 
     for ft_method_tuple in ft_methods_filtered:
         ft_method_name, ft_method_callable = ft_method_tuple
 
-        method_name_without_prefix = ft_method_name[mtf_prefix_len:]
+        method_name_without_prefix = remove_mtd_prefix(ft_method_name)
 
         method_callable_args = _extract_method_args(ft_method_callable)
 
@@ -483,18 +495,19 @@ def process_features(
         if not isinstance(processed_ft, str):
             if method_name_without_prefix in processed_ft:
                 ft_method_processed.append(extended_item)
+                available_feat_names.append(method_name_without_prefix)
                 processed_ft.remove(method_name_without_prefix)
 
         else:
             # In this case, user is only interested in a single
             # metafeature
             if method_name_without_prefix == processed_ft:
-                return (extended_item, )
+                return (method_name_without_prefix, ), (extended_item, )
 
     if not suppress_warnings:
         _process_features_warnings(processed_ft)
 
-    return tuple(ft_method_processed)
+    return tuple(available_feat_names), tuple(ft_method_processed)
 
 
 def isnumeric(value: t.Any) -> bool:
