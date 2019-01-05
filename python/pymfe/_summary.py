@@ -1,4 +1,4 @@
-"""Module dedicated for functions that summarizes feature values.
+"""Module dedicated for auxiliary functions for feature summarization.
 
 Attributes:
     SUMMARY_METHODS (:obj:`Dict`): dictionary that links summary
@@ -22,10 +22,20 @@ def sum_histogram(values: TypeValList, bins: int = 5,
     """Returns a list of frequencies/density of a histogram of given values.
 
     Args:
-        values: collection of values which histogram is made from.
-        bins: number of bins (separations) of the histogram.
-        normalize: if True, returns density values instead of fre-
-            quencies.
+        values (:obj:`List` of numeric): collection of values which histo-
+            gram will be made from.
+
+        bins (:obj:`int`, optional): number of bins (separations) of the
+            histogram.
+
+        normalize(:obj:`bool`, optional): if True, returns density values
+            instead of frequencies.
+
+    Returns:
+        list: frequencies or density of each bin.
+
+    Raises:
+        TypeError: if `values` contains non-numeric data.
     """
 
     values, _ = np.histogram(values, bins=bins, density=normalize)
@@ -34,7 +44,12 @@ def sum_histogram(values: TypeValList, bins: int = 5,
 
 
 def sum_quartiles(values: TypeValList) -> TypeValList:
-    """Calc. min, first quartile, median, third quartile and max of values."""
+    """Calc. min, first quartile, median, third quartile and max of values.
+
+    Args:
+        values (:obj:`List` of numeric): values to quartiles be calculated
+            from.
+    """
     return np.percentile(values, (0, 25, 50, 75, 100))
 
 
