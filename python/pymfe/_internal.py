@@ -1,11 +1,19 @@
 """Provides useful functions for MFE package.
 
 Attributes:
-    VALID_GROUPS (:obj:`tuple` of :obj:`str`): Supported type of
+    VALID_GROUPS (:obj:`tuple` of :obj:`str`): Supported groups of
         metafeatures of pymfe.
+
     VALID_SUMMARY (:obj:`tuple` of :obj:`str`): Supported summary
         functions to combine metafeature values.
-    VALID_MFECLASSES (:obj:`tuple`): Metafeature extractors classes.
+
+    VALID_MFECLASSES (:obj:`tuple` of Classes): Metafeature ex-
+        tractors predefined classes, where metafeature-extraction
+        methods will be searched.
+
+    MTF_PREFIX (:obj:`str`): prefix of metafeature-extraction me-
+        thod names. For example, the metafeature called `inst_nr`
+        is implemented in the method named `[MTF_PREFIX]_inst_nr`.
 """
 import typing as t
 import inspect
@@ -77,16 +85,20 @@ def _check_value_in_group(value: t.Union[str, t.Iterable[str]],
     """Checks if a value is in a set or a set of values is a subset of a set.
 
     Args:
-        value: value(s) to be checked if are in the given group of strings.
-        group: a group of strings.
-        wildcard: a value which represent 'all values'. The case is ignored,
-            so, for example, both values 'all', 'ALL' and any mix of cases
-            are considered to be the same wildcard token.
+        value (:obj:`Iterable` of :obj:`str` or :obj:`str): value(s) to be
+            checked if are in the given group of strings.
+
+        group (:obj:`Iterable` of :obj:`str`): a group of strings represen-
+            ting the values such that `value` will be verified against.
+
+        wildcard (:obj:`str`, optional): a value which represent 'all values'.
+            The case is ignored, so, for example, both values 'all', 'ALL' and
+            any mix of cases are considered to be the same wildcard token.
 
     Returns:
-        A pair of tuples containing, respectivelly, values that are in
-        the given group and those that are not. If no value is in either
-        group, then this group will be None.
+        tuple(tuple, tuple): A pair of tuples containing, respectively, values
+        that are in the given group and those that are not. If no value is in
+        either group, then this group will be None.
 
     Raises:
         TypeError: if 'value' is not a t.Iterable type or some of its
@@ -125,26 +137,27 @@ def _check_value_in_group(value: t.Union[str, t.Iterable[str]],
 
 
 def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
-    """Check if 'groups' argument from MFE.__init__ is correct.
+    """Process `groups` argument from MFE.__init__ to generate internal metadata.
 
     Args:
         groups (:obj:`str` or :obj:`t.Iterable` of :obj:`str`): a single
             string or a iterable with group identifiers to be processed.
             It must assume or contain the following values:
-                1. 'landmarking': Landmarking metafeatures.
-                2. 'general': General/simple metafeatures.
-                3. 'statistical': Statistical metafeatures.
-                4. 'model-based': Metafeatures from machine learning models.
-                5. 'info-theory': Information Theory metafeatures.
+                1. `landmarking`: Landmarking metafeatures.
+                2. `general`: General/simple metafeatures.
+                3. `statistical`: Statistical metafeatures.
+                4. `model-based`: Metafeatures from machine learning models.
+                5. `info-theory`: Information Theory metafeatures.
 
     Returns:
-        A tuple containing all valid group lower-cased identifiers.
+        tuple(str): containing all valid group lower-cased identifiers.
 
     Raises:
-        TypeError: if 'groups' is neither a string 'all' nor a t.Iterable
+        TypeError: if `groups` is neither a string `all` nor a Iterable
             containing valid group identifiers as strings.
-        ValueError: if 'groups' is None or is a empty t.Iterable or
-            if a unknown group identifier is given.
+
+        ValueError: if `groups` is None or is a empty Iterable or if a unknown
+            group identifier is given.
     """
     if not groups:
         raise ValueError('"Groups" can not be None nor empty.')
@@ -161,48 +174,32 @@ def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
 
 def process_summary(
         summary: t.Union[str, t.Iterable[str]]
-        ) -> t.Tuple[TypeExtMtdTuple, ...]:
-    """Check if 'summary' argument from MFE.__init__ is correct.
+        ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
+    """Process `summary` argument from MFE.__init__ to generate internal metadata.
 
     Args:
         summary (:obj:`t.Iterable` of :obj:`str` or a :obj:`str`): a
             summary function or a list of these, which are used to
             combine different calculations of the same metafeature.
-            Check out reference `Rivolli et al.`_ for more information.
-            The values must be one of the following:
-                1. 'mean': Average of the values.
-                2. 'sd': Standard deviation of the values.
-                3. 'count': Computes the cardinality of the measure.
-                    Suitable for variable cardinality.
-                4. 'histogram': Describes the distribution of the mea-
-                    sure values. Suitable for high cardinality.
-                5. 'iq_range': Computes the interquartile range of the
-                    measure values.
-                6. 'kurtosis': Describes the shape of the measures values
-                    distribution.
-                7. 'max': Resilts in the maximum vlaues of the measure.
-                8. 'median': Results in the central value of the measure.
-                9. 'min': Results in the minimum value of the measure.
-                10. 'quartiles': Results in the minimum, first quartile,
-                    median, third quartile and maximum of the measure
-                    values.
-                11. 'range': Computes the ranfe of the measure values.
-                12. 'skewness': Describes the shape of the measure values
-                    distribution in terms of symmetry.
-
-    Raises:
-        TypeError: if 'summary' is neither a string 'all' nor a t.Iterable
-            containing valid group identifiers as strings.
-        ValueError: if 'summary' is None or is a empty t.Iterable or
-            if a unknown group identifier is given.
 
     Returns:
-        A tuple containing all valid lower-cased summary functions.
+        tuple(tuple, tuple): the first field contains all valid lower-cased
+            summary function names, where the last field contains internal
+            metadata about methods which implements each summary function.
+            This last tuple model is:
 
-    References:
-        .. _Rivolli et al.:
-            "Towards Reproducible Empirical Research in Meta-Learning",
-            Rivolli et al. URL: https://arxiv.org/abs/1808.10406
+                (
+                    `summary_method_name`,
+                    `summary_method_callable`,
+                    `summary_method_args`,
+                )
+
+    Raises:
+        TypeError: if `summary` is neither a string `all` nor a Iterable
+            containing valid group identifiers as strings.
+
+        ValueError: if `summary` is None or is a empty Iterable or if a un-
+            known group identifier is given.
     """
     if not summary:
         raise ValueError('"Summary" can not be None nor empty.')
@@ -215,6 +212,7 @@ def process_summary(
             "Please select values in {1}.".format(not_in_group, VALID_SUMMARY))
 
     summary_methods = []  # type: t.List[TypeExtMtdTuple]
+    available_sum_methods = []  # type: t.List[str]
 
     for summary_func in in_group:
         summary_mtd_callable = _summary.SUMMARY_METHODS[summary_func]
@@ -232,22 +230,25 @@ def process_summary(
         )
 
         summary_methods.append(summary_mtd_pack)
+        available_sum_methods.append(summary_func)
 
-    return tuple(summary_methods)
+    return tuple(available_sum_methods), tuple(summary_methods)
 
 
 def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
                ) -> t.Tuple[np.ndarray, np.ndarray]:
-    """Checks received data type and shape.
+    """Checks received `X` and `y` data type and shape.
 
     Args:
-        Check 'mfe.fit' method for more information.
+        Check `mfe.fit` method for more information.
 
     Raises:
-        Check 'mfe.fit' method for more information.
+        TypeError: if `X` or `y` is neither a np.ndarray nor a list-
+        type object.
 
     Returns:
-        X and y both casted to a numpy.array.
+        tuple(np.ndarray, np.ndarray): X and y possibly reshaped and
+        casted to np.ndarray type.
     """
     if not isinstance(X, (np.ndarray, list)):
         raise TypeError('"X" is neither "list" nor "np.array".')

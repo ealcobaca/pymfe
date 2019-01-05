@@ -12,7 +12,27 @@ _TypeSeqExt = t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
 
 
 class MFE:
-    """Core class for metafeature extraction."""
+    """Core class for metafeature extraction.
+
+    Attributes:
+        X (:obj:`Sequence`): independent attributes of the dataset.
+
+        y (:obj:`Sequence`): target attributes of the dataset.
+
+        splits (:obj:`Iterable`): Iterable/generator for K-Fold Cross
+            Validation train and test indexes splits.
+
+        groups (:obj:`Sequence`): tuple object containing fitted me-
+            tafeature groups loaded in model at instantiation.
+
+        features (:obj:`Sequence`): tuple object containing loaded
+            metafeature-extraction method names available for meta-
+            feature extraction, from selected metafeatures groups and
+            features listed at instantiation
+
+        summary (:obj:`Sequence`): tuple object which contains summary
+            functions names for features summarization.
+    """
     # pylint: disable=R0902
 
     def __init__(self,
@@ -26,7 +46,8 @@ class MFE:
         Provides easy access for metafeature extraction from structured
         datasets. It expected that user first calls `fit` method after
         instantiation and then `extract` for effectively extract the se-
-        lected metafeatures.
+        lected metafeatures. Check reference `Rivolli et al.`_ for more
+        information.
 
         Attributes:
             groups (:obj:`Iterable` of :obj:`str` or `str`): a collection
@@ -59,7 +80,28 @@ class MFE:
             summary (:obj:`Iterable` of :obj:`str` or `str`, optional): a
                 collection or a single summary function to summarize a group
                 of metafeature measures into a fixed-length group of value,
-                typically a single value.
+                typically a single value. The values must be one of the follo-
+                wing:
+
+                    1. `mean`: Average of the values.
+                    2. `sd`: Standard deviation of the values.
+                    3. `count`: Computes the cardinality of the measure.
+                        Suitable for variable cardinality.
+                    4. `histogram`: Describes the distribution of the mea-
+                        sure values. Suitable for high cardinality.
+                    5. `iq_range`: Computes the interquartile range of the
+                        measure values.
+                    6. `kurtosis`: Describes the shape of the measures values
+                        distribution.
+                    7. `max`: Resilts in the maximum vlaues of the measure.
+                    8. `median`: Results in the central value of the measure.
+                    9. `min`: Results in the minimum value of the measure.
+                    10. `quartiles`: Results in the minimum, first quartile,
+                        median, third quartile and maximum of the measure
+                        values.
+                    11. `range`: Computes the range of the measure values.
+                    12. `skewness`: Describes the shape of the measure values
+                        distribution in terms of symmetry.
 
                 If more than one summary function is selected, then all multi-
                 valued metafeatures extracted will be summarized with each
@@ -73,20 +115,26 @@ class MFE:
 
             suppress_warnings (:obj:`bool`, optional): if True, than all warn-
                 ings invoked at the instantiation time will be ignored.
+
+
+        References:
+            .. _Rivolli et al.:
+                "Towards Reproducible Empirical Research in Meta-Learning",
+                Rivolli et al. URL: https://arxiv.org/abs/1808.10406
         """
         # pylint: disable=R0913
 
         self.groups = _internal.process_groups(groups)  # type: t.Sequence[str]
 
-        self.features, self._ft_mtd_metadata = _internal.process_features(
+        self.features, self._metadata_mtd_ft = _internal.process_features(
             features=features,
             groups=self.groups,
             wildcard=wildcard,
             suppress_warnings=suppress_warnings)  \
             # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
-        self.summary = _internal.process_summary(
-            summary)  # type: t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
+        self.summary, self._metadata_mtd_sm = _internal.process_summary(
+            summary)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
         self.X = None  # type: t.Optional[np.array]
         self.y = None  # type: t.Optional[np.array]
@@ -291,7 +339,7 @@ class MFE:
                 suppress_warnings: bool = False,
                 **kwargs
                 ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]]]:
-        """Invoke summary functions loaded in model on given feature values.
+        r"""Invoke summary functions loaded in model on given feature values.
 
         Args:
             feature_values (:obj:`Sequence` of numerics): sequence containing
@@ -325,7 +373,7 @@ class MFE:
         metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
         metafeat_names = []  # type: t.List[str]
 
-        for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self.summary:
+        for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
 
             sm_mtd_args_pack = MFE._build_mtd_args(
                 method_name=sm_mtd_name,
@@ -370,7 +418,7 @@ class MFE:
                 cted a single time, which may give poor results.
 
         Raises:
-            ValueError: if number of rows of X and y does not match.
+            ValueError: if number of rows of X and y length does not match.
             TypeError: if X or y (or both) is neither a :obj:`list` or
                 a :obj:`np.array` object.
 
@@ -434,9 +482,9 @@ class MFE:
 
                 Example:
                     args = {
-                        `sd`: {`ddof`: 2},
-                        `1NN`: {`metric`: `minkowski`, `p`: 2},
-                        `leaves`: {`max_depth`: 4},
+                        'sd': {'ddof': 2},
+                        '1NN': {'metric': 'minkowski', 'p': 2},
+                        'leaves': {'max_depth': 4},
                     }
 
                     res = MFE().fit(X=data, y=labels).extract(**args)
@@ -472,7 +520,7 @@ class MFE:
         metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
         metafeat_names = []  # type: t.List[str]
 
-        for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._ft_mtd_metadata:
+        for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
 
             ft_name_without_prefix = _internal.remove_mtd_prefix(ft_mtd_name)
 
@@ -519,6 +567,7 @@ if __name__ == "__main__":
 
     MODEL = MFE(groups="all", features="all")
     print(MODEL.features)
+    print(MODEL.summary)
     MODEL.fit(X=attr, y=labels)
     names, vals = MODEL.extract(
         suppress_warnings=False,
