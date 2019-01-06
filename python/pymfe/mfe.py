@@ -140,7 +140,10 @@ class MFE:
         self.splits = None  # type: t.Optional[t.Iterable[int]]
 
         self._custom_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
+        """User-independent custom arguments for features (e.g. `X` and `y`)"""
+
         self._custom_args_sum = None  # type: t.Optional[t.Dict[str, t.Any]]
+        """User-independent custom arguments for summary functions."""
 
     def _call_summary_methods(
             self,
@@ -165,10 +168,18 @@ class MFE:
                 non-numeric values and, in this case, user must suppress this
                 using a built-in argument of the summary method via **kwargs.
 
+            suppress_warnings (:obj:`bool`): if True, ignore all warnings in-
+                voked before and after summary method calls. Note that, as
+                the `remove_nan` parameter, the summary callables may still
+                invoke warnings by itself and the user need to ignore then,
+                if possible, via **kwargs.
+
+            **kwargs: user-defined arguments for the summary callables.
+
         Returns:
             tuple(list, list): a tuple containing two lists. The first field
                 is the identifiers of each summarized value in the form
-                `feature_name.summary_method_name` (i.e. the feature-extrac-
+                `feature_name.summary_mtd_name` (i.e. the feature-extrac-
                 tion name concatenated by the summary method name, separated
                 by a dot). The second field is the summarized values. Both
                 lists has a 1-1 correspondence by the index of each element
@@ -187,8 +198,8 @@ class MFE:
         for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
 
             sm_mtd_args_pack = _internal.build_mtd_kwargs(
-                method_name=sm_mtd_name,
-                method_args=sm_mtd_args,
+                mtd_name=sm_mtd_name,
+                mtd_args=sm_mtd_args,
                 user_custom_args=kwargs.get(sm_mtd_name),
                 inner_custom_args=self._custom_args_sum,
                 suppress_warnings=suppress_warnings)
@@ -263,14 +274,14 @@ class MFE:
         """Extracts metafeatures from previously fitted dataset.
 
         Args:
-            remove_nan(:obj:`bool`, optional): if True, remove any non-numeric
+            remove_nan (:obj:`bool`, optional): if True, remove any non-numeric
                 values features before summarizing values from feature-extrac-
                 tion methods. Note that the summary methods may still remove
                 non-numeric values by itself. In this case, the user will need
                 to modify this behavior using built-in summary method arguments
                 via this method **kwargs, if possible.
 
-            suppress_warnings(:obj:`bool`, optional): if True, do not show
+            suppress_warnings (:obj:`bool`, optional): if True, do not show
                 warnings about unknown user custom parameters for feature-
                 extraction and summary methods passed via **kwargs. Note that
                 both feature-extraction and summary methods may still raise
@@ -282,7 +293,7 @@ class MFE:
                 tion and summary methods. The expected format is the follow-
                 ing:
 
-                    {`method_name`: {`arg_name`: value, ...}, ...}
+                    {`mtd_name`: {`arg_name`: value, ...}, ...}
 
                 In words, the key values of `**kwargs` should be the target
                 methods to pass the custom arguments, and each method has
@@ -302,7 +313,7 @@ class MFE:
         Returns:
             tuple(list, list): a tuple containing two lists. The first field
                 is the identifiers of each summarized value in the form
-                `feature_name.summary_method_name` (i.e. the feature-extrac-
+                `feature_name.summary_mtd_name` (i.e. the feature-extrac-
                 tion name concatenated by the summary method name, separated
                 by a dot). The second field is the summarized values. Both
                 lists has a 1-1 correspondence by the index of each element
@@ -335,8 +346,8 @@ class MFE:
             ft_name_without_prefix = _internal.remove_mtd_prefix(ft_mtd_name)
 
             ft_mtd_args_pack = _internal.build_mtd_kwargs(
-                method_name=ft_name_without_prefix,
-                method_args=ft_mtd_args,
+                mtd_name=ft_name_without_prefix,
+                mtd_args=ft_mtd_args,
                 user_custom_args=kwargs.get(ft_name_without_prefix),
                 inner_custom_args=self._custom_args_ft,
                 suppress_warnings=suppress_warnings)
@@ -377,10 +388,14 @@ if __name__ == "__main__":
     print(MODEL.features)
     print(MODEL.summary)
     MODEL.fit(X=attr, y=labels)
+
     names, vals = MODEL.extract(
-        suppress_warnings=False, remove_nan=True, **{"sd": {
-            "ddof": 1
-        }})
+        suppress_warnings=False,
+        remove_nan=True,
+        cache_kwargs=False,
+        **{
+            "sd": {"ddof": 1},
+        })
 
     for n, v in zip(names, vals):
         print(n, v)
