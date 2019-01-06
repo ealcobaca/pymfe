@@ -204,7 +204,7 @@ def _get_all_ft_mtds() -> t.Dict[str, t.List[TypeMtdTuple]]:
 
 def _filter_mtd_dict(
         ft_mtds_dict: t.Dict[str, t.List[TypeMtdTuple]],
-        groups: t.Optional[t.Tuple[str, ...]]) -> t.Tuple[TypeMtdTuple]:
+        groups: t.Optional[t.Tuple[str, ...]]) -> t.Tuple[TypeMtdTuple, ...]:
     """Filter return of `_get_all_ft_mtds(...)` function based on given `groups`.
 
     This is an auxiliary function for `process_features(...)` function.
@@ -276,6 +276,196 @@ def _extract_mtd_args(ft_mtd_callable: t.Callable) -> t.List[str]:
     ft_mtd_signature = inspect.signature(ft_mtd_callable)
     mtd_callable_args = list(ft_mtd_signature.parameters.keys())
     return mtd_callable_args
+
+
+def summarize(
+        features: t.Union[np.ndarray, t.Sequence],
+        callable_sum: t.Callable,
+        callable_args: t.Optional[t.Dict[str, t.Any]] = None,
+        remove_nan: bool = True,
+        ) -> t.Union[t.Sequence, TypeNumeric]:
+    """Returns feature summarized by `callable_sum`.
+
+    Args:
+        features (:obj:`Sequence` of numerics): Sequence containing values
+            to summarize.
+
+        callable_sum (:obj:`Callable`): Callable of the method which im-
+            plements the desired summary function.
+
+        callable_args (:obj:`Dict`, optional): arguments to the summary
+            function. The expected dictionary format is the following:
+            {`argument_name`: value}. In order to know the summary func-
+            tion arguments you need to check out the documentation of
+            the method which implements it.
+
+        remove_nan (:obj:`bool`, optional): check and remove all elements
+            in `features` which are not numeric. Note that :obj:`np.inf`
+            is still considered numeric (:obj:`float` type).
+
+    Returns:
+        float: value of summarized feature values if possible. May
+        return :obj:`np.nan` if summary function call invokes TypeError.
+
+    Raises:
+        AttributeError: if `callable_sum` is invalid.
+        TypeError: if `features`  is not a sequence.
+    """
+    processed_feat = np.array(features)
+
+    if remove_nan:
+        numeric_vals = list(map(isnumeric, features))
+        processed_feat = processed_feat[numeric_vals]
+        processed_feat = processed_feat.astype(np.float32)
+
+    if callable_args is None:
+        callable_args = {}
+
+    try:
+        metafeature = callable_sum(processed_feat, **callable_args)
+
+    except TypeError:
+        metafeature = np.nan
+
+    return metafeature
+
+
+def get_feat_value(
+        method_name: str,
+        method_args: t.Dict[str, t.Any],
+        method_callable: t.Callable,
+        suppress_warnings: bool = False
+        ) -> t.Union[TypeNumeric, np.ndarray]:
+    """Extract feat. from `method_callable` with `method_args` as args.
+
+    Args:
+        method_name (:obj:`str`): name of the feature-extraction method
+            to be invoked.
+
+        method_args (:obj:`Dic`): arguments of method to be invoked. The
+            expected format of the arguments is {`argument_name`: value}.
+            In order to know the method arguments available, you need to
+            check its documentation.
+
+        method_callable(:obj:`Callable`): callable of the feature-extra-
+            ction method.
+
+        suppress_warnings(:obj:`bool`): if True, all warnings invoked whi-
+            before invoking the method (or after) will be ignored. The me-
+            thod itself may still invoke warnings.
+
+    Returns:
+        numeric or array: return value of the feature-extraction method.
+
+    Raises:
+        AttributeError: if `method_callable` is not valid.
+    """
+
+    try:
+        features = method_callable(**method_args)
+
+    except TypeError as type_e:
+        if not suppress_warnings:
+            warnings.warn(
+                "Error extracting {0}: \n{1}.\nWill set it "
+                "as 'np.nan' for all summary functions.".format(
+                    method_name, repr(type_e)), RuntimeWarning)
+
+        features = np.nan
+
+    return features
+
+
+def build_mtd_kwargs(
+        method_name: str,
+        method_args: t.Iterable[str],
+        inner_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
+        user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
+        suppress_warnings: bool = False) -> t.Dict[str, t.Any]:
+    """Build a `kwargs` (:obj:`Dict`) for a feature-extraction :obj:`Callable`.
+
+    Args:
+        method_name (:obj:`str`): name of the method.
+
+        method_args (:obj:`Iterable` of :obj:`str`): Iterable containing
+            the name of all arguments of the callable.
+
+        inner_custom_args (:obj:`Dict`, optional): custom arguments for
+            inner usage, for example, to pass ``X``, ``y`` or other user-
+            independent arguments necessary for the callable. The expected
+            format of this dict is {`argument_name`: value}.
+
+        user_custom_args (:obj:`Dict`, optional): assumes the same model
+            as the dict above, but this one is dedicated to keep user-dep-
+            endent arguments for method callable, for example, number of
+            bins of a histogram-like metafeature or degrees of freedom of
+            a standard deviation-related metafeature. The name of the ar-
+            guments must be verified in its correspondent method documen-
+            tation.
+
+        suppress_warnings(:obj:`bool`, optional): if True, will not show
+            any warnings about unknown callable parameters.
+
+    Returns:
+        dict: a ready-to-use `kwargs` for the correspondent callable. The
+            format is {`argument_name`: value}.
+    """
+
+    if user_custom_args is None:
+        user_custom_args = {}
+
+    if inner_custom_args is None:
+        inner_custom_args = {}
+
+    combined_args = {
+        **user_custom_args,
+        **inner_custom_args,
+    }
+
+    callable_args = {
+        custom_arg: combined_args[custom_arg]
+        for custom_arg in combined_args if custom_arg in method_args
+    }
+
+    if not suppress_warnings:
+        unknown_arg_set = (
+            unknown_arg
+            for unknown_arg in user_custom_args.keys()
+            if unknown_arg not in method_args
+        )  # type: t.Generator[str, None, None]
+
+        for unknown_arg in unknown_arg_set:
+            warnings.warn(
+                'Unknown argument "{0}" for method "{1}".'.format(
+                    unknown_arg, method_name), UserWarning)
+
+    return callable_args
+
+
+def check_summary_warnings(
+        value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
+        name_feature: str,
+        name_summary: str) -> None:
+    """Check if there is :obj:`np.nan` within summarized values.
+
+    Args:
+        value (numeric or :obj:`Sequence`): summarized values.
+
+        name_feature (:obj:`str`): name of the feature-extraction
+            method used to generate the values which was summarized.
+
+        name_summary (:obj:`str`): name of the summary method
+            used to produce `value`.
+    """
+
+    if not isinstance(value, collections.Iterable):
+        value = [value]
+
+    if any(np.isnan(value)):
+        warnings.warn(
+            "Failed to summarize {0} with {1}. "
+            "(generated NaN).".format(name_feature,
+                                      name_summary), RuntimeWarning)
 
 
 def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
@@ -416,7 +606,7 @@ def process_features(
     processed_ft = _preprocess_ft_arg(features)  # type: t.List[str]
 
     ft_mtds_filtered = _filter_mtd_dict(
-        _get_all_ft_mtds(), groups)  # type: t.Tuple[TypeMtdTuple]
+        _get_all_ft_mtds(), groups)  # type: t.Tuple[TypeMtdTuple, ...]
 
     if wildcard in processed_ft:
         processed_ft = [
