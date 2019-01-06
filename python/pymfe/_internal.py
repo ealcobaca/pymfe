@@ -152,8 +152,7 @@ def _get_feat_mtds_from_class(class_obj: t.Callable) -> t.List[TypeMtdTuple]:
         feature extraction (prefixed with :obj:`MTF_PREFIX`).
     """
     feat_mtd_list = inspect.getmembers(
-        class_obj,
-        predicate=inspect.ismethod)  # type: t.List[TypeMtdTuple]
+        class_obj, predicate=inspect.ismethod)  # type: t.List[TypeMtdTuple]
 
     # It is assumed that all feature-extraction related methods
     # name are all prefixed with "MTF_PREFIX".
@@ -233,14 +232,13 @@ def _filter_mtd_dict(
     else:
         ft_mtds_filtered = tuple(ft_mtds_dict.values())
 
-    ft_mtds_filtered = tuple(mtd_tuple for ft_group in ft_mtds_filtered
-                             for mtd_tuple in ft_group)
+    ft_mtds_filtered = tuple(
+        mtd_tuple for ft_group in ft_mtds_filtered for mtd_tuple in ft_group)
 
     return ft_mtds_filtered
 
 
-def _preprocess_ft_arg(
-        features: t.Union[str, t.Iterable[str]]) -> t.List[str]:
+def _preprocess_ft_arg(features: t.Union[str, t.Iterable[str]]) -> t.List[str]:
     """Process `features` to a canonical form.
 
     Remove repeated elements from a collection of features and cast all values
@@ -283,7 +281,7 @@ def summarize(
         callable_sum: t.Callable,
         callable_args: t.Optional[t.Dict[str, t.Any]] = None,
         remove_nan: bool = True,
-        ) -> t.Union[t.Sequence, TypeNumeric]:
+) -> t.Union[t.Sequence, TypeNumeric]:
     """Returns feature summarized by `callable_sum`.
 
     Args:
@@ -334,8 +332,7 @@ def get_feat_value(
         method_name: str,
         method_args: t.Dict[str, t.Any],
         method_callable: t.Callable,
-        suppress_warnings: bool = False
-        ) -> t.Union[TypeNumeric, np.ndarray]:
+        suppress_warnings: bool = False) -> t.Union[TypeNumeric, np.ndarray]:
     """Extract feat. from `method_callable` with `method_args` as args.
 
     Args:
@@ -376,12 +373,11 @@ def get_feat_value(
     return features
 
 
-def build_mtd_kwargs(
-        method_name: str,
-        method_args: t.Iterable[str],
-        inner_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
-        user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
-        suppress_warnings: bool = False) -> t.Dict[str, t.Any]:
+def build_mtd_kwargs(method_name: str,
+                     method_args: t.Iterable[str],
+                     inner_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
+                     user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
+                     suppress_warnings: bool = False) -> t.Dict[str, t.Any]:
     """Build a `kwargs` (:obj:`Dict`) for a feature-extraction :obj:`Callable`.
 
     Args:
@@ -428,11 +424,10 @@ def build_mtd_kwargs(
     }
 
     if not suppress_warnings:
-        unknown_arg_set = (
-            unknown_arg
-            for unknown_arg in user_custom_args.keys()
-            if unknown_arg not in method_args
-        )  # type: t.Generator[str, None, None]
+        unknown_arg_set = (unknown_arg
+                           for unknown_arg in user_custom_args.keys()
+                           if unknown_arg not in method_args
+                           )  # type: t.Generator[str, None, None]
 
         for unknown_arg in unknown_arg_set:
             warnings.warn(
@@ -442,10 +437,8 @@ def build_mtd_kwargs(
     return callable_args
 
 
-def check_summary_warnings(
-        value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
-        name_feature: str,
-        name_summary: str) -> None:
+def check_summary_warnings(value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
+                           name_feature: str, name_summary: str) -> None:
     """Check if there is :obj:`np.nan` within summarized values.
 
     Args:
@@ -464,8 +457,8 @@ def check_summary_warnings(
     if any(np.isnan(value)):
         warnings.warn(
             "Failed to summarize {0} with {1}. "
-            "(generated NaN).".format(name_feature,
-                                      name_summary), RuntimeWarning)
+            "(generated NaN).".format(name_feature, name_summary),
+            RuntimeWarning)
 
 
 def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
@@ -492,16 +485,16 @@ def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
     in_group, not_in_group = _check_value_in_group(groups, VALID_GROUPS)
 
     if not_in_group:
-        raise ValueError(
-            "Unknown groups: {0}. "
-            "Please select values in {1}.".format(not_in_group, VALID_GROUPS))
+        raise ValueError("Unknown groups: {0}. "
+                         "Please select values in {1}.".format(
+                             not_in_group, VALID_GROUPS))
 
     return in_group
 
 
 def process_summary(
         summary: t.Union[str, t.Iterable[str]]
-        ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
+) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
     """Process `summary` argument from MFE.__init__ to generate internal metadata.
 
     Args:
@@ -536,9 +529,9 @@ def process_summary(
     in_group, not_in_group = _check_value_in_group(summary, VALID_SUMMARY)
 
     if not_in_group:
-        raise ValueError(
-            "Unknown summary: {0}. "
-            "Please select values in {1}.".format(not_in_group, VALID_SUMMARY))
+        raise ValueError("Unknown summary: {0}. "
+                         "Please select values in {1}.".format(
+                             not_in_group, VALID_SUMMARY))
 
     summary_methods = []  # type: t.List[TypeExtMtdTuple]
     available_sum_methods = []  # type: t.List[str]
@@ -569,7 +562,7 @@ def process_features(
         groups: t.Optional[t.Tuple[str, ...]] = None,
         wildcard: str = "all",
         suppress_warnings: bool = False
-        ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
+) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
     """Process `features` argument from MFE.__init__ to generate internal metadata.
 
     This function is expected to be used after `process_groups` function,
@@ -610,8 +603,7 @@ def process_features(
 
     if wildcard in processed_ft:
         processed_ft = [
-            remove_mtd_prefix(mtd_name)
-            for mtd_name, _ in ft_mtds_filtered
+            remove_mtd_prefix(mtd_name) for mtd_name, _ in ft_mtds_filtered
         ]
 
     available_feat_names = []  # type: t.List[str]
