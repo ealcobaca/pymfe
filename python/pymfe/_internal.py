@@ -281,7 +281,7 @@ def summarize(
         callable_sum: t.Callable,
         callable_args: t.Optional[t.Dict[str, t.Any]] = None,
         remove_nan: bool = True,
-) -> t.Union[t.Sequence, TypeNumeric]:
+        ) -> t.Union[t.Sequence, TypeNumeric]:
     """Returns feature summarized by `callable_sum`.
 
     Args:
@@ -329,22 +329,22 @@ def summarize(
 
 
 def get_feat_value(
-        method_name: str,
-        method_args: t.Dict[str, t.Any],
-        method_callable: t.Callable,
+        mtd_name: str,
+        mtd_args: t.Dict[str, t.Any],
+        mtd_callable: t.Callable,
         suppress_warnings: bool = False) -> t.Union[TypeNumeric, np.ndarray]:
-    """Extract feat. from `method_callable` with `method_args` as args.
+    """Extract feat. from `mtd_callable` with `mtd_args` as args.
 
     Args:
-        method_name (:obj:`str`): name of the feature-extraction method
+        mtd_name (:obj:`str`): name of the feature-extraction method
             to be invoked.
 
-        method_args (:obj:`Dic`): arguments of method to be invoked. The
+        mtd_args (:obj:`Dic`): arguments of method to be invoked. The
             expected format of the arguments is {`argument_name`: value}.
             In order to know the method arguments available, you need to
             check its documentation.
 
-        method_callable(:obj:`Callable`): callable of the feature-extra-
+        mtd_callable(:obj:`Callable`): callable of the feature-extra-
             ction method.
 
         suppress_warnings(:obj:`bool`): if True, all warnings invoked whi-
@@ -355,35 +355,35 @@ def get_feat_value(
         numeric or array: return value of the feature-extraction method.
 
     Raises:
-        AttributeError: if `method_callable` is not valid.
+        AttributeError: if `mtd_callable` is not valid.
     """
 
     try:
-        features = method_callable(**method_args)
+        features = mtd_callable(**mtd_args)
 
     except TypeError as type_e:
         if not suppress_warnings:
             warnings.warn(
                 "Error extracting {0}: \n{1}.\nWill set it "
                 "as 'np.nan' for all summary functions.".format(
-                    method_name, repr(type_e)), RuntimeWarning)
+                    mtd_name, repr(type_e)), RuntimeWarning)
 
         features = np.nan
 
     return features
 
 
-def build_mtd_kwargs(method_name: str,
-                     method_args: t.Iterable[str],
+def build_mtd_kwargs(mtd_name: str,
+                     mtd_args: t.Iterable[str],
                      inner_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
                      user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
                      suppress_warnings: bool = False) -> t.Dict[str, t.Any]:
     """Build a `kwargs` (:obj:`Dict`) for a feature-extraction :obj:`Callable`.
 
     Args:
-        method_name (:obj:`str`): name of the method.
+        mtd_name (:obj:`str`): name of the method.
 
-        method_args (:obj:`Iterable` of :obj:`str`): Iterable containing
+        mtd_args (:obj:`Iterable` of :obj:`str`): Iterable containing
             the name of all arguments of the callable.
 
         inner_custom_args (:obj:`Dict`, optional): custom arguments for
@@ -420,19 +420,19 @@ def build_mtd_kwargs(method_name: str,
 
     callable_args = {
         custom_arg: combined_args[custom_arg]
-        for custom_arg in combined_args if custom_arg in method_args
+        for custom_arg in combined_args if custom_arg in mtd_args
     }
 
     if not suppress_warnings:
         unknown_arg_set = (unknown_arg
                            for unknown_arg in user_custom_args.keys()
-                           if unknown_arg not in method_args
+                           if unknown_arg not in mtd_args
                            )  # type: t.Generator[str, None, None]
 
         for unknown_arg in unknown_arg_set:
             warnings.warn(
                 'Unknown argument "{0}" for method "{1}".'.format(
-                    unknown_arg, method_name), UserWarning)
+                    unknown_arg, mtd_name), UserWarning)
 
     return callable_args
 
@@ -494,7 +494,7 @@ def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
 
 def process_summary(
         summary: t.Union[str, t.Iterable[str]]
-) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
+        ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
     """Process `summary` argument from MFE.__init__ to generate internal metadata.
 
     Args:
@@ -562,7 +562,7 @@ def process_features(
         groups: t.Optional[t.Tuple[str, ...]] = None,
         wildcard: str = "all",
         suppress_warnings: bool = False
-) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
+        ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
     """Process `features` argument from MFE.__init__ to generate internal metadata.
 
     This function is expected to be used after `process_groups` function,
