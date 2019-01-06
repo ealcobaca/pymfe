@@ -31,6 +31,7 @@ class MFE:
         summary (:obj:`tuple` of :obj:`str`): tuple object which contains sum-
             mary functions names for features summarization.
     """
+
     # pylint: disable=R0902
 
     def __init__(self,
@@ -38,8 +39,7 @@ class MFE:
                  features: t.Union[str, t.Iterable[str]] = "all",
                  summary: t.Union[str, t.Iterable[str]] = ("mean", "sd"),
                  wildcard: str = "all",
-                 suppress_warnings: bool = False
-                 ) -> None:
+                 suppress_warnings: bool = False) -> None:
         """
         Provides easy access for metafeature extraction from structured
         datasets. It expected that user first calls `fit` method after
@@ -143,13 +143,13 @@ class MFE:
         self._custom_args_sum = None  # type: t.Optional[t.Dict[str, t.Any]]
 
     def _call_summary_methods(
-                self,
-                feature_values: t.Sequence[_internal.TypeNumeric],
-                feature_name: str,
-                remove_nan: bool = True,
-                suppress_warnings: bool = False,
-                **kwargs
-                ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]]]:
+            self,
+            feature_values: t.Sequence[_internal.TypeNumeric],
+            feature_name: str,
+            remove_nan: bool = True,
+            suppress_warnings: bool = False,
+            **kwargs
+    ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]]]:
         """Invoke summary functions loaded in model on given feature values.
 
         Args:
@@ -206,8 +206,7 @@ class MFE:
                     name_summary=sm_mtd_name)
 
             metafeat_vals.append(summarized_val)
-            metafeat_names.append("{0}.{1}".format(
-                feature_name, sm_mtd_name))
+            metafeat_names.append("{0}.{1}".format(feature_name, sm_mtd_name))
 
         return metafeat_names, metafeat_vals
 
@@ -342,11 +341,9 @@ class MFE:
                 inner_custom_args=self._custom_args_ft,
                 suppress_warnings=suppress_warnings)
 
-            features = _internal.get_feat_value(
-                ft_mtd_name,
-                ft_mtd_args_pack,
-                ft_mtd_callable,
-                suppress_warnings)
+            features = _internal.get_feat_value(ft_mtd_name, ft_mtd_args_pack,
+                                                ft_mtd_callable,
+                                                suppress_warnings)
 
             if isinstance(features, (np.ndarray, collections.Sequence)):
                 summarized_names, summarized_vals = self._call_summary_methods(
@@ -381,8 +378,9 @@ if __name__ == "__main__":
     print(MODEL.summary)
     MODEL.fit(X=attr, y=labels)
     names, vals = MODEL.extract(
-        suppress_warnings=False,
-        remove_nan=True, **{"sd": {"ddof": 1}})
+        suppress_warnings=False, remove_nan=True, **{"sd": {
+            "ddof": 1
+        }})
 
     for n, v in zip(names, vals):
         print(n, v)
