@@ -251,7 +251,8 @@ class MFE:
         self.X, self.y = _internal.check_data(X, y)
 
         if (splits is not None
-                and not isinstance(splits, collections.Iterable)):
+                and (not isinstance(splits, collections.Iterable)
+                     or isinstance(splits, str))):
             raise TypeError('"splits" argument must be a iterable.')
 
         self.splits = splits
@@ -356,7 +357,9 @@ class MFE:
                                                 ft_mtd_callable,
                                                 suppress_warnings)
 
-            if isinstance(features, (np.ndarray, collections.Sequence)):
+            if (self._metadata_mtd_sm is not None
+                    and isinstance(features, (np.ndarray,
+                                              collections.Sequence))):
                 summarized_names, summarized_vals = self._call_summary_methods(
                     feature_values=features,
                     feature_name=ft_name_without_prefix,

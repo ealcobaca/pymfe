@@ -258,7 +258,7 @@ def _preprocess_ft_arg(features: t.Union[str, t.Iterable[str]]) -> t.List[str]:
     return list(map(str.lower, set(features)))
 
 
-def _extract_mtd_args(ft_mtd_callable: t.Callable) -> t.List[str]:
+def _extract_mtd_args(ft_mtd_callable: t.Callable) -> t.Tuple[str, ...]:
     """Extracts arguments from given method.
 
     Args:
@@ -272,7 +272,7 @@ def _extract_mtd_args(ft_mtd_callable: t.Callable) -> t.List[str]:
         TypeError: if 'ft_mtd_callable' is not a valid Callable.
     """
     ft_mtd_signature = inspect.signature(ft_mtd_callable)
-    mtd_callable_args = list(ft_mtd_signature.parameters.keys())
+    mtd_callable_args = tuple(ft_mtd_signature.parameters.keys())
     return mtd_callable_args
 
 
@@ -461,13 +461,17 @@ def check_summary_warnings(value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
             RuntimeWarning)
 
 
-def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
+def process_groups(
+        groups: t.Union[t.Iterable[str], str],
+        wildcard: str = "all") -> t.Tuple[str, ...]:
     """Process `groups` argument from MFE.__init__ to generate internal metadata.
 
     Args:
         groups (:obj:`str` or :obj:`t.Iterable` of :obj:`str`): a single
             string or a iterable with group identifiers to be processed.
             Check out ``MFE`` Class documentation for more information.
+
+        wildcard (:obj:`str`): value to be used as ``select all`` value.
 
     Returns:
         tuple(str): containing all valid group lower-cased identifiers.
@@ -482,7 +486,10 @@ def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
     if not groups:
         raise ValueError('"Groups" can not be None nor empty.')
 
-    in_group, not_in_group = _check_value_in_group(groups, VALID_GROUPS)
+    in_group, not_in_group = _check_value_in_group(
+        value=groups,
+        group=VALID_GROUPS,
+        wildcard=wildcard)
 
     if not_in_group:
         raise ValueError("Unknown groups: {0}. "
@@ -493,7 +500,8 @@ def process_groups(groups: t.Union[t.Iterable[str], str]) -> t.Tuple[str, ...]:
 
 
 def process_summary(
-        summary: t.Union[str, t.Iterable[str]]
+        summary: t.Union[str, t.Iterable[str]],
+        wildcard: str = "all"
         ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
     """Process `summary` argument from MFE.__init__ to generate internal metadata.
 
@@ -503,6 +511,8 @@ def process_summary(
             combine different calculations of the same metafeature. Check
             ``MFE`` Class documentation for more information about this
             parameter.
+
+        wildcard (:obj:`str`): value to be used as ``select all`` value.
 
     Returns:
         tuple(tuple, tuple): the first field contains all valid lower-cased
@@ -517,16 +527,16 @@ def process_summary(
                 )
 
     Raises:
-        TypeError: if `summary` is neither a string `all` nor a Iterable
-            containing valid group identifiers as strings.
-
-        ValueError: if `summary` is None or is a empty Iterable or if a un-
-            known group identifier is given.
+        TypeError: if `summary` is not :obj:`None`, empty, a valid string
+            nor a Iterable containing valid group identifiers as strings.
     """
     if not summary:
-        raise ValueError('"Summary" can not be None nor empty.')
+        return tuple(), tuple()
 
-    in_group, not_in_group = _check_value_in_group(summary, VALID_SUMMARY)
+    in_group, not_in_group = _check_value_in_group(
+        value=summary,
+        group=VALID_SUMMARY,
+        wildcard=wildcard)
 
     if not_in_group:
         raise ValueError("Unknown summary: {0}. "
@@ -537,22 +547,27 @@ def process_summary(
     available_sum_methods = []  # type: t.List[str]
 
     for summary_func in in_group:
-        summary_mtd_callable = _summary.SUMMARY_METHODS[summary_func]
+        summary_mtd_callable = _summary.SUMMARY_METHODS.get(summary_func)
 
-        try:
-            summary_mtd_args = _extract_mtd_args(summary_mtd_callable)
+        if not summary_mtd_callable:
+            warnings.warn("Missing summary function "
+                          "{0} at _summary module.".format(summary_func),
+                          RuntimeWarning)
+        else:
+            try:
+                summary_mtd_args = _extract_mtd_args(summary_mtd_callable)
 
-        except ValueError:
-            summary_mtd_args = []
+            except ValueError:
+                summary_mtd_args = tuple()
 
-        summary_mtd_pack = (
-            summary_func,
-            summary_mtd_callable,
-            summary_mtd_args,
-        )
+            summary_mtd_pack = (
+                summary_func,
+                summary_mtd_callable,
+                summary_mtd_args,
+            )
 
-        summary_methods.append(summary_mtd_pack)
-        available_sum_methods.append(summary_func)
+            summary_methods.append(summary_mtd_pack)
+            available_sum_methods.append(summary_func)
 
     return tuple(available_sum_methods), tuple(summary_methods)
 
@@ -591,10 +606,13 @@ def process_features(
         tuple item field is a string containing the name of a feature-extracti-
         on related method, and the second field is a callable object for the
         corresponding method, and the third is the method arguments.
+
+    Raises:
+        ValueError: if features is :obj:`None` or is empty.
     """
 
     if not features:
-        return tuple(), tuple()
+        raise ValueError('"features" can not be None nor empty.')
 
     processed_ft = _preprocess_ft_arg(features)  # type: t.List[str]
 
