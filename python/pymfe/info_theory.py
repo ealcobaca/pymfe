@@ -20,24 +20,24 @@ class MFEInfoTheory:
         return scipy.stats.entropy(counts, base=2)
 
     @classmethod
-    def ft_attr_ent(cls, X: t.Union[np.ndarray, t.List]) -> np.ndarray:
+    def ft_attr_ent(cls, C: np.ndarray) -> t.Union[np.ndarray, np.float]:
         """Calculates entropy for each attribute."""
-        return np.apply_along_axis(
-            func1d=MFEInfoTheory._entropy,
-            axis=0,
-            arr=X)
+        try:
+            return np.apply_along_axis(
+                func1d=MFEInfoTheory._entropy,
+                axis=0,
+                arr=C)
+
+        except ValueError:
+            return np.nan
 
     @classmethod
-    def ft_class_ent(cls, y: t.Union[np.ndarray, t.List]) -> np.ndarray:
+    def ft_class_ent(cls, y: np.ndarray) -> t.Union[np.ndarray, np.float]:
         """Calculates class entropy.
 
         If data has multiclassed instances, each column is interpreted
         as a class.
         """
-
-        if isinstance(y, np.ndarray):
-            y = np.array(y)
-
         if len(y.shape) > 1:
             return MFEInfoTheory.ft_attr_ent(y)
 

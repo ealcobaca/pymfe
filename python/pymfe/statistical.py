@@ -13,6 +13,6 @@ class MFEStatistical:
     """To do this documentation."""
 
     @classmethod
-    def ft_mean(cls, X: np.ndarray) -> t.Union[np.ndarray, float]:
+    def ft_mean(cls, N: np.ndarray) -> t.Union[np.ndarray, float]:
         """Returns the mean value of each data column."""
-        return X.mean(axis=0)
+        return N.mean(axis=0)
