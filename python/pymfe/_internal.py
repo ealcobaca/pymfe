@@ -60,20 +60,14 @@ TypeExtMtdTuple = t.Tuple[str, t.Callable[[], t.Any], t.Sequence]
 _TYPE_NUMERIC = (
     int,
     float,
-    np.int32,
-    np.float32,
-    np.float64,
-    np.int64,
+    np.number,
 )
 
 TypeNumeric = t.TypeVar(
     "TypeNumeric",
     int,
     float,
-    np.int32,
-    np.float32,
-    np.float64,
-    np.int64,
+    np.number,
 )
 """Typing alias for both numeric types."""
 
@@ -689,23 +683,40 @@ def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
     return X, y
 
 
-def isnumeric(value: t.Any) -> bool:
-    """Checks if `value` is a Numeric Type.
+def isnumeric(
+        value: t.Any,
+        check_subtype: bool = True) -> bool:
+    """Checks if `value` is a Numeric Type or a collection of Numerics.
 
     The ``Numeric Type`` is assumed to be one of the following:
-        1. `int`
-        2. `float`
-        3. `np.int32`
-        4. `np.float32`
-        5. `np.float64`
-        6. `np.int64`
+        1. :obj:`int`
+        2. :obj:`float`
+        3. :obj:`np.number`
 
     Args:
-        value (:obj:`Any`): any object to be checked as numeric.
+        value (:obj:`Any`): any object to be checked as numeric or a
+            collection of numerics.
+
+        check_subtype (:obj:`bool`, optional): if True, check elements of
+            ``value`` if it is a Iterable object. Otherwise, only checks
+            ``value`` type ignoring the fact that it can be a Iterable ob-
+            ject.
 
     Returns:
-        bool: True if `value` is a numeric type object. False otherwise.
+        bool: True if `value` is a numeric type object or a collection
+            of numeric-only elements. False otherwise.
     """
+    if (check_subtype
+            and isinstance(value, (collections.Iterable, np.ndarray))
+            and not isinstance(value, str)):
+
+        value = np.array(value)
+
+        if value.size == 0:
+            return False
+
+        return all(isinstance(x, _TYPE_NUMERIC) for x in value)
+
     return isinstance(value, _TYPE_NUMERIC)
 
 
