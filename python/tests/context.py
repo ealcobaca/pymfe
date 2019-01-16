@@ -28,11 +28,12 @@ def _get_test_data(path):
 
     test_data = []
     for dataset_name in test_dataset_list:
-        test_data.append(
-            pd.read_csv(
-                path + dataset_name,
-                index_col=0,
-            ))
+        if dataset_name.endswith(".csv"):
+            test_data.append(
+                pd.read_csv(
+                    path + dataset_name,
+                    index_col=0,
+                ))
 
     return test_data
 
