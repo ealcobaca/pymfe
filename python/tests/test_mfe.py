@@ -1,5 +1,6 @@
 """Test module for core class MFE and _internal module."""
 import pytest
+import collections
 
 import context  # noqa: F401
 from pymfe.mfe import MFE
@@ -279,3 +280,79 @@ class TestMFEInstantiation:
         model = MFE().fit(X=X, y=y, splits=splits)
 
         assert (model.X.shape == shape_X and model.y.shape == shape_y)
+
+    @pytest.mark.parametrize(
+        "dt_id, class_ind, ind_num, ind_cat, cat_cols, check_bool",
+        (
+            (1, 6, (0, 3), (1, 2, 4, 5), "auto", True),
+            (1, 6, (0, 3, 4), (1, 2, 5), "auto", False),
+            (0, 20, tuple(range(20)), tuple(), [], False),
+            (0, 20, tuple(range(20)), tuple(), None, False),
+        )
+    )
+    def test_check_num_cat_cols_indexes(
+            self,
+            dt_id,
+            class_ind,
+            ind_num,
+            ind_cat,
+            cat_cols,
+            check_bool):
+        """Test column indexes separated by numeric and categorical types."""
+        dataset = context.DATASET_LIST[dt_id]
+
+        if not isinstance(class_ind, collections.Iterable):
+            class_ind = [class_ind]
+
+        attr_ind = list(set(range(dataset.shape[1])).difference(class_ind))
+
+        X = dataset.iloc[:, attr_ind].values
+        y = dataset.iloc[:, class_ind].values
+
+        model = MFE().fit(X=X, y=y, cat_cols=cat_cols, check_bool=check_bool)
+
+        assert (sorted(model._attr_indexes_num) == sorted(ind_num)
+                and sorted(model._attr_indexes_cat) == sorted(ind_cat))
+
+
+class TestInternalFunctions:
+    """Test avulse _internal module functions."""
+
+    @pytest.mark.parametrize("value, check_subtype", (
+        (1, False),
+        (1, True),
+        (3.1415, False),
+        (3.1415, True),
+        (-0, False),
+        (-0.5, False),
+        ([-0.5], True),
+        ([1, 2.1, 0.0, -0.0, -.1, +1.2, +.9, 0.14, 3.1415], True),
+    ))
+    def test_isnumeric_valid(self, value, check_subtype):
+        assert _internal.isnumeric(
+            value=value,
+            check_subtype=check_subtype)
+
+    @pytest.mark.parametrize("value, check_subtype", (
+        ("1", False),
+        (["1"], True),
+        ([1], False),
+        (None, False),
+        (None, True),
+        ([], True),
+        ([], False),
+        ([], False),
+        ([], True),
+        ("1.2", False),
+        ([3.1415], False),
+        ("a", True),
+        ([None, 1, 2], True),
+        ([None, 1, 2], True),
+        (["-.32", "1.0", "+2.0"], True),
+        ([1, 2.1, 0.0, -0.0, -.1, +1.2, +.9, 0.14, 3.1415, "b"], True),
+        ([1, 2.1, 0.0, -0.0, -.1, +1.2, "+.9", 0.14, "3.1415"], True),
+    ))
+    def test_isnumeric_invalid(self, value, check_subtype):
+        assert not _internal.isnumeric(
+            value=value,
+            check_subtype=check_subtype)
