@@ -32,7 +32,8 @@ class MFE:
             mary functions names for features summarization.
     """
 
-    # pylint: disable=R0902
+    # Disable limits for instance var and method args num
+    # pylint: disable=R0902, R0913
 
     def __init__(self,
                  groups: t.Union[str, t.Iterable[str]] = "all",
@@ -256,7 +257,7 @@ class MFE:
         if self.X is None:
             raise TypeError("X can't be 'None'.")
 
-        categorical_cols = np.array([False])  # type: np.ndarray[bool]
+        categorical_cols = None  # type: np.ndarray[bool]
 
         if not cat_cols:
             categorical_cols = np.array([False] * self.X.shape[1])
