@@ -145,6 +145,12 @@ class MFE:
         self._custom_args_sum = None  # type: t.Optional[t.Dict[str, t.Any]]
         """User-independent custom arguments for summary functions."""
 
+        self._attr_indexes_num = None  # type: t.Optional[t.Tuple[int, ...]]
+        """Numerical column indexes from fitted X (independent attributes)."""
+
+        self._attr_indexes_cat = None  # type: t.Optional[t.Tuple[int, ...]]
+        """Categorical column indexes from fitted X (indep. attributes)."""
+
     def _call_summary_methods(
             self,
             feature_values: t.Sequence[_internal.TypeNumeric],
@@ -190,7 +196,7 @@ class MFE:
                 ([`attr_ent.mean`, `attr_ent.sd`], [0.983459, 0.344361]) is
                 the return value for the feature `attr_end` summarized by
                 both `mean` and `sd` (standard deviation), giving the values
-                0.983469 and 0.344361, respectively.
+                `0.983469` and `0.344361`, respectively.
         """
         metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
         metafeat_names = []  # type: t.List[str]
@@ -221,10 +227,79 @@ class MFE:
 
         return metafeat_names, metafeat_vals
 
+    def _fill_col_ind_by_type(
+            self,
+            cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
+            check_bool: bool = True
+    ) -> None:
+        """Get X column indexes by its data type.
+
+        The indexes for numerical and categorical attributes are kept,
+        respectively, at ``_attr_indexes_num`` and ``_attr_indexes_cat``
+        instance attributes.
+
+        Args:
+            cat_cols (:obj:`str` or :obj:`iterable` of :obj:`int`, optional):
+                Iterable of indexes identifying categorical columns. If spe-
+                cial keyword ``auto`` is given, then an automatic verification
+                will be done in the fitted attributes.
+
+            check_bool (:obj:`bool`, optional): check ``fit`` method corres-
+                ponding argument for more information.
+
+        Raises:
+            TypeError: if ``X`` attribute is :obj:`NoneType`.
+            ValueError: if ``cat_cols`` is neither ``auto`` or a valid
+                integer Iterable.
+        """
+
+        if self.X is None:
+            raise TypeError("X can't be 'None'.")
+
+        categorical_cols = np.array([False])  # type: np.ndarray[bool]
+
+        if not cat_cols:
+            categorical_cols = np.array([False] * self.X.shape[1])
+
+        elif isinstance(cat_cols, str) and cat_cols.lower() == "auto":
+            categorical_cols = ~np.apply_along_axis(
+                _internal.isnumeric,
+                axis=0,
+                arr=self.X,
+                **{"check_subtype": True},
+            )
+
+            if check_bool:
+                categorical_cols |= np.apply_along_axis(
+                    func1d=lambda col: len(np.unique(col)) == 2,
+                    axis=0,
+                    arr=self.X,
+                )
+
+        elif (isinstance(cat_cols, (np.ndarray, collections.Iterable))
+              and not isinstance(cat_cols, str)
+              and all(isinstance(x, int) for x in cat_cols)):
+            categorical_cols = (
+                i in cat_cols for i in range(self.X.shape[1])
+            )
+
+        else:
+            raise ValueError(
+                'Invalid "cat_cols" argument ({0}). '
+                'Expecting "auto" or a integer Iterable.'.format(cat_cols))
+
+        categorical_cols = np.array(categorical_cols)
+
+        self._attr_indexes_num = tuple(np.where(~categorical_cols)[0])
+        self._attr_indexes_cat = tuple(np.where(categorical_cols)[0])
+
     def fit(self,
             X: t.Sequence,
             y: t.Sequence,
-            splits: t.Optional[t.Iterable[int]] = None) -> "MFE":
+            splits: t.Optional[t.Iterable[int]] = None,
+            cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
+            check_bool: bool = True
+            ) -> "MFE":
         """Fits dataset into the a MFE model.
 
         Args:
@@ -238,14 +313,27 @@ class MFE:
                 metafeatures. If not given, each metafeature will be extra-
                 cted a single time, which may give poor results.
 
+            cat_cols (:obj:`Sequence` of :obj:`int` or :obj:`str`, optional):
+                categorical columns of dataset. If :obj:`NoneType` or empty se-
+                quence is given, all columns are assumed as numeric. If ``au-
+                to`` value is given, then an attempt of automatic detection is
+                performed while fitting the dataset.
+
+            check_bool (:obj:`bool`, optional): if `cat_cols` is ``auto``,
+                and this flag is True, assume that all columns with exactly
+                two different values is also a categorical (boolean) column,
+                independently of its data type. Otherwise, these columns may
+                be considered Numeric depending on its data type.
+
         Raises:
             ValueError: if number of rows of X and y length does not match.
             TypeError: if X or y (or both) is neither a :obj:`list` or
                 a :obj:`np.array` object.
 
         Returns:
-            MFE: the instance itself, to permit inline instantiation-and-fit
-                code like MFE(...).fit(...).
+            MFE: the instance itself, to allow inline instantiation-and-fit
+                code `model = MFE(...).fit(...)` or inline fit-and-extraction
+                `result = MFE(...).fit(...).extract(...)`.
         """
 
         self.X, self.y = _internal.check_data(X, y)
@@ -257,13 +345,20 @@ class MFE:
 
         self.splits = splits
 
+        self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
+
+        data_num = self.X[:, self._attr_indexes_num]
+        data_cat = self.X[:, self._attr_indexes_cat]
+
         self._custom_args_ft = {
             "X": self.X,
+            "N": data_num,
+            "C": data_cat,
             "y": self.y,
             "splits": self.splits,
         }
 
-        self._custom_args_sum = None
+        self._custom_args_sum = None  # For possible future updates
 
         return self
 
@@ -379,17 +474,15 @@ class MFE:
 
 if __name__ == "__main__":
     attr = np.array([
-        [1, 2, 3, 4],
-        [0, 0, 1, 1],
-        [1, 2, 1, 1],
-        [1, 1, 1, 1],
+        [1, '-.2', '1', 4],
+        [0, '+.0', 'a', -1],
+        [1, '2.2', '0', -1.2],
+        [1, '-1', 'b', .12],
     ])
 
     labels = np.array([1, 1, 0, 0])
 
     MODEL = MFE(groups="all", features="all")
-    print(MODEL.features)
-    print(MODEL.summary)
     MODEL.fit(X=attr, y=labels)
 
     names, vals = MODEL.extract(
@@ -397,7 +490,7 @@ if __name__ == "__main__":
         remove_nan=True,
         cache_kwargs=False,
         **{
-            "sd": {"ddof": 1},
+            "sd": {"ddof": 0},
         })
 
     for n, v in zip(names, vals):
