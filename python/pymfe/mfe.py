@@ -475,16 +475,19 @@ class MFE:
 
 if __name__ == "__main__":
     attr = np.array([
-        [1, '-.2', '1', 4],
-        [0, '+.0', 'a', -1],
-        [1, '2.2', '0', -1.2],
-        [1, '-1', 'b', .12],
-    ])
+        [1, -.2, '1', 4],
+        [0, .0, 'a', -1],
+        [1, 2.2, '0', -1.2],
+        [1, -1, 'b', .12],
+    ], dtype=object)
 
     labels = np.array([1, 1, 0, 0])
 
     MODEL = MFE(groups="all", features="all")
     MODEL.fit(X=attr, y=labels)
+
+    print(MODEL._custom_args_ft["N"])
+    print(MODEL._custom_args_ft["C"])
 
     names, vals = MODEL.extract(
         suppress_warnings=False,
