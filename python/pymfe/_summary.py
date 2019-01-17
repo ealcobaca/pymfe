@@ -17,9 +17,9 @@ TypeValList = t.Iterable[TypeNumeric]
 """Type annotation for a Iterable of a Numeric type (int or float)."""
 
 
-def sum_histogram(values: TypeValList, bins: int = 5,
-                  normalize: bool = False) -> TypeValList:
-    """Returns a list of frequencies/density of a histogram of given values.
+def sum_histogram(values: TypeValList, bins: int = 10,
+                  normalize: bool = True) -> TypeValList:
+    """Returns a list of abs/rel. frequencies of a histogram of given values.
 
     Args:
         values (:obj:`List` of numeric): collection of values which histo-

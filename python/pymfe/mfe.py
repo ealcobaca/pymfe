@@ -376,7 +376,9 @@ class MFE:
             "splits": self.splits,
         }
 
-        self._custom_args_sum = None  # For possible future updates
+        self._custom_args_sum = {
+            "sd": {"ddof": 1},
+        }
 
         return self
 
