@@ -112,28 +112,10 @@ class TestGeneral:
             (1, {}, "freq_class", {}, "freqClass", "var"),
             (0, {}, "freq_class", {}, "freqClass", "median"),
             (1, {}, "freq_class", {}, "freqClass", "median"),
-            (0, {}, "freq_class", {
-                "sd": {
-                    "ddof": 1
-                }
-            }, "freqClass", "sd"),
-            (1, {}, "freq_class", {
-                "sd": {
-                    "ddof": 1
-                }
-            }, "freqClass", "sd"),
-            (0, {}, "freq_class", {
-                "histogram": {
-                    "bins": 10,
-                    "normalize": True
-                }
-            }, "freqClass", "histogram"),
-            (1, {}, "freq_class", {
-                "histogram": {
-                    "bins": 10,
-                    "normalize": True
-                }
-            }, "freqClass", "histogram"),
+            (0, {}, "freq_class", {}, "freqClass", "sd"),
+            (1, {}, "freq_class", {}, "freqClass", "sd"),
+            (0, {}, "freq_class", {}, "freqClass", "histogram"),
+            (1, {}, "freq_class", {}, "freqClass", "histogram"),
             (0, {}, "inst_to_attr", {}, "instToAttr", "all"),
             (1, {}, "inst_to_attr", {}, "instToAttr", "all"),
             (0, {
