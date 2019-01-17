@@ -51,10 +51,14 @@ class MFEGeneral:
         return C.shape[1] / N.shape[1]
 
     @classmethod
-    def ft_freq_class(cls, y: np.ndarray) -> np.ndarray:
-        """Returns an array of frequency of each distinct class."""
+    def ft_freq_class(cls, y: np.ndarray) -> t.Union[np.ndarray, np.float]:
+        """Returns an array of relative frequency of each distinct class."""
         _, freq = np.unique(y, return_counts=True)
-        return freq
+
+        if sum(freq) == 0:
+            return np.nan
+
+        return freq / sum(freq)
 
     @classmethod
     def ft_inst_to_attr(cls, X: np.ndarray) -> int:

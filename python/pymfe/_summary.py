@@ -43,7 +43,7 @@ def sum_histogram(values: TypeValList, bins: int = 5,
     return values
 
 
-def sum_quartiles(values: TypeValList) -> TypeValList:
+def sum_quantiles(values: TypeValList) -> TypeValList:
     """Calc. min, first quartile, median, third quartile and max of values.
 
     Args:
@@ -56,6 +56,7 @@ def sum_quartiles(values: TypeValList) -> TypeValList:
 SUMMARY_METHODS = {
     "mean": np.mean,
     "sd": np.std,
+    "var": np.var,
     "count": len,
     "histogram": sum_histogram,
     "iq_range": stats.iqr,
@@ -63,7 +64,7 @@ SUMMARY_METHODS = {
     "max": max,
     "median": np.median,
     "min": min,
-    "quartiles": sum_quartiles,
+    "quantiles": sum_quantiles,
     "range": np.ptp,
     "skewness": stats.skew,
 }
