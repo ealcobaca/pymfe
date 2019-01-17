@@ -1,4 +1,4 @@
-,integer,cat_1,cat_2,float,boolean,cat_3,class
+,integer,cat_1,cat_2,float,boolean,cat_3,target
 0,-10,C,yes,9.871846024945558,True,high,0
 1,9,B,no,14.252712546081188,False,low,0
 2,-4,A,yes,-9.57372822144932,False,very high,1
