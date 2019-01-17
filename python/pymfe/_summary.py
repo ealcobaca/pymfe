@@ -7,7 +7,7 @@ Attributes:
 """
 import typing as t
 
-from scipy import stats
+import scipy.stats
 import numpy as np
 
 TypeNumeric = t.TypeVar("TypeNumeric", int, float)
@@ -38,9 +38,12 @@ def sum_histogram(values: TypeValList, bins: int = 5,
         TypeError: if `values` contains non-numeric data.
     """
 
-    values, _ = np.histogram(values, bins=bins, density=normalize)
+    freqs, _ = np.histogram(values, bins=bins)
 
-    return values
+    if normalize:
+        freqs = freqs / sum(freqs)
+
+    return freqs
 
 
 def sum_quantiles(values: TypeValList) -> TypeValList:
@@ -59,12 +62,12 @@ SUMMARY_METHODS = {
     "var": np.var,
     "count": len,
     "histogram": sum_histogram,
-    "iq_range": stats.iqr,
-    "kurtosis": stats.kurtosis,
+    "iq_range": scipy.stats.iqr,
+    "kurtosis": scipy.stats.kurtosis,
     "max": max,
     "median": np.median,
     "min": min,
     "quantiles": sum_quantiles,
     "range": np.ptp,
-    "skewness": stats.skew,
+    "skewness": scipy.stats.skew,
 }
