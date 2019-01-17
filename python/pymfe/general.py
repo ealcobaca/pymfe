@@ -14,18 +14,31 @@ import numpy as np
 
 
 class MFEGeneral:
-    """General-type Metafeature extractor."""
+    """Keeps methods for metafeatures of ``General``/``Simple`` group.
 
-    def __init__(self,
-                 features: t.Union[str, t.Iterable[str]] = "all") -> None:
-        """Extracts general metafeatures from datasets.
+    The convention adopted for metafeature-extraction related methods
+    is to always start with ``ft_`` prefix in order to allow automatic
+    method detection. This prefix is predefined within ``_internal``
+    module.
 
-        Args:
-            features: string or list of strings containing the
-                metafeatures that should be extracted from fitted
-                datasets.
-        """
-        self.features = features
+    All method signature follows the conventions and restrictions listed
+    below:
+        1. For independent attribute data, ``X`` means ``every type of
+            attribute``, ``N`` means ``Numeric attributes only`` and ``C``
+            stands for ``Categorical attributes only``.
+
+        2. Only ``X``, ``y``, ``N``, ``C`` and ``splits`` are allowed
+            to be required method arguments. All other arguments must be
+            strictly optional (i.e. has a predefined default value).
+
+        3. It is assumed that the user can change any optional argument,
+            without any previous verification for both type or value, via
+            **kwargs argument of ``extract`` method of MFE class.
+
+        4. The return value of all feature-extraction methods should be
+            a single value or a generic Sequence (preferably a np.ndarray)
+            type with numeric values.
+    """
 
     @classmethod
     def ft_attr_to_inst(cls, X: np.ndarray) -> int:
