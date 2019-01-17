@@ -95,7 +95,7 @@ class MFE:
                     7. `max`: Resilts in the maximum vlaues of the measure.
                     8. `median`: Results in the central value of the measure.
                     9. `min`: Results in the minimum value of the measure.
-                    10. `quartiles`: Results in the minimum, first quartile,
+                    10. `quantiles`: Results in the minimum, first quartile,
                         median, third quartile and maximum of the measure
                         values.
                     11. `range`: Computes the range of the measure values.
@@ -188,10 +188,14 @@ class MFE:
                 is the identifiers of each summarized value in the form
                 `feature_name.summary_mtd_name` (i.e. the feature-extrac-
                 tion name concatenated by the summary method name, separated
-                by a dot). The second field is the summarized values. Both
-                lists has a 1-1 correspondence by the index of each element
-                (i.e. the value at index `i` in the second list has its iden-
-                tifier at the same index in the first list and vice-versa).
+                by a dot). If the summary function return more than one value
+                (cardinality greater than 1), then each value name will have
+                an extra concatenated id starting from 0 to differ between
+                values (i.e. `feature_name.summary_mtd_name.id`). The second
+                field is the summarized values. Both lists has a 1-1 corres-
+                pondence by the index of each element (i.e. the value at in-
+                dex `i` in the second list has its identifier at the same
+                index in the first list and vice-versa).
 
             Example:
                 ([`attr_ent.mean`, `attr_ent.sd`], [0.983459, 0.344361]) is
@@ -223,8 +227,21 @@ class MFE:
                     name_feature=feature_name,
                     name_summary=sm_mtd_name)
 
-            metafeat_vals.append(summarized_val)
-            metafeat_names.append("{0}.{1}".format(feature_name, sm_mtd_name))
+            if isinstance(summarized_val, np.ndarray):
+                summarized_val = summarized_val.flatten().tolist()
+
+            if (isinstance(summarized_val, collections.Sequence)
+                    and not isinstance(summarized_val, str)):
+                metafeat_vals += summarized_val
+                metafeat_names += [
+                    "{0}.{1}.{2}".format(feature_name, sm_mtd_name, i)
+                    for i in range(len(summarized_val))
+                ]
+
+            else:
+                metafeat_vals.append(summarized_val)
+                metafeat_names.append(
+                    "{0}.{1}".format(feature_name, sm_mtd_name))
 
         return metafeat_names, metafeat_vals
 
@@ -483,11 +500,8 @@ if __name__ == "__main__":
 
     labels = np.array([1, 1, 0, 0])
 
-    MODEL = MFE(groups="all", features="all")
+    MODEL = MFE(groups="all", features="all", summary="all")
     MODEL.fit(X=attr, y=labels)
-
-    print(MODEL._custom_args_ft["N"])
-    print(MODEL._custom_args_ft["C"])
 
     names, vals = MODEL.extract(
         suppress_warnings=False,
