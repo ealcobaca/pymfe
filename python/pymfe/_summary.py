@@ -7,7 +7,7 @@ Attributes:
 """
 import typing as t
 
-from scipy import stats
+import scipy.stats
 import numpy as np
 
 TypeNumeric = t.TypeVar("TypeNumeric", int, float)
@@ -17,9 +17,9 @@ TypeValList = t.Iterable[TypeNumeric]
 """Type annotation for a Iterable of a Numeric type (int or float)."""
 
 
-def sum_histogram(values: TypeValList, bins: int = 5,
-                  normalize: bool = False) -> TypeValList:
-    """Returns a list of frequencies/density of a histogram of given values.
+def sum_histogram(values: TypeValList, bins: int = 10,
+                  normalize: bool = True) -> TypeValList:
+    """Returns a list of abs/rel. frequencies of a histogram of given values.
 
     Args:
         values (:obj:`List` of numeric): collection of values which histo-
@@ -38,12 +38,15 @@ def sum_histogram(values: TypeValList, bins: int = 5,
         TypeError: if `values` contains non-numeric data.
     """
 
-    values, _ = np.histogram(values, bins=bins, density=normalize)
+    freqs, _ = np.histogram(values, bins=bins)
 
-    return values
+    if normalize:
+        freqs = freqs / sum(freqs)
+
+    return freqs
 
 
-def sum_quartiles(values: TypeValList) -> TypeValList:
+def sum_quantiles(values: TypeValList) -> TypeValList:
     """Calc. min, first quartile, median, third quartile and max of values.
 
     Args:
@@ -56,14 +59,15 @@ def sum_quartiles(values: TypeValList) -> TypeValList:
 SUMMARY_METHODS = {
     "mean": np.mean,
     "sd": np.std,
+    "var": np.var,
     "count": len,
     "histogram": sum_histogram,
-    "iq_range": stats.iqr,
-    "kurtosis": stats.kurtosis,
+    "iq_range": scipy.stats.iqr,
+    "kurtosis": scipy.stats.kurtosis,
     "max": max,
     "median": np.median,
     "min": min,
-    "quartiles": sum_quartiles,
+    "quantiles": sum_quantiles,
     "range": np.ptp,
-    "skewness": stats.skew,
+    "skewness": scipy.stats.skew,
 }
