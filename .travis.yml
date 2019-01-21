@@ -8,8 +8,8 @@ install:
 
 env:
     global:
-        - SOURCE_FILES=`find ./pymfe/ -name '*.py'`
-        - TEST_FILES=`find ./tests/ -name '*.py'`
+        - SOURCE_FILES=`find ./python/pymfe/ -name '*.py'`
+        - TEST_FILES=`find ./python/tests/ -name '*.py'`
 
 script:
     - mypy $SOURCE_FILES --ignore-missing-imports
