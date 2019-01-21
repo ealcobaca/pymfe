@@ -1,0 +1,17 @@
+language: python
+
+python:
+    - "3.6"
+
+install:
+    - pip install pytest mypy pylint
+
+env:
+    global:
+        - SOURCE_FILES=`find ./pymfe/ -name '*.py'`
+        - TEST_FILES=`find ./tests/ -name '*.py'`
+
+script:
+    - mypy $SOURCE_FILES --ignore-missing-imports
+    - pylint $SOURCE_FILES -d 'E1130, C0103, W0107, R0904, R0903, E1101, C0111'
+    - pytest ./tests/
