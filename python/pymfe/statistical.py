@@ -7,7 +7,7 @@ Todo:
 import typing as t
 
 import numpy as np
-import scipy.stats
+import scipy
 
 
 class MFEStatistical:
@@ -79,19 +79,25 @@ class MFEStatistical:
         return scipy.stats.iqr(N, axis=0)
 
     @classmethod
-    def ft_kurtosis(cls, N: np.ndarray) -> np.ndarray:
+    def ft_kurtosis(cls, N: np.ndarray, bias: bool = False) -> np.ndarray:
         """To do this doc."""
-        pass
+        return scipy.stats.kurtosis(N, axis=0, bias=bias)
 
     @classmethod
-    def ft_mad(cls, N: np.ndarray) -> np.ndarray:
-        """To do this doc."""
-        pass
+    def ft_mad(cls, N: np.ndarray, factor: float = 1.4826) -> np.ndarray:
+        """Computes Median Absolute Deviation (MAD) adjusted by a factor.
+
+        The default ``factor`` is 1.4826 due to fact that it is an appro-
+        ximated result of MAD of a normally distributed data, so it make
+        this method result comparable with this sort of data.
+         """
+        median_dev = abs(N - np.median(N, axis=0))
+        return np.median(median_dev, axis=0) * factor
 
     @classmethod
     def ft_max(cls, N: np.ndarray) -> np.ndarray:
         """To do this doc."""
-        pass
+        return N.max(axis=0)
 
     @classmethod
     def ft_mean(cls, N: np.ndarray) -> np.ndarray:
@@ -101,12 +107,12 @@ class MFEStatistical:
     @classmethod
     def ft_median(cls, N: np.ndarray) -> np.ndarray:
         """To do this doc."""
-        pass
+        return np.median(N, axis=0)
 
     @classmethod
     def ft_min(cls, N: np.ndarray) -> np.ndarray:
         """To do this doc."""
-        pass
+        return N.min(axis=0)
 
     @classmethod
     def ft_nr_cor_attr(cls, N: np.ndarray) -> np.ndarray:
@@ -126,12 +132,12 @@ class MFEStatistical:
     @classmethod
     def ft_range(cls, N: np.ndarray) -> np.ndarray:
         """To do this doc."""
-        pass
+        return np.ptp(N, axis=0)
 
     @classmethod
-    def ft_sd(cls, N: np.ndarray) -> np.ndarray:
+    def ft_sd(cls, N: np.ndarray, ddof: float = 1) -> np.ndarray:
         """To do this doc."""
-        pass
+        return N.std(axis=0, ddof=ddof)
 
     @classmethod
     def ft_sd_ratio(cls, N: np.ndarray) -> np.ndarray:
@@ -139,9 +145,9 @@ class MFEStatistical:
         pass
 
     @classmethod
-    def ft_skewness(cls, N: np.ndarray) -> np.ndarray:
+    def ft_skewness(cls, N: np.ndarray, bias: bool = False) -> np.ndarray:
         """To do this doc."""
-        pass
+        return scipy.stats.skew(N, axis=0, bias=bias)
 
     @classmethod
     def ft_sparcity(cls, N: np.ndarray) -> np.ndarray:
@@ -149,14 +155,15 @@ class MFEStatistical:
         pass
 
     @classmethod
-    def ft_t_mean(cls, N: np.ndarray) -> np.ndarray:
+    def ft_t_mean(cls, N: np.ndarray,
+                  pcut: float = 0.2) -> t.Union[float, np.ndarray]:
         """To do this doc."""
-        pass
+        return scipy.stats.trim_mean(N, proportiontocut=pcut)
 
     @classmethod
-    def ft_var(cls, N: np.ndarray) -> np.ndarray:
+    def ft_var(cls, N: np.ndarray, ddof: float = 1) -> np.ndarray:
         """To do this doc."""
-        pass
+        return N.var(axis=0, ddof=ddof)
 
     @classmethod
     def ft_w_lambda(cls, N: np.ndarray) -> np.ndarray:
@@ -168,6 +175,6 @@ if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    res = MFEStatistical.ft_iq_range(iris.data)
+    res = MFEStatistical.ft_t_mean(iris.data)
 
     print(res)
