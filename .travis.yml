@@ -4,7 +4,8 @@ python:
     - "3.6"
 
 install:
-    - pip install pytest mypy pylint
+    - pip install pytest mypy pylint rpy2
+    - pip install -r ./python/requirements.txt
 
 env:
     global:
@@ -13,5 +14,10 @@ env:
 
 script:
     - mypy $SOURCE_FILES --ignore-missing-imports
-    - pylint $SOURCE_FILES -d 'E1130, C0103, W0107, R0904, R0903, E1101, C0111'
+    - pylint $SOURCE_FILES -d 'E1130, C0103, W0107, R0904, R0903, E1101, C0111, E0401, C0411'
     - pytest ./python/tests/
+
+notifications:
+    email:
+        on_success: never
+        on_failure: never
