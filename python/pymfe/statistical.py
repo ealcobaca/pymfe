@@ -239,9 +239,30 @@ class MFEStatistical:
         return nr_norm
 
     @classmethod
-    def ft_nr_outliers(cls, N: np.ndarray) -> np.ndarray:
-        """To do this doc."""
-        pass
+    def ft_nr_outliers(cls, N: np.ndarray, whis: float = 1.5) -> int:
+        """Calculate number of attribute which has at least one outlier value.
+
+        An attribute has outlier if some value is outside the closed in-
+        terval [first_quartile - WHIS * IQR, third_quartile + WHIS * IQR],
+        where IQR is the Interquartile Range (third_quartile - first_quartile),
+        and WHIS is tipically `1.5`.
+
+        Args:
+            whis (:obj:`float`): factor to multiply IQR and set up non-outlier
+                interval (as stated above). Higher values make the interval
+                greater, thus increasing the tolerance against outliers, where
+                lower values decreases non-outlier interval and therefore crea-
+                tes less tolerance against outliers.
+        """
+        v_min, q_1, q_3, v_max = np.percentile(
+            N, (0, 25, 75, 100), axis=0)
+
+        whis_iqr = whis * (q_3 - q_1)
+
+        cut_low = q_1 - whis_iqr
+        cut_high = q_3 + whis_iqr
+
+        return sum((cut_low > v_min) | (cut_high < v_max))
 
     @classmethod
     def ft_range(cls, N: np.ndarray) -> np.ndarray:
@@ -352,6 +373,6 @@ if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    res = MFEStatistical.ft_sd_ratio(iris.data, iris.target)
+    res = MFEStatistical.ft_nr_outliers(iris.data)
 
     print(res)
