@@ -1,5 +1,14 @@
 """Module dedicated to extraction of Statistical Metafeatures.
 
+Notes:
+    For more information about the metafeatures implemented here,
+    check out `Rivolli et al.`_.
+
+References:
+    .. _Rivolli et al.:
+        "Towards Reproducible Empirical Research in Meta-Learning",
+        Rivolli et al. URL: https://arxiv.org/abs/1808.10406
+
 Todo:
     * Implement metafeatures.
     * Improve documentation.
@@ -11,15 +20,62 @@ import scipy
 
 
 class MFEStatistical:
-    """To do this documentation."""
+    """Keep methods for metafeatures of ``Statistical`` group.
+
+    The convention adopted for metafeature-extraction related methods
+    is to always start with ``ft_`` prefix in order to allow automatic
+    method detection. This prefix is predefined within ``_internal``
+    module.
+
+    All method signature follows the conventions and restrictions listed
+    below:
+        1. For independent attribute data, ``X`` means ``every type of
+            attribute``, ``N`` means ``Numeric attributes only`` and ``C``
+            stands for ``Categorical attributes only``.
+
+        2. Only ``X``, ``y``, ``N``, ``C`` and ``splits`` are allowed
+            to be required method arguments. All other arguments must be
+            strictly optional (i.e. has a predefined default value).
+
+        3. It is assumed that the user can change any optional argument,
+            without any previous verification for both type or value, via
+            **kwargs argument of ``extract`` method of MFE class.
+
+        4. The return value of all feature-extraction methods should be
+            a single value or a generic Sequence (preferably a np.ndarray)
+            type with numeric values.
+    """
 
     @classmethod
     def ft_can_cor(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
         """To do this doc."""
 
     @classmethod
-    def ft_gravity(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """To do this doc."""
+    def ft_gravity(
+            cls, N: np.ndarray, y: np.ndarray,
+            norm_ord: t.Union[int, float] = 2) -> np.ndarray:
+        """Computes distance between minority and majority classes center of mass.
+
+        The center of mass of a class is the average value of each attribute
+        between instances of the same class.
+
+        The majority and minority classes can not be the same, even if
+        all classes have the same number of instances.
+
+        Args:
+            norm_ord (:obj:`numeric`): Minkowski distance parameter. Minkowski
+            distance has the following popular cases for this argument value:
+
+                norm_ord    Distance name
+                -------------------------
+                -inf        Min value
+                1           Manhattan/cityblock
+                2           Euclidean
+                +inf        Max value (infinite norm)
+
+        Raises:
+            ValueError: if ``norm_ord`` is not numeric.
+        """
         classes, freqs = np.unique(y, return_counts=True)
 
         class_freq_most, _ = max(zip(classes, freqs), key=lambda x: x[1])
@@ -35,7 +91,7 @@ class MFEStatistical:
         center_freq_class_least = N[y == class_freq_least, :].mean(axis=0)
 
         return np.linalg.norm(
-            center_freq_class_most - center_freq_class_least, ord=2)
+            center_freq_class_most - center_freq_class_least, ord=norm_ord)
 
     @classmethod
     def ft_cor(cls, N: np.ndarray) -> t.Union[float, np.ndarray]:
@@ -66,7 +122,7 @@ class MFEStatistical:
 
     @classmethod
     def ft_eigenvalues(cls, N: np.ndarray) -> t.Union[float, np.ndarray]:
-        """Returns eigenvalues of covariance matrix."""
+        """Returns eigenvalues of covariance matrix of N attributes."""
         cov_mat = np.cov(N, rowvar=False)
 
         try:
@@ -94,23 +150,30 @@ class MFEStatistical:
 
     @classmethod
     def ft_kurtosis(cls, N: np.ndarray, bias: bool = False) -> np.ndarray:
-        """To do this doc."""
+        """Compute Kurtosis of each attribute of N.
+
+        Args:
+            bias (:obj:`bool`): If False, then the calculations are corrected
+                for statistical bias.
+        """
         return scipy.stats.kurtosis(N, axis=0, bias=bias)
 
     @classmethod
     def ft_mad(cls, N: np.ndarray, factor: float = 1.4826) -> np.ndarray:
         """Computes Median Absolute Deviation (MAD) adjusted by a factor.
 
-        The default ``factor`` is 1.4826 due to fact that it is an appro-
-        ximated result of MAD of a normally distributed data, so it make
-        this method result comparable with this sort of data.
+        Args:
+            factor (:obj:`float`): multiplication factor for output correction.
+            The default ``factor`` is 1.4826 due to fact that it is an appro-
+            ximated result of MAD of a normally distributed data, so it make
+            this method result comparable with this sort of data.
          """
         median_dev = abs(N - np.median(N, axis=0))
         return np.median(median_dev, axis=0) * factor
 
     @classmethod
     def ft_max(cls, N: np.ndarray) -> np.ndarray:
-        """To do this doc."""
+        """Get maximum value from each N attribute."""
         return N.max(axis=0)
 
     @classmethod
@@ -120,12 +183,12 @@ class MFEStatistical:
 
     @classmethod
     def ft_median(cls, N: np.ndarray) -> np.ndarray:
-        """To do this doc."""
+        """Get median value from each N attribute."""
         return np.median(N, axis=0)
 
     @classmethod
     def ft_min(cls, N: np.ndarray) -> np.ndarray:
-        """To do this doc."""
+        """Get minimum value from each N attribute."""
         return N.min(axis=0)
 
     @classmethod
@@ -136,13 +199,13 @@ class MFEStatistical:
         """Number of attribute pairs with corr. equal or greater than a threshold.
 
         Args:
-            threshold (:obj:`float`, optional): value of threshold, where
-                correlation is assumed to be strong if its absolute value
-                is equal or greater than it.
+            threshold (:obj:`float`): value of threshold, where correlation is
+                assumed to be strong if its absolute value is equal or greater
+                than it.
 
-            normalize (:obj:`bool`, optional): if True, the result will be
-                normalized by a factor of 2 / (d * (d - 1)), whered = number
-                of attributes (columns) in N.
+            normalize (:obj:`bool`): if True, the result will be normalized by
+                a factor of 2 / (d * (d - 1)), where d = number of attributes
+                (columns) in N.
         """
         abs_corr_vals = MFEStatistical.ft_cor(N)
 
@@ -160,7 +223,13 @@ class MFEStatistical:
 
     @classmethod
     def ft_nr_norm(cls, N: np.ndarray, threshold: float = 0.1) -> int:
-        """To do this doc."""
+        """Number of attr. with normal distribution based in Shapiro-Wilk test.
+
+        Args:
+            threshold (:obj:`float`): threshold to consider the p-value of
+                Shapiro-Wilk test of each attribute small enough to assume
+                normal distribution.
+        """
         nr_norm = 0
 
         for attr in N.T:
@@ -176,46 +245,102 @@ class MFEStatistical:
 
     @classmethod
     def ft_range(cls, N: np.ndarray) -> np.ndarray:
-        """To do this doc."""
+        """Compute range (max - min) of each attribute."""
         return np.ptp(N, axis=0)
 
     @classmethod
     def ft_sd(cls, N: np.ndarray, ddof: float = 1) -> np.ndarray:
-        """To do this doc."""
-        return N.std(axis=0, ddof=ddof)
+        """Compute standard deviation of each attribute.
+
+        Args:
+            ddof (:obj:`float`): degrees of freedom for standard
+                deviation.
+        """
+        sd_array = N.std(axis=0, ddof=ddof)
+
+        sd_array = np.array([
+            np.nan if np.isinf(val) else val
+            for val in sd_array
+        ])
+
+        return sd_array
 
     @classmethod
-    def ft_sd_ratio(cls, N: np.ndarray) -> np.ndarray:
+    def ft_sd_ratio(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
         """To do this doc."""
         pass
 
     @classmethod
     def ft_skewness(cls, N: np.ndarray, bias: bool = False) -> np.ndarray:
-        """To do this doc."""
+        """Compute skewness for each attribute.
+
+        Args:
+            bias (:obj:`bool`): If False, then the calculations are
+                corrected for statistical bias.
+        """
         return scipy.stats.skew(N, axis=0, bias=bias)
 
     @classmethod
     def ft_sparsity(cls, N: np.ndarray, normalize: bool = True) -> np.ndarray:
-        """To do this doc."""
+        """Compute (normalized) sparsity metric for each attribute.
+
+        Sparcity S of a vector x of numeric values is defined as
+
+            S(x) = (1.0 / (n - 1.0)) * ((n / phi(x)) - 1.0),
+
+        where
+            - n is the number of instances in dataset N.
+            - phi(x) is the number of distinct values in x.
+
+        Args:
+            normalize (:obj:`bool`): if True, then the output will be
+                S(x) as calculated above. Otherwise, output will not
+                be multiplied by (1.0 / (n - 1.0)) factor (i.e. new
+                output is S'(x) = ((n / phi(x)) - 1.0)).
+        """
 
         ans = np.array([attr.size / np.unique(attr).size for attr in N.T])
 
+        num_inst, _ = N.shape
+
         norm_factor = 1.0
         if normalize:
-            norm_factor = 1.0 / (N.shape[0] - 1.0)
+            norm_factor = 1.0 / (num_inst - 1.0)
 
         return (ans - 1.0) * norm_factor
 
     @classmethod
     def ft_t_mean(cls, N: np.ndarray,
                   pcut: float = 0.2) -> t.Union[float, np.ndarray]:
-        """To do this doc."""
+        """Compute trimmed mean of each attribute.
+
+        Args:
+            pcut (:obj:`float`): percentage of cut from both ``lower``
+                and ``higher`` values. This value should be in inter-
+                val [0.0, 0.5), where if 0.0 the return value is the
+                default mean calculation. If pcut < 0.0, then
+                :obj:`np.nan` will be returned.
+        """
+        if pcut < 0:
+            return np.nan
+
         return scipy.stats.trim_mean(N, proportiontocut=pcut)
 
     @classmethod
     def ft_var(cls, N: np.ndarray, ddof: float = 1) -> np.ndarray:
-        """To do this doc."""
-        return N.var(axis=0, ddof=ddof)
+        """Compute variance of each attribute.
+
+        Args:
+            ddof (:obj:`float`): degrees of freedom for variance.
+        """
+        var_array = N.var(axis=0, ddof=ddof)
+
+        var_array = np.array([
+            np.nan if np.isinf(val) else val
+            for val in var_array
+        ])
+
+        return var_array
 
     @classmethod
     def ft_w_lambda(cls, N: np.ndarray) -> np.ndarray:
@@ -227,6 +352,6 @@ if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    res = MFEStatistical.ft_sd_ratio(iris.data)
+    res = MFEStatistical.ft_sd_ratio(iris.data, iris.target)
 
     print(res)
