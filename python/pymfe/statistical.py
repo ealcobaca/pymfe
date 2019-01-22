@@ -14,14 +14,28 @@ class MFEStatistical:
     """To do this documentation."""
 
     @classmethod
-    def ft_can_cor(cls, N: np.ndarray):
+    def ft_can_cor(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
         """To do this doc."""
-        pass
 
     @classmethod
-    def ft_gravity(cls, N: np.ndarray) -> np.ndarray:
+    def ft_gravity(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
         """To do this doc."""
-        pass
+        classes, freqs = np.unique(y, return_counts=True)
+
+        class_freq_most, _ = max(zip(classes, freqs), key=lambda x: x[1])
+
+        class_freq_most_ind = np.where(class_freq_most == classes)[0]
+
+        classes = np.delete(classes, class_freq_most_ind)
+        freqs = np.delete(freqs, class_freq_most_ind)
+
+        class_freq_least, _ = min(zip(classes, freqs), key=lambda x: x[1])
+
+        center_freq_class_most = N[y == class_freq_most, :].mean(axis=0)
+        center_freq_class_least = N[y == class_freq_least, :].mean(axis=0)
+
+        return np.linalg.norm(
+            center_freq_class_most - center_freq_class_least, ord=2)
 
     @classmethod
     def ft_cor(cls, N: np.ndarray) -> t.Union[float, np.ndarray]:
@@ -115,14 +129,42 @@ class MFEStatistical:
         return N.min(axis=0)
 
     @classmethod
-    def ft_nr_cor_attr(cls, N: np.ndarray) -> np.ndarray:
-        """To do this doc."""
-        pass
+    def ft_nr_cor_attr(cls,
+                       N: np.ndarray,
+                       threshold: float = 0.5,
+                       normalize: bool = True) -> np.ndarray:
+        """Number of attribute pairs with corr. equal or greater than a threshold.
+
+        Args:
+            threshold (:obj:`float`, optional): value of threshold, where
+                correlation is assumed to be strong if its absolute value
+                is equal or greater than it.
+
+            normalize (:obj:`bool`, optional): if True, the result will be
+                normalized by a factor of 2 / (d * (d - 1)), whered = number
+                of attributes (columns) in N.
+        """
+        abs_corr_vals = MFEStatistical.ft_cor(N)
+
+        _, num_attr = N.shape
+
+        norm_factor = 1.0
+
+        if normalize:
+            norm_factor = 2.0 / (num_attr * (num_attr - 1.0))
+
+        return sum(abs_corr_vals >= threshold) * norm_factor
 
     @classmethod
-    def ft_nr_norm(cls, N: np.ndarray) -> np.ndarray:
+    def ft_nr_norm(cls, N: np.ndarray, threshold: float = 0.1) -> int:
         """To do this doc."""
-        pass
+        nr_norm = 0
+
+        for attr in N.T:
+            _, p_value = scipy.stats.shapiro(attr)
+            nr_norm += p_value < threshold
+
+        return nr_norm
 
     @classmethod
     def ft_nr_outliers(cls, N: np.ndarray) -> np.ndarray:
@@ -150,9 +192,16 @@ class MFEStatistical:
         return scipy.stats.skew(N, axis=0, bias=bias)
 
     @classmethod
-    def ft_sparcity(cls, N: np.ndarray) -> np.ndarray:
+    def ft_sparsity(cls, N: np.ndarray, normalize: bool = True) -> np.ndarray:
         """To do this doc."""
-        pass
+
+        ans = np.array([attr.size / np.unique(attr).size for attr in N.T])
+
+        norm_factor = 1.0
+        if normalize:
+            norm_factor = 1.0 / (N.shape[0] - 1.0)
+
+        return (ans - 1.0) * norm_factor
 
     @classmethod
     def ft_t_mean(cls, N: np.ndarray,
@@ -175,6 +224,6 @@ if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    res = MFEStatistical.ft_t_mean(iris.data)
+    res = MFEStatistical.ft_sd_ratio(iris.data)
 
     print(res)
