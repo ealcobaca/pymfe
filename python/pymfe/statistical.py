@@ -146,6 +146,9 @@ class MFEStatistical:
         """
         abs_corr_vals = MFEStatistical.ft_cor(N)
 
+        if not isinstance(abs_corr_vals, np.ndarray):
+            abs_corr_vals = np.array(abs_corr_vals)
+
         _, num_attr = N.shape
 
         norm_factor = 1.0
