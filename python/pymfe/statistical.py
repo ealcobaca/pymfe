@@ -49,11 +49,13 @@ class MFEStatistical:
     @classmethod
     def ft_can_cor(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
         """To do this doc."""
+        pass
 
     @classmethod
-    def ft_gravity(
-            cls, N: np.ndarray, y: np.ndarray,
-            norm_ord: t.Union[int, float] = 2) -> np.ndarray:
+    def ft_gravity(cls,
+                   N: np.ndarray,
+                   y: np.ndarray,
+                   norm_ord: t.Union[int, float] = 2) -> np.ndarray:
         """Computes distance between minority and majority classes center of mass.
 
         The center of mass of a class is the average value of each attribute
@@ -254,8 +256,7 @@ class MFEStatistical:
                 lower values decreases non-outlier interval and therefore crea-
                 tes less tolerance against outliers.
         """
-        v_min, q_1, q_3, v_max = np.percentile(
-            N, (0, 25, 75, 100), axis=0)
+        v_min, q_1, q_3, v_max = np.percentile(N, (0, 25, 75, 100), axis=0)
 
         whis_iqr = whis * (q_3 - q_1)
 
@@ -279,17 +280,41 @@ class MFEStatistical:
         """
         sd_array = N.std(axis=0, ddof=ddof)
 
-        sd_array = np.array([
-            np.nan if np.isinf(val) else val
-            for val in sd_array
-        ])
+        sd_array = np.array(
+            [np.nan if np.isinf(val) else val for val in sd_array])
 
         return sd_array
 
     @classmethod
     def ft_sd_ratio(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """To do this doc."""
-        pass
+        """Statistic test for homogeneity of covariances."""
+        num_inst, num_col = N.shape
+        classes, classes_freqs = np.unique(y, return_counts=True)
+        num_classes = classes.size
+
+        sample_cov_matrices = np.array(
+            [np.cov(N[y == cl, :], rowvar=False) for cl in classes])
+
+        vec_weight = classes_freqs - 1.0
+
+        pooled_cov_mat = np.array([
+            weight * S_i
+            for weight, S_i in zip(vec_weight, sample_cov_matrices)
+        ]).sum(axis=0) / (num_inst - num_classes)
+
+        gamma = 1.0 - ((2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
+                       (6.0 * (num_col + 1.0) *
+                        (num_classes - 1.0))) * (sum(1.0 / vec_weight) - 1.0 /
+                                                 (num_inst - num_classes))
+
+        vec_logdet = [
+            np.math.log(np.linalg.det(S_i)) for S_i in sample_cov_matrices
+        ]
+
+        m_factor = (gamma * ((num_inst - num_classes) * np.math.log(
+            np.linalg.det(pooled_cov_mat)) - np.dot(vec_weight, vec_logdet)))
+
+        return np.exp(m_factor / (num_col * (num_inst - num_classes)))
 
     @classmethod
     def ft_skewness(cls, N: np.ndarray, bias: bool = False) -> np.ndarray:
@@ -356,10 +381,8 @@ class MFEStatistical:
         """
         var_array = N.var(axis=0, ddof=ddof)
 
-        var_array = np.array([
-            np.nan if np.isinf(val) else val
-            for val in var_array
-        ])
+        var_array = np.array(
+            [np.nan if np.isinf(val) else val for val in var_array])
 
         return var_array
 
@@ -373,6 +396,6 @@ if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    res = MFEStatistical.ft_nr_outliers(iris.data)
+    res = MFEStatistical.ft_sd_ratio(iris.data, iris.target)
 
     print(res)
