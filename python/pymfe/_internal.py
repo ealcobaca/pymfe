@@ -48,6 +48,13 @@ VALID_MFECLASSES = (
     info_theory.MFEInfoTheory,
 )  # type: t.Tuple
 
+VALID_TIMEOPT = (
+    "avg",
+    "avg_summ",
+    "total",
+    "total_summ",
+)
+
 MTF_PREFIX = "ft_"
 """Prefix which is that metafeat. extraction related methods starts with."""
 
@@ -642,6 +649,24 @@ def process_features(
                           UserWarning)
 
     return tuple(available_feat_names), tuple(ft_mtd_processed)
+
+
+def process_timeopt(timeopt: t.Optional[str]):
+
+    if timeopt is None:
+        return None
+
+    if not isinstance(timeopt, str):
+        raise TypeError("Time argument must be "
+                        "string type or None (got {}).".format(type(timeopt)))
+
+    timeopt = timeopt.lower()
+
+    if timeopt not in VALID_TIMEOPT:
+        raise ValueError('Invalid time option "{0}". Please choose one '
+                         "amongst {1} or None.".format(timeopt, VALID_TIMEOPT))
+
+    return timeopt
 
 
 def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]

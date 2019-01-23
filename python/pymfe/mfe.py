@@ -1,4 +1,9 @@
-"""Main module for extracting metafeatures from datasets."""
+"""Main module for extracting metafeatures from datasets.
+
+Todo:
+    * Implement parallel computing.
+    * Implement time measurement for metafeature extraction.
+"""
 import typing as t
 import collections
 
@@ -39,6 +44,7 @@ class MFE:
                  groups: t.Union[str, t.Iterable[str]] = "all",
                  features: t.Union[str, t.Iterable[str]] = "all",
                  summary: t.Union[str, t.Iterable[str]] = ("mean", "sd"),
+                 measure_time: t.Optional[str] = None,
                  wildcard: str = "all",
                  suppress_warnings: bool = False) -> None:
         """
@@ -109,6 +115,22 @@ class MFE:
                 The special value provided by the argument `wildcard` can be
                 used to rapidly select all summary functions.
 
+            measure_time (:obj:`str`, optional): options for measuring time
+                elapsed during metafeature extraction. If :obj:`None`, no time
+                elapsed will be measured. Otherwise, this argument must be a
+                :obj:`str` valued as one of the options below:
+
+                    1. `avg`: average time for each metafeature (total time di-
+                        vided by the feature cardinality, i.e., number of feat-
+                        ures extracted by a single feature-extraction related
+                        method), without summarization time.
+                    2. `avg_summ`: average time for each metafeature including
+                        required time for summarization.
+                    3. `total`: total time for each metafeature, without sum-
+                        marization time.
+                    4. `total_summ`: total time for each metafeature including
+                        required time for summarization.
+
             wildcard (:obj:`str`, optional): value used as `select all` for
                 `groups`, `features` and `summary` arguments.
 
@@ -135,6 +157,9 @@ class MFE:
         self.summary, self._metadata_mtd_sm = _internal.process_summary(
             summary)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
+        self.timeopt = _internal.process_timeopt(
+            measure_time)  # type: t.Optional[str]
+
         self.X = None  # type: t.Optional[np.array]
         self.y = None  # type: t.Optional[np.array]
 
@@ -157,6 +182,7 @@ class MFE:
             feature_values: t.Sequence[_internal.TypeNumeric],
             feature_name: str,
             remove_nan: bool = True,
+            verbose: bool = False,
             suppress_warnings: bool = False,
             **kwargs
     ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]]]:
@@ -169,17 +195,23 @@ class MFE:
             feature_name (:obj:`str`): name of the feature method used for
                 produce the `feature_value`.
 
-            remove_nan (:obj:`bool`): if True, all non-numeric values will
-                be removed from `feature_values` before calling each summary
-                method. Note that the summary method itself may still remove
-                non-numeric values and, in this case, user must suppress this
-                using a built-in argument of the summary method via **kwargs.
+            remove_nan (:obj:`bool`, optional): if True, all non-numeric values
+                will be removed from `feature_values` before calling each sum-
+                mary method. Note that the summary method itself may still re-
+                move non-numeric values and, in this case, user must suppress
+                this using a built-in argument of the summary method using the
+                **kwargs argument.
 
-            suppress_warnings (:obj:`bool`): if True, ignore all warnings in-
-                voked before and after summary method calls. Note that, as
-                the `remove_nan` parameter, the summary callables may still
-                invoke warnings by itself and the user need to ignore then,
-                if possible, via **kwargs.
+            verbose (:obj:`bool`, optional): if True, then messages about the
+                summarization process may be printed. Note that warnings are
+                not related with this argument (see ``suppress_warnings`` arg-
+                ument below).
+
+            suppress_warnings (:obj:`bool`, optional): if True, ignore all
+                warnings invoked before and after summary method calls. Note
+                that, as the `remove_nan` parameter, the summary callables may
+                still invoke warnings by itself and the user need to ignore
+                then, if possible, via **kwargs.
 
             **kwargs: user-defined arguments for the summary callables.
 
@@ -207,6 +239,11 @@ class MFE:
         metafeat_names = []  # type: t.List[str]
 
         for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
+
+            if verbose:
+                print("  Summarizing {0} feature with {1} summary"
+                      " function...".format(feature_name,
+                                            sm_mtd_name), end=" ")
 
             sm_mtd_args_pack = _internal.build_mtd_kwargs(
                 mtd_name=sm_mtd_name,
@@ -242,6 +279,9 @@ class MFE:
                 metafeat_vals.append(summarized_val)
                 metafeat_names.append(
                     "{0}.{1}".format(feature_name, sm_mtd_name))
+
+            if verbose:
+                print("Done.")
 
         return metafeat_names, metafeat_vals
 
@@ -384,6 +424,8 @@ class MFE:
 
     def extract(self,
                 remove_nan: bool = True,
+                verbose: bool = False,
+                enable_parallel: bool = False,
                 suppress_warnings: bool = False,
                 **kwargs
                 ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]]]:
@@ -396,6 +438,15 @@ class MFE:
                 non-numeric values by itself. In this case, the user will need
                 to modify this behavior using built-in summary method arguments
                 via this method **kwargs, if possible.
+
+            verbose (:obj:`bool`, optional): if True, messages related with the
+                metafeature extraction process can be printed. Note that warn-
+                ing messages is not affected by this option (see ``suppress_-
+                warnings`` argument below).
+
+            enable_parallel (:obj:`bool`, optional): if True, then the meta-
+                feature extraction will be done with multiprocesses. This
+                argument has no effect for now (to be implemented).
 
             suppress_warnings (:obj:`bool`, optional): if True, do not show
                 warnings about unknown user custom parameters for feature-
@@ -457,7 +508,13 @@ class MFE:
         metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
         metafeat_names = []  # type: t.List[str]
 
+        if verbose:
+            print("Started metafeature extraction process...")
+
         for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
+
+            if verbose:
+                print("Extracting {} feature...".format(ft_mtd_name))
 
             ft_name_without_prefix = _internal.remove_mtd_prefix(ft_mtd_name)
 
@@ -479,6 +536,7 @@ class MFE:
                     feature_values=features,
                     feature_name=ft_name_without_prefix,
                     remove_nan=remove_nan,
+                    verbose=verbose,
                     suppress_warnings=suppress_warnings,
                     **kwargs)
 
@@ -488,6 +546,13 @@ class MFE:
             else:
                 metafeat_vals.append(features)
                 metafeat_names.append(ft_name_without_prefix)
+
+            if verbose:
+                print("Done with {} feature.".format(ft_mtd_name))
+
+        if verbose:
+            print("Done with metafeature extraction process.",
+                  "Total of {} values obtained.".format(len(metafeat_vals)))
 
         return metafeat_names, metafeat_vals
 
@@ -502,13 +567,13 @@ if __name__ == "__main__":
 
     labels = np.array([1, 1, 0, 0])
 
-    MODEL = MFE(groups="all", features="all", summary="all")
+    MODEL = MFE(groups="all", features="all",
+                summary="all", measure_time="avg_summ")
     MODEL.fit(X=attr, y=labels)
 
     names, vals = MODEL.extract(
         suppress_warnings=False,
         remove_nan=True,
-        cache_kwargs=False,
         **{
             "sd": {"ddof": 0},
         })
