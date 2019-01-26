@@ -50,7 +50,7 @@ class MFEInfoTheory:
                         vec_y: np.ndarray) -> np.ndarray:
         """Compute joint probability matrix P(a, b), a in vec_x and b in vec_y.
 
-        Used for ``_conc`` method and ``ft_joint_entropy``.
+        Used for ``_conc`` method and ``ft_joint_ent``.
         """
         x_vals = np.unique(vec_x)
         y_vals = np.unique(vec_y)
@@ -120,13 +120,13 @@ class MFEInfoTheory:
             return np.nan
 
     @classmethod
-    def ft_class_conc(cls, C: np.ndarray, vec_y: np.ndarray) -> np.ndarray:
+    def ft_class_conc(cls, C: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute concentration coefficient between each attr. and class."""
         return np.apply_along_axis(
-            func1d=MFEInfoTheory._conc, axis=0, arr=C, vec_y=vec_y)
+            func1d=MFEInfoTheory._conc, axis=0, arr=C, y=y)
 
     @classmethod
-    def ft_class_ent(cls, vec_y: np.ndarray) -> t.Union[np.ndarray, np.float]:
+    def ft_class_ent(cls, y: np.ndarray) -> float:
         """Calculates target attribute Shannon entropy.
 
         The Shannon Entropy H of a vector y is defined as:
@@ -137,13 +137,13 @@ class MFEInfoTheory:
         vector y and P(y = val) is the probability of y assume some
         value val in phi_y.
         """
-        return MFEInfoTheory._entropy(vec_y)
+        return MFEInfoTheory._entropy(y)
 
     @classmethod
     def ft_eq_num_attr(cls,
                        C: np.ndarray,
-                       vec_y: np.ndarray,
-                       epsilon: float = 1.0e-8) -> np.ndarray:
+                       y: np.ndarray,
+                       epsilon: float = 1.0e-8) -> float:
         """Number of attributes equivalent for a predictive task.
 
         The attribute equivalence E is defined as:
@@ -158,15 +158,15 @@ class MFEInfoTheory:
             epsilon (:obj:`float`, optional): small numeric value to
                 avoid division by zero.
         """
-        ent_class = MFEInfoTheory._entropy(vec_y)
-        mutual_info = MFEInfoTheory.ft_mut_inf(C, vec_y)
+        ent_class = MFEInfoTheory._entropy(y)
+        mutual_info = MFEInfoTheory.ft_mut_inf(C, y)
 
         _, num_col = C.shape
 
         return num_col * (ent_class / (epsilon + sum(mutual_info)))
 
     @classmethod
-    def ft_joint_entropy(cls, C: np.ndarray, vec_y: np.ndarray) -> np.ndarray:
+    def ft_joint_ent(cls, C: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Calculate Joint entropy between each attribute and class.
 
         The Joint Entropy H between a predictive attribute x and target
@@ -185,23 +185,23 @@ class MFEInfoTheory:
         """
 
         def joint_entropy(vec_x: np.ndarray,
-                          vec_y: np.ndarray,
+                          y: np.ndarray,
                           epsilon: float = 1.0e-8) -> float:
             joint_prob_mat = MFEInfoTheory._joint_prob_mat(vec_x,
-                                                           vec_y) + epsilon
+                                                           y) + epsilon
 
             joint_entropy = np.multiply(joint_prob_mat,
                                         np.log2(joint_prob_mat)).sum().sum()
 
             return -1.0 * joint_entropy
 
-        joint_entropy = np.apply_along_axis(
-            func1d=joint_entropy, axis=0, arr=C, vec_y=vec_y)
+        joint_entropy_array = np.apply_along_axis(
+            func1d=joint_entropy, axis=0, arr=C, y=y)
 
-        return joint_entropy
+        return joint_entropy_array
 
     @classmethod
-    def ft_mut_inf(cls, C: np.ndarray, vec_y: np.ndarray) -> np.ndarray:
+    def ft_mut_inf(cls, C: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Mutual information between each attribute in C and class y.
 
         Mutual Information MI between an attribute x and target attri-
@@ -212,20 +212,20 @@ class MFEInfoTheory:
         Where H(x) and H(y) are, respectively, the Shannon Entropy (see
         ``ft_attr_ent`` or ``ft_class_ent`` documentations for more in-
         formation) for x and y and H(x, y) is the Joint Entropy between
-        x and y (see ``ft_joint_entropy`` documentation for more informa-
+        x and y (see ``ft_joint_ent`` documentation for more informa-
         tion).
         """
         return np.apply_along_axis(
             func1d=sklearn.metrics.mutual_info_score,
             axis=0,
             arr=C,
-            labels_pred=vec_y)
+            labels_pred=y)
 
     @classmethod
     def ft_ns_ratio(cls,
                     C: np.ndarray,
-                    vec_y: np.ndarray,
-                    epsilon: float = 1.0e-8) -> np.ndarray:
+                    y: np.ndarray,
+                    epsilon: float = 1.0e-8) -> float:
         """Compute noisiness of attributes.
 
         Let y be a target attribute and x one predictive attribute in
@@ -242,6 +242,6 @@ class MFEInfoTheory:
                 avoid division by zero.
         """
         ent_attr = sum(MFEInfoTheory.ft_attr_ent(C))
-        mutual_info = sum(MFEInfoTheory.ft_mut_inf(C, vec_y))
+        mutual_info = sum(MFEInfoTheory.ft_mut_inf(C, y))
 
         return (ent_attr - mutual_info) / (epsilon + mutual_info)
