@@ -362,7 +362,7 @@ def get_feat_value(
     try:
         features = mtd_callable(**mtd_args)
 
-    except TypeError as type_e:
+    except (TypeError, ValueError) as type_e:
         if not suppress_warnings:
             warnings.warn(
                 "Error extracting {0}: \n{1}.\nWill set it "
