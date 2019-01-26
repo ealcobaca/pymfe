@@ -123,7 +123,7 @@ class MFEInfoTheory:
     def ft_class_conc(cls, C: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Compute concentration coefficient between each attr. and class."""
         return np.apply_along_axis(
-            func1d=MFEInfoTheory._conc, axis=0, arr=C, y=y)
+            func1d=MFEInfoTheory._conc, axis=0, arr=C, vec_y=y)
 
     @classmethod
     def ft_class_ent(cls, y: np.ndarray) -> float:
