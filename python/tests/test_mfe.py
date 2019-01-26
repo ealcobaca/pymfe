@@ -169,13 +169,14 @@ class TestMFESummary:
     @pytest.mark.parametrize(
         "features, callable_sum, callable_args, expected_value", (
             (DATA_GENERIC_NUMERIC_0, _summary.SUMMARY_METHODS["histogram"], {
-                "bins": 3
+                "bins": 3,
+                "normalize": False,
             }, [4, 3, 1]),
             (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["histogram"], {
                 "bins": 5,
-                "normalize": True
-            }, [0.38027352, 0.19013676, 0.38027352, 0.38027352, 0.19013676]),
-            (DATA_GENERIC_NUMERIC_0, _summary.SUMMARY_METHODS["quartiles"],
+                "normalize": True,
+            }, [0.25, 0.125, 0.25, 0.25, 0.125]),
+            (DATA_GENERIC_NUMERIC_0, _summary.SUMMARY_METHODS["quantiles"],
              None, [1.0, 1.0, 1.5, 2.0, 3.0]),
         ))
     def test_summarize_multi_feat_value(self, features, callable_sum,
@@ -186,6 +187,9 @@ class TestMFESummary:
             features=features,
             callable_sum=callable_sum,
             callable_args=callable_args)
+
+        print(sum_val)
+        print(expected_value)
 
         assert all([
             abs(a - b) < TestMFESummary.EPSILON
