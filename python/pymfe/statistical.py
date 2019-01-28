@@ -17,6 +17,8 @@ import typing as t
 
 import numpy as np
 import scipy
+import statsmodels.multivariate.manova
+import sklearn.preprocessing
 
 
 class MFEStatistical:
@@ -55,7 +57,7 @@ class MFEStatistical:
     def ft_gravity(cls,
                    N: np.ndarray,
                    y: np.ndarray,
-                   norm_ord: t.Union[int, float] = 2) -> np.ndarray:
+                   norm_ord: t.Union[int, float] = 2) -> float:
         """Computes distance between minority and majority classes center of mass.
 
         The center of mass of a class is the average value of each attribute
@@ -118,9 +120,17 @@ class MFEStatistical:
         return abs(inf_triang_vals)
 
     @classmethod
-    def ft_nr_disc(cls, N: np.ndarray) -> np.ndarray:
-        """To do this doc."""
-        pass
+    def ft_nr_disc(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Compute number of canonical corr. between each attr. and class.
+
+        This is effectively the size of return value of ``ft_can_cor`` method.
+        """
+        can_cor = MFEStatistical.ft_can_cor(N, y)
+
+        if isinstance(can_cor, np.ndarray):
+            return can_cor.size
+
+        return np.nan
 
     @classmethod
     def ft_eigenvalues(cls, N: np.ndarray) -> t.Union[float, np.ndarray]:
@@ -138,12 +148,17 @@ class MFEStatistical:
     @classmethod
     def ft_g_mean(cls, N: np.ndarray) -> np.ndarray:
         """Geometric mean of each column."""
-        return scipy.stats.mstats.gmean(N, axis=0)
+        invalid_vals = np.any(N < 0, axis=0)
+
+        g_mean = scipy.stats.mstats.gmean(N, axis=0)
+        g_mean = g_mean[invalid_vals]
+
+        return g_mean
 
     @classmethod
-    def ft_h_mean(cls, N: np.ndarray) -> np.ndarray:
+    def ft_h_mean(cls, N: np.ndarray, epsilon: float = 1.0e-8) -> np.ndarray:
         """Harmonic mean of each column."""
-        return scipy.stats.mstats.hmean(N, axis=0)
+        return scipy.stats.mstats.hmean(N + epsilon, axis=0)
 
     @classmethod
     def ft_iq_range(cls, N: np.ndarray) -> np.ndarray:
@@ -197,7 +212,8 @@ class MFEStatistical:
     def ft_nr_cor_attr(cls,
                        N: np.ndarray,
                        threshold: float = 0.5,
-                       normalize: bool = True) -> np.ndarray:
+                       normalize: bool = True,
+                       epsilon: float = 1.0e-8) -> int:
         """Number of attribute pairs with corr. equal or greater than a threshold.
 
         Args:
@@ -208,6 +224,9 @@ class MFEStatistical:
             normalize (:obj:`bool`): if True, the result will be normalized by
                 a factor of 2 / (d * (d - 1)), where d = number of attributes
                 (columns) in N.
+
+            epsilon (:obj:`float`): a very small value to prevent
+                division by zero.
         """
         abs_corr_vals = MFEStatistical.ft_cor(N)
 
@@ -219,7 +238,7 @@ class MFEStatistical:
         norm_factor = 1.0
 
         if normalize:
-            norm_factor = 2.0 / (num_attr * (num_attr - 1.0))
+            norm_factor = 2.0 / (epsilon + num_attr * (num_attr - 1.0))
 
         return sum(abs_corr_vals >= threshold) * norm_factor
 
@@ -263,7 +282,7 @@ class MFEStatistical:
         cut_low = q_1 - whis_iqr
         cut_high = q_3 + whis_iqr
 
-        return sum((cut_low > v_min) | (cut_high < v_max))
+        return sum(np.logical_or(cut_low > v_min, cut_high < v_max))
 
     @classmethod
     def ft_range(cls, N: np.ndarray) -> np.ndarray:
@@ -271,7 +290,7 @@ class MFEStatistical:
         return np.ptp(N, axis=0)
 
     @classmethod
-    def ft_sd(cls, N: np.ndarray, ddof: float = 1) -> np.ndarray:
+    def ft_sd(cls, N: np.ndarray, ddof: int = 1) -> np.ndarray:
         """Compute standard deviation of each attribute.
 
         Args:
@@ -286,8 +305,14 @@ class MFEStatistical:
         return sd_array
 
     @classmethod
-    def ft_sd_ratio(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """Statistic test for homogeneity of covariances."""
+    def ft_sd_ratio(cls, N: np.ndarray, y: np.ndarray,
+                    epsilon: float = 1.0e-8) -> float:
+        """Statistic test for homogeneity of covariances.
+
+        Args:
+            epsilon (:obj:`float`): a very small value to prevent
+                division by zero.
+        """
         num_inst, num_col = N.shape
         classes, classes_freqs = np.unique(y, return_counts=True)
         num_classes = classes.size
@@ -295,26 +320,29 @@ class MFEStatistical:
         sample_cov_matrices = np.array(
             [np.cov(N[y == cl, :], rowvar=False) for cl in classes])
 
-        vec_weight = classes_freqs - 1.0
+        vec_weight = classes_freqs - 1.0 + epsilon
 
         pooled_cov_mat = np.array([
             weight * S_i
             for weight, S_i in zip(vec_weight, sample_cov_matrices)
         ]).sum(axis=0) / (num_inst - num_classes)
 
-        gamma = 1.0 - ((2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
-                       (6.0 * (num_col + 1.0) *
-                        (num_classes - 1.0))) * (sum(1.0 / vec_weight) - 1.0 /
-                                                 (num_inst - num_classes))
+        gamma = 1.0 - (
+            (2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
+            (epsilon + 6.0 * (num_col + 1.0) *
+             (num_classes - 1.0))) * (sum(1.0 / vec_weight) - 1.0 /
+                                      (epsilon + num_inst - num_classes))
 
         vec_logdet = [
-            np.math.log(np.linalg.det(S_i)) for S_i in sample_cov_matrices
+            np.math.log(epsilon + np.linalg.det(S_i))
+            for S_i in sample_cov_matrices
         ]
 
         m_factor = (gamma * ((num_inst - num_classes) * np.math.log(
             np.linalg.det(pooled_cov_mat)) - np.dot(vec_weight, vec_logdet)))
 
-        return np.exp(m_factor / (num_col * (num_inst - num_classes)))
+        return np.exp(
+            m_factor / (epsilon + num_col * (num_inst - num_classes)))
 
     @classmethod
     def ft_skewness(cls, N: np.ndarray, bias: bool = False) -> np.ndarray:
@@ -373,7 +401,7 @@ class MFEStatistical:
         return scipy.stats.trim_mean(N, proportiontocut=pcut)
 
     @classmethod
-    def ft_var(cls, N: np.ndarray, ddof: float = 1) -> np.ndarray:
+    def ft_var(cls, N: np.ndarray, ddof: int = 1) -> np.ndarray:
         """Compute variance of each attribute.
 
         Args:
@@ -387,15 +415,22 @@ class MFEStatistical:
         return var_array
 
     @classmethod
-    def ft_w_lambda(cls, N: np.ndarray) -> np.ndarray:
-        """To do this doc."""
-        pass
+    def ft_w_lambda(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Compute Wilks' Lambda value."""
+        num_row, num_col = N.shape
 
+        if num_col == 0 or y.size != num_row:
+            return np.nan
 
-if __name__ == "__main__":
-    from sklearn import datasets
-    iris = datasets.load_iris()
+        N = N.astype(np.float32)
 
-    res = MFEStatistical.ft_sd_ratio(iris.data, iris.target)
+        y = sklearn.preprocessing.LabelEncoder().fit_transform(y)
+        y = y.astype(np.float32)
 
-    print(res)
+        model = statsmodels.multivariate.manova.MANOVA(N, y)
+
+        results = model.mv_test()
+
+        w_lambda = results.results["x0"]["stat"].values[0, 0]
+
+        return w_lambda
