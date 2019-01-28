@@ -1,4 +1,15 @@
-"""Module dedicated to extraction of Information Theory Metafeatures."""
+"""Module dedicated to extraction of Information Theory Metafeatures.
+
+
+Notes:
+    For more information about the metafeatures implemented here,
+    check out `Rivolli et al.`_.
+
+References:
+    .. _Rivolli et al.:
+        "Towards Reproducible Empirical Research in Meta-Learning",
+        Rivolli et al. URL: https://arxiv.org/abs/1808.10406
+"""
 import typing as t
 import itertools
 
