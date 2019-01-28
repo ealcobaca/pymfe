@@ -310,8 +310,8 @@ class MFEStatistical:
         """Statistic test for homogeneity of covariances.
 
         Args:
-            epsilon (:obj:`float`): a very small value to prevent
-                division by zero.
+            epsilon (:obj:`float`): a very small value to prevent division by
+                zero.
         """
         num_inst, num_col = N.shape
         classes, classes_freqs = np.unique(y, return_counts=True)
@@ -333,13 +333,18 @@ class MFEStatistical:
              (num_classes - 1.0))) * (sum(1.0 / vec_weight) - 1.0 /
                                       (epsilon + num_inst - num_classes))
 
-        vec_logdet = [
-            np.math.log(epsilon + np.linalg.det(S_i))
-            for S_i in sample_cov_matrices
-        ]
+        try:
+            vec_logdet = [
+                np.math.log(epsilon + np.linalg.det(S_i))
+                for S_i in sample_cov_matrices
+            ]
 
-        m_factor = (gamma * ((num_inst - num_classes) * np.math.log(
-            np.linalg.det(pooled_cov_mat)) - np.dot(vec_weight, vec_logdet)))
+            m_factor = (gamma * ((num_inst - num_classes) * np.math.log(
+                np.linalg.det(pooled_cov_mat)) - np.dot(
+                    vec_weight, vec_logdet)))
+
+        except np.linalg.LinAlgError:
+            return np.nan
 
         return np.exp(
             m_factor / (epsilon + num_col * (num_inst - num_classes)))
@@ -355,7 +360,10 @@ class MFEStatistical:
         return scipy.stats.skew(N, axis=0, bias=bias)
 
     @classmethod
-    def ft_sparsity(cls, N: np.ndarray, normalize: bool = True) -> np.ndarray:
+    def ft_sparsity(cls,
+                    N: np.ndarray,
+                    normalize: bool = True,
+                    epsilon: float = 1.0e-8) -> np.ndarray:
         """Compute (normalized) sparsity metric for each attribute.
 
         Sparcity S of a vector x of numeric values is defined as
@@ -371,6 +379,9 @@ class MFEStatistical:
                 S(x) as calculated above. Otherwise, output will not
                 be multiplied by (1.0 / (n - 1.0)) factor (i.e. new
                 output is S'(x) = ((n / phi(x)) - 1.0)).
+
+            epsilon (:obj:`float`): a very small value to prevent division by
+                zero.
         """
 
         ans = np.array([attr.size / np.unique(attr).size for attr in N.T])
@@ -379,7 +390,7 @@ class MFEStatistical:
 
         norm_factor = 1.0
         if normalize:
-            norm_factor = 1.0 / (num_inst - 1.0)
+            norm_factor = 1.0 / (epsilon + num_inst - 1.0)
 
         return (ans - 1.0) * norm_factor
 
