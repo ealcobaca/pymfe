@@ -213,7 +213,7 @@ class MFEStatistical:
                        N: np.ndarray,
                        threshold: float = 0.5,
                        normalize: bool = True,
-                       epsilon: float = 1.0e-8) -> int:
+                       epsilon: float = 1.0e-8) -> t.Union[int, float]:
         """Number of attribute pairs with corr. equal or greater than a threshold.
 
         Args:
@@ -235,7 +235,7 @@ class MFEStatistical:
 
         _, num_attr = N.shape
 
-        norm_factor = 1.0
+        norm_factor = 1
 
         if normalize:
             norm_factor = 2.0 / (epsilon + num_attr * (num_attr - 1.0))
