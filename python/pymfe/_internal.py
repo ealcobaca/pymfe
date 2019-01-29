@@ -20,6 +20,7 @@ import inspect
 import collections
 import operator
 import warnings
+import time
 
 import numpy as np
 
@@ -764,3 +765,27 @@ def remove_mtd_prefix(mtd_name: str) -> str:
         return mtd_name[len(MTF_PREFIX):]
 
     return mtd_name
+
+
+def timeit(func: t.Callable, **kwargs) -> t.Tuple[t.Any, float]:
+    """Measure how much time is for calling ``func`` with ``args``.
+
+    Args:
+        func (:obj:`Callable`): a callable which invokation time will be
+            measured from.
+
+        **kwargs: arguments for ``func``.
+
+    Return:
+        tuple[any, float]: the first element is the return value from
+            ``func``. The second argument is the time necessary for a
+            complement invokation of ``func``.
+
+    Raises:
+        Any exception raised by ``func`` with arguments ``args`` is not
+        catched by this method.
+    """
+    t_start = time.time()
+    ret_val = func(**kwargs)
+    time_total = time.time() - t_start
+    return ret_val, time_total

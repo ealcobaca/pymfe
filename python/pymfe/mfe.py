@@ -124,12 +124,32 @@ class MFE:
                         vided by the feature cardinality, i.e., number of feat-
                         ures extracted by a single feature-extraction related
                         method), without summarization time.
-                    2. `avg_summ`: average time for each metafeature including
-                        required time for summarization.
+                    2. `avg_summ`: average time for each metafeature (total ti-
+                        me of extraction divided by feature cardinality) inclu-
+                        ding required time for summarization.
                     3. `total`: total time for each metafeature, without sum-
                         marization time.
                     4. `total_summ`: total time for each metafeature including
                         required time for summarization.
+
+                The ``cardinality`` of the feature, used to divide the total
+                time measured by a single feature extraction method if an op-
+                tion starting with ``avg`` is selected, is the number of values
+                that can be extracted with a single method in the fitted data-
+                set. For example, ``mean`` feature has cardinality equal to the
+                number of numeric features in the dataset, where ``cor`` (from
+                ``correlation``) has cardinality (N - 1)/2, where N is the num-
+                ber of numeric features in the dataset.
+
+                If a summary method has cardinality higher than one (more than
+                one value returned after summarization and, thus, creating more
+                than one entry in the result lists) like, for example, ``histo-
+                gram`` summary method, then the corresponding time of this sum-
+                mary will be inserted only in the first correspondent element
+                of the time list. The remaining entries are all filled with 0.0
+                value. This is done to keep consistency between the size of all
+                returned lists and index correct correspondation between all
+                lists.
 
             wildcard (:obj:`str`, optional): value used as `select all` for
                 `groups`, `features` and `summary` arguments.
@@ -185,7 +205,9 @@ class MFE:
             verbose: bool = False,
             suppress_warnings: bool = False,
             **kwargs
-    ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]]]:
+    ) -> t.Tuple[t.List[str],
+                 t.List[t.Union[float, t.Sequence]],
+                 t.List[float]]:
         """Invoke summary functions loaded in model on given feature values.
 
         Args:
@@ -216,8 +238,8 @@ class MFE:
             **kwargs: user-defined arguments for the summary callables.
 
         Returns:
-            tuple(list, list): a tuple containing two lists. The first field
-                is the identifiers of each summarized value in the form
+            tuple(list, list, list): a tuple containing three lists. The first
+                field is the identifiers of each summarized value in the form
                 `feature_name.summary_mtd_name` (i.e. the feature-extrac-
                 tion name concatenated by the summary method name, separated
                 by a dot). If the summary function return more than one value
@@ -227,7 +249,13 @@ class MFE:
                 field is the summarized values. Both lists has a 1-1 corres-
                 pondence by the index of each element (i.e. the value at in-
                 dex `i` in the second list has its identifier at the same
-                index in the first list and vice-versa).
+                index in the first list and vice-versa). The third field is
+                a list with measured time wasted by each summary function. If
+                the cardinality of the summary function is greater than 1,
+                then the correspondent measured time will be kept only in the
+                first correspondent field and the extra fields will be filled
+                with 0.0. This is necessary to keep consistency of the size
+                between all lists.
 
             Example:
                 ([`attr_ent.mean`, `attr_ent.sd`], [0.983459, 0.344361]) is
@@ -237,6 +265,7 @@ class MFE:
         """
         metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
         metafeat_names = []  # type: t.List[str]
+        metafeat_times = []  # type: t.List[float]
 
         for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
 
@@ -252,11 +281,14 @@ class MFE:
                 inner_custom_args=self._custom_args_sum,
                 suppress_warnings=suppress_warnings)
 
-            summarized_val = _internal.summarize(
-                features=feature_values,
-                callable_sum=sm_mtd_callable,
-                callable_args=sm_mtd_args_pack,
-                remove_nan=remove_nan)
+            summarized_val, time_sm = _internal.timeit(
+                _internal.summarize,
+                **{
+                    "features": feature_values,
+                    "callable_sum": sm_mtd_callable,
+                    "callable_args": sm_mtd_args_pack,
+                    "remove_nan": remove_nan,
+                })
 
             if not suppress_warnings:
                 _internal.check_summary_warnings(
@@ -274,16 +306,19 @@ class MFE:
                     "{0}.{1}.{2}".format(feature_name, sm_mtd_name, i)
                     for i in range(len(summarized_val))
                 ]
+                metafeat_times += ([time_sm]
+                                   + ((len(summarized_val) - 1) * [0.0]))
 
             else:
                 metafeat_vals.append(summarized_val)
                 metafeat_names.append(
                     "{0}.{1}".format(feature_name, sm_mtd_name))
+                metafeat_times.append(time_sm)
 
             if verbose:
                 print("Done.")
 
-        return metafeat_names, metafeat_vals
+        return metafeat_names, metafeat_vals, metafeat_times
 
     def _fill_col_ind_by_type(
             self,
@@ -350,6 +385,38 @@ class MFE:
 
         self._attr_indexes_num = tuple(np.where(~categorical_cols)[0])
         self._attr_indexes_cat = tuple(np.where(categorical_cols)[0])
+
+    def _combine_time(self, time_ft: float,
+                      times_sm: t.List[float]) -> t.List[float]:
+        """Treat ft. extraction and summarization time based in ``timeopt``.
+
+        Args:
+            time_ft (:obj:`float`): time necessary to extract some feature.
+
+            times_sm (:obj:`list` of :obj:`float`): list of values to summarize
+                the metafeature value with each summary function.
+
+        Returns:
+            list[float]: if ``timeopt`` attribute considers ``summary`` time
+            (i.e. selected option ends with ``summ``), then this returned list
+            values are the combination of times gathered in feature extraction
+            and summarization methods. Otherwise, the list values are the value
+            of ``time_ft`` copied ``len(times_sm)`` times to keep consistency
+            with the correspondence between the values of all lists returned by
+            ``extract`` method.
+        """
+        total_time = np.array([time_ft] * len(times_sm))
+
+        if self.timeopt and self.timeopt.endswith("summ"):
+            total_time += times_sm
+
+        # As seen in ``_call_summary_methods`` method documentation,
+        # zero-valued elements are created to fill the time list in order
+        # to keep its size consistent with another feature extraction re-
+        # lated lists. In this case, here they're kept zero-valued.
+        total_time[np.array(times_sm) == 0.0] = 0.0
+
+        return total_time.tolist()
 
     def fit(self,
             X: t.Sequence,
@@ -428,7 +495,7 @@ class MFE:
                 enable_parallel: bool = False,
                 suppress_warnings: bool = False,
                 **kwargs
-                ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]]]:
+                ) -> t.Tuple[t.List, ...]:
         """Extracts metafeatures from previously fitted dataset.
 
         Args:
@@ -507,6 +574,7 @@ class MFE:
 
         metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
         metafeat_names = []  # type: t.List[str]
+        metafeat_times = []  # type: t.List[float]
 
         if verbose:
             print("Started metafeature extraction process...")
@@ -525,14 +593,24 @@ class MFE:
                 inner_custom_args=self._custom_args_ft,
                 suppress_warnings=suppress_warnings)
 
-            features = _internal.get_feat_value(ft_mtd_name, ft_mtd_args_pack,
-                                                ft_mtd_callable,
-                                                suppress_warnings)
+            features, time_ft = _internal.timeit(
+                _internal.get_feat_value,
+                **{
+                    "mtd_name": ft_mtd_name,
+                    "mtd_args": ft_mtd_args_pack,
+                    "mtd_callable": ft_mtd_callable,
+                    "suppress_warnings": suppress_warnings,
+                })
 
-            if (self._metadata_mtd_sm is not None
-                    and isinstance(features, (np.ndarray,
-                                              collections.Sequence))):
-                summarized_names, summarized_vals = self._call_summary_methods(
+            ft_has_length = isinstance(features, (np.ndarray,
+                                                  collections.Sequence))
+
+            if (ft_has_length and self.timeopt
+                    and self.timeopt.startswith("avg")):
+                time_ft /= len(features)
+
+            if self._metadata_mtd_sm is not None and ft_has_length:
+                sm_ret = self._call_summary_methods(
                     feature_values=features,
                     feature_name=ft_name_without_prefix,
                     remove_nan=remove_nan,
@@ -540,12 +618,16 @@ class MFE:
                     suppress_warnings=suppress_warnings,
                     **kwargs)
 
+                summarized_names, summarized_vals, times_sm = sm_ret
+
                 metafeat_vals += summarized_vals
                 metafeat_names += summarized_names
+                metafeat_times += self._combine_time(time_ft, times_sm)
 
             else:
                 metafeat_vals.append(features)
                 metafeat_names.append(ft_name_without_prefix)
+                metafeat_times.append(time_ft)
 
             if verbose:
                 print("Done with {} feature.".format(ft_mtd_name))
@@ -553,6 +635,9 @@ class MFE:
         if verbose:
             print("Done with metafeature extraction process.",
                   "Total of {} values obtained.".format(len(metafeat_vals)))
+
+        if self.timeopt:
+            return metafeat_names, metafeat_vals, metafeat_times
 
         return metafeat_names, metafeat_vals
 
@@ -567,16 +652,16 @@ if __name__ == "__main__":
 
     labels = np.array([1, 1, 0, 0])
 
-    MODEL = MFE(groups="all", features="all",
-                summary="all", measure_time="avg_summ")
+    MODEL = MFE(groups="all", features=["mean", "nr_inst"],
+                summary=["histogram", "mean", "sd"], measure_time="avg_summ")
     MODEL.fit(X=attr, y=labels)
 
-    names, vals = MODEL.extract(
+    names, vals, times = MODEL.extract(
         suppress_warnings=False,
         remove_nan=True,
         **{
             "sd": {"ddof": 0},
         })
 
-    for n, v in zip(names, vals):
-        print(n, v)
+    for n, v, i in zip(names, vals, times):
+        print(n, v, i)
