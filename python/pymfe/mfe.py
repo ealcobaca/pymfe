@@ -2,7 +2,6 @@
 
 Todo:
     * Implement parallel computing.
-    * Implement time measurement for metafeature extraction.
 """
 import typing as t
 import collections
@@ -205,9 +204,8 @@ class MFE:
             verbose: bool = False,
             suppress_warnings: bool = False,
             **kwargs
-    ) -> t.Tuple[t.List[str],
-                 t.List[t.Union[float, t.Sequence]],
-                 t.List[float]]:
+    ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]], t.
+                 List[float]]:
         """Invoke summary functions loaded in model on given feature values.
 
         Args:
@@ -270,9 +268,10 @@ class MFE:
         for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
 
             if verbose:
-                print("  Summarizing {0} feature with {1} summary"
-                      " function...".format(feature_name,
-                                            sm_mtd_name), end=" ")
+                print(
+                    "  Summarizing {0} feature with {1} summary"
+                    " function...".format(feature_name, sm_mtd_name),
+                    end=" ")
 
             sm_mtd_args_pack = _internal.build_mtd_kwargs(
                 mtd_name=sm_mtd_name,
@@ -282,13 +281,8 @@ class MFE:
                 suppress_warnings=suppress_warnings)
 
             summarized_val, time_sm = _internal.timeit(
-                _internal.summarize,
-                **{
-                    "features": feature_values,
-                    "callable_sum": sm_mtd_callable,
-                    "callable_args": sm_mtd_args_pack,
-                    "remove_nan": remove_nan,
-                })
+                _internal.summarize, feature_values, sm_mtd_callable,
+                sm_mtd_args_pack, remove_nan)
 
             if not suppress_warnings:
                 _internal.check_summary_warnings(
@@ -303,16 +297,15 @@ class MFE:
                     and not isinstance(summarized_val, str)):
                 metafeat_vals += summarized_val
                 metafeat_names += [
-                    "{0}.{1}.{2}".format(feature_name, sm_mtd_name, i)
+                    ".".join((feature_name, sm_mtd_name, str(i)))
                     for i in range(len(summarized_val))
                 ]
-                metafeat_times += ([time_sm]
-                                   + ((len(summarized_val) - 1) * [0.0]))
+                metafeat_times += ([time_sm] + (
+                    (len(summarized_val) - 1) * [0.0]))
 
             else:
                 metafeat_vals.append(summarized_val)
-                metafeat_names.append(
-                    "{0}.{1}".format(feature_name, sm_mtd_name))
+                metafeat_names.append(".".join((feature_name, sm_mtd_name)))
                 metafeat_times.append(time_sm)
 
             if verbose:
@@ -320,11 +313,76 @@ class MFE:
 
         return metafeat_names, metafeat_vals, metafeat_times
 
+    def _call_feature_methods(self,
+                              remove_nan: bool = True,
+                              verbose: bool = False,
+                              enable_parallel: bool = False,
+                              suppress_warnings: bool = False,
+                              **kwargs) -> t.Tuple[t.List, ...]:
+        """Invoke feature methods/functions loaded in model and gather results.
+
+        The returned values are already summarized, if needed.
+
+        For more information, check ``extract`` method documentation for
+        in-depth information about arguments and return value.
+        """
+        metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
+        metafeat_names = []  # type: t.List[str]
+        metafeat_times = []  # type: t.List[float]
+
+        for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
+
+            if verbose:
+                print("Extracting {} feature...".format(ft_mtd_name))
+
+            ft_name_without_prefix = _internal.remove_mtd_prefix(ft_mtd_name)
+
+            ft_mtd_args_pack = _internal.build_mtd_kwargs(
+                mtd_name=ft_name_without_prefix,
+                mtd_args=ft_mtd_args,
+                user_custom_args=kwargs.get(ft_name_without_prefix),
+                inner_custom_args=self._custom_args_ft,
+                suppress_warnings=suppress_warnings)
+
+            features, time_ft = _internal.timeit(
+                _internal.get_feat_value, ft_mtd_name, ft_mtd_args_pack,
+                ft_mtd_callable, suppress_warnings)
+
+            ft_has_length = isinstance(features,
+                                       (np.ndarray, collections.Sequence))
+
+            if ft_has_length and self._timeopt_type_is_avg():
+                time_ft /= len(features)
+
+            if self._metadata_mtd_sm is not None and ft_has_length:
+                sm_ret = self._call_summary_methods(
+                    feature_values=features,
+                    feature_name=ft_name_without_prefix,
+                    remove_nan=remove_nan,
+                    verbose=verbose,
+                    suppress_warnings=suppress_warnings,
+                    **kwargs)
+
+                summarized_names, summarized_vals, times_sm = sm_ret
+
+                metafeat_vals += summarized_vals
+                metafeat_names += summarized_names
+                metafeat_times += self._combine_time(time_ft, times_sm)
+
+            else:
+                metafeat_vals.append(features)
+                metafeat_names.append(ft_name_without_prefix)
+                metafeat_times.append(time_ft)
+
+            if verbose:
+                print("Done with {} feature.".format(ft_mtd_name))
+
+        return metafeat_names, metafeat_vals, metafeat_times
+
     def _fill_col_ind_by_type(
             self,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
-            check_bool: bool = True
-    ) -> None:
+            check_bool: bool = True) -> None:
         """Get X column indexes by its data type.
 
         The indexes for numerical and categorical attributes are kept,
@@ -359,7 +417,7 @@ class MFE:
                 _internal.isnumeric,
                 axis=0,
                 arr=self.X,
-                **{"check_subtype": True},
+                check_subtype=True,
             )
 
             if check_bool:
@@ -372,9 +430,7 @@ class MFE:
         elif (isinstance(cat_cols, (np.ndarray, collections.Iterable))
               and not isinstance(cat_cols, str)
               and all(isinstance(x, int) for x in cat_cols)):
-            categorical_cols = (
-                i in cat_cols for i in range(self.X.shape[1])
-            )
+            categorical_cols = (i in cat_cols for i in range(self.X.shape[1]))
 
         else:
             raise ValueError(
@@ -385,6 +441,16 @@ class MFE:
 
         self._attr_indexes_num = tuple(np.where(~categorical_cols)[0])
         self._attr_indexes_cat = tuple(np.where(categorical_cols)[0])
+
+    def _timeopt_type_is_avg(self) -> bool:
+        """Checks if user selected time option is an ``average`` type."""
+        return (isinstance(self.timeopt, str)
+                and self.timeopt.startswith(_internal.TIMEOPT_AVG_PREFIX))
+
+    def _timeopt_include_summary(self) -> bool:
+        """Checks if user selected time option include ``summary`` time."""
+        return (isinstance(self.timeopt, str)
+                and self.timeopt.endswith(_internal.TIMEOPT_SUMMARY_SUFIX))
 
     def _combine_time(self, time_ft: float,
                       times_sm: t.List[float]) -> t.List[float]:
@@ -407,7 +473,7 @@ class MFE:
         """
         total_time = np.array([time_ft] * len(times_sm))
 
-        if self.timeopt and self.timeopt.endswith("summ"):
+        if self._timeopt_include_summary():
             total_time += times_sm
 
         # As seen in ``_call_summary_methods`` method documentation,
@@ -423,8 +489,7 @@ class MFE:
             y: t.Sequence,
             splits: t.Optional[t.Iterable[int]] = None,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
-            check_bool: bool = True
-            ) -> "MFE":
+            check_bool: bool = True) -> "MFE":
         """Fits dataset into the a MFE model.
 
         Args:
@@ -484,7 +549,9 @@ class MFE:
         }
 
         self._custom_args_sum = {
-            "sd": {"ddof": 1},
+            "sd": {
+                "ddof": 1
+            },
         }
 
         return self
@@ -494,8 +561,7 @@ class MFE:
                 verbose: bool = False,
                 enable_parallel: bool = False,
                 suppress_warnings: bool = False,
-                **kwargs
-                ) -> t.Tuple[t.List, ...]:
+                **kwargs) -> t.Tuple[t.List, ...]:
         """Extracts metafeatures from previously fitted dataset.
 
         Args:
@@ -572,74 +638,35 @@ class MFE:
                 or not isinstance(self.y, np.ndarray)):
             self.X, self.y = _internal.check_data(self.X, self.y)
 
-        metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
-        metafeat_names = []  # type: t.List[str]
-        metafeat_times = []  # type: t.List[float]
-
         if verbose:
             print("Started metafeature extraction process...")
 
-        for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
+        results = self._call_feature_methods(
+            remove_nan=remove_nan,
+            verbose=verbose,
+            enable_parallel=enable_parallel,
+            suppress_warnings=suppress_warnings,
+            **kwargs)
 
-            if verbose:
-                print("Extracting {} feature...".format(ft_mtd_name))
-
-            ft_name_without_prefix = _internal.remove_mtd_prefix(ft_mtd_name)
-
-            ft_mtd_args_pack = _internal.build_mtd_kwargs(
-                mtd_name=ft_name_without_prefix,
-                mtd_args=ft_mtd_args,
-                user_custom_args=kwargs.get(ft_name_without_prefix),
-                inner_custom_args=self._custom_args_ft,
-                suppress_warnings=suppress_warnings)
-
-            features, time_ft = _internal.timeit(
-                _internal.get_feat_value,
-                **{
-                    "mtd_name": ft_mtd_name,
-                    "mtd_args": ft_mtd_args_pack,
-                    "mtd_callable": ft_mtd_callable,
-                    "suppress_warnings": suppress_warnings,
-                })
-
-            ft_has_length = isinstance(features, (np.ndarray,
-                                                  collections.Sequence))
-
-            if (ft_has_length and self.timeopt
-                    and self.timeopt.startswith("avg")):
-                time_ft /= len(features)
-
-            if self._metadata_mtd_sm is not None and ft_has_length:
-                sm_ret = self._call_summary_methods(
-                    feature_values=features,
-                    feature_name=ft_name_without_prefix,
-                    remove_nan=remove_nan,
-                    verbose=verbose,
-                    suppress_warnings=suppress_warnings,
-                    **kwargs)
-
-                summarized_names, summarized_vals, times_sm = sm_ret
-
-                metafeat_vals += summarized_vals
-                metafeat_names += summarized_names
-                metafeat_times += self._combine_time(time_ft, times_sm)
-
-            else:
-                metafeat_vals.append(features)
-                metafeat_names.append(ft_name_without_prefix)
-                metafeat_times.append(time_ft)
-
-            if verbose:
-                print("Done with {} feature.".format(ft_mtd_name))
+        res_names, res_vals, res_times = results
 
         if verbose:
-            print("Done with metafeature extraction process.",
-                  "Total of {} values obtained.".format(len(metafeat_vals)))
+            if self._timeopt_type_is_avg():
+                time_type = "average"
+            else:
+                time_type = "total"
+
+            print(
+                "Done with metafeature extraction process.",
+                "Total of {0} values obtained. Time elapsed "
+                "({1}) = {2:.8f}.".format(
+                    len(res_vals), time_type, sum(res_times)),
+                sep="\n")
 
         if self.timeopt:
-            return metafeat_names, metafeat_vals, metafeat_times
+            return res_names, res_vals, res_times
 
-        return metafeat_names, metafeat_vals
+        return res_names, res_vals
 
 
 if __name__ == "__main__":
@@ -648,20 +675,20 @@ if __name__ == "__main__":
         [0, .0, 'a', -1],
         [1, 2.2, '0', -1.2],
         [1, -1, 'b', .12],
-    ], dtype=object)
+    ],
+                    dtype=object)
 
     labels = np.array([1, 1, 0, 0])
 
-    MODEL = MFE(groups="all", features=["mean", "nr_inst"],
-                summary=["histogram", "mean", "sd"], measure_time="avg_summ")
+    MODEL = MFE(
+        groups="all",
+        features=["cat_to_num", "mean", "nr_inst"],
+        summary=["histogram", "mean", "sd"],
+        measure_time="avg_summ")
     MODEL.fit(X=attr, y=labels)
 
     names, vals, times = MODEL.extract(
-        suppress_warnings=False,
-        remove_nan=True,
-        **{
-            "sd": {"ddof": 0},
-        })
+        suppress_warnings=False, remove_nan=True, verbose=True, sd={"ddof": 2})
 
     for n, v, i in zip(names, vals, times):
         print(n, v, i)
