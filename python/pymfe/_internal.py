@@ -11,9 +11,27 @@ Attributes:
         tractors predefined classes, where metafeature-extraction
         methods will be searched.
 
+    VALID_TIMEOPT (:obj:`tuple` of :obj:`str`): valid options for
+        time measurements while extracting metafeatures.
+
     MTF_PREFIX (:obj:`str`): prefix of metafeature-extraction me-
         thod names. For example, the metafeature called `inst_nr`
         is implemented in the method named `[MTF_PREFIX]_inst_nr`.
+
+    TIMEOPT_AVG_PREFIX (:obj:`str`): prefix for time options ba-
+        sed on average of gathered metrics. It means necessarily
+        that, if an option is prefixed with this constant value,
+        then it is supposed that the gathered time elapsed metri-
+        cs must be divided by the cardinality of the features ex-
+        tracted (``cardinality`` means ``number of``).
+
+    TIMEOPT_SUMMARY_SUFIX (:obj:`str`): sufix for time options
+        which include summarization time alongside the time ne-
+        cessary for the extraction of the feature. It means that,
+        if an time option is sufixed with this constant value,
+        then the time metrics must include the time necessary
+        for the summarization of each value with cardinality gre-
+        ater than one.
 """
 import typing as t
 import inspect
@@ -56,8 +74,11 @@ VALID_TIMEOPT = (
     "total_summ",
 )
 
+TIMEOPT_AVG_PREFIX = "avg"
+
+TIMEOPT_SUMMARY_SUFIX = "summ"
+
 MTF_PREFIX = "ft_"
-"""Prefix which is that metafeat. extraction related methods starts with."""
 
 TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
@@ -70,6 +91,7 @@ _TYPE_NUMERIC = (
     float,
     np.number,
 )
+"""Tuple with generic numeric types."""
 
 TypeNumeric = t.TypeVar(
     "TypeNumeric",
@@ -653,7 +675,25 @@ def process_features(
 
 
 def process_timeopt(timeopt: t.Optional[str]):
+    """Process time measurement option selected by user.
 
+    The processing consists of checking if the option given is a
+    valid one, and set all given string to lower case to keep option
+    checking (when necessary) consistent.
+
+    Args:
+        timeopt (:obj:`str`): option of time measurement given by the
+            user while instantiating MFE class.
+
+    Return:
+        str: canonical ``timeopt`` (lower-cased).
+
+    Raises:
+        TypeError: if ``timeopt`` is neither None or a string.
+        ValueError: if ``timeot`` is not a valid option. Check MFE
+            documentation class or ``VALID_TIMEOPT`` module attribute
+            to check which time options are available to user.
+    """
     if timeopt is None:
         return None
 
@@ -767,14 +807,14 @@ def remove_mtd_prefix(mtd_name: str) -> str:
     return mtd_name
 
 
-def timeit(func: t.Callable, **kwargs) -> t.Tuple[t.Any, float]:
+def timeit(func: t.Callable, *args) -> t.Tuple[t.Any, float]:
     """Measure how much time is for calling ``func`` with ``args``.
 
     Args:
         func (:obj:`Callable`): a callable which invokation time will be
             measured from.
 
-        **kwargs: arguments for ``func``.
+        *args: arguments for ``func``.
 
     Return:
         tuple[any, float]: the first element is the return value from
@@ -786,6 +826,6 @@ def timeit(func: t.Callable, **kwargs) -> t.Tuple[t.Any, float]:
         catched by this method.
     """
     t_start = time.time()
-    ret_val = func(**kwargs)
+    ret_val = func(*args)
     time_total = time.time() - t_start
     return ret_val, time_total
