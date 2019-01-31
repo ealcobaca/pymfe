@@ -41,6 +41,7 @@ import warnings
 import time
 
 import numpy as np
+import sklearn.preprocessing
 
 import _summary
 import general
@@ -746,7 +747,7 @@ def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
         raise ValueError('"X" number of rows and "y" '
                          "length shapes do not match.")
 
-    return X, y
+    return np.copy(X), np.copy(y)
 
 
 def isnumeric(
@@ -829,3 +830,32 @@ def timeit(func: t.Callable, *args) -> t.Tuple[t.Any, float]:
     ret_val = func(*args)
     time_total = time.time() - t_start
     return ret_val, time_total
+
+
+def transform_cat(data_categoric: np.ndarray) -> np.ndarray:
+    """One Hot Encoding (Binarize) given categorical data."""
+    if not data_categoric:
+        return None
+
+    label_enc = sklearn.preprocessing.LabelEncoder()
+    hot_enc = sklearn.preprocessing.OneHotEncoder(sparse=False)
+
+    data_numeric = np.apply_along_axis(
+        func1d=label_enc.fit_transform,
+        axis=0,
+        arr=data_categoric)
+
+    num_row, _ = data_categoric.shape
+
+    dummies_vars = np.empty((num_row, 0), float)
+    for column in data_numeric.T:
+        new_dummies = hot_enc.fit_transform(column.reshape(-1, 1))
+        dummies_vars = np.concatenate((dummies_vars, new_dummies), axis=1)
+
+    return dummies_vars
+
+
+def transform_num(data_numeric: np.ndarray) -> np.ndarray:
+    """Discretize numeric data with a equal-frequency histogram."""
+    if not data_numeric:
+        return None
