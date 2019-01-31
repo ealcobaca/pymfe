@@ -5,6 +5,7 @@ Todo:
 """
 import typing as t
 import collections
+import copy
 
 import numpy as np
 
@@ -488,6 +489,8 @@ class MFE:
             X: t.Sequence,
             y: t.Sequence,
             splits: t.Optional[t.Iterable[int]] = None,
+            transform_num: bool = False,
+            transform_cat: bool = False,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
             check_bool: bool = True) -> "MFE":
         """Fits dataset into the a MFE model.
@@ -502,6 +505,20 @@ class MFE:
                 Cross Validation index splits to use mainly in landmarking
                 metafeatures. If not given, each metafeature will be extra-
                 cted a single time, which may give poor results.
+
+            transform_num (:obj:`bool`, optional): if True, numeric attributes
+                will be discretized using equal-frequency histogram technique
+                to use when extracting categorical data only metafeatures. Note
+                that numeric features will still use the original numeric valu-
+                es. If False, then numeric attributes will just be ignored for
+                categorical-only metafeatures.
+
+            transform_cat (:obj:`bool`, optional): if True, categorical attri-
+                butes will be binarized using One Hot Encoding technique to use
+                when extracting categorical data only metafeatures. Note that
+                categoric features will still use the original categorical va-
+                lues. If False, then categorical attributes will just be igno-
+                red for numeric-only metafeatures.
 
             cat_cols (:obj:`Sequence` of :obj:`int` or :obj:`str`, optional):
                 categorical columns of dataset. If :obj:`NoneType` or empty se-
@@ -533,12 +550,27 @@ class MFE:
                      or isinstance(splits, str))):
             raise TypeError('"splits" argument must be a iterable.')
 
-        self.splits = splits
+        self.splits = copy.deepcopy(splits)
 
         self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
 
         data_num = self.X[:, self._attr_indexes_num]
         data_cat = self.X[:, self._attr_indexes_cat]
+
+        if transform_cat:
+            categorical_dummies = _internal.transform_cat(data_cat)
+            if categorical_dummies:
+                data_num = np.concatenate((data_num, categorical_dummies),
+                                          axis=1)
+                data_num.astype(float)
+                del categorical_dummies
+
+        if transform_num:
+            discretized_data = _internal.transform_num(data_num)
+            if discretized_data:
+                data_cat = np.concatenate((data_cat, discretized_data),
+                                          axis=1)
+                del discretized_data
 
         self._custom_args_ft = {
             "X": self.X,
