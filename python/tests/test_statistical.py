@@ -56,6 +56,10 @@ class TestInfoTheory:
             (0, {}, "sparsity", {}, "sparsity", "var"),
             (0, {}, "t_mean", {}, "tMean", "histogram"),
             (0, {}, "var", {}, "var", "sd"),
+            (0, {}, "can_cor", {}, "canCor", "mean"),
+            (0, {}, "nr_disc", {}, "nrDisc", "all"),
+            (1, {}, "can_cor", {}, "canCor", "mean"),
+            (1, {}, "nr_disc", {}, "nrDisc", "all"),
         ),
     )
     def test_ft_methods_statistical(self, dt_id, fit_args, feat_name_py,

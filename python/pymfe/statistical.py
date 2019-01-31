@@ -8,17 +8,11 @@ References:
     .. _Rivolli et al.:
         "Towards Reproducible Empirical Research in Meta-Learning",
         Rivolli et al. URL: https://arxiv.org/abs/1808.10406
-
-Todo:
-    * Implement metafeatures.
-    * Improve documentation.
 """
 import typing as t
 
 import numpy as np
 import scipy
-import statsmodels.multivariate.manova
-import sklearn.preprocessing
 
 
 class MFEStatistical:
@@ -47,11 +41,97 @@ class MFEStatistical:
             a single value or a generic Sequence (preferably a np.ndarray)
             type with numeric values.
     """
+    @classmethod
+    def _linear_disc_mat_eig(cls, N: np.ndarray,
+                             y: np.ndarray) -> t.Tuple[np.ndarray, np.ndarray]:
+        """Compute eigenvals/vecs of Fisher's Linear Discriminant Analysis.
+
+        More specificaly, the eigenvalues and eigenvectors are calculated
+        from matrix S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat).
+
+        Check ``ft_can_cor`` documentation for more in-depth information
+        about this matrix.
+        """
+        def compute_scatter_within(
+                N: np.ndarray, y: np.ndarray,
+                class_val_freq: t.Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+            """Compute Scatter Within matrix. Check doc above for more info."""
+            scatter_within = np.array([
+                (cl_frq - 1.0) * np.cov(N[y == cl_val, :], rowvar=False)
+                for cl_val, cl_frq in zip(*class_val_freq)
+            ]).sum(axis=0)
+
+            return scatter_within
+
+        def compute_scatter_between(
+                N: np.ndarray, y: np.ndarray,
+                class_val_freq: t.Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+            """Compute Scatter Between matrix. The doc above has more info."""
+            class_vals, class_freqs = class_val_freq
+
+            class_means = np.array([
+                N[y == cl_val, :].mean(axis=0)
+                for cl_val in class_vals
+            ])
+
+            relative_centers = class_means - N.mean(axis=0)
+
+            scatter_between = np.array([
+                cl_frq * np.outer(rc, rc)
+                for cl_frq, rc in zip(class_freqs, relative_centers)
+            ]).sum(axis=0)
+
+            return scatter_between
+
+        class_val_freq = np.unique(y, return_counts=True)
+
+        N = N.astype(float)
+
+        scatter_within = compute_scatter_within(N, y, class_val_freq)
+        scatter_between = compute_scatter_between(N, y, class_val_freq)
+
+        try:
+            scatter_within_inv = np.linalg.inv(scatter_within)
+
+            return np.linalg.eig(np.matmul(scatter_within_inv,
+                                           scatter_between))
+
+        except np.linalg.LinAlgError:
+            return np.array([]), np.array([])
 
     @classmethod
-    def ft_can_cor(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """To do this doc."""
-        pass
+    def ft_can_cor(cls, N: np.ndarray, y: np.ndarray,
+                   epsilon: float = 1.0e-8) -> np.ndarray:
+        """Compute canonical correlations of data.
+
+        The canonical correlations p are defined as shown below:
+
+            p_i = sqrt(lda_eig_i / (1.0 + lda_eig_i))
+
+        Where ``lda_eig_i`` is the ith eigenvalue of Fisher's Linear Discri-
+        minant Analysis Matrix S defined as:
+
+            S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat),
+
+        where
+            Scatter_Within_Mat = sum((N_c - 1.0) * Covariance(X_c)),
+            N_c is the number of instances of class c and X_c are the
+            instances of class c. Effectively, this is exactly just the
+            summation of all Covariance matrices between instances of the
+            same class without dividing then by the number of instances.
+
+            Scatter_Between_Mat = sum(N_c * (U_c - U) * (U_c - U)^T), N_c
+            is the number of instances of class c, U_c is the mean coordi-
+            nates of instances of class c, and U is the mean value of coor-
+            dinates of all instances in the dataset.
+
+        Args:
+            epsilon (:obj:`float`): a very small value to prevent division by
+                zero.
+        """
+        eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
+        eig_vals = eig_vals[abs(eig_vals) > epsilon]
+        return (eig_vals / (epsilon + 1.0 + eig_vals))**0.5
 
     @classmethod
     def ft_gravity(cls,
@@ -148,10 +228,10 @@ class MFEStatistical:
     @classmethod
     def ft_g_mean(cls, N: np.ndarray) -> np.ndarray:
         """Geometric mean of each column."""
-        invalid_vals = np.any(N < 0, axis=0)
+        invalid_vals = np.any(N <= 0, axis=0)
 
         g_mean = scipy.stats.mstats.gmean(N, axis=0)
-        g_mean = g_mean[invalid_vals]
+        g_mean[invalid_vals] = np.nan
 
         return g_mean
 
@@ -225,8 +305,8 @@ class MFEStatistical:
                 a factor of 2 / (d * (d - 1)), where d = number of attributes
                 (columns) in N.
 
-            epsilon (:obj:`float`): a very small value to prevent
-                division by zero.
+            epsilon (:obj:`float`): a very small value to prevent division by
+                zero.
         """
         abs_corr_vals = MFEStatistical.ft_cor(N)
 
@@ -427,21 +507,15 @@ class MFEStatistical:
 
     @classmethod
     def ft_w_lambda(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Compute Wilks' Lambda value."""
-        num_row, num_col = N.shape
+        """Compute Wilks' Lambda value.
 
-        if num_col == 0 or y.size != num_row:
-            return np.nan
+        The Wilk's Lambda L is calculated as:
 
-        N = N.astype(np.float32)
+            L = prod(1.0 / (1.0 + lda_eig_i))
 
-        y = sklearn.preprocessing.LabelEncoder().fit_transform(y)
-        y = y.astype(np.float32)
-
-        model = statsmodels.multivariate.manova.MANOVA(N, y)
-
-        results = model.mv_test()
-
-        w_lambda = results.results["x0"]["stat"].values[0, 0]
-
-        return w_lambda
+        Where ``lda_eig_i`` is the ith eigenvalue of Fisher's Linear Discri-
+        minant Analysis Matrix. Check ``ft_can_cor`` documentation for more
+        in-depth information about this value.
+        """
+        eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
+        return np.prod(1.0 / (1.0 + eig_vals))
