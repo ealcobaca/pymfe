@@ -43,6 +43,7 @@ from pymfe.mfe import MFE  # noqa: E402
 TARGET_COL_NAMES = ("target", )
 
 EPSILON = 1.0e-6
+EPSILON_RELAXED = 1.0e-2
 
 
 def _get_test_data(path: str, file_extension: str = ".csv"
@@ -166,7 +167,7 @@ def na_to_nan(values: t.Sequence[t.Any]) -> np.ndarray:
 
 def get_val_r(dataset: pd.core.frame.DataFrame, feat_name_r: str,
               ind_attr: t.Sequence[bool], ind_targ: t.Sequence[bool],
-              summary_name: str, group_name: str) -> t.Sequence:
+              summary_name: str, group_name: str, **kwargs) -> t.Sequence:
     """Get summarized metafeature value from R mfe implementation.
 
     Args:
@@ -212,7 +213,8 @@ def get_val_r(dataset: pd.core.frame.DataFrame, feat_name_r: str,
         x=dataset_r.rx(ind_attr),
         y=dataset_r.rx(ind_targ),
         features=feat_name_r,
-        summary=summary_name)
+        summary=summary_name,
+        **kwargs)
 
     rpy2.robjects.pandas2ri.deactivate()
 

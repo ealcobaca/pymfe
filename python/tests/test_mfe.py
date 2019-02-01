@@ -188,9 +188,6 @@ class TestMFESummary:
             callable_sum=callable_sum,
             callable_args=callable_args)
 
-        print(sum_val)
-        print(expected_value)
-
         assert all([
             abs(a - b) < TestMFESummary.EPSILON
             for a, b in zip(sum_val, expected_value)
