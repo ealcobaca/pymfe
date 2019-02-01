@@ -1,7 +1,7 @@
 """Module dedicated to extraction of General Metafeatures.
 
 Notes:
-    More description about the metafeatures implemented here,
+    For more information about the metafeatures implemented here,
     check out `Rivolli et al.`_.
 
 References:
@@ -14,7 +14,7 @@ import numpy as np
 
 
 class MFEGeneral:
-    """Keeps methods for metafeatures of ``General``/``Simple`` group.
+    """Keep methods for metafeatures of ``General``/``Simple`` group.
 
     The convention adopted for metafeature-extraction related methods
     is to always start with ``ft_`` prefix in order to allow automatic
