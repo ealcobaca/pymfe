@@ -485,10 +485,37 @@ class MFE:
 
         return total_time.tolist()
 
-    def _set_data_categoric(self, transform_num: bool) -> np.ndarray:
-        """To do."""
+    def _set_data_categoric(self, transform_num: bool,
+                            num_bins: bool = None) -> np.ndarray:
+        """Returns categorical data from fitted dataset.
+
+        Args:
+            transform_num (:obj:`bool`): if True, then all numeric-type
+                data will be discretized using an equal-frequency histo-
+                gram. Otherwise, these attributes will be ignored.
+
+            num_bins (:obj:`bool`, optional): number of bins of the dis-
+                cretization histogram. Used only if ``transform_num`` is
+                True. If this argument is :obj:`NoneType`, the default
+                value is min(2, c), where ``c`` is the cubic root of the
+                number of instances of the fitted dataset.
+
+        Returns:
+            np.ndarray: processed categorical data. If no changes are ne-
+                eded from the original dataset, then this method will not
+                create a copy of the original data to prevent unnecessary
+                memory usage. Otherwise, this method will return a modifi-
+                ed version of the original categorical data, thus consum-
+                ing more memory.
+
+        Raises:
+            TypeError: if ``X`` or ``_attr_indexes_cat`` instance attribu-
+                tes are :obj:`NoneType`. This can be avoided passing valid
+                data to fit and first calling ``_fill_col_ind_by_type`` ins-
+                tance method before this method.
+        """
         if self.X is None:
-            raise TypeError("Is necessary to fit valid data into"
+            raise TypeError("It is necessary to fit valid data into"
                             "model before setting up categoric data."
                             '("X" attribute is "NoneType").')
 
@@ -501,7 +528,7 @@ class MFE:
 
         if transform_num:
             data_num_discretized = _internal.transform_num(
-                self.X[:, self._attr_indexes_num])
+                self.X[:, self._attr_indexes_num], num_bins=num_bins)
 
             if data_num_discretized is not None:
                 data_cat = np.concatenate((data_cat, data_num_discretized),
@@ -510,9 +537,28 @@ class MFE:
         return data_cat
 
     def _set_data_numeric(self, transform_cat: bool) -> np.ndarray:
-        """To do."""
+        """Returns numeric data from fitted dataset.
+
+        Args:
+            transform_cat (:obj:`bool`): if True, then all categoric-type
+                data will be binarized with One Hot Encoding strategy.
+
+        Returns:
+            np.ndarray: processed numerical data. If no changes are needed
+                from the original dataset, then this method will not create
+                a copy of the original data to prevent unnecessary memory
+                usage. Otherwise, this method will return a modified versi-
+                on of the original numerical data, thus consuming more me-
+                mory.
+
+        Raises:
+            TypeError: if ``X`` or ``_attr_indexes_num`` instance attributes
+                are :obj:`NoneType`. This can be avoided passing valid data
+                to fit and first calling ``_fill_col_ind_by_type`` instance
+                method before this method.
+        """
         if self.X is None:
-            raise TypeError("Is necessary to fit valid data into"
+            raise TypeError("It is necessary to fit valid data into"
                             "model before setting up numeric data."
                             '("X" attribute is "NoneType").')
 
@@ -615,9 +661,8 @@ class MFE:
         }
 
         self._custom_args_sum = {
-            "sd": {
-                "ddof": 1
-            },
+            "ddof": 1,
+            "bias": False,
         }
 
         return self

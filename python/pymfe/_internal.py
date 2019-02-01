@@ -880,8 +880,8 @@ def transform_num(data_numeric: np.ndarray,
 
         num_bins (:obj:`int`, optional): number of bins of the equal-
             frequency histogram used to discretize the data. If no
-            value is given, then the default value is the cubic root
-            of number of instances rounded down.
+            value is given, then the default value is min(2, c), where
+            ``c`` is the cubic root of number of instances rounded down.
 
     Returns:
         np.ndarray: discretized version of ``data_numeric``.
