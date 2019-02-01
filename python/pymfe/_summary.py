@@ -13,8 +13,8 @@ import numpy as np
 TypeNumeric = t.TypeVar("TypeNumeric", int, float)
 """Type annotation for a Numeric type (int or float)."""
 
-TypeValList = t.Iterable[TypeNumeric]
-"""Type annotation for a Iterable of a Numeric type (int or float)."""
+TypeValList = t.Sequence[TypeNumeric]
+"""Type annotation for a Sequence of a Numeric type (int or float)."""
 
 
 def sum_histogram(values: TypeValList, bins: int = 10,
@@ -77,6 +77,9 @@ def skewness(values: TypeValList, method=3, bias=True) -> float:
             Where ``n`` is the number of elements in ``values`` and
             m_i is the ith momentum of ``values``.
 
+            Note that if the selected method is unable to be calculated due
+            to division by zero, then the first method will be used instead.
+
         bias (:obj:`bool`, optional): If False, then the calculations
             are corrected for statistical bias.
 
@@ -92,15 +95,15 @@ def skewness(values: TypeValList, method=3, bias=True) -> float:
     if num_vals == 0:
         return np.nan
 
-    skewness = scipy.stats.skew(values, bias=bias)
+    skew_val = scipy.stats.skew(values, bias=bias)
 
     if method == 2 and num_vals != 2:
-        skewness *= (num_vals*(num_vals - 1.0))**0.5 / (num_vals - 2.0)
+        skew_val *= (num_vals*(num_vals - 1.0))**0.5 / (num_vals - 2.0)
 
     elif method == 3:
-        skewness *= ((num_vals - 1.0) / num_vals)**(1.5)
+        skew_val *= ((num_vals - 1.0) / num_vals)**(1.5)
 
-    return skewness
+    return skew_val
 
 
 def kurtosis(values: TypeValList, method=3, bias=True) -> TypeValList:
@@ -123,6 +126,9 @@ def kurtosis(values: TypeValList, method=3, bias=True) -> TypeValList:
             Where ``n`` is the number of elements in ``values`` and
             m_i is the ith momentum of ``values``.
 
+            Note that if the selected method is unable to be calculated due
+            to division by zero, then the first method will be used instead.
+
         bias (:obj:`bool`, optional): If False, then the calculations
             are corrected for statistical bias.
     """
@@ -135,16 +141,16 @@ def kurtosis(values: TypeValList, method=3, bias=True) -> TypeValList:
     if num_vals == 0:
         return np.nan
 
-    kurtosis = scipy.stats.kurtosis(values, bias=bias)
+    kurt_val = scipy.stats.kurtosis(values, bias=bias)
 
     if method == 2 and num_vals > 3:
-        kurtosis = (num_vals + 1.0) * kurtosis + 6
-        kurtosis *= (num_vals - 1.0) / ((num_vals-2.0) * (num_vals-3.0))
+        kurt_val = (num_vals + 1.0) * kurt_val + 6
+        kurt_val *= (num_vals - 1.0) / ((num_vals-2.0) * (num_vals-3.0))
 
     elif method == 3:
-        kurtosis = (kurtosis + 3.0) * (1.0 - 1.0/num_vals)**2.0 - 3.0
+        kurt_val = (kurt_val + 3.0) * (1.0 - 1.0/num_vals)**2.0 - 3.0
 
-    return kurtosis
+    return kurt_val
 
 
 SUMMARY_METHODS = {

@@ -520,7 +520,8 @@ class MFEStatistical:
         return var_array
 
     @classmethod
-    def ft_w_lambda(cls, N: np.ndarray, y: np.ndarray) -> float:
+    def ft_w_lambda(cls, N: np.ndarray, y: np.ndarray,
+                    epsilon: float = 1.0e-8) -> float:
         """Compute Wilks' Lambda value.
 
         The Wilk's Lambda L is calculated as:
@@ -530,16 +531,18 @@ class MFEStatistical:
         Where ``lda_eig_i`` is the ith eigenvalue of Fisher's Linear Discri-
         minant Analysis Matrix. Check ``ft_can_cor`` documentation for more
         in-depth information about this value.
+
+        Args:
+            epsilon (:obj:`float`): a very small value to filter ``zero-val-
+                ued`` eigenvalues.
         """
         eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
 
         _, num_cols = N.shape
-
         num_classes = np.unique(y).size
+        max_valid_eig = min(num_cols, num_classes)
 
-        z = min(num_cols, num_classes)
-
-        eig_vals = eig_vals[eig_vals > 1.0e-8]
-        eig_vals = np.array(sorted(eig_vals, reverse=True)[:z])
+        eig_vals = eig_vals[eig_vals > epsilon]
+        eig_vals = np.array(sorted(eig_vals, reverse=True)[:max_valid_eig])
 
         return np.prod(1.0 / (1.0 + eig_vals))
