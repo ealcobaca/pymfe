@@ -14,6 +14,8 @@ import typing as t
 import numpy as np
 import scipy
 
+import _summary
+
 
 class MFEStatistical:
     """Keep methods for metafeatures of ``Statistical`` group.
@@ -246,14 +248,20 @@ class MFEStatistical:
         return scipy.stats.iqr(N, axis=0)
 
     @classmethod
-    def ft_kurtosis(cls, N: np.ndarray, bias: bool = False) -> np.ndarray:
+    def ft_kurtosis(cls, N: np.ndarray, bias: bool = True) -> np.ndarray:
         """Compute Kurtosis of each attribute of N.
 
         Args:
             bias (:obj:`bool`): If False, then the calculations are corrected
                 for statistical bias.
         """
-        return scipy.stats.kurtosis(N, axis=0, bias=bias)
+        kurt_arr = np.apply_along_axis(
+            func1d=_summary.kurtosis,
+            axis=0,
+            arr=N,
+            bias=bias)
+
+        return kurt_arr
 
     @classmethod
     def ft_mad(cls, N: np.ndarray, factor: float = 1.4826) -> np.ndarray:
@@ -430,14 +438,20 @@ class MFEStatistical:
             m_factor / (epsilon + num_col * (num_inst - num_classes)))
 
     @classmethod
-    def ft_skewness(cls, N: np.ndarray, bias: bool = False) -> np.ndarray:
+    def ft_skewness(cls, N: np.ndarray, bias: bool = True) -> np.ndarray:
         """Compute skewness for each attribute.
 
         Args:
             bias (:obj:`bool`): If False, then the calculations are
                 corrected for statistical bias.
         """
-        return scipy.stats.skew(N, axis=0, bias=bias)
+        skew_arr = np.apply_along_axis(
+            func1d=_summary.skewness,
+            axis=0,
+            arr=N,
+            bias=bias)
+
+        return skew_arr
 
     @classmethod
     def ft_sparsity(cls,
@@ -518,4 +532,14 @@ class MFEStatistical:
         in-depth information about this value.
         """
         eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
+
+        _, num_cols = N.shape
+
+        num_classes = np.unique(y).size
+
+        z = min(num_cols, num_classes)
+
+        eig_vals = eig_vals[eig_vals > 1.0e-8]
+        eig_vals = np.array(sorted(eig_vals, reverse=True)[:z])
+
         return np.prod(1.0 / (1.0 + eig_vals))

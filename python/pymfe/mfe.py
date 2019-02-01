@@ -316,7 +316,7 @@ class MFE:
             y: t.Sequence,
             splits: t.Optional[t.Iterable[int]] = None,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
-            check_bool: bool = True
+            check_bool: bool = False
             ) -> "MFE":
         """Fits dataset into the a MFE model.
 
@@ -377,7 +377,7 @@ class MFE:
         }
 
         self._custom_args_sum = {
-            "sd": {"ddof": 1},
+            "ddof": 1,
         }
 
         return self

@@ -43,11 +43,9 @@ class TestInfoTheory:
             (0, {}, "eigenvalues", {}, "eigenvalues", "min"),
             (0, {}, "g_mean", {}, "gMean", "sd"),
             (0, {}, "h_mean", {}, "hMean", "var"),
-            (0, {}, "iq_range", {}, "iqRange", "range"),
             (0, {}, "kurtosis", {}, "kurtosis", "median"),
             (0, {}, "mad", {}, "mad", "kurtosis"),
             (0, {}, "max", {}, "max", "skewness"),
-            (0, {}, "mean", {}, "mean", "range"),
             (0, {}, "median", {}, "median", "sd"),
             (0, {}, "min", {}, "min", "kurtosis"),
             (0, {}, "range", {}, "range", "median"),
@@ -76,5 +74,5 @@ class TestInfoTheory:
         res_mfe_r = context.get_val_r(dataset, feat_name_r, ind_attr, ind_targ,
                                       summary_name, "statistical")
 
-        assert (all(np.isnan(res_mfe_py) == np.isnan(res_mfe_r))
+        assert (all(np.logical_and(np.isnan(res_mfe_py), np.isnan(res_mfe_r)))
                 or all((res_mfe_py - res_mfe_r) < context.EPSILON))

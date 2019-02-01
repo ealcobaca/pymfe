@@ -56,6 +56,97 @@ def sum_quantiles(values: TypeValList) -> TypeValList:
     return np.percentile(values, (0, 25, 50, 75, 100))
 
 
+def skewness(values: TypeValList, method=3, bias=True) -> float:
+    """Calculate skewness from data using ``method`` strategy.
+
+    Args:
+        values (:obj:`list` or numeric): values from where skewness is
+            estimated.
+
+        method (:obj:`int`, optional): defines the strategy used for
+            estimate data skewness. Used for total compatibility with
+            R package ``e1071``. The options must be one of the follo-
+            wing:
+
+            Option      Formula
+            -------------------
+            1           Skew_1 = m_3 / m_2^(3/2) (default of ``scipy.stats``)
+            2           Skew_2 = Skew_1 * sqrt(n(n-1)) / (n-2)
+            3           Skew_3 = m_3 / s^3 = Skew_1 ((n-1)/n)^(3/2)
+
+            Where ``n`` is the number of elements in ``values`` and
+            m_i is the ith momentum of ``values``.
+
+        bias (:obj:`bool`, optional): If False, then the calculations
+            are corrected for statistical bias.
+
+    Return:
+        float: estimated kurtosis from ``values`` using ``method``.
+    """
+    if method not in (1, 2, 3):
+        raise ValueError('Invalid method "{}" for'
+                         "extracting skewness".format(method))
+
+    num_vals = len(values)
+
+    if num_vals == 0:
+        return np.nan
+
+    skewness = scipy.stats.skew(values, bias=bias)
+
+    if method == 2 and num_vals != 2:
+        skewness *= (num_vals*(num_vals - 1.0))**0.5 / (num_vals - 2.0)
+
+    elif method == 3:
+        skewness *= ((num_vals - 1.0) / num_vals)**(1.5)
+
+    return skewness
+
+
+def kurtosis(values: TypeValList, method=3, bias=True) -> TypeValList:
+    """
+    Args:
+        values (:obj:`list` of numeric): values from where kurtosis is
+            estimated.
+
+        method (:obj:`int`, optional): defines the strategy used for
+            estimate data kurtosis. Used for total compatibility with
+            R package ``e1071``. The options must be one of the follo-
+            wing:
+
+            Option      Formula
+            -------------------
+            1           Kurt_1 = m_4 / m_2^2 - 3. (default of ``scipy.stats``)
+            2           Kurt_2 = ((n+1) * Kurt_1 + 6) * (n-1) / ((n-2)*(n-3)).
+            3           Kurt_3 = m_4 / s^4 - 3 = (Kurt_1+3) * (1 - 1/n)^2 - 3.
+
+            Where ``n`` is the number of elements in ``values`` and
+            m_i is the ith momentum of ``values``.
+
+        bias (:obj:`bool`, optional): If False, then the calculations
+            are corrected for statistical bias.
+    """
+    if method not in (1, 2, 3):
+        raise ValueError('Invalid method "{}" for'
+                         "extracting kurtosis".format(method))
+
+    num_vals = len(values)
+
+    if num_vals == 0:
+        return np.nan
+
+    kurtosis = scipy.stats.kurtosis(values, bias=bias)
+
+    if method == 2 and num_vals > 3:
+        kurtosis = (num_vals + 1.0) * kurtosis + 6
+        kurtosis *= (num_vals - 1.0) / ((num_vals-2.0) * (num_vals-3.0))
+
+    elif method == 3:
+        kurtosis = (kurtosis + 3.0) * (1.0 - 1.0/num_vals)**2.0 - 3.0
+
+    return kurtosis
+
+
 SUMMARY_METHODS = {
     "mean": np.mean,
     "sd": np.std,
@@ -63,11 +154,11 @@ SUMMARY_METHODS = {
     "count": len,
     "histogram": sum_histogram,
     "iq_range": scipy.stats.iqr,
-    "kurtosis": scipy.stats.kurtosis,
+    "kurtosis": kurtosis,
     "max": max,
     "median": np.median,
     "min": min,
     "quantiles": sum_quantiles,
     "range": np.ptp,
-    "skewness": scipy.stats.skew,
+    "skewness": skewness,
 }
