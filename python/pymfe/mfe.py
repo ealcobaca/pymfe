@@ -587,7 +587,8 @@ class MFE:
             transform_num: bool = False,
             transform_cat: bool = False,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
-            check_bool: bool = True) -> "MFE":
+            check_bool: bool = False
+            ) -> "MFE":
         """Fits dataset into the a MFE model.
 
         Args:
@@ -662,7 +663,6 @@ class MFE:
 
         self._custom_args_sum = {
             "ddof": 1,
-            "bias": False,
         }
 
         return self
