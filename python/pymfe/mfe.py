@@ -180,8 +180,8 @@ class MFE:
         self.timeopt = _internal.process_timeopt(
             measure_time)  # type: t.Optional[str]
 
-        self.X = None  # type: t.Optional[np.array]
-        self.y = None  # type: t.Optional[np.array]
+        self.X = None  # type: t.Optional[np.ndarray]
+        self.y = None  # type: t.Optional[np.ndarray]
 
         self.splits = None  # type: t.Optional[t.Iterable[int]]
 
@@ -485,6 +485,55 @@ class MFE:
 
         return total_time.tolist()
 
+    def _set_data_categoric(self, transform_num: bool) -> np.ndarray:
+        """To do."""
+        if self.X is None:
+            raise TypeError("Is necessary to fit valid data into"
+                            "model before setting up categoric data."
+                            '("X" attribute is "NoneType").')
+
+        if self._attr_indexes_cat is None:
+            raise TypeError("No information about indexes of categoric"
+                            "attributes. Please be sure to call method"
+                            '"_fill_col_ind_by_type" before this.')
+
+        data_cat = self.X[:, self._attr_indexes_cat]
+
+        if transform_num:
+            data_num_discretized = _internal.transform_num(
+                self.X[:, self._attr_indexes_num])
+
+            if data_num_discretized is not None:
+                data_cat = np.concatenate((data_cat, data_num_discretized),
+                                          axis=1)
+
+        return data_cat
+
+    def _set_data_numeric(self, transform_cat: bool) -> np.ndarray:
+        """To do."""
+        if self.X is None:
+            raise TypeError("Is necessary to fit valid data into"
+                            "model before setting up numeric data."
+                            '("X" attribute is "NoneType").')
+
+        if self._attr_indexes_num is None:
+            raise TypeError("No information about indexes of numeric"
+                            "attributes. Please be sure to call method"
+                            '"_fill_col_ind_by_type" before this.')
+
+        data_num = self.X[:, self._attr_indexes_num]
+
+        if transform_cat:
+            categorical_dummies = _internal.transform_cat(
+                self.X[:, self._attr_indexes_cat])
+
+            if categorical_dummies is not None:
+                data_num = np.concatenate((data_num, categorical_dummies),
+                                          axis=1)
+                data_num.astype(float)
+
+        return data_num
+
     def fit(self,
             X: t.Sequence,
             y: t.Sequence,
@@ -554,23 +603,8 @@ class MFE:
 
         self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
 
-        data_num = self.X[:, self._attr_indexes_num]
-        data_cat = self.X[:, self._attr_indexes_cat]
-
-        if transform_cat:
-            categorical_dummies = _internal.transform_cat(data_cat)
-            if categorical_dummies:
-                data_num = np.concatenate((data_num, categorical_dummies),
-                                          axis=1)
-                data_num.astype(float)
-                del categorical_dummies
-
-        if transform_num:
-            discretized_data = _internal.transform_num(data_num)
-            if discretized_data:
-                data_cat = np.concatenate((data_cat, discretized_data),
-                                          axis=1)
-                del discretized_data
+        data_cat = self._set_data_categoric(transform_num=transform_num)
+        data_num = self._set_data_numeric(transform_cat=transform_cat)
 
         self._custom_args_ft = {
             "X": self.X,
@@ -717,7 +751,11 @@ if __name__ == "__main__":
         features=["cat_to_num", "mean", "nr_inst"],
         summary=["histogram", "mean", "sd"],
         measure_time="avg_summ")
-    MODEL.fit(X=attr, y=labels)
+    MODEL.fit(X=attr, y=labels, transform_num=True, transform_cat=True)
+
+    print(MODEL._custom_args_ft["X"])
+    print(MODEL._custom_args_ft["N"])
+    print(MODEL._custom_args_ft["C"])
 
     names, vals, times = MODEL.extract(
         suppress_warnings=False, remove_nan=True, verbose=True, sd={"ddof": 2})

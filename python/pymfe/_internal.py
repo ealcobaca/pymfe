@@ -832,9 +832,9 @@ def timeit(func: t.Callable, *args) -> t.Tuple[t.Any, float]:
     return ret_val, time_total
 
 
-def transform_cat(data_categoric: np.ndarray) -> np.ndarray:
+def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     """One Hot Encoding (Binarize) given categorical data."""
-    if not data_categoric:
+    if data_categoric.size == 0:
         return None
 
     label_enc = sklearn.preprocessing.LabelEncoder()
@@ -855,7 +855,64 @@ def transform_cat(data_categoric: np.ndarray) -> np.ndarray:
     return dummies_vars
 
 
-def transform_num(data_numeric: np.ndarray) -> np.ndarray:
-    """Discretize numeric data with a equal-frequency histogram."""
-    if not data_numeric:
+def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
+    """Discretize a 1-D numeric array into a equal-frequency histogram."""
+    perc_interval = int(100.0 / num_bins)
+    perc_range = range(perc_interval, 100, perc_interval)
+    hist_divs = np.percentile(data, perc_range)
+
+    if hist_divs.size == 0:
+        hist_divs = [np.median(data)]
+
+    return np.digitize(data, hist_divs)
+
+
+def transform_num(data_numeric: np.ndarray,
+                  num_bins: t.Optional[int] = None) -> t.Optional[np.ndarray]:
+    """Discretize numeric data with a equal-frequency histogram.
+
+    The numeric values will be overwritten by the index of the his-
+    togram bin which each value will fall into.
+
+    Args:
+        data_numeric (:obj:`np.ndarray`): 2-D numpy array of numeric-
+            only data to be discretized.
+
+        num_bins (:obj:`int`, optional): number of bins of the equal-
+            frequency histogram used to discretize the data. If no
+            value is given, then the default value is the cubic root
+            of number of instances rounded down.
+
+    Returns:
+        np.ndarray: discretized version of ``data_numeric``.
+
+    Raises:
+        TypeError: if num_bins isn't :obj:`int`.
+        ValueError: if num_bins is a non-positive value.
+    """
+
+    if data_numeric.size == 0:
         return None
+
+    if num_bins is not None:
+        if not isinstance(num_bins, int):
+            raise TypeError('"num_bins" must be integer or NoneType.')
+
+        if num_bins <= 0:
+            raise ValueError('"num_bins" must be a positive'
+                             "integer or NoneType.")
+
+    num_inst, _ = data_numeric.shape
+
+    if not num_bins:
+        num_bins = int(num_inst**(1/3))
+
+    data_numeric = data_numeric.astype(float)
+
+    digitalized_data = np.apply_along_axis(
+        func1d=_equal_freq_discretization,
+        axis=0,
+        arr=data_numeric,
+        num_bins=num_bins)
+
+    return digitalized_data
