@@ -536,12 +536,21 @@ class MFE:
 
         return data_cat
 
-    def _set_data_numeric(self, transform_cat: bool) -> np.ndarray:
+    def _set_data_numeric(self, transform_cat: bool,
+                          rescale: t.Optional[str] = None,
+                          rescale_args: t.Optional[t.Dict[str, t.Any]] = None
+                          ) -> np.ndarray:
         """Returns numeric data from fitted dataset.
 
         Args:
             transform_cat (:obj:`bool`): if True, then all categoric-type
                 data will be binarized with One Hot Encoding strategy.
+
+            rescale (:obj:`str`, optional): check ``fit`` documentation for
+                more information about this parameter.
+
+            rescale_args (:obj:`dict`, optional): check ``fit`` documentation
+                for more information about this parameter.
 
         Returns:
             np.ndarray: processed numerical data. If no changes are needed
@@ -577,6 +586,11 @@ class MFE:
                 data_num = np.concatenate((data_num, categorical_dummies),
                                           axis=1).astype(float)
 
+        if rescale:
+            data_num = _internal.rescale_data(data=data_num,
+                                              option=rescale,
+                                              args=rescale_args)
+
         return data_num
 
     def fit(self,
@@ -585,6 +599,8 @@ class MFE:
             splits: t.Optional[t.Iterable[int]] = None,
             transform_num: bool = False,
             transform_cat: bool = False,
+            rescale: t.Optional[str] = None,
+            rescale_args: t.Optional[t.Dict[str, t.Any]] = None,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
             check_bool: bool = False
             ) -> "MFE":
@@ -615,6 +631,31 @@ class MFE:
                 lues. If False, then categorical attributes will just be igno-
                 red for numeric-only metafeatures.
 
+            rescale (:obj:`str`, optional): if :obj:`NoneType`, all numeric da-
+                ta will be kept with its original values. Otherwise, this argu-
+                ment can assume one of the string options below in order to re-
+                scale all numeric values:
+
+                    1. ``standard``: set numeric data to zero mean, unit varia-
+                        nce. Also known as ``z-score`` normalization. Check do-
+                        cumentation of ``sklearn.preprocessing.StandardScaler``
+                        for in-depth information.
+
+                    2. `'min-max``: set numeric data to interval [a, b], a < b.
+                        You can define values to ``a`` and ``b`` using argument
+                        ``rescale_args``. The default values are a = 0.0  and
+                        b = 1.0. Check ``sklearn.preprocessing.MinMaxScaler``
+                        documentation for more information.
+
+                    3. ``robust``: rescale data using statististics robust to
+                        outliers. Check ``sklearn.preprocessing.RobustScaler``
+                        documentation for in-depth information.
+
+            rescale_args (:obj:`dict`, optional): dictionary containing parame-
+                ters for rescaling data. Used only if ``rescale`` argument is
+                not :obj:`NoneType`. This dict keys are the parameter names as
+                strings and the values, the corresponding parameter value.
+
             cat_cols (:obj:`Sequence` of :obj:`int` or :obj:`str`, optional):
                 categorical columns of dataset. If :obj:`NoneType` or empty se-
                 quence is given, all columns are assumed as numeric. If ``au-
@@ -640,6 +681,8 @@ class MFE:
 
         self.X, self.y = _internal.check_data(X, y)
 
+        rescale = _internal.process_rescale_opt(rescale)
+
         if (splits is not None
                 and (not isinstance(splits, collections.Iterable)
                      or isinstance(splits, str))):
@@ -650,7 +693,9 @@ class MFE:
         self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
 
         data_cat = self._set_data_categoric(transform_num=transform_num)
-        data_num = self._set_data_numeric(transform_cat=transform_cat)
+        data_num = self._set_data_numeric(transform_cat=transform_cat,
+                                          rescale=rescale,
+                                          rescale_args=rescale_args)
 
         self._custom_args_ft = {
             "X": self.X,
@@ -795,10 +840,15 @@ if __name__ == "__main__":
         features=["cat_to_num", "mean", "nr_inst"],
         summary=["histogram", "mean", "sd"],
         measure_time="avg_summ")
-    MODEL.fit(X=attr, y=labels, transform_num=True, transform_cat=True)
+    MODEL.fit(rescale="robust", rescale_args=None,
+              X=attr, y=labels, transform_num=True, transform_cat=True)
 
     print(MODEL._custom_args_ft["X"])
     print(MODEL._custom_args_ft["N"])
+    print(MODEL._custom_args_ft["N"].mean())
+    print(MODEL._custom_args_ft["N"].var())
+    print(MODEL._custom_args_ft["N"].max())
+    print(MODEL._custom_args_ft["N"].min())
     print(MODEL._custom_args_ft["C"])
 
     names, vals, times = MODEL.extract(
