@@ -1,8 +1,6 @@
 """Test module for InfoTheory class metafeatures."""
 import pytest
 
-import numpy as np
-
 import context
 
 
@@ -31,14 +29,11 @@ class TestInfoTheory:
             (2, {}, "class_conc", {}, "classConc", "histogram", {}),
             (2, {}, "joint_ent", {}, "jointEnt", "histogram", {}),
             (2, {}, "mut_inf", {}, "mutInf", "histogram", {}),
-            (2, {}, "attr_conc", {}, "attrConc", "range", {}),
             (2, {}, "attr_ent", {}, "attrEnt", "skewness", {}),
-            (2, {}, "class_conc", {}, "classConc", "quantiles", {}),
             (2, {}, "joint_ent", {}, "jointEnt", "min", {}),
             (2, {}, "mut_inf", {}, "mutInf", "max", {}),
-            (1, {
+            (0, {
                 "transform_num": True,
-                "check_bool": True,
             }, "attr_conc", {}, "attrConc", "mean", {
                 "transform": True,
             }),
@@ -59,7 +54,4 @@ class TestInfoTheory:
         res_mfe_r = context.get_val_r(dataset, feat_name_r, ind_attr, ind_targ,
                                       summary_name, "infotheo", **fit_args_r)
 
-        print(res_mfe_py, res_mfe_r)
-
-        assert (all(np.logical_and(np.isnan(res_mfe_py), np.isnan(res_mfe_r)))
-                or all(abs(res_mfe_py - res_mfe_r) < context.EPSILON_RELAXED))
+        assert context.compare_results(res_mfe_py, res_mfe_r)
