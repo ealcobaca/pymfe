@@ -138,4 +138,4 @@ class TestInfoTheory:
                                       summary_name, "statistical",
                                       **fit_args_r)
 
-        assert context.compare_results(res_mfe_py, res_mfe_r)
+        assert context.compare_results(res_mfe_py, res_mfe_r, diff_factor=0.05)

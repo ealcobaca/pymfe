@@ -838,7 +838,7 @@ if __name__ == "__main__":
     MODEL = MFE(
         groups="all",
         features=["cat_to_num", "mean", "nr_inst"],
-        summary=["histogram", "mean", "sd"],
+        summary=["histogram", "mean", "sd", "kurtosis"],
         measure_time="avg_summ")
     MODEL.fit(rescale="robust", rescale_args=None,
               X=attr, y=labels, transform_num=True, transform_cat=True)
@@ -852,7 +852,8 @@ if __name__ == "__main__":
     print(MODEL._custom_args_ft["C"])
 
     names, vals, times = MODEL.extract(
-        suppress_warnings=False, remove_nan=True, verbose=True, sd={"ddof": 2})
+        suppress_warnings=False, remove_nan=True,
+        verbose=True, kurtosis={"method": 1})
 
     for n, v, i in zip(names, vals, times):
         print(n, v, i)
