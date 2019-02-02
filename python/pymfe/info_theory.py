@@ -15,7 +15,6 @@ import itertools
 
 import numpy as np
 import scipy
-import sklearn.metrics
 
 
 class MFEInfoTheory:
@@ -74,10 +73,22 @@ class MFEInfoTheory:
         return joint_prob_mat
 
     @classmethod
+    def _joint_entropy(cls, vec_x: np.ndarray, vec_y: np.ndarray,
+                       epsilon: float = 1.0e-10) -> float:
+        """Compute joint entropy between vectorx ``x`` and ``y``."""
+        joint_prob_mat = MFEInfoTheory._joint_prob_mat(vec_x,
+                                                       vec_y) + epsilon
+
+        joint_entropy = np.multiply(joint_prob_mat,
+                                    np.log2(joint_prob_mat)).sum().sum()
+
+        return -1.0 * joint_entropy
+
+    @classmethod
     def _conc(cls,
               vec_x: np.ndarray,
               vec_y: np.ndarray,
-              epsilon: float = 1.0e-8) -> float:
+              epsilon: float = 1.0e-10) -> float:
         """Concentration coefficient between two arrays ``vec_x`` and ``vec_y``.
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
@@ -154,7 +165,7 @@ class MFEInfoTheory:
     def ft_eq_num_attr(cls,
                        C: np.ndarray,
                        y: np.ndarray,
-                       epsilon: float = 1.0e-8) -> float:
+                       epsilon: float = 1.0e-10) -> float:
         """Number of attributes equivalent for a predictive task.
 
         The attribute equivalence E is defined as:
@@ -195,19 +206,8 @@ class MFEInfoTheory:
         value j in the set phi_y.
         """
 
-        def joint_entropy(vec_x: np.ndarray,
-                          y: np.ndarray,
-                          epsilon: float = 1.0e-8) -> float:
-            joint_prob_mat = MFEInfoTheory._joint_prob_mat(vec_x,
-                                                           y) + epsilon
-
-            joint_entropy = np.multiply(joint_prob_mat,
-                                        np.log2(joint_prob_mat)).sum().sum()
-
-            return -1.0 * joint_entropy
-
         joint_entropy_array = np.apply_along_axis(
-            func1d=joint_entropy, axis=0, arr=C, y=y)
+            func1d=MFEInfoTheory._joint_entropy, axis=0, arr=C, vec_y=y)
 
         return joint_entropy_array
 
@@ -226,17 +226,23 @@ class MFEInfoTheory:
         x and y (see ``ft_joint_ent`` documentation for more informa-
         tion).
         """
+        def compute_mutual_info(x, y):
+            ent_x = MFEInfoTheory._entropy(x)
+            ent_y = MFEInfoTheory._entropy(y)
+            joint_ent = MFEInfoTheory._joint_entropy(x, y)
+            return ent_x + ent_y - joint_ent
+
         return np.apply_along_axis(
-            func1d=sklearn.metrics.mutual_info_score,
+            func1d=compute_mutual_info,
             axis=0,
             arr=C,
-            labels_pred=y)
+            y=y)
 
     @classmethod
     def ft_ns_ratio(cls,
                     C: np.ndarray,
                     y: np.ndarray,
-                    epsilon: float = 1.0e-8) -> float:
+                    epsilon: float = 1.0e-10) -> float:
         """Compute noisiness of attributes.
 
         Let y be a target attribute and x one predictive attribute in

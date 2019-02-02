@@ -42,6 +42,7 @@ import time
 
 import numpy as np
 import sklearn.preprocessing
+import patsy
 
 import _summary
 import general
@@ -832,7 +833,9 @@ def timeit(func: t.Callable, *args) -> t.Tuple[t.Any, float]:
     return ret_val, time_total
 
 
-def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
+def _unused_transform_cat(
+        data_categoric: np.ndarray
+        ) -> t.Optional[np.ndarray]:
     """One Hot Encoding (Binarize) given categorical data."""
     if data_categoric.size == 0:
         return None
@@ -853,6 +856,24 @@ def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
         dummies_vars = np.concatenate((dummies_vars, new_dummies), axis=1)
 
     return dummies_vars
+
+
+def transform_cat(data_categoric):
+    """To do."""
+    _, num_col = data_categoric.shape
+
+    dummy_attr_names = [
+        "C{}".format(i) for i in range(num_col)
+    ]
+
+    named_data = {
+        attr_name: data_categoric[:, attr_index]
+        for attr_index, attr_name in enumerate(dummy_attr_names)
+    }
+
+    formula = "~ 0 + {}".format(" + ".join(dummy_attr_names))
+
+    return np.asarray(patsy.dmatrix(formula, named_data))
 
 
 def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:

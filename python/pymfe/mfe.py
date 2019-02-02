@@ -575,8 +575,7 @@ class MFE:
 
             if categorical_dummies is not None:
                 data_num = np.concatenate((data_num, categorical_dummies),
-                                          axis=1)
-                data_num.astype(float)
+                                          axis=1).astype(float)
 
         return data_num
 
