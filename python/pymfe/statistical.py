@@ -43,6 +43,7 @@ class MFEStatistical:
             a single value or a generic Sequence (preferably a np.ndarray)
             type with numeric values.
     """
+
     @classmethod
     def _linear_disc_mat_eig(cls, N: np.ndarray,
                              y: np.ndarray) -> t.Tuple[np.ndarray, np.ndarray]:
@@ -54,14 +55,14 @@ class MFEStatistical:
         Check ``ft_can_cor`` documentation for more in-depth information
         about this matrix.
         """
+
         def compute_scatter_within(
                 N: np.ndarray, y: np.ndarray,
                 class_val_freq: t.Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
             """Compute Scatter Within matrix. Check doc above for more info."""
-            scatter_within = np.array([
-                (cl_frq - 1.0) * np.cov(N[y == cl_val, :], rowvar=False)
-                for cl_val, cl_frq in zip(*class_val_freq)
-            ]).sum(axis=0)
+            scatter_within = np.array(
+                [(cl_frq - 1.0) * np.cov(N[y == cl_val, :], rowvar=False)
+                 for cl_val, cl_frq in zip(*class_val_freq)]).sum(axis=0)
 
             return scatter_within
 
@@ -71,10 +72,8 @@ class MFEStatistical:
             """Compute Scatter Between matrix. The doc above has more info."""
             class_vals, class_freqs = class_val_freq
 
-            class_means = np.array([
-                N[y == cl_val, :].mean(axis=0)
-                for cl_val in class_vals
-            ])
+            class_means = np.array(
+                [N[y == cl_val, :].mean(axis=0) for cl_val in class_vals])
 
             relative_centers = class_means - N.mean(axis=0)
 
@@ -95,8 +94,8 @@ class MFEStatistical:
         try:
             scatter_within_inv = np.linalg.inv(scatter_within)
 
-            return np.linalg.eig(np.matmul(scatter_within_inv,
-                                           scatter_between))
+            return np.linalg.eig(
+                np.matmul(scatter_within_inv, scatter_between))
 
         except np.linalg.LinAlgError:
             return np.array([]), np.array([])
@@ -248,17 +247,36 @@ class MFEStatistical:
         return scipy.stats.iqr(N, axis=0)
 
     @classmethod
-    def ft_kurtosis(cls, N: np.ndarray, bias: bool = True) -> np.ndarray:
+    def ft_kurtosis(cls, N: np.ndarray, method: int = 3,
+                    bias: bool = True) -> np.ndarray:
         """Compute Kurtosis of each attribute of N.
 
         Args:
             bias (:obj:`bool`): If False, then the calculations are corrected
                 for statistical bias.
+
+        method (:obj:`int`, optional): defines the strategy used for
+            estimate data kurtosis. Used for total compatibility with
+            R package ``e1071``. The options must be one of the follo-
+            wing:
+
+            Option      Formula
+            -------------------
+            1           Kurt_1 = m_4 / m_2^2 - 3. (default of ``scipy.stats``)
+            2           Kurt_2 = ((n+1) * Kurt_1 + 6) * (n-1) / ((n-2)*(n-3)).
+            3           Kurt_3 = m_4 / s^4 - 3 = (Kurt_1+3) * (1 - 1/n)^2 - 3.
+
+            Where ``n`` is the number of elements in ``values`` and
+            m_i is the ith momentum of ``values``.
+
+            Note that if the selected method is unable to be calculated due
+            to division by zero, then the first method will be used instead.
         """
         kurt_arr = np.apply_along_axis(
-            func1d=_summary.kurtosis,
+            func1d=_summary.sum_kurtosis,
             axis=0,
             arr=N,
+            method=method,
             bias=bias)
 
         return kurt_arr
@@ -438,18 +456,38 @@ class MFEStatistical:
             m_factor / (epsilon + num_col * (num_inst - num_classes)))
 
     @classmethod
-    def ft_skewness(cls, N: np.ndarray, bias: bool = True) -> np.ndarray:
+    def ft_skewness(cls, N: np.ndarray, method: int = 3,
+                    bias: bool = True) -> np.ndarray:
         """Compute skewness for each attribute.
 
         Args:
             bias (:obj:`bool`): If False, then the calculations are
                 corrected for statistical bias.
+
+
+        method (:obj:`int`, optional): defines the strategy used for
+            estimate data skewness. Used for total compatibility with
+            R package ``e1071``. The options must be one of the follo-
+            wing:
+
+            Option      Formula
+            -------------------
+            1           Skew_1 = m_3 / m_2^(3/2) (default of ``scipy.stats``)
+            2           Skew_2 = Skew_1 * sqrt(n(n-1)) / (n-2)
+            3           Skew_3 = m_3 / s^3 = Skew_1 ((n-1)/n)^(3/2)
+
+            Where ``n`` is the number of elements in ``values`` and
+            m_i is the ith momentum of ``values``.
+
+            Note that if the selected method is unable to be calculated due
+            to division by zero, then the first method will be used instead.
         """
         skew_arr = np.apply_along_axis(
-            func1d=_summary.skewness,
+            func1d=_summary.sum_skewness,
             axis=0,
             arr=N,
-            bias=bias)
+            bias=bias,
+            method=method)
 
         return skew_arr
 
