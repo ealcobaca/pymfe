@@ -42,7 +42,7 @@ from pymfe.mfe import MFE  # noqa: E402
 
 TARGET_COL_NAMES = ("target", )
 
-EPSILON = 1.0e-6
+EPSILON = 1.0e-4
 EPSILON_RELAXED = 1.0e-2
 
 
@@ -153,7 +153,7 @@ def get_val_py(dataset: pd.core.frame.DataFrame, feat_name_py: str,
         summary=summary_name,
     ).fit(
         X=X, y=y, **fit_args).extract(
-            remove_nan=False, **method_args)
+            remove_nan=False, **{feat_name_py: method_args})
 
     return res_mfe_py_vals
 
@@ -222,3 +222,23 @@ def get_val_r(dataset: pd.core.frame.DataFrame, feat_name_r: str,
     res_mfe_r_vals = na_to_nan(res_mfe_r.rx2(feat_name_r))
 
     return res_mfe_r_vals
+
+
+def compare_results(res_mfe_py: t.Sequence,
+                    res_mfe_r: t.Sequence,
+                    verbose: bool = True) -> t.Sequence:
+    """Canonical way to compare results between diff. MFE implementations."""
+
+    compared_list = [
+        (np.logical_and(np.isnan(val_py), np.isnan(val_r))
+         or (abs(val_py - val_r) < EPSILON))
+        for val_py, val_r in zip(res_mfe_py, res_mfe_r)
+    ]
+
+    if verbose:
+        print("Result from Python MFE:", res_mfe_py,
+              "Result from R MFE:", res_mfe_r,
+              "Difference vector:", compared_list,
+              sep="\n")
+
+    return all(compared_list)
