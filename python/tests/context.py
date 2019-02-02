@@ -1,6 +1,7 @@
 """Provides easy import path procedure for test modules.
 
-Font:
+Notes:
+    Some tips are gathered from:
     "Structuring Your Project", The Hitchhiker's Guide to Python
     link: https://docs.python-guide.org/writing/structure/
 
@@ -201,6 +202,9 @@ def get_val_r(dataset: pd.core.frame.DataFrame, feat_name_r: str,
     Raises:
         AttributeError: if ``group_name`` is not a correct group name.
     """
+    if not summary_name:
+        summary_name = "non.aggregated"
+
     rpy2.robjects.pandas2ri.activate()
     rpy2.robjects.numpy2ri.activate()
 
@@ -226,12 +230,59 @@ def get_val_r(dataset: pd.core.frame.DataFrame, feat_name_r: str,
 
 def compare_results(res_mfe_py: t.Sequence,
                     res_mfe_r: t.Sequence,
+                    diff_factor: t.Optional[float] = None,
                     verbose: bool = True) -> t.Sequence:
-    """Canonical way to compare results between diff. MFE implementations."""
+    """Canonical way to compare results between diff. MFE implementations.
+
+    A pair of values are considered equivalent if they both are :obj:`np.nan`
+    or if the following holds:
+
+        abs(val_a - val_b) <= EPSILON + diff_factor*min(abs(val_a), abs(val_b))
+
+    EPSILON is a module attribute which assume a very small value.  Check
+    ``Args`` section for information about ``diff_factor``.
+
+    Args:
+        res_mfe_py (:obj:`Sequence` of numeric): results obtained from MFE
+            python implementation.
+
+        res_mfe_r (:obj:`Sequence` of numeric): results obtained from MFE
+            R implementation.
+
+        diff_factor (:obj:`float`, optional): percentage of the minimum
+            absolute value between results of allowed divergente between
+            both values from ``res_mfe_py`` and ``res_mfe_r``. Must be in
+            [0, 1] interval or assume :obj:`NoneType`. If this argument is
+            :obj:`NoneType` it will be set to 0.0.
+
+        verbose (:obj:`bool`, optional): if True, then this function may
+            print messages which can help inspect failed tests cases.
+
+    Return:
+        bool: if True, then all pair of values are assumed as equivalent.
+            False if any pair of values is considered distinct.
+
+    Raises:
+        ValueError: if ``diff_factor`` is not in [0, 1] interval.
+    """
+    if not diff_factor:
+        diff_factor = 0.0
+
+    if not (0 <= diff_factor <= 1.0):
+        raise ValueError('"diff_factor" must be in [0, 1] interval. '
+                         "(or be None).")
+
+    def check_difference(val_a, val_b, diff_factor):
+        abs_diff = abs(val_a - val_b)
+
+        max_diff_allowed = (EPSILON + diff_factor
+                            * min(abs(val_a), abs(val_b)))
+
+        return abs_diff <= max_diff_allowed
 
     compared_list = [
         (np.logical_and(np.isnan(val_py), np.isnan(val_r))
-         or (abs(val_py - val_r) < EPSILON))
+         or check_difference(val_py, val_r, diff_factor))
         for val_py, val_r in zip(res_mfe_py, res_mfe_r)
     ]
 

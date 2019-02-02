@@ -32,9 +32,49 @@ class TestInfoTheory:
             (2, {}, "attr_ent", {}, "attrEnt", "skewness", {}),
             (2, {}, "joint_ent", {}, "jointEnt", "min", {}),
             (2, {}, "mut_inf", {}, "mutInf", "max", {}),
+            (1, {
+                "transform_num": True,
+            }, "eq_num_attr", {}, "eqNumAttr", "mean", {
+                "transform": True,
+            }),
             (0, {
                 "transform_num": True,
+            }, "ns_ratio", {}, "nsRatio", "all", {
+                "transform": True,
+            }),
+            (1, {
+                "transform_num": True,
             }, "attr_conc", {}, "attrConc", "mean", {
+                "transform": True,
+            }),
+            (0, {
+                "transform_num": True,
+            }, "joint_ent", {}, "jointEnt", "mean", {
+                "transform": True,
+            }),
+            (0, {
+                "transform_num": True,
+            }, "mut_inf", {}, "mutInf", "mean", {
+                "transform": True,
+            }),
+            (1, {
+                "transform_num": True,
+            }, "mut_inf", {}, "mutInf", "mean", {
+                "transform": True,
+            }),
+            (0, {
+                "transform_num": True,
+            }, "attr_ent", {}, "attrEnt", "sd", {
+                "transform": True,
+            }),
+            (1, {
+                "transform_num": True,
+            }, "attr_ent", {}, "attrEnt", "sd", {
+                "transform": True,
+            }),
+            (1, {
+                "transform_num": True,
+            }, "attr_ent", {}, "attrEnt", None, {
                 "transform": True,
             }),
         ),
@@ -54,4 +94,4 @@ class TestInfoTheory:
         res_mfe_r = context.get_val_r(dataset, feat_name_r, ind_attr, ind_targ,
                                       summary_name, "infotheo", **fit_args_r)
 
-        assert context.compare_results(res_mfe_py, res_mfe_r)
+        assert context.compare_results(res_mfe_py, res_mfe_r, diff_factor=0.05)

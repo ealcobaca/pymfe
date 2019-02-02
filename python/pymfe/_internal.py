@@ -79,11 +79,13 @@ VALID_TIMEOPT = (
     "total_summ",
 )
 
-VALID_RESCALE = (
-    "standard",
-    "min-max",
-    "robust",
-)
+_RESCALE_SCALERS = {
+    "standard": sklearn.preprocessing.StandardScaler,
+    "min-max": sklearn.preprocessing.MinMaxScaler,
+    "robust": sklearn.preprocessing.RobustScaler,
+}
+
+VALID_RESCALE = (*_RESCALE_SCALERS, )
 
 TIMEOPT_AVG_PREFIX = "avg"
 
@@ -932,7 +934,7 @@ def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
     if hist_divs.size == 0:
         hist_divs = [np.median(data)]
 
-    return np.digitize(data, hist_divs)
+    return np.digitize(data, hist_divs, right=True)
 
 
 def transform_num(data_numeric: np.ndarray,
@@ -958,7 +960,6 @@ def transform_num(data_numeric: np.ndarray,
         TypeError: if num_bins isn't :obj:`int`.
         ValueError: if num_bins is a non-positive value.
     """
-
     if data_numeric.size == 0:
         return None
 
@@ -1017,21 +1018,13 @@ def rescale_data(data: np.ndarray,
         Any exception caused by arguments from ``args`` into the
         scaler model is also raised by this function.
     """
+    if option not in VALID_RESCALE:
+        raise ValueError('Unknown option "{0}". Please choose one'
+                         "between {1}".format(option, VALID_RESCALE))
 
     if not args:
         args = {}
 
-    if option == "min-max":
-        scaler = sklearn.preprocessing.MinMaxScaler(**args)
+    scaler_model = _RESCALE_SCALERS.get(option)(**args)
 
-    elif option == "standard":
-        scaler = sklearn.preprocessing.StandardScaler(**args)
-
-    elif option == "robust":
-        scaler = sklearn.preprocessing.RobustScaler(**args)
-
-    else:
-        raise ValueError('Unknown option "{0}". Please choose one'
-                         "between {1}".format(option, VALID_RESCALE))
-
-    return scaler.fit_transform(data)
+    return scaler_model.fit_transform(data)
