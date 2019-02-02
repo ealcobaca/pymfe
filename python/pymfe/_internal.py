@@ -14,6 +14,9 @@ Attributes:
     VALID_TIMEOPT (:obj:`tuple` of :obj:`str`): valid options for
         time measurements while extracting metafeatures.
 
+    VALID_RESCALE (:obj:`tuple` of :obj:`str`): valid options for
+        rescaling numeric data while fitting dataset.
+
     MTF_PREFIX (:obj:`str`): prefix of metafeature-extraction me-
         thod names. For example, the metafeature called `inst_nr`
         is implemented in the method named `[MTF_PREFIX]_inst_nr`.
@@ -74,6 +77,12 @@ VALID_TIMEOPT = (
     "avg_summ",
     "total",
     "total_summ",
+)
+
+VALID_RESCALE = (
+    "standard",
+    "min-max",
+    "robust",
 )
 
 TIMEOPT_AVG_PREFIX = "avg"
@@ -692,7 +701,7 @@ def process_timeopt(timeopt: t.Optional[str]):
 
     Raises:
         TypeError: if ``timeopt`` is neither None or a string.
-        ValueError: if ``timeot`` is not a valid option. Check MFE
+        ValueError: if ``timeopt`` is not a valid option. Check MFE
             documentation class or ``VALID_TIMEOPT`` module attribute
             to check which time options are available to user.
     """
@@ -710,6 +719,41 @@ def process_timeopt(timeopt: t.Optional[str]):
                          "amongst {1} or None.".format(timeopt, VALID_TIMEOPT))
 
     return timeopt
+
+
+def process_rescale_opt(rescale_opt: t.Optional[str]):
+    """Process the user numeric data scaling option.
+
+    The processing consists of checking if the option given is a
+    valid one, and set all given string to lower case to keep option
+    checking (when necessary) consistent.
+
+    Args:
+        rescale_opt (:obj:`str`): a valid numeric data rescaling option.
+
+    Return:
+        str: canonical ``rescale_opt`` (lower-cased).
+
+    Raises:
+        TypeError: if ``rescale_opt`` is neither None or a string.
+        ValueError: if ``rescale_opt`` is not a valid option. Check MFE
+            documentation class or ``VALID_RESCALE`` module attribute
+            to check which time options are available to user.
+    """
+    if rescale_opt is None:
+        return None
+
+    if not isinstance(rescale_opt, str):
+        raise TypeError("Time argument must be string type"
+                        "or None (got {}).".format(type(rescale_opt)))
+
+    rescale_opt = rescale_opt.lower()
+
+    if rescale_opt not in VALID_RESCALE:
+        raise ValueError('Invalid time option "{0}". Please choose one amongst'
+                         "{1} or None.".format(rescale_opt, VALID_RESCALE))
+
+    return rescale_opt
 
 
 def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
@@ -836,7 +880,10 @@ def timeit(func: t.Callable, *args) -> t.Tuple[t.Any, float]:
 def _unused_transform_cat(
         data_categoric: np.ndarray
         ) -> t.Optional[np.ndarray]:
-    """One Hot Encoding (Binarize) given categorical data."""
+    """One Hot Encoding (Binarize) given categorical data.
+
+    Currently unused.
+    """
     if data_categoric.size == 0:
         return None
 
@@ -937,3 +984,54 @@ def transform_num(data_numeric: np.ndarray,
         num_bins=num_bins)
 
     return digitalized_data
+
+
+def rescale_data(data: np.ndarray,
+                 option: str,
+                 args: t.Optional[t.Dict[str, t.Any]] = None) -> np.ndarray:
+    """Rescale numeric fitted data accordingly to user select option.
+
+    Args:
+        data (:obj:`np.ndarray`): data to be rescaled.
+
+        option (:obj:`str`): rescaling strategy. Must be one in
+            ``VALID_RESCALE`` attribute.
+
+        args (:obj:`dict`, optional): extra arguments for scaler. All
+            scaler used are from ``sklearn`` package, so you should
+            consult they documentation for a complete list of available
+            arguments to user costumization. The used scalers for each
+            available ``option`` are:
+
+                ``min-max``: ``sklearn.preprocessing.MinMaxScaler``
+                ``standard``: ``sklearn.preprocessing.StandardScale``
+                ``robust``: ``sklearn.preprocessing.RobustScaler``
+
+    Returns:
+        np.ndarray: scaled ``data`` based in ``option`` correspondent
+            strategy.
+
+    Raises:
+        ValueError: if ``option`` is not in ``VALID_RESCALE``.
+
+        Any exception caused by arguments from ``args`` into the
+        scaler model is also raised by this function.
+    """
+
+    if not args:
+        args = {}
+
+    if option == "min-max":
+        scaler = sklearn.preprocessing.MinMaxScaler(**args)
+
+    elif option == "standard":
+        scaler = sklearn.preprocessing.StandardScaler(**args)
+
+    elif option == "robust":
+        scaler = sklearn.preprocessing.RobustScaler(**args)
+
+    else:
+        raise ValueError('Unknown option "{0}". Please choose one'
+                         "between {1}".format(option, VALID_RESCALE))
+
+    return scaler.fit_transform(data)
