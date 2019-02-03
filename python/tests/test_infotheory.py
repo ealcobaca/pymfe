@@ -74,7 +74,7 @@ class TestInfoTheory:
             }),
             (1, {
                 "transform_num": True,
-            }, "attr_ent", {}, "attrEnt", None, {
+            }, "attr_ent", {}, "attrEnt", "mean", {
                 "transform": True,
             }),
         ),

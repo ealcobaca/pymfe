@@ -1,7 +1,11 @@
 """Main module for extracting metafeatures from datasets.
 
 Todo:
+    * Precomputation options, to avoid frequent recalculations.
     * Implement parallel computing.
+    * By-class feature extraction.
+    * Support for multiclass, regression and unsupervised tasks.
+    * Remove program driver for quick tests.
 """
 import typing as t
 import collections
@@ -355,7 +359,7 @@ class MFE:
             if ft_has_length and self._timeopt_type_is_avg():
                 time_ft /= len(features)
 
-            if self._metadata_mtd_sm is not None and ft_has_length:
+            if self._metadata_mtd_sm and ft_has_length:
                 sm_ret = self._call_summary_methods(
                     feature_values=features,
                     feature_name=ft_name_without_prefix,
@@ -715,6 +719,7 @@ class MFE:
                 remove_nan: bool = True,
                 verbose: bool = False,
                 enable_parallel: bool = False,
+                by_class: bool = False,
                 suppress_warnings: bool = False,
                 **kwargs) -> t.Tuple[t.List, ...]:
         """Extracts metafeatures from previously fitted dataset.
@@ -735,6 +740,8 @@ class MFE:
             enable_parallel (:obj:`bool`, optional): if True, then the meta-
                 feature extraction will be done with multiprocesses. This
                 argument has no effect for now (to be implemented).
+
+            by_class (:obj:`bool, optional): not implemented yet.
 
             suppress_warnings (:obj:`bool`, optional): if True, do not show
                 warnings about unknown user custom parameters for feature-

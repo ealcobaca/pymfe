@@ -46,7 +46,8 @@ class MFEStatistical:
 
     @classmethod
     def _linear_disc_mat_eig(cls, N: np.ndarray,
-                             y: np.ndarray) -> t.Tuple[np.ndarray, np.ndarray]:
+                             y: np.ndarray,
+                             ) -> t.Tuple[np.ndarray, np.ndarray]:
         """Compute eigenvals/vecs of Fisher's Linear Discriminant Analysis.
 
         More specificaly, the eigenvalues and eigenvectors are calculated
@@ -54,6 +55,11 @@ class MFEStatistical:
 
         Check ``ft_can_cor`` documentation for more in-depth information
         about this matrix.
+
+        Return:
+            tuple(np.ndarray, np.ndarray): eigenvalues and eigenvectors
+                (in this order) of Fisher's Linear Discriminant Analysis
+                Matrix.
         """
 
         def compute_scatter_within(
@@ -94,15 +100,84 @@ class MFEStatistical:
         try:
             scatter_within_inv = np.linalg.inv(scatter_within)
 
-            return np.linalg.eig(
-                np.matmul(scatter_within_inv, scatter_between))
+            return np.linalg.eig(np.matmul(scatter_within_inv,
+                                           scatter_between))
 
         except np.linalg.LinAlgError:
-            return np.array([]), np.array([])
+            return np.array([np.nan]), np.array([np.nan])
+
+    @classmethod
+    def _filter_eig_vals(cls,
+                         eig_vals: np.ndarray,
+                         data: np.ndarray,
+                         y: np.ndarray,
+                         eig_vecs: t.Optional[np.ndarray] = None,
+                         filter_imaginary: bool = True,
+                         filter_less_relevant: float = True,
+                         epsilon: float = 1.0e-8,
+                         ) -> np.ndarray:
+        """Get most expressive eigenvalues (higher absolute value).
+
+        This function returns N eigenvalues, such that:
+
+            N < min(num_class, num_attr)
+
+        Args:
+            filter_imaginary (:obj:`bool`, optional): if True, remove ima-
+                ginary valued eigenvalues and its correspondent eigenvect-
+                ors.
+
+            filter_less_relevant (:obj:`bool`, optional): if True, remove
+                eigenvalues smaller than ``epsilon``.
+
+            epsilon (:obj:`float`, optional): a very small value used to
+                determine ``less relevant`` eigenvalues.
+        """
+        _, num_cols = data.shape
+        num_classes = np.unique(y).size
+        max_valid_eig = min(num_cols, num_classes)
+
+        if eig_vals.size <= max_valid_eig:
+            if eig_vecs:
+                return eig_vals, eig_vecs
+
+            return eig_vals
+
+        eig_vals = np.array(sorted(eig_vals, key=lambda item: abs(item),
+                                   reverse=True)[:max_valid_eig])
+
+        if not filter_imaginary and not filter_less_relevant:
+            if eig_vecs:
+                return eig_vals, eig_vecs
+
+            return eig_vals
+
+        indexes_to_keep = np.array(eig_vals.size * [True])
+
+        if filter_imaginary:
+            indexes_to_keep = np.logical_and(np.isreal(eig_vals),
+                                             indexes_to_keep)
+
+        if filter_less_relevant:
+            indexes_to_keep = np.logical_and(abs(eig_vals) > epsilon,
+                                             indexes_to_keep)
+
+        eig_vals = eig_vals[indexes_to_keep]
+
+        if eig_vecs:
+            eig_vecs = eig_vecs[indexes_to_keep]
+
+        if filter_imaginary:
+            eig_vals = eig_vals.real
+
+        if eig_vecs:
+            return eig_vals, eig_vecs
+
+        return eig_vals
 
     @classmethod
     def ft_can_cor(cls, N: np.ndarray, y: np.ndarray,
-                   epsilon: float = 1.0e-8) -> np.ndarray:
+                   epsilon: float = 1.0e-10) -> np.ndarray:
         """Compute canonical correlations of data.
 
         The canonical correlations p are defined as shown below:
@@ -131,7 +206,10 @@ class MFEStatistical:
                 zero.
         """
         eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
-        eig_vals = eig_vals[abs(eig_vals) > epsilon]
+
+        eig_vals = MFEStatistical._filter_eig_vals(eig_vals=eig_vals,
+                                                   data=N, y=y)
+
         return (eig_vals / (epsilon + 1.0 + eig_vals))**0.5
 
     @classmethod
@@ -558,8 +636,7 @@ class MFEStatistical:
         return var_array
 
     @classmethod
-    def ft_w_lambda(cls, N: np.ndarray, y: np.ndarray,
-                    epsilon: float = 1.0e-8) -> float:
+    def ft_w_lambda(cls, N: np.ndarray, y: np.ndarray) -> float:
         """Compute Wilks' Lambda value.
 
         The Wilk's Lambda L is calculated as:
@@ -569,18 +646,13 @@ class MFEStatistical:
         Where ``lda_eig_i`` is the ith eigenvalue of Fisher's Linear Discri-
         minant Analysis Matrix. Check ``ft_can_cor`` documentation for more
         in-depth information about this value.
-
-        Args:
-            epsilon (:obj:`float`): a very small value to filter ``zero-val-
-                ued`` eigenvalues.
         """
         eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
 
-        _, num_cols = N.shape
-        num_classes = np.unique(y).size
-        max_valid_eig = min(num_cols, num_classes)
+        eig_vals = MFEStatistical._filter_eig_vals(eig_vals=eig_vals,
+                                                   data=N, y=y)
 
-        eig_vals = eig_vals[eig_vals > epsilon]
-        eig_vals = np.array(sorted(eig_vals, reverse=True)[:max_valid_eig])
+        if eig_vals.size == 0:
+            return np.nan
 
         return np.prod(1.0 / (1.0 + eig_vals))

@@ -17,7 +17,14 @@ class TestInfoTheory:
             (0, {}, "nr_outliers", {}, "nrOutliers", "all", {}),
             (0, {}, "sd_ratio", {}, "sdRatio", "all", {}),
             (0, {}, "w_lambda", {}, "wLambda", "all", {}),
-            (1, {}, "w_lambda", {}, "wLambda", "all", {}),
+            (1, {}, "w_lambda", {}, "wLambda", "all", {
+                "transform": False,
+            }),
+            (1, {}, "w_lambda", {
+                "transform_cat": True,
+            }, "wLambda", "all", {
+                "transform": True,
+            }),
             (0, {}, "cor", {}, "cor", "mean", {}),
             (0, {}, "cov", {}, "cov", "mean", {}),
             (0, {}, "eigenvalues", {}, "eigenvalues", "mean", {}),
@@ -54,7 +61,6 @@ class TestInfoTheory:
             (0, {}, "var", {}, "var", "sd", {}),
             (0, {}, "can_cor", {}, "canCor", "mean", {}),
             (0, {}, "nr_disc", {}, "nrDisc", "all", {}),
-
             (2, {
                 "transform_cat": True,
             }, "skewness", {}, "skewness", "mean", {
