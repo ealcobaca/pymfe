@@ -907,8 +907,11 @@ def _unused_transform_cat(
     return dummies_vars
 
 
-def transform_cat(data_categoric):
+def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     """To do."""
+    if data_categoric.size == 0:
+        return None
+
     _, num_col = data_categoric.shape
 
     dummy_attr_names = [

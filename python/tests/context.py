@@ -72,6 +72,8 @@ def _get_test_data(path: str, file_extension: str = ".csv"
                 pd.read_csv(
                     "{0}{1}".format(path, dataset_name),
                     index_col=0,
+                    na_values=("?", ),
+                    keep_default_na=True,
                 ))
 
     return test_data
