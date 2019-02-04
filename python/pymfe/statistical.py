@@ -43,9 +43,11 @@ class MFEStatistical:
             a single value or a generic Sequence (preferably a np.ndarray)
             type with numeric values.
     """
+
     @classmethod
     def _linear_disc_mat_eig(cls, N: np.ndarray,
-                             y: np.ndarray) -> t.Tuple[np.ndarray, np.ndarray]:
+                             y: np.ndarray,
+                             ) -> t.Tuple[np.ndarray, np.ndarray]:
         """Compute eigenvals/vecs of Fisher's Linear Discriminant Analysis.
 
         More specificaly, the eigenvalues and eigenvectors are calculated
@@ -53,15 +55,20 @@ class MFEStatistical:
 
         Check ``ft_can_cor`` documentation for more in-depth information
         about this matrix.
+
+        Return:
+            tuple(np.ndarray, np.ndarray): eigenvalues and eigenvectors
+                (in this order) of Fisher's Linear Discriminant Analysis
+                Matrix.
         """
+
         def compute_scatter_within(
                 N: np.ndarray, y: np.ndarray,
                 class_val_freq: t.Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
             """Compute Scatter Within matrix. Check doc above for more info."""
-            scatter_within = np.array([
-                (cl_frq - 1.0) * np.cov(N[y == cl_val, :], rowvar=False)
-                for cl_val, cl_frq in zip(*class_val_freq)
-            ]).sum(axis=0)
+            scatter_within = np.array(
+                [(cl_frq - 1.0) * np.cov(N[y == cl_val, :], rowvar=False)
+                 for cl_val, cl_frq in zip(*class_val_freq)]).sum(axis=0)
 
             return scatter_within
 
@@ -71,10 +78,8 @@ class MFEStatistical:
             """Compute Scatter Between matrix. The doc above has more info."""
             class_vals, class_freqs = class_val_freq
 
-            class_means = np.array([
-                N[y == cl_val, :].mean(axis=0)
-                for cl_val in class_vals
-            ])
+            class_means = np.array(
+                [N[y == cl_val, :].mean(axis=0) for cl_val in class_vals])
 
             relative_centers = class_means - N.mean(axis=0)
 
@@ -98,12 +103,81 @@ class MFEStatistical:
             return np.linalg.eig(np.matmul(scatter_within_inv,
                                            scatter_between))
 
-        except np.linalg.LinAlgError:
-            return np.array([]), np.array([])
+        except (np.linalg.LinAlgError, ValueError):
+            return np.array([np.nan]), np.array([np.nan])
+
+    @classmethod
+    def _filter_eig_vals(cls,
+                         eig_vals: np.ndarray,
+                         data: np.ndarray,
+                         y: np.ndarray,
+                         eig_vecs: t.Optional[np.ndarray] = None,
+                         filter_imaginary: bool = True,
+                         filter_less_relevant: float = True,
+                         epsilon: float = 1.0e-8,
+                         ) -> np.ndarray:
+        """Get most expressive eigenvalues (higher absolute value).
+
+        This function returns N eigenvalues, such that:
+
+            N < min(num_class, num_attr)
+
+        Args:
+            filter_imaginary (:obj:`bool`, optional): if True, remove ima-
+                ginary valued eigenvalues and its correspondent eigenvect-
+                ors.
+
+            filter_less_relevant (:obj:`bool`, optional): if True, remove
+                eigenvalues smaller than ``epsilon``.
+
+            epsilon (:obj:`float`, optional): a very small value used to
+                determine ``less relevant`` eigenvalues.
+        """
+        _, num_cols = data.shape
+        num_classes = np.unique(y).size
+        max_valid_eig = min(num_cols, num_classes)
+
+        if eig_vals.size <= max_valid_eig:
+            if eig_vecs:
+                return eig_vals, eig_vecs
+
+            return eig_vals
+
+        eig_vals = np.array(sorted(
+            eig_vals, key=abs, reverse=True)[:max_valid_eig])
+
+        if not filter_imaginary and not filter_less_relevant:
+            if eig_vecs:
+                return eig_vals, eig_vecs
+
+            return eig_vals
+
+        indexes_to_keep = np.array(eig_vals.size * [True])
+
+        if filter_imaginary:
+            indexes_to_keep = np.logical_and(np.isreal(eig_vals),
+                                             indexes_to_keep)
+
+        if filter_less_relevant:
+            indexes_to_keep = np.logical_and(abs(eig_vals) > epsilon,
+                                             indexes_to_keep)
+
+        eig_vals = eig_vals[indexes_to_keep]
+
+        if eig_vecs:
+            eig_vecs = eig_vecs[indexes_to_keep]
+
+        if filter_imaginary:
+            eig_vals = eig_vals.real
+
+        if eig_vecs:
+            return eig_vals, eig_vecs
+
+        return eig_vals
 
     @classmethod
     def ft_can_cor(cls, N: np.ndarray, y: np.ndarray,
-                   epsilon: float = 1.0e-8) -> np.ndarray:
+                   epsilon: float = 1.0e-10) -> np.ndarray:
         """Compute canonical correlations of data.
 
         The canonical correlations p are defined as shown below:
@@ -132,7 +206,10 @@ class MFEStatistical:
                 zero.
         """
         eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
-        eig_vals = eig_vals[abs(eig_vals) > epsilon]
+
+        eig_vals = MFEStatistical._filter_eig_vals(eig_vals=eig_vals,
+                                                   data=N, y=y)
+
         return (eig_vals / (epsilon + 1.0 + eig_vals))**0.5
 
     @classmethod
@@ -180,9 +257,12 @@ class MFEStatistical:
             center_freq_class_most - center_freq_class_least, ord=norm_ord)
 
     @classmethod
-    def ft_cor(cls, N: np.ndarray) -> t.Union[float, np.ndarray]:
+    def ft_cor(cls, N: np.ndarray) -> np.ndarray:
         """Absolute value of correlation between distinct column pairs."""
         corr_mat = np.corrcoef(N, rowvar=False)
+
+        if not isinstance(corr_mat, np.ndarray) and np.isnan(corr_mat):
+            return np.array([np.nan])
 
         res_num_rows, _ = corr_mat.shape
 
@@ -215,25 +295,50 @@ class MFEStatistical:
         return np.nan
 
     @classmethod
-    def ft_eigenvalues(cls, N: np.ndarray) -> t.Union[float, np.ndarray]:
+    def ft_eigenvalues(cls, N: np.ndarray) -> np.ndarray:
         """Returns eigenvalues of covariance matrix of N attributes."""
         cov_mat = np.cov(N, rowvar=False)
 
         try:
             eigvals = np.linalg.eigvals(cov_mat)
 
-        except np.linalg.LinAlgError:
-            return np.nan
+        except (np.linalg.LinAlgError, ValueError):
+            return np.array([np.nan])
 
         return eigvals
 
     @classmethod
-    def ft_g_mean(cls, N: np.ndarray) -> np.ndarray:
-        """Geometric mean of each column."""
-        invalid_vals = np.any(N <= 0, axis=0)
+    def ft_g_mean(cls, N: np.ndarray, allow_zeros: bool = False,
+                  epsilon: float = 1.0e-10) -> np.ndarray:
+        """Geometric mean of each column.
 
-        g_mean = scipy.stats.mstats.gmean(N, axis=0)
-        g_mean[invalid_vals] = np.nan
+        Args:
+            allow_zeros (:obj:`bool`): if True, than all attributes with zero
+                values will have geometric mean set to zero. Otherwise, their
+                geometric mean are set to :obj:`np.nan`.
+
+            epsilon (:obj:`float`): a very small value which all values with
+                absolute value lesser than it are considered zero-valued.
+        """
+        min_values = N.min(axis=0)
+
+        if allow_zeros:
+            cols_invalid = min_values < 0.0
+            cols_zero = 0.0 <= abs(min_values) < epsilon
+            cols_valid = np.logical_not(np.logical_or(cols_invalid,
+                                                      cols_zero))
+
+        else:
+            cols_invalid = min_values <= epsilon
+            cols_valid = np.logical_not(cols_invalid)
+
+        _, num_col = N.shape
+        g_mean = np.zeros(num_col)
+
+        g_mean[cols_valid] = scipy.stats.mstats.gmean(
+            N[:, cols_valid], axis=0)
+
+        g_mean[cols_invalid] = np.nan
 
         return g_mean
 
@@ -248,17 +353,36 @@ class MFEStatistical:
         return scipy.stats.iqr(N, axis=0)
 
     @classmethod
-    def ft_kurtosis(cls, N: np.ndarray, bias: bool = True) -> np.ndarray:
+    def ft_kurtosis(cls, N: np.ndarray, method: int = 3,
+                    bias: bool = True) -> np.ndarray:
         """Compute Kurtosis of each attribute of N.
 
         Args:
             bias (:obj:`bool`): If False, then the calculations are corrected
                 for statistical bias.
+
+        method (:obj:`int`, optional): defines the strategy used for
+            estimate data kurtosis. Used for total compatibility with
+            R package ``e1071``. The options must be one of the follo-
+            wing:
+
+            Option      Formula
+            -------------------
+            1           Kurt_1 = m_4 / m_2^2 - 3. (default of ``scipy.stats``)
+            2           Kurt_2 = ((n+1) * Kurt_1 + 6) * (n-1) / ((n-2)*(n-3)).
+            3           Kurt_3 = m_4 / s^4 - 3 = (Kurt_1+3) * (1 - 1/n)^2 - 3.
+
+            Where ``n`` is the number of elements in ``values`` and
+            m_i is the ith momentum of ``values``.
+
+            Note that if the selected method is unable to be calculated due
+            to division by zero, then the first method will be used instead.
         """
         kurt_arr = np.apply_along_axis(
-            func1d=_summary.kurtosis,
+            func1d=_summary.sum_kurtosis,
             axis=0,
             arr=N,
+            method=method,
             bias=bias)
 
         return kurt_arr
@@ -438,18 +562,38 @@ class MFEStatistical:
             m_factor / (epsilon + num_col * (num_inst - num_classes)))
 
     @classmethod
-    def ft_skewness(cls, N: np.ndarray, bias: bool = True) -> np.ndarray:
+    def ft_skewness(cls, N: np.ndarray, method: int = 3,
+                    bias: bool = True) -> np.ndarray:
         """Compute skewness for each attribute.
 
         Args:
             bias (:obj:`bool`): If False, then the calculations are
                 corrected for statistical bias.
+
+
+        method (:obj:`int`, optional): defines the strategy used for
+            estimate data skewness. Used for total compatibility with
+            R package ``e1071``. The options must be one of the follo-
+            wing:
+
+            Option      Formula
+            -------------------
+            1           Skew_1 = m_3 / m_2^(3/2) (default of ``scipy.stats``)
+            2           Skew_2 = Skew_1 * sqrt(n(n-1)) / (n-2)
+            3           Skew_3 = m_3 / s^3 = Skew_1 ((n-1)/n)^(3/2)
+
+            Where ``n`` is the number of elements in ``values`` and
+            m_i is the ith momentum of ``values``.
+
+            Note that if the selected method is unable to be calculated due
+            to division by zero, then the first method will be used instead.
         """
         skew_arr = np.apply_along_axis(
-            func1d=_summary.skewness,
+            func1d=_summary.sum_skewness,
             axis=0,
             arr=N,
-            bias=bias)
+            bias=bias,
+            method=method)
 
         return skew_arr
 
@@ -490,7 +634,7 @@ class MFEStatistical:
 
     @classmethod
     def ft_t_mean(cls, N: np.ndarray,
-                  pcut: float = 0.2) -> t.Union[float, np.ndarray]:
+                  pcut: float = 0.2) -> np.ndarray:
         """Compute trimmed mean of each attribute.
 
         Args:
@@ -501,7 +645,7 @@ class MFEStatistical:
                 :obj:`np.nan` will be returned.
         """
         if pcut < 0:
-            return np.nan
+            return np.array([np.nan])
 
         return scipy.stats.trim_mean(N, proportiontocut=pcut)
 
@@ -520,8 +664,7 @@ class MFEStatistical:
         return var_array
 
     @classmethod
-    def ft_w_lambda(cls, N: np.ndarray, y: np.ndarray,
-                    epsilon: float = 1.0e-8) -> float:
+    def ft_w_lambda(cls, N: np.ndarray, y: np.ndarray) -> float:
         """Compute Wilks' Lambda value.
 
         The Wilk's Lambda L is calculated as:
@@ -531,18 +674,13 @@ class MFEStatistical:
         Where ``lda_eig_i`` is the ith eigenvalue of Fisher's Linear Discri-
         minant Analysis Matrix. Check ``ft_can_cor`` documentation for more
         in-depth information about this value.
-
-        Args:
-            epsilon (:obj:`float`): a very small value to filter ``zero-val-
-                ued`` eigenvalues.
         """
         eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
 
-        _, num_cols = N.shape
-        num_classes = np.unique(y).size
-        max_valid_eig = min(num_cols, num_classes)
+        eig_vals = MFEStatistical._filter_eig_vals(eig_vals=eig_vals,
+                                                   data=N, y=y)
 
-        eig_vals = eig_vals[eig_vals > epsilon]
-        eig_vals = np.array(sorted(eig_vals, reverse=True)[:max_valid_eig])
+        if eig_vals.size == 0:
+            return np.nan
 
         return np.prod(1.0 / (1.0 + eig_vals))
