@@ -3,6 +3,7 @@
 Todo:
     * Precomputation options, to avoid frequent recalculations.
     * Implement parallel computing.
+    * Handle missing data.
     * By-class feature extraction.
     * Support for multiclass, regression and unsupervised tasks.
     * Remove program driver for quick tests.
@@ -417,12 +418,12 @@ class MFE:
             categorical_cols = np.array([False] * self.X.shape[1])
 
         elif isinstance(cat_cols, str) and cat_cols.lower() == "auto":
-            categorical_cols = ~np.apply_along_axis(
+            categorical_cols = np.logical_not(np.apply_along_axis(
                 _internal.isnumeric,
                 axis=0,
                 arr=self.X,
                 check_subtype=True,
-            )
+            ))
 
             if check_bool:
                 categorical_cols |= np.apply_along_axis(
@@ -443,7 +444,8 @@ class MFE:
 
         categorical_cols = np.array(categorical_cols)
 
-        self._attr_indexes_num = tuple(np.where(~categorical_cols)[0])
+        self._attr_indexes_num = tuple(
+            np.where(np.logical_not(categorical_cols))[0])
         self._attr_indexes_cat = tuple(np.where(categorical_cols)[0])
 
     def _timeopt_type_is_avg(self) -> bool:
@@ -605,7 +607,8 @@ class MFE:
             rescale: t.Optional[str] = None,
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
-            check_bool: bool = False
+            check_bool: bool = False,
+            missing_data: str = "ignore",
             ) -> "MFE":
         """Fits dataset into the a MFE model.
 
@@ -670,6 +673,9 @@ class MFE:
                 two different values is also a categorical (boolean) column,
                 independently of its data type. Otherwise, these columns may
                 be considered Numeric depending on its data type.
+
+            missing_data (:obj:`str`, optional): strategy to handle missing
+                values in data. Not implemented yet.
 
         Raises:
             ValueError: if number of rows of X and y length does not match.

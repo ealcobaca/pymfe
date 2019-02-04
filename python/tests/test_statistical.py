@@ -20,9 +20,8 @@ class TestInfoTheory:
             (1, {}, "w_lambda", {}, "wLambda", "all", {
                 "transform": False,
             }),
-            (1, {}, "w_lambda", {
-                "transform_cat": True,
-            }, "wLambda", "all", {
+            (1, {"transform_cat": True}, "w_lambda", {},
+                "wLambda", "all", {
                 "transform": True,
             }),
             (0, {}, "cor", {}, "cor", "mean", {}),

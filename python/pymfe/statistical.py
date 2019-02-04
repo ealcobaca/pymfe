@@ -103,7 +103,7 @@ class MFEStatistical:
             return np.linalg.eig(np.matmul(scatter_within_inv,
                                            scatter_between))
 
-        except np.linalg.LinAlgError:
+        except (np.linalg.LinAlgError, ValueError):
             return np.array([np.nan]), np.array([np.nan])
 
     @classmethod
@@ -302,18 +302,41 @@ class MFEStatistical:
         try:
             eigvals = np.linalg.eigvals(cov_mat)
 
-        except np.linalg.LinAlgError:
+        except (np.linalg.LinAlgError, ValueError):
             return np.array([np.nan])
 
         return eigvals
 
     @classmethod
-    def ft_g_mean(cls, N: np.ndarray) -> np.ndarray:
-        """Geometric mean of each column."""
-        invalid_vals = np.any(N <= 0, axis=0)
+    def ft_g_mean(cls, N: np.ndarray, allow_zeros: bool = False,
+                  epsilon: float = 1.0e-10) -> np.ndarray:
+        """Geometric mean of each column.
 
-        g_mean = scipy.stats.mstats.gmean(N, axis=0)
-        g_mean[invalid_vals] = np.nan
+        Args:
+            allow_zeros (:obj:`bool`): if True, than all attributes with zero
+                values will have geometric mean set to zero. Otherwise, their
+                geometric mean are set to :obj:`np.nan`.
+
+            epsilon (:obj:`float`): a very small value which all values with
+                absolute value lesser than it are considered zero-valued.
+        """
+        if allow_zeros:
+            cols_invalid = np.any(N < 0, axis=0)
+            cols_zero = np.any(abs(N) < epsilon, axis=0)
+            cols_valid = np.logical_not(np.logical_or(cols_invalid,
+                                                      cols_zero))
+
+        else:
+            cols_invalid = np.any(N <= 0, axis=0)
+            cols_valid = np.logical_not(cols_invalid)
+
+        _, num_col = N.shape
+        g_mean = np.zeros(num_col)
+
+        g_mean[cols_valid] = scipy.stats.mstats.gmean(
+            N[:, cols_valid], axis=0)
+
+        g_mean[cols_invalid] = np.nan
 
         return g_mean
 
