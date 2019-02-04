@@ -609,6 +609,7 @@ class MFE:
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
             check_bool: bool = False,
             missing_data: str = "ignore",
+            precompute: str = "all",
             ) -> "MFE":
         """Fits dataset into the a MFE model.
 
@@ -677,6 +678,13 @@ class MFE:
             missing_data (:obj:`str`, optional): strategy to handle missing
                 values in data. Not implemented yet.
 
+            precompute (:obj:`str`, optional): which computed common values
+                should be cached to share among various metafeature-extrac-
+                tion related methods (e.g. ``distinct classes``, ``covariance
+                matrix``, etc). This argument may speed up metafeature extrac-
+                tion but also consumes more memory, so it may not be suitable
+                for very large datasets.
+
         Raises:
             ValueError: if number of rows of X and y length does not match.
             TypeError: if X or y (or both) is neither a :obj:`list` or
@@ -687,7 +695,6 @@ class MFE:
                 code `model = MFE(...).fit(...)` or inline fit-and-extraction
                 `result = MFE(...).fit(...).extract(...)`.
         """
-
         self.X, self.y = _internal.check_data(X, y)
 
         rescale = _internal.process_generic_option(

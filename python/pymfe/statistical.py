@@ -143,8 +143,8 @@ class MFEStatistical:
 
             return eig_vals
 
-        eig_vals = np.array(sorted(eig_vals, key=lambda item: abs(item),
-                                   reverse=True)[:max_valid_eig])
+        eig_vals = np.array(sorted(
+            eig_vals, key=abs, reverse=True)[:max_valid_eig])
 
         if not filter_imaginary and not filter_less_relevant:
             if eig_vecs:
@@ -320,14 +320,16 @@ class MFEStatistical:
             epsilon (:obj:`float`): a very small value which all values with
                 absolute value lesser than it are considered zero-valued.
         """
+        min_values = N.min(axis=0)
+
         if allow_zeros:
-            cols_invalid = np.any(N < 0, axis=0)
-            cols_zero = np.any(abs(N) < epsilon, axis=0)
+            cols_invalid = min_values < 0.0
+            cols_zero = 0.0 <= abs(min_values) < epsilon
             cols_valid = np.logical_not(np.logical_or(cols_invalid,
                                                       cols_zero))
 
         else:
-            cols_invalid = np.any(N <= 0, axis=0)
+            cols_invalid = min_values <= epsilon
             cols_valid = np.logical_not(cols_invalid)
 
         _, num_col = N.shape
