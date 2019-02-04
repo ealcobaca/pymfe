@@ -1,6 +1,7 @@
 """Provides easy import path procedure for test modules.
 
-Font:
+Notes:
+    Some tips are gathered from:
     "Structuring Your Project", The Hitchhiker's Guide to Python
     link: https://docs.python-guide.org/writing/structure/
 
@@ -42,7 +43,8 @@ from pymfe.mfe import MFE  # noqa: E402
 
 TARGET_COL_NAMES = ("target", )
 
-EPSILON = 1.0e-6
+EPSILON = 1.0e-4
+EPSILON_RELAXED = 1.0e-2
 
 
 def _get_test_data(path: str, file_extension: str = ".csv"
@@ -70,6 +72,8 @@ def _get_test_data(path: str, file_extension: str = ".csv"
                 pd.read_csv(
                     "{0}{1}".format(path, dataset_name),
                     index_col=0,
+                    na_values=("?", ),
+                    keep_default_na=True,
                 ))
 
     return test_data
@@ -152,7 +156,7 @@ def get_val_py(dataset: pd.core.frame.DataFrame, feat_name_py: str,
         summary=summary_name,
     ).fit(
         X=X, y=y, **fit_args).extract(
-            remove_nan=False, **method_args)
+            remove_nan=False, **{feat_name_py: method_args})
 
     return res_mfe_py_vals
 
@@ -167,7 +171,7 @@ def na_to_nan(values: t.Sequence[t.Any]) -> np.ndarray:
 
 def get_val_r(dataset: pd.core.frame.DataFrame, feat_name_r: str,
               ind_attr: t.Sequence[bool], ind_targ: t.Sequence[bool],
-              summary_name: str, group_name: str) -> t.Sequence:
+              summary_name: str, group_name: str, **kwargs) -> t.Sequence:
     """Get summarized metafeature value from R mfe implementation.
 
     Args:
@@ -200,6 +204,9 @@ def get_val_r(dataset: pd.core.frame.DataFrame, feat_name_r: str,
     Raises:
         AttributeError: if ``group_name`` is not a correct group name.
     """
+    if not summary_name:
+        summary_name = "non.aggregated"
+
     rpy2.robjects.pandas2ri.activate()
     rpy2.robjects.numpy2ri.activate()
 
@@ -213,10 +220,84 @@ def get_val_r(dataset: pd.core.frame.DataFrame, feat_name_r: str,
         x=dataset_r.rx(ind_attr),
         y=dataset_r.rx(ind_targ),
         features=feat_name_r,
-        summary=summary_name)
+        summary=summary_name,
+        **kwargs)
 
     rpy2.robjects.pandas2ri.deactivate()
 
     res_mfe_r_vals = na_to_nan(res_mfe_r.rx2(feat_name_r))
 
     return res_mfe_r_vals
+
+
+def compare_results(res_mfe_py: t.Sequence,
+                    res_mfe_r: t.Sequence,
+                    diff_factor: t.Optional[float] = None,
+                    verbose: bool = True) -> t.Sequence:
+    """Canonical way to compare results between diff. MFE implementations.
+
+    A pair of values are considered equivalent if they both are :obj:`np.nan`
+    or if the following holds:
+
+        abs(val_a - val_b) <= EPSILON + diff_factor*min(abs(val_a), abs(val_b))
+
+    EPSILON is a module attribute which assume a very small value.  Check
+    ``Args`` section for information about ``diff_factor``.
+
+    Args:
+        res_mfe_py (:obj:`Sequence` of numeric): results obtained from MFE
+            python implementation.
+
+        res_mfe_r (:obj:`Sequence` of numeric): results obtained from MFE
+            R implementation.
+
+        diff_factor (:obj:`float`, optional): percentage of the minimum
+            absolute value between results of allowed divergente between
+            both values from ``res_mfe_py`` and ``res_mfe_r``. Must be in
+            [0, 1] interval or assume :obj:`NoneType`. If this argument is
+            :obj:`NoneType` it will be set to 0.0.
+
+        verbose (:obj:`bool`, optional): if True, then this function may
+            print messages which can help inspect failed tests cases.
+
+    Return:
+        bool: if True, then all pair of values are assumed as equivalent.
+            False if any pair of values is considered distinct.
+
+    Raises:
+        ValueError: if ``diff_factor`` is not in [0, 1] interval.
+    """
+    if len(res_mfe_py) != len(res_mfe_r):
+        if verbose:
+            print("Outputs with different size.")
+
+        return False
+
+    if not diff_factor:
+        diff_factor = 0.0
+
+    if not (0 <= diff_factor <= 1.0):
+        raise ValueError('"diff_factor" must be in [0, 1] interval. '
+                         "(or be None).")
+
+    def check_difference(val_a, val_b, diff_factor):
+        abs_diff = abs(val_a - val_b)
+
+        max_diff_allowed = (EPSILON + diff_factor
+                            * min(abs(val_a), abs(val_b)))
+
+        return abs_diff <= max_diff_allowed
+
+    compared_list = [
+        (np.logical_and(np.isnan(val_py), np.isnan(val_r))
+         or check_difference(val_py, val_r, diff_factor))
+        for val_py, val_r in zip(res_mfe_py, res_mfe_r)
+    ]
+
+    if verbose:
+        print("Result from Python MFE:", res_mfe_py,
+              "Result from R MFE:", res_mfe_r,
+              "Difference vector:", compared_list,
+              sep="\n")
+
+    return all(compared_list)

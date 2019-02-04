@@ -11,4 +11,5 @@ class MFEModelBased:
 
     @classmethod
     def ft_test_model_based(cls):
+        """To do."""
         return 0.0
