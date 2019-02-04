@@ -22,8 +22,8 @@ class TestMFEGroups:
           "LaNdMaRKiNg"), _internal.VALID_GROUPS),
     ))
     def test_param_groups_iterable_valid(self, groups, expected):
-        """Tests 'group' param (_process_groups), valid iterable input."""
-        mfe_groups = set(_internal.process_groups(groups))
+        """Tests 'group' param, valid iterable input."""
+        mfe_groups = set(_internal.process_generic_set(groups, "groups"))
         assert not mfe_groups.difference(expected)
 
     @pytest.mark.parametrize("groups, expected", (
@@ -34,9 +34,64 @@ class TestMFEGroups:
         ("landmarking", ("landmarking", )),
     ))
     def test_param_groups_single_valid(self, groups, expected):
-        """Tests 'group' param (_process_groups), valid single-valued input."""
-        mfe_groups = set(_internal.process_groups(groups))
+        """Tests 'group' param, valid single-valued input."""
+        mfe_groups = set(_internal.process_generic_set(groups, "groups"))
         assert not mfe_groups.difference(expected)
+
+    @pytest.mark.parametrize("timeopt, expected", (
+        (None, None),
+        ("AVG", "avg"),
+        ("avg_summ", "avg_summ"),
+        ("Total_Summ", "total_summ"),
+        ("TOTAL", "total"),
+    ))
+    def test_param_timeopt_single_valid(self, timeopt, expected):
+        """Tests 'group' param, valid single-valued input."""
+        mfe_timeopt = _internal.process_generic_option(
+            timeopt, "timeopt", allow_none=True)
+
+        assert mfe_timeopt == expected
+
+    @pytest.mark.parametrize("rescale, expected", (
+        (None, None),
+        ("ROBUST", "robust"),
+        ("Min-Max", "min-max"),
+        ("Standard", "standard"),
+    ))
+    def test_param_rescale_single_valid(self, rescale, expected):
+        """Tests 'group' param, valid single-valued input."""
+        mfe_rescale = _internal.process_generic_option(
+            rescale, "rescale", allow_none=True)
+
+        assert mfe_rescale == expected
+
+    @pytest.mark.parametrize("timeopt, expected_exception", (
+        (("total", ), TypeError),
+        ([None], TypeError),
+        ("totaal", ValueError),
+        ("", ValueError),
+        ("all", ValueError),
+        ("avg_", ValueError),
+    ))
+    def test_param_timeopt_notvalid(self, timeopt, expected_exception):
+        """Tests 'timeopt' param, invalid input."""
+        with pytest.raises(expected_exception):
+            _internal.process_generic_option(
+                timeopt, "timeopt", allow_none=True)
+
+    @pytest.mark.parametrize("rescale, expected_exception", (
+        (("standard", ), TypeError),
+        ([None], TypeError),
+        ("robustrobust", ValueError),
+        ("all", ValueError),
+        ("", ValueError),
+        ("min_max", ValueError),
+    ))
+    def test_param_rescale_notvalid(self, rescale, expected_exception):
+        """Tests 'rescale' param, invalid input."""
+        with pytest.raises(expected_exception):
+            _internal.process_generic_option(
+                rescale, "rescale", allow_none=True)
 
     @pytest.mark.parametrize("groups, expected_exception", (
         (["unknown"], ValueError),
@@ -49,9 +104,9 @@ class TestMFEGroups:
         (12, TypeError),
     ))
     def test_param_groups_iterable_notvalid(self, groups, expected_exception):
-        """Tests 'group' param (_process_groups), invalid iterable input."""
+        """Tests 'group' param, invalid iterable input."""
         with pytest.raises(expected_exception):
-            set(_internal.process_groups(groups))
+            _internal.process_generic_set(groups, "groups")
 
     @pytest.mark.parametrize("groups, expected_exception", (
         ("unknown", ValueError),
@@ -64,9 +119,9 @@ class TestMFEGroups:
         (123, TypeError),
     ))
     def test_param_groups_single_notvalid(self, groups, expected_exception):
-        """Tests 'group' param (_process_groups), invalid single-val input."""
+        """Tests 'group' param, invalid single-val input."""
         with pytest.raises(expected_exception):
-            set(_internal.process_groups(groups))
+            _internal.process_generic_set(groups, "groups")
 
 
 class TestMFESummary:
@@ -149,10 +204,10 @@ class TestMFESummary:
             (DATA_GENERIC_NUMERIC_0, _summary.SUMMARY_METHODS["mean"], None,
              1.625),
             (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["sd"], {
-                "ddof": 2
+                "ddof": 2,
             }, 1.2423693),
             (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["sd"], {
-                "ddof": 1
+                "ddof": 1,
             }, 1.1502104),
         ))
     def test_summarize_single_feat_value(self, features, callable_sum,
@@ -252,6 +307,20 @@ class TestMFEInstantiation:
             model.fit(X=[1], y=[1])
             model.extract(suppress_warnings=suppress_warnings, **kwargs)
 
+    @pytest.mark.parametrize("timeopt",
+                             ("total", "avg", "total_sum", "avg_summ"))
+    def test_check_timeopt_working(self, timeopt):
+        features = ("mean", "kurtosis", "attr_ent")
+        summary = ("range", "skewness", "mean", "max")
+        res = MFE(
+            features=features, summary=summary, measure_time="total").fit(
+                X=[1], y=[1]).extract(suppress_warnings=True)
+
+        name, val, time = res
+
+        assert (len(res) == 3 and len(name) == len(val) == len(time)
+                and len(time) == len(features) * len(summary))
+
     @pytest.mark.parametrize("X, y, splits, expected_error", (
         ([1, 2, 3, 4], [1, 2, 3], None, ValueError),
         ([[1, 2, 3, 4]], [1, 2, 3, 4], None, ValueError),
@@ -283,22 +352,14 @@ class TestMFEInstantiation:
         assert (model.X.shape == shape_X and model.y.shape == shape_y)
 
     @pytest.mark.parametrize(
-        "dt_id, class_ind, ind_num, ind_cat, cat_cols, check_bool",
-        (
+        "dt_id, class_ind, ind_num, ind_cat, cat_cols, check_bool", (
             (1, 6, (0, 3), (1, 2, 4, 5), "auto", True),
             (1, 6, (0, 3, 4), (1, 2, 5), "auto", False),
             (0, 20, tuple(range(20)), tuple(), [], False),
             (0, 20, tuple(range(20)), tuple(), None, False),
-        )
-    )
-    def test_check_num_cat_cols_indexes(
-            self,
-            dt_id,
-            class_ind,
-            ind_num,
-            ind_cat,
-            cat_cols,
-            check_bool):
+        ))
+    def test_check_num_cat_cols_indexes(self, dt_id, class_ind, ind_num,
+                                        ind_cat, cat_cols, check_bool):
         """Test column indexes separated by numeric and categorical types."""
         dataset = context.DATASET_LIST[dt_id]
 
@@ -330,9 +391,7 @@ class TestInternalFunctions:
         ([1, 2.1, 0.0, -0.0, -.1, +1.2, +.9, 0.14, 3.1415], True),
     ))
     def test_isnumeric_valid(self, value, check_subtype):
-        assert _internal.isnumeric(
-            value=value,
-            check_subtype=check_subtype)
+        assert _internal.isnumeric(value=value, check_subtype=check_subtype)
 
     @pytest.mark.parametrize("value, check_subtype", (
         ("1", False),
@@ -355,5 +414,4 @@ class TestInternalFunctions:
     ))
     def test_isnumeric_invalid(self, value, check_subtype):
         assert not _internal.isnumeric(
-            value=value,
-            check_subtype=check_subtype)
+            value=value, check_subtype=check_subtype)

@@ -41,9 +41,6 @@ class MFE:
             mary functions names for features summarization.
     """
 
-    # Disable limits for instance var and method args num
-    # pylint: disable=R0902, R0913
-
     def __init__(self,
                  groups: t.Union[str, t.Iterable[str]] = "all",
                  features: t.Union[str, t.Iterable[str]] = "all",
@@ -167,9 +164,9 @@ class MFE:
                 "Towards Reproducible Empirical Research in Meta-Learning",
                 Rivolli et al. URL: https://arxiv.org/abs/1808.10406
         """
-        # pylint: disable=R0913
-
-        self.groups = _internal.process_groups(groups)  # type: t.Sequence[str]
+        self.groups = _internal.process_generic_set(
+            values=groups,
+            group_name="groups")  # type: t.Sequence[str]
 
         self.features, self._metadata_mtd_ft = _internal.process_features(
             features=features,
@@ -181,8 +178,10 @@ class MFE:
         self.summary, self._metadata_mtd_sm = _internal.process_summary(
             summary)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
-        self.timeopt = _internal.process_timeopt(
-            measure_time)  # type: t.Optional[str]
+        self.timeopt = _internal.process_generic_option(
+            value=measure_time,
+            group_name="timeopt",
+            allow_none=True)  # type: t.Optional[str]
 
         self.X = None  # type: t.Optional[np.ndarray]
         self.y = None  # type: t.Optional[np.ndarray]
@@ -685,7 +684,10 @@ class MFE:
 
         self.X, self.y = _internal.check_data(X, y)
 
-        rescale = _internal.process_rescale_opt(rescale)
+        rescale = _internal.process_generic_option(
+            value=rescale,
+            group_name="rescale",
+            allow_none=True)
 
         if (splits is not None
                 and (not isinstance(splits, collections.Iterable)

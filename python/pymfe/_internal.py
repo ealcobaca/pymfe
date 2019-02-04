@@ -1,6 +1,11 @@
 """Provides useful functions for MFE package.
 
 Attributes:
+    VALID_VALUE_PREFIX (:obj:`str`): Prefix which all tuples that
+        keeps valid values for custom user options must use in its
+        name. This is used to enable automatic detectation of these
+        groups.
+
     VALID_GROUPS (:obj:`tuple` of :obj:`str`): Supported groups of
         metafeatures of pymfe.
 
@@ -20,6 +25,8 @@ Attributes:
     MTF_PREFIX (:obj:`str`): prefix of metafeature-extraction me-
         thod names. For example, the metafeature called `inst_nr`
         is implemented in the method named `[MTF_PREFIX]_inst_nr`.
+        This is used to enable automatic detection of these me-
+        thods.
 
     TIMEOPT_AVG_PREFIX (:obj:`str`): prefix for time options ba-
         sed on average of gathered metrics. It means necessarily
@@ -42,6 +49,7 @@ import collections
 import operator
 import warnings
 import time
+import sys
 
 import numpy as np
 import sklearn.preprocessing
@@ -53,6 +61,8 @@ import statistical
 import info_theory
 import landmarking
 import model_based
+
+VALID_VALUE_PREFIX = "VALID_"
 
 VALID_GROUPS = (
     "landmarking",
@@ -115,18 +125,18 @@ TypeNumeric = t.TypeVar(
 """Typing alias for both numeric types."""
 
 
-def _check_value_in_group(value: t.Union[str, t.Iterable[str]],
-                          group: t.Iterable[str],
-                          wildcard: str = "all"
-                          ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[str, ...]]:
+def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
+                           valid_group: t.Iterable[str],
+                           wildcard: t.Optional[str] = "all"
+                           ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[str, ...]]:
     """Checks if a value is in a set or a set of values is a subset of a set.
 
     Args:
         value (:obj:`Iterable` of :obj:`str` or :obj:`str): value(s) to be
-            checked if are in the given group of strings.
+            checked if are in the given valid_group of strings.
 
-        group (:obj:`Iterable` of :obj:`str`): a group of strings represen-
-            ting the values such that `value` will be verified against.
+        valid_group (:obj:`Iterable` of :obj:`str`): a valid_group of strings
+            representing the values such that `value` will be verified against.
 
         wildcard (:obj:`str`, optional): a value which represent 'all values'.
             The case is ignored, so, for example, both values 'all', 'ALL' and
@@ -134,8 +144,8 @@ def _check_value_in_group(value: t.Union[str, t.Iterable[str]],
 
     Returns:
         tuple(tuple, tuple): A pair of tuples containing, respectively, values
-        that are in the given group and those that are not. If no value is in
-        either group, then this group will be :obj:`None`.
+        that are in the given valid_group and those that are not. If no value
+        is in either valid_group, then this valid_group will be :obj:`None`.
 
     Raises:
         TypeError: if `value` is not a Iterable type or some of its elements
@@ -151,10 +161,10 @@ def _check_value_in_group(value: t.Union[str, t.Iterable[str]],
 
     if isinstance(value, str):
         value = value.lower()
-        if value == wildcard.lower():
-            in_group = tuple(group)
+        if wildcard and value == wildcard.lower():
+            in_group = tuple(valid_group)
 
-        elif value in group:
+        elif value in valid_group:
             in_group = (value, )
 
         else:
@@ -163,12 +173,12 @@ def _check_value_in_group(value: t.Union[str, t.Iterable[str]],
     else:
         value_set = set(map(str.lower, value))
 
-        if wildcard.lower() in value_set:
-            in_group = tuple(group)
+        if wildcard and wildcard.lower() in value_set:
+            in_group = tuple(valid_group)
 
         else:
-            in_group = tuple(value_set.intersection(group))
-            not_in_group = tuple(value_set.difference(group))
+            in_group = tuple(value_set.intersection(valid_group))
+            not_in_group = tuple(value_set.difference(valid_group))
 
     return in_group, not_in_group
 
@@ -498,42 +508,151 @@ def check_summary_warnings(value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
             RuntimeWarning)
 
 
-def process_groups(
-        groups: t.Union[t.Iterable[str], str],
-        wildcard: str = "all") -> t.Tuple[str, ...]:
-    """Process `groups` argument from MFE.__init__ to generate internal metadata.
+def process_generic_set(
+        values: t.Optional[t.Union[t.Iterable[str], str]],
+        group_name: str,
+        wildcard: t.Optional[str] = "all",
+        allow_none: bool = False,
+        allow_empty: bool = False,
+        ) -> t.Tuple[str, ...]:
+    """Check if given ``values`` are in an internal valid set named ``group_name``.
 
     Args:
-        groups (:obj:`str` or :obj:`t.Iterable` of :obj:`str`): a single
-            string or a iterable with group identifiers to be processed.
-            Check out ``MFE`` Class documentation for more information.
+        wildcard (:obj:`str`, optional): special value to ``accept any value``.
 
-        wildcard (:obj:`str`): value to be used as ``select all`` value.
+        group_name (:obj:`str`, optional): name of which internal group ``va-
+            lues`` should be searched inside. Please check this module Attri-
+            bute documentation in order to verify which groups are available
+            for valid options. They are always prefixed with ``VALID_GROUPS_-
+            PREFIX``, and this parameter must be the name of the group without
+            its prefix. For example, to select ``VALID_CLASSES`` group for
+            ``values`` reference, then group_names must be just ``classes``.
 
-    Returns:
-        tuple(str): containing all valid group lower-cased identifiers.
+        allow_none (:obj:`bool`, optional): if True, then :obj:`NoneType` is
+            a accepted as ``values``. Note that, if ``values`` is an Iterable,
+            it does not mean that :obj:`NoneType` will become a valid value wi-
+            thin, but ``values`` can assume value :obj:`NoneType`.
+
+        allow_empty (:obj:`bool`, optional): if True, then ``values`` can be an
+            zero-length iterable.
+
+    Return:
+        tuple(str): lower-cased tuple with all valid values.
 
     Raises:
-        TypeError: if `groups` is neither a string `all` nor a Iterable
-            containing valid group identifiers as strings.
+        TypeError: if ``group_name`` is :obj:`NoneType`.
+        ValueError: These are the conditions for raising this exception:
+            - Some element in ``values`` is a valid value (not in the
+                selected valid values based in ``group_name`` argument).
 
-        ValueError: if `groups` is None or is a empty Iterable or if a unknown
-            group identifier is given.
+            - ``values`` is None and ``allow_none`` is False.
+
+            - ``values`` is a empty sequence and ``allow_empty`` is False.
+
+            - ``group_name`` is ``summary`` or ``features``, as both of
+                these groups have their own special function to process
+                user custom arguments (check ``process_features`` and
+                ``process_summary`` for more information).
+
+            - ``group_names`` is not a valid group for ``values`` reference.
     """
-    if not groups:
-        raise ValueError('"Groups" can not be None nor empty.')
+    if not group_name:
+        raise TypeError('"group_name" can not be empty or None.')
 
-    in_group, not_in_group = _check_value_in_group(
-        value=groups,
-        group=VALID_GROUPS,
+    if values is None:
+        if allow_none:
+            return tuple()
+
+        raise ValueError('"Values" can not be None. (while checking '
+                         'group "{}").'.format(group_name))
+
+    if values is not None and not values:
+        if allow_empty:
+            return tuple()
+
+        raise ValueError('"Values" can not be empty. (while checking '
+                         'group "{}")'.format(group_name))
+
+    if group_name.upper() in ("SUMMARY", "FEATURES"):
+        raise ValueError('Forbidden "group_name" option ({}). There is a '
+                         "specify processing method for it".format(group_name))
+
+    _module_name = sys.modules[__name__]
+
+    try:
+        valid_values = inspect.getattr_static(
+            _module_name, "{0}{1}".format(VALID_VALUE_PREFIX,
+                                          group_name.upper()))
+    except AttributeError:
+        raise ValueError('Invalid "group_name" "{}". Check _internal '
+                         "module documentation to verify which ones "
+                         "are available for use.".format(group_name))
+
+    in_valid_set, not_in_valid_set = _check_values_in_group(
+        value=values,
+        valid_group=valid_values,
         wildcard=wildcard)
 
-    if not_in_group:
-        raise ValueError("Unknown groups: {0}. "
+    if not_in_valid_set:
+        raise ValueError("Unknown values: {0}. "
                          "Please select values in {1}.".format(
-                             not_in_group, VALID_GROUPS))
+                             not_in_valid_set, valid_values))
 
-    return in_group
+    return in_valid_set
+
+
+def process_generic_option(
+        value: t.Optional[str],
+        group_name: str,
+        allow_none: bool = False,
+        allow_empty: bool = False,
+        ) -> t.Optional[str]:
+    """Check if given ``value`` is in an internal reference group of values.
+
+    This function is essentially a wrapper for the ``process_generic_set``
+    function, with some differences:
+
+        - Only string-typed values are accepted, with the exception that
+            it can also assume :obj:`NoneType` if ``allow_none`` is True.
+
+        - The return value is not a tuple, but instead a lower-cased ver-
+            sion of ``value``.
+
+    Check ``process_generic_set`` for more precise information about this
+    process.
+
+    Return:
+        str: lower-cased version of ``value``.
+
+    Raises:
+        TypeError: if value is neither :obj:`NoneType` (and ``allow_none`` is
+            also True) nor a :obj:`str` type object.
+
+        All exceptions from ``process_generic_set`` are also raised, with the
+        same conditions as described in that function documentation.
+    """
+
+    if value is not None and not isinstance(value, str):
+        raise TypeError('"value" (group name {}) must be a string-'
+                        "type object (got {}).".format(group_name,
+                                                       type(value)))
+
+    processed_value = process_generic_set(
+        values=value,
+        group_name=group_name,
+        wildcard=None,
+        allow_none=allow_none,
+        allow_empty=allow_empty)
+
+    canonical_value = None
+
+    if processed_value:
+        canonical_value = processed_value[0]
+
+        if not isinstance(canonical_value, str):
+            canonical_value = None
+
+    return canonical_value
 
 
 def process_summary(
@@ -570,9 +689,9 @@ def process_summary(
     if not summary:
         return tuple(), tuple()
 
-    in_group, not_in_group = _check_value_in_group(
+    in_group, not_in_group = _check_values_in_group(
         value=summary,
-        group=VALID_SUMMARY,
+        valid_group=VALID_SUMMARY,
         wildcard=wildcard)
 
     if not_in_group:
@@ -685,77 +804,6 @@ def process_features(
                           UserWarning)
 
     return tuple(available_feat_names), tuple(ft_mtd_processed)
-
-
-def process_timeopt(timeopt: t.Optional[str]):
-    """Process time measurement option selected by user.
-
-    The processing consists of checking if the option given is a
-    valid one, and set all given string to lower case to keep option
-    checking (when necessary) consistent.
-
-    Args:
-        timeopt (:obj:`str`): option of time measurement given by the
-            user while instantiating MFE class.
-
-    Return:
-        str: canonical ``timeopt`` (lower-cased).
-
-    Raises:
-        TypeError: if ``timeopt`` is neither None or a string.
-        ValueError: if ``timeopt`` is not a valid option. Check MFE
-            documentation class or ``VALID_TIMEOPT`` module attribute
-            to check which time options are available to user.
-    """
-    if timeopt is None:
-        return None
-
-    if not isinstance(timeopt, str):
-        raise TypeError("Time argument must be "
-                        "string type or None (got {}).".format(type(timeopt)))
-
-    timeopt = timeopt.lower()
-
-    if timeopt not in VALID_TIMEOPT:
-        raise ValueError('Invalid time option "{0}". Please choose one '
-                         "amongst {1} or None.".format(timeopt, VALID_TIMEOPT))
-
-    return timeopt
-
-
-def process_rescale_opt(rescale_opt: t.Optional[str]):
-    """Process the user numeric data scaling option.
-
-    The processing consists of checking if the option given is a
-    valid one, and set all given string to lower case to keep option
-    checking (when necessary) consistent.
-
-    Args:
-        rescale_opt (:obj:`str`): a valid numeric data rescaling option.
-
-    Return:
-        str: canonical ``rescale_opt`` (lower-cased).
-
-    Raises:
-        TypeError: if ``rescale_opt`` is neither None or a string.
-        ValueError: if ``rescale_opt`` is not a valid option. Check MFE
-            documentation class or ``VALID_RESCALE`` module attribute
-            to check which time options are available to user.
-    """
-    if rescale_opt is None:
-        return None
-
-    if not isinstance(rescale_opt, str):
-        raise TypeError("Time argument must be string type"
-                        "or None (got {}).".format(type(rescale_opt)))
-
-    rescale_opt = rescale_opt.lower()
-
-    if rescale_opt not in VALID_RESCALE:
-        raise ValueError('Invalid time option "{0}". Please choose one amongst'
-                         "{1} or None.".format(rescale_opt, VALID_RESCALE))
-
-    return rescale_opt
 
 
 def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
@@ -1022,12 +1070,12 @@ def rescale_data(data: np.ndarray,
         scaler model is also raised by this function.
     """
     if option not in VALID_RESCALE:
-        raise ValueError('Unknown option "{0}". Please choose one'
+        raise ValueError('Unknown option "{0}". Please choose one '
                          "between {1}".format(option, VALID_RESCALE))
 
     if not args:
         args = {}
 
-    scaler_model = _RESCALE_SCALERS.get(option)(**args)
+    scaler_model = _RESCALE_SCALERS.get(option, "min-max")(**args)
 
     return scaler_model.fit_transform(data)
