@@ -257,9 +257,12 @@ class MFEStatistical:
             center_freq_class_most - center_freq_class_least, ord=norm_ord)
 
     @classmethod
-    def ft_cor(cls, N: np.ndarray) -> t.Union[float, np.ndarray]:
+    def ft_cor(cls, N: np.ndarray) -> np.ndarray:
         """Absolute value of correlation between distinct column pairs."""
         corr_mat = np.corrcoef(N, rowvar=False)
+
+        if not isinstance(corr_mat, np.ndarray) and np.isnan(corr_mat):
+            return np.array([np.nan])
 
         res_num_rows, _ = corr_mat.shape
 
@@ -292,7 +295,7 @@ class MFEStatistical:
         return np.nan
 
     @classmethod
-    def ft_eigenvalues(cls, N: np.ndarray) -> t.Union[float, np.ndarray]:
+    def ft_eigenvalues(cls, N: np.ndarray) -> np.ndarray:
         """Returns eigenvalues of covariance matrix of N attributes."""
         cov_mat = np.cov(N, rowvar=False)
 
@@ -300,7 +303,7 @@ class MFEStatistical:
             eigvals = np.linalg.eigvals(cov_mat)
 
         except np.linalg.LinAlgError:
-            return np.nan
+            return np.array([np.nan])
 
         return eigvals
 
@@ -606,7 +609,7 @@ class MFEStatistical:
 
     @classmethod
     def ft_t_mean(cls, N: np.ndarray,
-                  pcut: float = 0.2) -> t.Union[float, np.ndarray]:
+                  pcut: float = 0.2) -> np.ndarray:
         """Compute trimmed mean of each attribute.
 
         Args:
@@ -617,7 +620,7 @@ class MFEStatistical:
                 :obj:`np.nan` will be returned.
         """
         if pcut < 0:
-            return np.nan
+            return np.array([np.nan])
 
         return scipy.stats.trim_mean(N, proportiontocut=pcut)
 

@@ -123,7 +123,7 @@ class MFEInfoTheory:
         return attr_conc
 
     @classmethod
-    def ft_attr_ent(cls, C: np.ndarray) -> t.Union[np.ndarray, np.float]:
+    def ft_attr_ent(cls, C: np.ndarray) -> np.ndarray:
         """Calculates Shannon entropy for each predictive attribute.
 
         The Shannon Entropy H of a vector x is defined as:
@@ -139,7 +139,7 @@ class MFEInfoTheory:
                 func1d=MFEInfoTheory._entropy, axis=0, arr=C)
 
         except ValueError:
-            return np.nan
+            return np.array([np.nan])
 
     @classmethod
     def ft_class_conc(cls, C: np.ndarray, y: np.ndarray) -> np.ndarray:

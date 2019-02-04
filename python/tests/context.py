@@ -267,6 +267,12 @@ def compare_results(res_mfe_py: t.Sequence,
     Raises:
         ValueError: if ``diff_factor`` is not in [0, 1] interval.
     """
+    if len(res_mfe_py) != len(res_mfe_r):
+        if verbose:
+            print("Outputs with different size.")
+
+        return False
+
     if not diff_factor:
         diff_factor = 0.0
 
