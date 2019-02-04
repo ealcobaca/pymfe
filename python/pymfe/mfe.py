@@ -865,14 +865,6 @@ if __name__ == "__main__":
     MODEL.fit(rescale="robust", rescale_args=None,
               X=attr, y=labels, transform_num=True, transform_cat=True)
 
-    print(MODEL._custom_args_ft["X"])
-    print(MODEL._custom_args_ft["N"])
-    print(MODEL._custom_args_ft["N"].mean())
-    print(MODEL._custom_args_ft["N"].var())
-    print(MODEL._custom_args_ft["N"].max())
-    print(MODEL._custom_args_ft["N"].min())
-    print(MODEL._custom_args_ft["C"])
-
     names, vals, times = MODEL.extract(
         suppress_warnings=False, remove_nan=True,
         verbose=True, kurtosis={"method": 1})
