@@ -94,11 +94,10 @@ def sum_quantiles(values: TypeValList,
         return np.percentile(
             values, (0, 25, 50, 75, 100), interpolation=numpy_interpolation)
 
-    else:
-        return scipy.stats.mstats.mquantiles(
-            values, (0.00, 0.25, 0.50, 0.75, 1.00),
-            alphap=scipy_alphap,
-            betap=scipy_betap)
+    return scipy.stats.mstats.mquantiles(
+        values, (0.00, 0.25, 0.50, 0.75, 1.00),
+        alphap=scipy_alphap,
+        betap=scipy_betap)
 
 
 def sum_skewness(values: TypeValList, method: int = 3,
