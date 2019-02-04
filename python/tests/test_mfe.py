@@ -203,12 +203,48 @@ class TestMFESummary:
         "features, callable_sum, callable_args, expected_value", (
             (DATA_GENERIC_NUMERIC_0, _summary.SUMMARY_METHODS["mean"], None,
              1.625),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["max"], None,
+             1.90624969),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["min"], None,
+             -1.380858),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["var"], {
+                "ddof": 1,
+            }, 1.3229841),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["var"], {
+                "ddof": 0,
+            }, 1.1576111),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["count"], None,
+             8),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["iq_range"],
+             None, 1.528035187),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["median"], None,
+             0.178063385),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["range"], None,
+             3.28710769),
             (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["sd"], {
                 "ddof": 2,
             }, 1.2423693),
             (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["sd"], {
                 "ddof": 1,
             }, 1.1502104),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["kurtosis"], {
+                "method": 1,
+            }, -1.031558),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["kurtosis"], {
+                "method": 2,
+            }, -0.7662727),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["kurtosis"], {
+                "method": 3,
+            }, -1.492912),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["skewness"], {
+                "method": 1,
+            }, 0.01203024),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["skewness"], {
+                "method": 2,
+            }, 0.01500435),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["skewness"], {
+                "method": 3,
+            }, 0.009846604),
         ))
     def test_summarize_single_feat_value(self, features, callable_sum,
                                          callable_args, expected_value):
@@ -233,6 +269,36 @@ class TestMFESummary:
             }, [0.25, 0.125, 0.25, 0.25, 0.125]),
             (DATA_GENERIC_NUMERIC_0, _summary.SUMMARY_METHODS["quantiles"],
              None, [1.0, 1.0, 1.5, 2.0, 3.0]),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["quantiles"], {
+                "package": "numpy",
+                "numpy_interpolation": "linear",
+            }, [-1.380858, -0.67023868, 0.17806338, 0.85779651, 1.90624969]),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["quantiles"], {
+                "package": "numpy",
+                "numpy_interpolation": "midpoint",
+            }, [-1.380858, -0.90217271, 0.17806338, 0.9116939, 1.90624969]),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["quantiles"], {
+                "package": "numpy",
+                "numpy_interpolation": "lower",
+            }, [-1.380858, -1.36604076, 0.09289884, 0.80389912, 1.90624969]),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["quantiles"], {
+                "package": "scipy",
+            }, [-1.380858, -0.94855951, 0.17806338, 0.92247338, 1.90624969]),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["quantiles"], {
+                "package": "scipy",
+                "scipy_alphap": 1.0,
+                "scipy_betap": 0.0,
+            }, [-1.380858, -0.43830465, 0.26322793, 1.01948868, 1.90624969]),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["quantiles"], {
+                "package": "scipy",
+                "scipy_alphap": 1.0,
+                "scipy_betap": 1.0,
+            }, [-1.380858, -0.67023868, 0.17806338, 0.85779651, 1.90624969]),
+            (DATA_GENERIC_NUMERIC_1, _summary.SUMMARY_METHODS["quantiles"], {
+                "package": "scipy",
+                "scipy_alphap": 1/3,
+                "scipy_betap": 1/3,
+            }, [-1.380858, -0.97948405, 0.17806338, 0.9296597, 1.90624969]),
         ))
     def test_summarize_multi_feat_value(self, features, callable_sum,
                                         callable_args, expected_value):
