@@ -369,7 +369,7 @@ def summarize(
     try:
         metafeature = callable_sum(processed_feat, **callable_args)
 
-    except TypeError:
+    except (TypeError, ValueError, ZeroDivisionError):
         metafeature = np.nan
 
     return metafeature
@@ -408,7 +408,7 @@ def get_feat_value(
     try:
         features = mtd_callable(**mtd_args)
 
-    except (TypeError, ValueError) as type_e:
+    except (TypeError, ValueError, ZeroDivisionError) as type_e:
         if not suppress_warnings:
             warnings.warn(
                 "Error extracting {0}: \n{1}.\nWill set it "
