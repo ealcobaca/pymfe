@@ -23,10 +23,18 @@ Attributes:
         rescaling numeric data while fitting dataset.
 
     MTF_PREFIX (:obj:`str`): prefix of metafeature-extraction me-
-        thod names. For example, the metafeature called `inst_nr`
-        is implemented in the method named `[MTF_PREFIX]_inst_nr`.
-        This is used to enable automatic detection of these me-
-        thods.
+        thod names for classes in ``VALID_MFECLASSES``. For exam-
+        ple, the metafeature called ``inst_nr`` is implemented in
+        the method named `[MTF_PREFIX]_inst_nr`. This is used to
+        enable automatic detection of these methods.
+
+    PRECOMPUTE_PREFIX (:obj:`str`): prefix for precomputation me-
+        thod names. If a method of a class in ``VALID_MFECLASSES``
+        starts with this prefix, it will be automatically executed
+        to gather values that this class frequently uses. These
+        values will be shared between all feature-extraction related
+        methods of all ``VALID_MFECLASSES`` classes to avoid redun-
+        dant computation.
 
     TIMEOPT_AVG_PREFIX (:obj:`str`): prefix for time options ba-
         sed on average of gathered metrics. It means necessarily
@@ -102,6 +110,8 @@ TIMEOPT_AVG_PREFIX = "avg"
 TIMEOPT_SUMMARY_SUFIX = "summ"
 
 MTF_PREFIX = "ft_"
+
+PRECOMPUTE_PREFIX = "precompute"
 
 TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
@@ -183,20 +193,20 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
     return in_group, not_in_group
 
 
-def _get_feat_mtds_from_class(class_obj: t.Callable) -> t.List[TypeMtdTuple]:
-    """Get feature-extraction related methods from a given Class.
-
-    Is assumed that methods related with feature extraction are prefixed
-    with :obj:`MTF_PREFIX` value.
+def _get_prefixed_mtds_from_class(class_obj: t.Any,
+                                  prefix: str) -> t.List[TypeMtdTuple]:
+    """Get all class methods from ``class_obj`` prefixed with ``prefix``.
 
     Args:
-        class_obj (:obj:`Class`): Class from which the feature methods
-            should be extracted.
+        class_obj (:obj:`Class`): Class from which the methods should be
+            extracted.
+
+        prefix (:obj:`str`): prefix which method names must have in order
+            to it be gathered.
 
     Returns:
-        list(tuple): a list of tuples in the form (`mtd_name`,
-        `mtd_address`) which contains all methods associated with
-        feature extraction (prefixed with :obj:`MTF_PREFIX`).
+        list(tuple): a list of tuples in the form (`mtd_name`, `mtd_address`)
+            of all class methods from ``class_obj`` prefixed with ``prefix``.
     """
     feat_mtd_list = inspect.getmembers(
         class_obj, predicate=inspect.ismethod)  # type: t.List[TypeMtdTuple]
@@ -205,58 +215,21 @@ def _get_feat_mtds_from_class(class_obj: t.Callable) -> t.List[TypeMtdTuple]:
     # name are all prefixed with "MTF_PREFIX".
     feat_mtd_list = [
         ft_method for ft_method in feat_mtd_list
-        if ft_method[0].startswith(MTF_PREFIX)
+        if ft_method[0].startswith(prefix)
     ]
 
     return feat_mtd_list
 
 
-def _get_all_ft_mtds() -> t.Dict[str, t.List[TypeMtdTuple]]:
-    """Get all feature-extraction related methods in prefefined Classes.
-
-    Feature-extraction methods are prefixed with :obj:`MTF_PREFIX` from all
-    Classes predefined in :obj:`VALID_MFECLASSES` tuple.
-
-    Returns:
-        dict: in the form {`group_name`: [(`mtd_name`, `mtd_address`)]},
-        i.e. the keys are the names of feature groups (e.g. `general` or
-        `landmarking`) and values are lists of tuples which first entry are
-        feature-extraction related method names and the second entry are its
-        correspondent address. For example:
-
-            {
-                `general`: [
-                    (`ft_nr_num`, <mtd_address>),
-                    (`ft_nr_inst`, <mtd_address>),
-                    ...
-                ],
-
-                `statistical`: [
-                    (`ft_mean`, <mtd_address>),
-                    (`ft_max`, <mtd_address>),
-                    ...
-                ],
-
-                ...
-            }
-    """
-    feat_mtd_dict = {
-        ft_type_id: _get_feat_mtds_from_class(mfe_class)
-        for ft_type_id, mfe_class in zip(VALID_GROUPS, VALID_MFECLASSES)
-    }  # type: t.Dict[str, t.List[TypeMtdTuple]]
-
-    return feat_mtd_dict
-
-
 def _filter_mtd_dict(
         ft_mtds_dict: t.Dict[str, t.List[TypeMtdTuple]],
         groups: t.Optional[t.Tuple[str, ...]]) -> t.Tuple[TypeMtdTuple, ...]:
-    """Filter return of `_get_all_ft_mtds(...)` function based on given `groups`.
+    """Filter return of `_get_all_prefixed_mtds` function based on given `groups`.
 
-    This is an auxiliary function for `process_features(...)` function.
+    This is an auxiliary function for ``process_features`` function.
 
     Args:
-        ft_mtds_dict (:obj:`Dict`): return from `_get_all_ft_mtds(...)`
+        ft_mtds_dict (:obj:`Dict`): return from ``_get_all_prefixed_mtds``
             function.
 
         groups (:obj:`Tuple` of :obj:`str`): a tuple of feature group names. It
@@ -285,7 +258,59 @@ def _filter_mtd_dict(
     return ft_mtds_filtered
 
 
-def _preprocess_ft_arg(features: t.Union[str, t.Iterable[str]]) -> t.List[str]:
+def _get_all_prefixed_mtds(
+        prefix: str, groups: str) -> t.Dict[str, t.List[TypeMtdTuple]]:
+    """Get all feature-extraction related methods in predefined Classes.
+
+    Feature-extraction methods are prefixed with ``prefix`` from all Clas-
+    ses predefined in :obj:`VALID_MFECLASSES` tuple.
+
+    Args:
+        prefix (:obj:`str`): prefix which method names must have in order
+            to it be gathered.
+
+        groups (:obj:`Tuple` of :obj:`str`): a tuple of feature group names.
+        It can assume value :obj:`NoneType`, which is interpreted as ``no
+        filter`` (i.e. all features of all groups will be returned).
+
+    Returns:
+        dict: in the form {`group_name`: [(`mtd_name`, `mtd_address`)]},
+        i.e. the keys are the names of feature groups (e.g. `general` or
+        `landmarking`) and values are lists of tuples which first entry are
+        feature-extraction related method names. The second entries are
+        their correspondent addresses. For example:
+
+            {
+                `general`: [
+                    (`ft_nr_num`, <mtd_address>),
+                    (`ft_nr_inst`, <mtd_address>),
+                    ...
+                ],
+                `statistical`: [
+                    (`ft_mean`, <mtd_address>),
+                    (`ft_max`, <mtd_address>),
+                    ...
+                ],
+                ...
+            }
+    """
+    groups = tuple(set(VALID_GROUPS).intersection(groups))
+
+    if not groups:
+        return {}
+
+    feat_mtd_dict = {
+        ft_type_id: _get_prefixed_mtds_from_class(
+            class_obj=mfe_class,
+            prefix=prefix)
+        for ft_type_id, mfe_class in zip(groups, VALID_MFECLASSES)
+    }  # type: t.Dict[str, t.List[TypeMtdTuple]]
+
+    return _filter_mtd_dict(ft_mtds_dict=feat_mtd_dict, groups=groups)
+
+
+def _preprocess_iterable_arg(
+        features: t.Union[str, t.Iterable[str]]) -> t.List[str]:
     """Process `features` to a canonical form.
 
     Remove repeated elements from a collection of features and cast all values
@@ -424,6 +449,7 @@ def build_mtd_kwargs(mtd_name: str,
                      mtd_args: t.Iterable[str],
                      inner_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
                      user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
+                     precomp_args: t.Optional[t.Dict[str, t.Any]] = None,
                      suppress_warnings: bool = False) -> t.Dict[str, t.Any]:
     """Build a `kwargs` (:obj:`Dict`) for a feature-extraction :obj:`Callable`.
 
@@ -446,6 +472,10 @@ def build_mtd_kwargs(mtd_name: str,
             guments must be verified in its correspondent method documen-
             tation.
 
+        precomp_args (:obj:`Dict`, optional): precomputed cached arguments
+            which may be used for the feature-extraction method to speed
+            up its calculations.
+
         suppress_warnings(:obj:`bool`, optional): if True, will not show
             any warnings about unknown callable parameters.
 
@@ -460,9 +490,13 @@ def build_mtd_kwargs(mtd_name: str,
     if inner_custom_args is None:
         inner_custom_args = {}
 
+    if precomp_args is None:
+        precomp_args = {}
+
     combined_args = {
         **user_custom_args,
         **inner_custom_args,
+        **precomp_args,
     }
 
     callable_args = {
@@ -766,18 +800,19 @@ def process_features(
     Raises:
         ValueError: if features is :obj:`None` or is empty.
     """
-
     if not features:
         raise ValueError('"features" can not be None nor empty.')
 
-    processed_ft = _preprocess_ft_arg(features)  # type: t.List[str]
+    ft_mtds_filtered = _get_all_prefixed_mtds(
+        prefix=MTF_PREFIX,
+        groups=groups)  # type: t.Tuple[TypeMtdTuple, ...]
 
-    ft_mtds_filtered = _filter_mtd_dict(
-        _get_all_ft_mtds(), groups)  # type: t.Tuple[TypeMtdTuple, ...]
+    processed_ft = _preprocess_iterable_arg(features)  # type: t.List[str]
 
     if wildcard in processed_ft:
         processed_ft = [
-            remove_mtd_prefix(mtd_name) for mtd_name, _ in ft_mtds_filtered
+            remove_prefix(value=mtd_name, prefix=MTF_PREFIX)
+            for mtd_name, _ in ft_mtds_filtered
         ]
 
     available_feat_names = []  # type: t.List[str]
@@ -786,7 +821,9 @@ def process_features(
     for ft_mtd_tuple in ft_mtds_filtered:
         ft_mtd_name, ft_mtd_callable = ft_mtd_tuple
 
-        mtd_name_without_prefix = remove_mtd_prefix(ft_mtd_name)
+        mtd_name_without_prefix = remove_prefix(
+            value=ft_mtd_name,
+            prefix=MTF_PREFIX)
 
         if mtd_name_without_prefix in processed_ft:
             mtd_callable_args = _extract_mtd_args(ft_mtd_callable)
@@ -806,7 +843,83 @@ def process_features(
     return tuple(available_feat_names), tuple(ft_mtd_processed)
 
 
-def check_data(X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
+def process_precomp_groups(
+        precomp_groups: t.Union[str, t.Iterable[str]],
+        groups: t.Optional[t.Tuple[str, ...]] = None,
+        wildcard: str = "all",
+        suppress_warnings: bool = False,
+        **kwargs
+        ) -> t.Dict[str, t.Any]:
+    """Process `precomp_groups` argument while fitting into a MFE model.
+
+    This function is expected to be used after `process_groups` function,
+    as `groups` parameter is expected to be in a canonical form (lower-cased
+    values inside a tuple).
+
+    Args:
+        precomp_groups (:obj:`Iterable` of `str` or `str`): a single or a se-
+            quence of metafeature group names whose precomputation methods
+            should be taken. Note that any group not in ``groups`` (see argu-
+            ment below) is completely ignored.
+
+        groups (:obj:`Tuple` of :obj:`str`, optional): collection containing
+            one or more group identifiers. Check out ``MFE`` class documenta-
+            tion for more information.
+
+        wildcard (:obj:`str`, optional): value to be used as ``select all``
+            for ``precompute`` argument.
+
+        suppress_warnings (:obj:`bool`, optional): if True, suppress warnings
+            invoked while processing precomputation option.
+
+        **kwargs: used to pass extra custom arguments to precomputation metho-
+            ds.
+
+    Returns:
+        dict:
+    """
+    if not precomp_groups:
+        return {}
+
+    processed_precomp_groups = _preprocess_iterable_arg(
+        precomp_groups)  # type: t.List[str]
+
+    if wildcard in processed_precomp_groups:
+        processed_precomp_groups = groups
+
+    else:
+        processed_precomp_groups = tuple(
+            set(processed_precomp_groups).intersection(groups))
+
+        if not suppress_warnings:
+            unknown_groups = processed_precomp_groups.difference(groups)
+
+            for unknown_precomp in unknown_groups:
+                warnings.warn('Unknown precomp_groups "{0}"'.format(
+                        unknown_precomp), UserWarning)
+
+    precomp_mtds_filtered = _get_all_prefixed_mtds(
+        prefix=PRECOMPUTE_PREFIX,
+        groups=processed_precomp_groups)  # type: t.Tuple[TypeMtdTuple, ...]
+
+    precomp_items = {}
+
+    for precomp_mtd_tuple in precomp_mtds_filtered:
+        _, precomp_mtd_callable = precomp_mtd_tuple
+
+        new_precomp_vals = precomp_mtd_callable(**kwargs)
+
+        if new_precomp_vals:
+            precomp_items = {
+                **precomp_items,
+                **new_precomp_vals,
+            }
+
+    return precomp_items
+
+
+def check_data(X: t.Union[np.ndarray, list],
+               y: t.Union[np.ndarray, list]
                ) -> t.Tuple[np.ndarray, np.ndarray]:
     """Checks received `X` and `y` data type and shape.
 
@@ -882,25 +995,25 @@ def isnumeric(
     return isinstance(value, _TYPE_NUMERIC)
 
 
-def remove_mtd_prefix(mtd_name: str) -> str:
-    """Remove feature-extraction method prefix from its name.
+def remove_prefix(value: str, prefix: str) -> str:
+    """Remove ``prefix`` from ``value``.
 
-    The predefined prefix is stored in :obj:`MTF_PREFIX`.
+    The predefined prefix is stored in :obj:`prefix`.
 
     Args:
-        mtd_name (:obj:`str`): method name prefixed with value
-            stored in :obj:`MTF_PREFIX`.
+        value (:obj:`str`): method name prefixed with value stored in
+            ``prefix``.
 
     Returns:
         str: method name without prefix.
 
     Raises:
-        TypeError: if `mtd_name` is not a string.
+        TypeError: if `value` is not a string.
     """
-    if mtd_name.startswith(MTF_PREFIX):
-        return mtd_name[len(MTF_PREFIX):]
+    if value.startswith(prefix):
+        return value[len(prefix):]
 
-    return mtd_name
+    return value
 
 
 def timeit(func: t.Callable, *args) -> t.Tuple[t.Any, float]:

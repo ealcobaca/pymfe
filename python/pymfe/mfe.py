@@ -201,6 +201,9 @@ class MFE:
         self._attr_indexes_cat = None  # type: t.Optional[t.Tuple[int, ...]]
         """Categorical column indexes from fitted X (indep. attributes)."""
 
+        self._precomp_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
+        """Precomputed common feature-extraction method arguments."""
+
     def _call_summary_methods(
             self,
             feature_values: t.Sequence[_internal.TypeNumeric],
@@ -340,13 +343,16 @@ class MFE:
             if verbose:
                 print("Extracting {} feature...".format(ft_mtd_name))
 
-            ft_name_without_prefix = _internal.remove_mtd_prefix(ft_mtd_name)
+            ft_name_without_prefix = _internal.remove_prefix(
+                value=ft_mtd_name,
+                prefix=_internal.MTF_PREFIX)
 
             ft_mtd_args_pack = _internal.build_mtd_kwargs(
                 mtd_name=ft_name_without_prefix,
                 mtd_args=ft_mtd_args,
                 user_custom_args=kwargs.get(ft_name_without_prefix),
                 inner_custom_args=self._custom_args_ft,
+                precomp_args=self._precomp_args_ft,
                 suppress_warnings=suppress_warnings)
 
             features, time_ft = _internal.timeit(
@@ -609,7 +615,9 @@ class MFE:
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
             check_bool: bool = False,
             missing_data: str = "ignore",
-            precompute: str = "all",
+            precomp_groups: str = "all",
+            wildcard: str = "all",
+            suppress_warnings: bool = False,
             ) -> "MFE":
         """Fits dataset into the a MFE model.
 
@@ -678,12 +686,18 @@ class MFE:
             missing_data (:obj:`str`, optional): strategy to handle missing
                 values in data. Not implemented yet.
 
-            precompute (:obj:`str`, optional): which computed common values
-                should be cached to share among various metafeature-extrac-
-                tion related methods (e.g. ``distinct classes``, ``covariance
-                matrix``, etc). This argument may speed up metafeature extrac-
-                tion but also consumes more memory, so it may not be suitable
-                for very large datasets.
+            precomp_groups (:obj:`str`, optional): which metafeature groups
+                common values should be cached to share among various metafea-
+                ture-extraction related methods (e.g. ``classes``, ``covarian-
+                ce``, etc). This argument may speed up metafeature extraction
+                but also consumes more memory, so it may not be suitable for
+                very large datasets.
+
+            wildcard (:obj:`str`, optional): value used as ``select all`` for
+                ``precomp_groups``.
+
+            suppress_warnings (:obj:`bool`, optional): if True, ignore all
+                warnings invoked while fitting dataset.
 
         Raises:
             ValueError: if number of rows of X and y length does not match.
@@ -695,17 +709,17 @@ class MFE:
                 code `model = MFE(...).fit(...)` or inline fit-and-extraction
                 `result = MFE(...).fit(...).extract(...)`.
         """
+        if (splits is not None
+                and (not isinstance(splits, collections.Iterable)
+                     or isinstance(splits, str))):
+            raise TypeError('"splits" argument must be a iterable.')
+
         self.X, self.y = _internal.check_data(X, y)
 
         rescale = _internal.process_generic_option(
             value=rescale,
             group_name="rescale",
             allow_none=True)
-
-        if (splits is not None
-                and (not isinstance(splits, collections.Iterable)
-                     or isinstance(splits, str))):
-            raise TypeError('"splits" argument must be a iterable.')
 
         self.splits = copy.deepcopy(splits)
 
@@ -723,6 +737,16 @@ class MFE:
             "y": self.y,
             "splits": self.splits,
         }
+
+        if precomp_groups:
+            self._precomp_args_ft = _internal.process_precomp_groups(
+                precomp_groups=precomp_groups,
+                groups=self.groups,
+                wildcard=wildcard,
+                suppress_warnings=suppress_warnings,
+                **self._custom_args_ft)
+
+        print(self._precomp_args_ft)
 
         self._custom_args_sum = {
             "ddof": 1,
@@ -859,7 +883,7 @@ if __name__ == "__main__":
 
     MODEL = MFE(
         groups="all",
-        features=["cat_to_num", "mean", "nr_inst"],
+        features=["cat_to_num", "mean", "nr_inst", "nr_class"],
         summary=["histogram", "mean", "sd", "kurtosis"],
         measure_time="avg_summ")
     MODEL.fit(rescale="robust", rescale_args=None,

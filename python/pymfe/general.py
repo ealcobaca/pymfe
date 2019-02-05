@@ -39,6 +39,32 @@ class MFEGeneral:
             a single value or a generic Sequence (preferably a np.ndarray)
             type with numeric values.
     """
+    @classmethod
+    def precompute_class(cls, y: t.Optional[np.ndarray] = None,
+                         **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute distinct classes and its frequencies from ``y``.
+
+        Args:
+            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+
+            **kwargs: not used, just here for consistency.
+
+        Return:
+            Precomputation dictionary with following items:
+                - ``classes`` (:obj:`np.ndarray`): distinct classes of ``y``,
+                    if ``y`` is not :obj:`NoneType`.
+                - ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
+                    ``y``, if ``y`` is not :obj:`NoneType`.
+        """
+        precomp_vals = {}
+
+        if y is not None:
+            classes, class_freqs = np.unique(y, return_counts=True)
+
+            precomp_vals["classes"] = classes
+            precomp_vals["class_freqs"] = class_freqs
+
+        return precomp_vals
 
     @classmethod
     def ft_attr_to_inst(cls, X: np.ndarray) -> int:
@@ -64,14 +90,22 @@ class MFEGeneral:
         return C.shape[1] / N.shape[1]
 
     @classmethod
-    def ft_freq_class(cls, y: np.ndarray) -> t.Union[np.ndarray, np.float]:
-        """Returns an array of relative frequency of each distinct class."""
+    def ft_freq_class(cls, y: np.ndarray,
+                      class_freqs: np.ndarray = None
+                      ) -> t.Union[np.ndarray, np.float]:
+        """Returns an array of relative frequency of each distinct class.
+
+        Args:
+            class_freqs (:obj:`np.ndarray`, optional): vector of (absolute,
+                not relative) frequency of each class in data.
+        """
         if y.size == 0:
             return np.nan
 
-        _, freq = np.unique(y, return_counts=True)
+        if class_freqs is None:
+            _, class_freqs = np.unique(y, return_counts=True)
 
-        return freq / y.size
+        return class_freqs / y.size
 
     @classmethod
     def ft_inst_to_attr(cls, X: np.ndarray) -> int:
@@ -100,8 +134,32 @@ class MFEGeneral:
         return C.shape[1]
 
     @classmethod
-    def ft_nr_class(cls, y: np.ndarray) -> int:
-        """Returns number of distinct classes."""
+    def ft_nr_class(cls, y: t.Optional[np.ndarray] = None,
+                    classes: t.Optional[np.ndarray] = None
+                    ) -> t.Union[float, int]:
+        """Returns number of distinct classes.
+
+        ``y`` and ``classes`` can not be :obj:`NoneType` simultaneously,
+        or else :obj:`np.nan` will be returned.
+
+        Args:
+            y (:obj:`np.ndarray`, optional): target vector.
+
+            classes (:obj:`np.ndarray`, optional): vector with all distinct
+                classes. This argument purpose is mainly for benefit from
+                precomputations.
+
+        Return:
+            int or float: number of distinct classes in a target vector if
+                either ``y`` or ``classes`` is given. Otherwise, return
+                :obj:`np.nan`.
+        """
+        if classes is not None:
+            return classes.size
+
+        if y is None:
+            return np.nan
+
         return np.unique(y).size
 
     @classmethod
