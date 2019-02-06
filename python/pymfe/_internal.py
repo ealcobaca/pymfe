@@ -111,7 +111,7 @@ TIMEOPT_SUMMARY_SUFIX = "summ"
 
 MTF_PREFIX = "ft_"
 
-PRECOMPUTE_PREFIX = "precompute"
+PRECOMPUTE_PREFIX = "precompute_"
 
 TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
@@ -133,6 +133,14 @@ TypeNumeric = t.TypeVar(
     np.number,
 )
 """Typing alias for both numeric types."""
+
+
+def warning_format(msg, *args, **kwargs):
+    """Change warnings format."""
+    return "Warning: {}\n".format(msg)
+
+
+warnings.formatwarning = warning_format
 
 
 def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
@@ -212,7 +220,8 @@ def _get_prefixed_mtds_from_class(class_obj: t.Any,
         class_obj, predicate=inspect.ismethod)  # type: t.List[TypeMtdTuple]
 
     # It is assumed that all feature-extraction related methods
-    # name are all prefixed with "MTF_PREFIX".
+    # name are all prefixed with "MTF_PREFIX" and all precomputa-
+    # tion methos, prefixed with "PRECOMPUTE_PREFIX".
     feat_mtd_list = [
         ft_method for ft_method in feat_mtd_list
         if ft_method[0].startswith(prefix)
@@ -259,7 +268,8 @@ def _filter_mtd_dict(
 
 
 def _get_all_prefixed_mtds(
-        prefix: str, groups: str) -> t.Dict[str, t.List[TypeMtdTuple]]:
+        prefix: str, groups: t.Tuple[str, ...]
+        ) -> t.Dict[str, t.List[TypeMtdTuple]]:
     """Get all feature-extraction related methods in predefined Classes.
 
     Feature-extraction methods are prefixed with ``prefix`` from all Clas-
@@ -303,7 +313,8 @@ def _get_all_prefixed_mtds(
         ft_type_id: _get_prefixed_mtds_from_class(
             class_obj=mfe_class,
             prefix=prefix)
-        for ft_type_id, mfe_class in zip(groups, VALID_MFECLASSES)
+        for ft_type_id, mfe_class in zip(VALID_GROUPS, VALID_MFECLASSES)
+        if ft_type_id in groups
     }  # type: t.Dict[str, t.List[TypeMtdTuple]]
 
     return _filter_mtd_dict(ft_mtds_dict=feat_mtd_dict, groups=groups)
@@ -876,7 +887,8 @@ def process_precomp_groups(
             ds.
 
     Returns:
-        dict:
+        dict: precomputed values given by ``kwargs`` using convenient methods
+            based in valid selected metafeature groups.
     """
     if not precomp_groups:
         return {}
@@ -888,15 +900,15 @@ def process_precomp_groups(
         processed_precomp_groups = groups
 
     else:
-        processed_precomp_groups = tuple(
-            set(processed_precomp_groups).intersection(groups))
-
         if not suppress_warnings:
-            unknown_groups = processed_precomp_groups.difference(groups)
+            unknown_groups = set(processed_precomp_groups).difference(groups)
 
             for unknown_precomp in unknown_groups:
                 warnings.warn('Unknown precomp_groups "{0}"'.format(
                         unknown_precomp), UserWarning)
+
+        processed_precomp_groups = tuple(
+            set(processed_precomp_groups).intersection(groups))
 
     precomp_mtds_filtered = _get_all_prefixed_mtds(
         prefix=PRECOMPUTE_PREFIX,
@@ -905,13 +917,29 @@ def process_precomp_groups(
     precomp_items = {}
 
     for precomp_mtd_tuple in precomp_mtds_filtered:
-        _, precomp_mtd_callable = precomp_mtd_tuple
+        precomp_mtd_name, precomp_mtd_callable = precomp_mtd_tuple
 
-        new_precomp_vals = precomp_mtd_callable(**kwargs)
+        try:
+            new_precomp_vals = precomp_mtd_callable(**kwargs)
+
+        except (AttributeError, TypeError, ValueError) as type_err:
+            new_precomp_vals = {}
+
+            if not suppress_warnings:
+                warnings.warn("Something went wrong while "
+                              'precomputing "{0}". Will ignore '
+                              "this method. Error message:\n"
+                              "{1}.".format(precomp_mtd_name, repr(type_err)))
 
         if new_precomp_vals:
             precomp_items = {
                 **precomp_items,
+                **new_precomp_vals,
+            }
+
+            # Update kwargs to avoid recalculations iteratively
+            kwargs = {
+                **kwargs,
                 **new_precomp_vals,
             }
 

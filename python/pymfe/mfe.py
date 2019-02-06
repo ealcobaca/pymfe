@@ -166,8 +166,7 @@ class MFE:
                 Rivolli et al. URL: https://arxiv.org/abs/1808.10406
         """
         self.groups = _internal.process_generic_set(
-            values=groups,
-            group_name="groups")  # type: t.Sequence[str]
+            values=groups, group_name="groups")  # type: t.Sequence[str]
 
         self.features, self._metadata_mtd_ft = _internal.process_features(
             features=features,
@@ -180,8 +179,7 @@ class MFE:
             summary)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
         self.timeopt = _internal.process_generic_option(
-            value=measure_time,
-            group_name="timeopt",
+            value=measure_time, group_name="timeopt",
             allow_none=True)  # type: t.Optional[str]
 
         self.X = None  # type: t.Optional[np.ndarray]
@@ -344,8 +342,7 @@ class MFE:
                 print("Extracting {} feature...".format(ft_mtd_name))
 
             ft_name_without_prefix = _internal.remove_prefix(
-                value=ft_mtd_name,
-                prefix=_internal.MTF_PREFIX)
+                value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
 
             ft_mtd_args_pack = _internal.build_mtd_kwargs(
                 mtd_name=ft_name_without_prefix,
@@ -424,12 +421,13 @@ class MFE:
             categorical_cols = np.array([False] * self.X.shape[1])
 
         elif isinstance(cat_cols, str) and cat_cols.lower() == "auto":
-            categorical_cols = np.logical_not(np.apply_along_axis(
-                _internal.isnumeric,
-                axis=0,
-                arr=self.X,
-                check_subtype=True,
-            ))
+            categorical_cols = np.logical_not(
+                np.apply_along_axis(
+                    _internal.isnumeric,
+                    axis=0,
+                    arr=self.X,
+                    check_subtype=True,
+                ))
 
             if check_bool:
                 categorical_cols |= np.apply_along_axis(
@@ -547,10 +545,11 @@ class MFE:
 
         return data_cat
 
-    def _set_data_numeric(self, transform_cat: bool,
-                          rescale: t.Optional[str] = None,
-                          rescale_args: t.Optional[t.Dict[str, t.Any]] = None
-                          ) -> np.ndarray:
+    def _set_data_numeric(
+            self,
+            transform_cat: bool,
+            rescale: t.Optional[str] = None,
+            rescale_args: t.Optional[t.Dict[str, t.Any]] = None) -> np.ndarray:
         """Returns numeric data from fitted dataset.
 
         Args:
@@ -598,13 +597,13 @@ class MFE:
                                           axis=1).astype(float)
 
         if rescale:
-            data_num = _internal.rescale_data(data=data_num,
-                                              option=rescale,
-                                              args=rescale_args)
+            data_num = _internal.rescale_data(
+                data=data_num, option=rescale, args=rescale_args)
 
         return data_num
 
-    def fit(self,
+    def fit(
+            self,
             X: t.Sequence,
             y: t.Sequence,
             splits: t.Optional[t.Iterable[int]] = None,
@@ -618,7 +617,7 @@ class MFE:
             precomp_groups: str = "all",
             wildcard: str = "all",
             suppress_warnings: bool = False,
-            ) -> "MFE":
+    ) -> "MFE":
         """Fits dataset into the a MFE model.
 
         Args:
@@ -717,18 +716,17 @@ class MFE:
         self.X, self.y = _internal.check_data(X, y)
 
         rescale = _internal.process_generic_option(
-            value=rescale,
-            group_name="rescale",
-            allow_none=True)
+            value=rescale, group_name="rescale", allow_none=True)
 
         self.splits = copy.deepcopy(splits)
 
         self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
 
         data_cat = self._set_data_categoric(transform_num=transform_num)
-        data_num = self._set_data_numeric(transform_cat=transform_cat,
-                                          rescale=rescale,
-                                          rescale_args=rescale_args)
+        data_num = self._set_data_numeric(
+            transform_cat=transform_cat,
+            rescale=rescale,
+            rescale_args=rescale_args)
 
         self._custom_args_ft = {
             "X": self.X,
@@ -745,8 +743,6 @@ class MFE:
                 wildcard=wildcard,
                 suppress_warnings=suppress_warnings,
                 **self._custom_args_ft)
-
-        print(self._precomp_args_ft)
 
         self._custom_args_sum = {
             "ddof": 1,
@@ -883,15 +879,23 @@ if __name__ == "__main__":
 
     MODEL = MFE(
         groups="all",
-        features=["cat_to_num", "mean", "nr_inst", "nr_class"],
+        features=["cat_to_num", "mean", "nr_inst", "nr_class", "w_lambda"],
         summary=["histogram", "mean", "sd", "kurtosis"],
         measure_time="avg_summ")
-    MODEL.fit(rescale="robust", rescale_args=None,
-              X=attr, y=labels, transform_num=True, transform_cat=True)
+    MODEL.fit(
+        rescale="robust",
+        precomp_groups="all",
+        rescale_args=None,
+        X=attr,
+        y=labels,
+        transform_num=True,
+        transform_cat=True)
 
     names, vals, times = MODEL.extract(
-        suppress_warnings=False, remove_nan=True,
-        verbose=True, kurtosis={"method": 1})
+        suppress_warnings=False,
+        remove_nan=True,
+        verbose=True,
+        kurtosis={"method": 1})
 
     for n, v, i in zip(names, vals, times):
         print(n, v, i)

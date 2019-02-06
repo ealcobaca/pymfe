@@ -155,7 +155,7 @@ def get_val_py(dataset: pd.core.frame.DataFrame, feat_name_py: str,
         features=feat_name_py,
         summary=summary_name,
     ).fit(
-        X=X, y=y, **fit_args).extract(
+        X=X, y=y, precomp_groups=None, **fit_args).extract(
             remove_nan=False, **{feat_name_py: method_args})
 
     return res_mfe_py_vals

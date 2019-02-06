@@ -40,14 +40,158 @@ class MFEStatistical:
             **kwargs argument of ``extract`` method of MFE class.
 
         4. The return value of all feature-extraction methods should be
-            a single value or a generic Sequence (preferably a np.ndarray)
+            a single value or a generic Sequence (preferably an np.ndarray)
             type with numeric values.
     """
 
     @classmethod
-    def _linear_disc_mat_eig(cls, N: np.ndarray,
-                             y: np.ndarray,
-                             ) -> t.Tuple[np.ndarray, np.ndarray]:
+    def precompute_statistical_class(cls,
+                                     y: t.Optional[np.ndarray] = None,
+                                     **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute distinct classes and its frequencies from ``y``.
+
+        Args:
+            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+
+            **kwargs: extra arguments. May containg values thar are already
+                precomputed before this method, so it can help speed up the
+                precomputation.
+
+        Return:
+            dict: with following precomputed items:
+
+            - ``classes`` (:obj:`np.ndarray`): distinct classes of ``y``,
+                if ``y`` is not :obj:`NoneType`.
+
+            - ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
+                ``y``, if ``y`` is not :obj:`NoneType`.
+        """
+        precomp_vals = {}
+
+        if y is not None and not {"classes", "class_freqs"}.issubset(kwargs):
+            classes, class_freqs = np.unique(y, return_counts=True)
+
+            precomp_vals["classes"] = classes
+            precomp_vals["class_freqs"] = class_freqs
+
+        return precomp_vals
+
+    @classmethod
+    def precompute_statistical_eigen(cls,
+                                     N: t.Optional[np.ndarray] = None,
+                                     y: t.Optional[np.ndarray] = None,
+                                     **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute eigenvalues and eigenvectors of Fisher's LDA Matrix.
+
+        Args:
+            N (:obj:`np.ndarray`, optional): numerical attributes from fitted
+                data.
+
+            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+
+            **kwargs: extra arguments. May containg values thar are already
+                precomputed before this method, so it can help speed up the
+                precomputation.
+
+        Return:
+            dict: with following precomputed items:
+
+            - ``eig_vals`` (:obj:`np.ndarray`): array with filtered eigen-
+                values of Fisher's Linear Discriminant Analysis Matrix.
+
+            - ``eig_vecs`` (:obj:`np.ndarray`): array with filtered eigen-
+                vectors of Fisher's Linear Discriminant Analysis Matrix.
+
+            The following items are used by this method, so they must be
+            precomputed too (and, therefore, are also in this return dict):
+
+            - ``classes`` (:obj:`np.ndarray`): distinct classes of ``y``,
+                ``y``, if both ``N`` and ``y`` are not :obj:`NoneType`.
+
+            - ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
+                ``y``, if both ``N`` and ``y`` are not :obj:`NoneType`.
+        """
+        precomp_vals = {}
+
+        if (y is not None and N is not None
+                and not {"eig_vals", "eig_vecs"}.issubset(kwargs)):
+            classes = kwargs.get("classes")
+            class_freqs = kwargs.get("class_freqs")
+
+            if classes is None or class_freqs is None:
+                classes, class_freqs = np.unique(y, return_counts=True)
+
+            eig_vals, eig_vecs = MFEStatistical._linear_disc_mat_eig(
+                N, y, classes=classes, class_freqs=class_freqs)
+
+            _, num_attr = N.shape
+
+            eig_vals, eig_vecs = MFEStatistical._filter_eig_vals(
+                num_attr=num_attr,
+                num_classes=classes.size,
+                eig_vals=eig_vals,
+                eig_vecs=eig_vecs)
+
+            precomp_vals["eig_vals"] = eig_vals
+            precomp_vals["eig_vecs"] = eig_vecs
+            precomp_vals["classes"] = classes
+            precomp_vals["class_freqs"] = class_freqs
+
+        return precomp_vals
+
+    @classmethod
+    def precompute_statistical_cor_cov(cls,
+                                       N: t.Optional[np.ndarray] = None,
+                                       **kwargs) -> t.Dict[str, t.Any]:
+        """Precomputes Correlation and Covariance matrix of numerical data.
+
+        Caution in allowing this precomputation method on large datasets,
+        as this method is very memory hungry.
+
+        Args:
+            N (:obj:`np.ndarray`, optional): numerical attributes from fitted
+                data.
+
+            **kwargs: extra arguments. May containg values thar are already
+                precomputed before this method, so it can help speed up the
+                precomputation.
+
+        Return:
+            dict: with following precomputed items:
+
+            - ``cov_mat`` (:obj:`np.ndarray`): covariance matrix of ``N``,
+                if ``N`` is not :obj:`NoneType`.
+
+            - ``abs_corr_mat`` (:obj:`np.ndarray`): absolute correlation
+                matrix of ``N``, if ``N`` is not :obj:`NoneType`.
+        """
+        precomp_vals = {}
+
+        if N is not None:
+            N = N.astype(float)
+
+            if "cov_mat" not in kwargs:
+                precomp_vals["cov_mat"] = np.cov(N, rowvar=False)
+
+            if "abs_corr_mat" not in kwargs:
+                abs_corr_mat = abs(np.corrcoef(N, rowvar=False))
+
+                if (not isinstance(abs_corr_mat, np.ndarray)
+                        and np.isnan(abs_corr_mat)):
+                    abs_corr_mat = np.array([np.nan])
+
+                precomp_vals["abs_corr_mat"] = abs_corr_mat
+
+        return precomp_vals
+
+    @classmethod
+    def _linear_disc_mat_eig(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            classes: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None,
+    ) -> t.Tuple[np.ndarray, np.ndarray]:
         """Compute eigenvals/vecs of Fisher's Linear Discriminant Analysis.
 
         More specificaly, the eigenvalues and eigenvectors are calculated
@@ -90,7 +234,11 @@ class MFEStatistical:
 
             return scatter_between
 
-        class_val_freq = np.unique(y, return_counts=True)
+        if classes is None or class_freqs is None:
+            class_val_freq = np.unique(y, return_counts=True)
+
+        else:
+            class_val_freq = (classes, class_freqs)
 
         N = N.astype(float)
 
@@ -100,22 +248,23 @@ class MFEStatistical:
         try:
             scatter_within_inv = np.linalg.inv(scatter_within)
 
-            return np.linalg.eig(np.matmul(scatter_within_inv,
-                                           scatter_between))
+            return np.linalg.eig(
+                np.matmul(scatter_within_inv, scatter_between))
 
         except (np.linalg.LinAlgError, ValueError):
             return np.array([np.nan]), np.array([np.nan])
 
     @classmethod
-    def _filter_eig_vals(cls,
-                         eig_vals: np.ndarray,
-                         data: np.ndarray,
-                         y: np.ndarray,
-                         eig_vecs: t.Optional[np.ndarray] = None,
-                         filter_imaginary: bool = True,
-                         filter_less_relevant: float = True,
-                         epsilon: float = 1.0e-8,
-                         ) -> np.ndarray:
+    def _filter_eig_vals(
+            cls,
+            eig_vals: np.ndarray,
+            num_attr: int,
+            num_classes: int,
+            eig_vecs: t.Optional[np.ndarray] = None,
+            filter_imaginary: bool = True,
+            filter_less_relevant: float = True,
+            epsilon: float = 1.0e-8,
+    ) -> t.Union[t.Tuple[np.ndarray, np.ndarray], np.ndarray]:
         """Get most expressive eigenvalues (higher absolute value).
 
         This function returns N eigenvalues, such that:
@@ -123,6 +272,16 @@ class MFEStatistical:
             N < min(num_class, num_attr)
 
         Args:
+            eig_vals (:obj:`np.ndarray`): eigenvalues to be filtered.
+
+            num_attr (:obj:`int`): number of attributes (columns) in data.
+
+            num_classes (:obj:`int`): number of distinct classes in fitted
+                data.
+
+            eig_vecs (:obj:`np.ndarray`, optional): eigenvectors to filter
+                alongside eigenvalues.
+
             filter_imaginary (:obj:`bool`, optional): if True, remove ima-
                 ginary valued eigenvalues and its correspondent eigenvect-
                 ors.
@@ -133,21 +292,29 @@ class MFEStatistical:
             epsilon (:obj:`float`, optional): a very small value used to
                 determine ``less relevant`` eigenvalues.
         """
-        _, num_cols = data.shape
-        num_classes = np.unique(y).size
-        max_valid_eig = min(num_cols, num_classes)
+        max_valid_eig = min(num_attr, num_classes)
 
         if eig_vals.size <= max_valid_eig:
-            if eig_vecs:
+            if eig_vecs is not None:
                 return eig_vals, eig_vecs
 
             return eig_vals
 
-        eig_vals = np.array(sorted(
-            eig_vals, key=abs, reverse=True)[:max_valid_eig])
+        if eig_vecs is None:
+            eig_vals = np.array(
+                sorted(eig_vals, key=abs, reverse=True)[:max_valid_eig])
+        else:
+            eig_vals, eig_vecs = zip(
+                *sorted(
+                    zip(eig_vals, eig_vecs),
+                    key=lambda item: abs(item[0]),
+                    reverse=True)[:max_valid_eig])
+
+            eig_vals = np.array(eig_vals)
+            eig_vecs = np.array(eig_vecs)
 
         if not filter_imaginary and not filter_less_relevant:
-            if eig_vecs:
+            if eig_vecs is not None:
                 return eig_vals, eig_vecs
 
             return eig_vals
@@ -155,29 +322,33 @@ class MFEStatistical:
         indexes_to_keep = np.array(eig_vals.size * [True])
 
         if filter_imaginary:
-            indexes_to_keep = np.logical_and(np.isreal(eig_vals),
-                                             indexes_to_keep)
+            indexes_to_keep = np.logical_and(
+                np.isreal(eig_vals), indexes_to_keep)
 
         if filter_less_relevant:
-            indexes_to_keep = np.logical_and(abs(eig_vals) > epsilon,
-                                             indexes_to_keep)
+            indexes_to_keep = np.logical_and(
+                abs(eig_vals) > epsilon, indexes_to_keep)
 
         eig_vals = eig_vals[indexes_to_keep]
 
-        if eig_vecs:
-            eig_vecs = eig_vecs[indexes_to_keep]
+        if eig_vecs is not None:
+            eig_vecs = eig_vecs[indexes_to_keep, :]
 
         if filter_imaginary:
             eig_vals = eig_vals.real
 
-        if eig_vecs:
+        if eig_vecs is not None:
             return eig_vals, eig_vecs
 
         return eig_vals
 
     @classmethod
-    def ft_can_cor(cls, N: np.ndarray, y: np.ndarray,
-                   epsilon: float = 1.0e-10) -> np.ndarray:
+    def ft_can_cor(cls,
+                   N: np.ndarray,
+                   y: np.ndarray,
+                   epsilon: float = 1.0e-10,
+                   eig_vals: t.Optional[np.ndarray] = None,
+                   classes: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute canonical correlations of data.
 
         The canonical correlations p are defined as shown below:
@@ -205,10 +376,16 @@ class MFEStatistical:
             epsilon (:obj:`float`): a very small value to prevent division by
                 zero.
         """
-        eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
+        if eig_vals is None:
+            eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
 
-        eig_vals = MFEStatistical._filter_eig_vals(eig_vals=eig_vals,
-                                                   data=N, y=y)
+            _, num_attr = N.shape
+
+            if classes is None:
+                classes = np.unique(y)
+
+            eig_vals = MFEStatistical._filter_eig_vals(
+                eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
 
         return (eig_vals / (epsilon + 1.0 + eig_vals))**0.5
 
@@ -216,7 +393,9 @@ class MFEStatistical:
     def ft_gravity(cls,
                    N: np.ndarray,
                    y: np.ndarray,
-                   norm_ord: t.Union[int, float] = 2) -> float:
+                   norm_ord: t.Union[int, float] = 2,
+                   classes: t.Optional[np.ndarray] = None,
+                   class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Computes distance between minority and majority classes center of mass.
 
         The center of mass of a class is the average value of each attribute
@@ -239,16 +418,18 @@ class MFEStatistical:
         Raises:
             ValueError: if ``norm_ord`` is not numeric.
         """
-        classes, freqs = np.unique(y, return_counts=True)
+        if classes is None or class_freqs is None:
+            classes, class_freqs = np.unique(y, return_counts=True)
 
-        class_freq_most, _ = max(zip(classes, freqs), key=lambda x: x[1])
+        class_freq_most, _ = max(zip(classes, class_freqs), key=lambda x: x[1])
 
         class_freq_most_ind = np.where(class_freq_most == classes)[0]
 
         classes = np.delete(classes, class_freq_most_ind)
-        freqs = np.delete(freqs, class_freq_most_ind)
+        class_freqs = np.delete(class_freqs, class_freq_most_ind)
 
-        class_freq_least, _ = min(zip(classes, freqs), key=lambda x: x[1])
+        class_freq_least, _ = min(
+            zip(classes, class_freqs), key=lambda x: x[1])
 
         center_freq_class_most = N[y == class_freq_most, :].mean(axis=0)
         center_freq_class_least = N[y == class_freq_least, :].mean(axis=0)
@@ -257,23 +438,27 @@ class MFEStatistical:
             center_freq_class_most - center_freq_class_least, ord=norm_ord)
 
     @classmethod
-    def ft_cor(cls, N: np.ndarray) -> np.ndarray:
+    def ft_cor(cls, N: np.ndarray,
+               abs_corr_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Absolute value of correlation between distinct column pairs."""
-        corr_mat = np.corrcoef(N, rowvar=False)
+        if abs_corr_mat is None:
+            abs_corr_mat = abs(np.corrcoef(N, rowvar=False))
 
-        if not isinstance(corr_mat, np.ndarray) and np.isnan(corr_mat):
+        if not isinstance(abs_corr_mat, np.ndarray) and np.isnan(abs_corr_mat):
             return np.array([np.nan])
 
-        res_num_rows, _ = corr_mat.shape
+        res_num_rows, _ = abs_corr_mat.shape
 
-        inf_triang_vals = corr_mat[np.tril_indices(res_num_rows, k=-1)]
+        inf_triang_vals = abs_corr_mat[np.tril_indices(res_num_rows, k=-1)]
 
         return abs(inf_triang_vals)
 
     @classmethod
-    def ft_cov(cls, N: np.ndarray) -> np.ndarray:
+    def ft_cov(cls, N: np.ndarray,
+               cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Absolute value of covariance between distinct column pairs."""
-        cov_mat = np.cov(N, rowvar=False)
+        if cov_mat is None:
+            cov_mat = np.cov(N, rowvar=False)
 
         res_num_rows, _ = cov_mat.shape
 
@@ -295,9 +480,13 @@ class MFEStatistical:
         return np.nan
 
     @classmethod
-    def ft_eigenvalues(cls, N: np.ndarray) -> np.ndarray:
+    def ft_eigenvalues(cls,
+                       N: np.ndarray,
+                       cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+        """Absolute value of covariance between distinct column pairs."""
         """Returns eigenvalues of covariance matrix of N attributes."""
-        cov_mat = np.cov(N, rowvar=False)
+        if cov_mat is None:
+            cov_mat = np.cov(N, rowvar=False)
 
         try:
             eigvals = np.linalg.eigvals(cov_mat)
@@ -308,7 +497,9 @@ class MFEStatistical:
         return eigvals
 
     @classmethod
-    def ft_g_mean(cls, N: np.ndarray, allow_zeros: bool = False,
+    def ft_g_mean(cls,
+                  N: np.ndarray,
+                  allow_zeros: bool = False,
                   epsilon: float = 1.0e-10) -> np.ndarray:
         """Geometric mean of each column.
 
@@ -325,8 +516,7 @@ class MFEStatistical:
         if allow_zeros:
             cols_invalid = min_values < 0.0
             cols_zero = 0.0 <= abs(min_values) < epsilon
-            cols_valid = np.logical_not(np.logical_or(cols_invalid,
-                                                      cols_zero))
+            cols_valid = np.logical_not(np.logical_or(cols_invalid, cols_zero))
 
         else:
             cols_invalid = min_values <= epsilon
@@ -335,8 +525,7 @@ class MFEStatistical:
         _, num_col = N.shape
         g_mean = np.zeros(num_col)
 
-        g_mean[cols_valid] = scipy.stats.mstats.gmean(
-            N[:, cols_valid], axis=0)
+        g_mean[cols_valid] = scipy.stats.mstats.gmean(N[:, cols_valid], axis=0)
 
         g_mean[cols_invalid] = np.nan
 
@@ -425,7 +614,9 @@ class MFEStatistical:
                        N: np.ndarray,
                        threshold: float = 0.5,
                        normalize: bool = True,
-                       epsilon: float = 1.0e-8) -> t.Union[int, float]:
+                       epsilon: float = 1.0e-8,
+                       abs_corr_mat: t.Optional[np.ndarray] = None
+                       ) -> t.Union[int, float]:
         """Number of attribute pairs with corr. equal or greater than a threshold.
 
         Args:
@@ -440,10 +631,7 @@ class MFEStatistical:
             epsilon (:obj:`float`): a very small value to prevent division by
                 zero.
         """
-        abs_corr_vals = MFEStatistical.ft_cor(N)
-
-        if not isinstance(abs_corr_vals, np.ndarray):
-            abs_corr_vals = np.array(abs_corr_vals)
+        abs_corr_vals = MFEStatistical.ft_cor(N, abs_corr_mat=abs_corr_mat)
 
         _, num_attr = N.shape
 
@@ -517,8 +705,12 @@ class MFEStatistical:
         return sd_array
 
     @classmethod
-    def ft_sd_ratio(cls, N: np.ndarray, y: np.ndarray,
-                    epsilon: float = 1.0e-8) -> float:
+    def ft_sd_ratio(cls,
+                    N: np.ndarray,
+                    y: np.ndarray,
+                    epsilon: float = 1.0e-8,
+                    classes: t.Optional[np.ndarray] = None,
+                    class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Statistic test for homogeneity of covariances.
 
         Args:
@@ -526,13 +718,16 @@ class MFEStatistical:
                 zero.
         """
         num_inst, num_col = N.shape
-        classes, classes_freqs = np.unique(y, return_counts=True)
+
+        if classes is None or class_freqs is None:
+            classes, class_freqs = np.unique(y, return_counts=True)
+
         num_classes = classes.size
 
         sample_cov_matrices = np.array(
             [np.cov(N[y == cl, :], rowvar=False) for cl in classes])
 
-        vec_weight = classes_freqs - 1.0 + epsilon
+        vec_weight = class_freqs - 1.0 + epsilon
 
         pooled_cov_mat = np.array([
             weight * S_i
@@ -633,8 +828,7 @@ class MFEStatistical:
         return (ans - 1.0) * norm_factor
 
     @classmethod
-    def ft_t_mean(cls, N: np.ndarray,
-                  pcut: float = 0.2) -> np.ndarray:
+    def ft_t_mean(cls, N: np.ndarray, pcut: float = 0.2) -> np.ndarray:
         """Compute trimmed mean of each attribute.
 
         Args:
@@ -664,7 +858,11 @@ class MFEStatistical:
         return var_array
 
     @classmethod
-    def ft_w_lambda(cls, N: np.ndarray, y: np.ndarray) -> float:
+    def ft_w_lambda(cls,
+                    N: np.ndarray,
+                    y: np.ndarray,
+                    eig_vals: t.Optional[np.ndarray] = None,
+                    classes: t.Optional[np.ndarray] = None) -> float:
         """Compute Wilks' Lambda value.
 
         The Wilk's Lambda L is calculated as:
@@ -675,10 +873,16 @@ class MFEStatistical:
         minant Analysis Matrix. Check ``ft_can_cor`` documentation for more
         in-depth information about this value.
         """
-        eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
+        if eig_vals is None:
+            eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
 
-        eig_vals = MFEStatistical._filter_eig_vals(eig_vals=eig_vals,
-                                                   data=N, y=y)
+            _, num_attr = N.shape
+
+            if classes is None:
+                classes = np.unique(y)
+
+            eig_vals = MFEStatistical._filter_eig_vals(
+                eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
 
         if eig_vals.size == 0:
             return np.nan
