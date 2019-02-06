@@ -378,9 +378,13 @@ class TestMFEInstantiation:
     def test_check_timeopt_working(self, timeopt):
         features = ("mean", "kurtosis", "attr_ent")
         summary = ("range", "skewness", "mean", "max")
-        res = MFE(
-            features=features, summary=summary, measure_time="total").fit(
-                X=[1], y=[1]).extract(suppress_warnings=True)
+
+        model = MFE(
+            features=features,
+            summary=summary,
+            measure_time="total").fit(X=[1], y=[1], precomp_groups=None)
+
+        res = model.extract(suppress_warnings=True)
 
         name, val, time = res
 

@@ -39,26 +39,32 @@ class MFEGeneral:
             a single value or a generic Sequence (preferably a np.ndarray)
             type with numeric values.
     """
+
     @classmethod
-    def precompute_class(cls, y: t.Optional[np.ndarray] = None,
-                         **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_general_class(cls,
+                                 y: t.Optional[np.ndarray] = None,
+                                 **kwargs) -> t.Dict[str, t.Any]:
         """Precompute distinct classes and its frequencies from ``y``.
 
         Args:
             y (:obj:`np.ndarray`, optional): target attribute from fitted data.
 
-            **kwargs: not used, just here for consistency.
+            **kwargs: extra arguments. May containg values thar are already
+                precomputed before this method, so it can help speed up the
+                precomputation.
 
         Return:
-            Precomputation dictionary with following items:
+            dict: with following precomputed items:
+
                 - ``classes`` (:obj:`np.ndarray`): distinct classes of ``y``,
                     if ``y`` is not :obj:`NoneType`.
+
                 - ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
                     ``y``, if ``y`` is not :obj:`NoneType`.
         """
         precomp_vals = {}
 
-        if y is not None:
+        if y is not None and not {"classes", "class_freqs"}.issubset(kwargs):
             classes, class_freqs = np.unique(y, return_counts=True)
 
             precomp_vals["classes"] = classes
@@ -90,8 +96,7 @@ class MFEGeneral:
         return C.shape[1] / N.shape[1]
 
     @classmethod
-    def ft_freq_class(cls, y: np.ndarray,
-                      class_freqs: np.ndarray = None
+    def ft_freq_class(cls, y: np.ndarray, class_freqs: np.ndarray = None
                       ) -> t.Union[np.ndarray, np.float]:
         """Returns an array of relative frequency of each distinct class.
 
@@ -134,9 +139,10 @@ class MFEGeneral:
         return C.shape[1]
 
     @classmethod
-    def ft_nr_class(cls, y: t.Optional[np.ndarray] = None,
-                    classes: t.Optional[np.ndarray] = None
-                    ) -> t.Union[float, int]:
+    def ft_nr_class(
+            cls,
+            y: t.Optional[np.ndarray] = None,
+            classes: t.Optional[np.ndarray] = None) -> t.Union[float, int]:
         """Returns number of distinct classes.
 
         ``y`` and ``classes`` can not be :obj:`NoneType` simultaneously,
