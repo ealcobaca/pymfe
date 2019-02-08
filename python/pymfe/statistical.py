@@ -331,13 +331,12 @@ class MFEStatistical:
 
         eig_vals = eig_vals[indexes_to_keep]
 
-        if eig_vecs is not None:
-            eig_vecs = eig_vecs[indexes_to_keep, :]
-
         if filter_imaginary:
             eig_vals = eig_vals.real
 
         if eig_vecs is not None:
+            eig_vecs = eig_vecs[indexes_to_keep, :]
+
             return eig_vals, eig_vecs
 
         return eig_vals
@@ -386,6 +385,9 @@ class MFEStatistical:
 
             eig_vals = MFEStatistical._filter_eig_vals(
                 eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
+
+        if not isinstance(eig_vals, np.ndarray):
+            eig_vals = np.array(eig_vals)
 
         return (eig_vals / (epsilon + 1.0 + eig_vals))**0.5
 
@@ -883,6 +885,9 @@ class MFEStatistical:
 
             eig_vals = MFEStatistical._filter_eig_vals(
                 eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
+
+        if not isinstance(eig_vals, np.ndarray):
+            eig_vals = np.array(eig_vals)
 
         if eig_vals.size == 0:
             return np.nan
