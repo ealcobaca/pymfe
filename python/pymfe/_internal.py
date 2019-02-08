@@ -1,60 +1,56 @@
-"""Provides useful functions for MFE package.
+"""This module provides useful functions for the MFE package.
 
 Attributes:
-    VALID_VALUE_PREFIX (:obj:`str`): Prefix which all tuples that
-        keeps valid values for custom user options must use in its
-        name. This is used to enable automatic detectation of these
+    VALID_VALUE_PREFIX (:obj:``str``): Prefix which all tuples that
+        keep valid values for custom user options must use in its name.
+        This prefix is used to enable the automatic detection of these
         groups.
 
-    VALID_GROUPS (:obj:`tuple` of :obj:`str`): Supported groups of
+    VALID_GROUPS (:obj:``tuple`` of :obj:``str``): Supported groups of
         metafeatures of pymfe.
 
-    VALID_SUMMARY (:obj:`tuple` of :obj:`str`): Supported summary
+    VALID_SUMMARY (:obj:``tuple`` of :obj:``str``): Supported summary
         functions to combine metafeature values.
 
-    VALID_MFECLASSES (:obj:`tuple` of Classes): Metafeature ex-
-        tractors predefined classes, where metafeature-extraction
-        methods will be searched.
+    VALID_MFECLASSES (:obj:``tuple`` of Classes): Metafeature extractors
+        predefined classes, where to perform the search of metafeature-ex-
+        traction methods.
 
-    VALID_TIMEOPT (:obj:`tuple` of :obj:`str`): valid options for
-        time measurements while extracting metafeatures.
+    VALID_TIMEOPT (:obj:``tuple`` of :obj:``str``): valid options for time
+        measurements while extracting metafeatures.
 
-    VALID_RESCALE (:obj:`tuple` of :obj:`str`): valid options for
-        rescaling numeric data while fitting dataset.
+    VALID_RESCALE (:obj:``tuple`` of :obj:``str``): valid options for res-
+        caling numeric data while fitting dataset.
 
-    MTF_PREFIX (:obj:`str`): prefix of metafeature-extraction me-
-        thod names for classes in ``VALID_MFECLASSES``. For exam-
-        ple, the metafeature called ``inst_nr`` is implemented in
-        the method named `[MTF_PREFIX]_inst_nr`. This is used to
-        enable automatic detection of these methods.
+    MTF_PREFIX (:obj:``str``): prefix of metafeature-extraction method
+        names for classes in ``VALID_MFECLASSES``. For example, the metafeature
+        called ``inst_nr`` is implemented in the method named ``[MTF_PREFIX]_-
+        inst_nr.`` Prefixation is used to enable the automatic detection of
+        these methods.
 
-    PRECOMPUTE_PREFIX (:obj:`str`): prefix for precomputation me-
-        thod names. If a method of a class in ``VALID_MFECLASSES``
-        starts with this prefix, it will be automatically executed
-        to gather values that this class frequently uses. These
-        values will be shared between all feature-extraction related
-        methods of all ``VALID_MFECLASSES`` classes to avoid redun-
-        dant computation.
+    PRECOMPUTE_PREFIX (:obj:``str``): prefix for precomputation method names.
+        If a method of a class in ``VALID_MFECLASSES`` starts with this prefix,
+        it is automatically executed to gather values that this class frequen-
+        tly uses. These values are shared between all feature-extraction rela-
+        ted methods of all ``VALID_MFECLASSES`` classes to avoid redundant com-
+        putation.
 
-    TIMEOPT_AVG_PREFIX (:obj:`str`): prefix for time options ba-
-        sed on average of gathered metrics. It means necessarily
-        that, if an option is prefixed with this constant value,
-        then it is supposed that the gathered time elapsed metri-
-        cs must be divided by the cardinality of the features ex-
-        tracted (``cardinality`` means ``number of``).
+    TIMEOPT_AVG_PREFIX (:obj:``str``): prefix for time options based on the
+        average of gathered metrics. It means necessarily that; if this cons-
+        tant value prefixes an option, then this option is supposed to divide
+        the gathered time elapsed metrics by the cardinality of the features
+        extracted (``cardinality`` means ``number of``).
 
-    TIMEOPT_SUMMARY_SUFIX (:obj:`str`): sufix for time options
-        which include summarization time alongside the time ne-
-        cessary for the extraction of the feature. It means that,
-        if an time option is sufixed with this constant value,
-        then the time metrics must include the time necessary
-        for the summarization of each value with cardinality gre-
-        ater than one.
+    TIMEOPT_SUMMARY_SUFFIX (:obj:``str``): suffix for time options which in-
+        clude summarization time alongside the time necessary for the extracti-
+        on of the feature. It means that, if this constant value suffixes a ti-
+        me option, then the time metrics must include the time necessary for
+        the summarization of each value with cardinality greater than one
+        (``cardinality`` means ``number of values``).
 """
 import typing as t
 import inspect
 import collections
-import operator
 import warnings
 import time
 import sys
@@ -107,7 +103,7 @@ VALID_RESCALE = (*_RESCALE_SCALERS, )
 
 TIMEOPT_AVG_PREFIX = "avg"
 
-TIMEOPT_SUMMARY_SUFIX = "summ"
+TIMEOPT_SUMMARY_SUFFIX = "summ"
 
 MTF_PREFIX = "ft_"
 
@@ -117,7 +113,7 @@ TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
 
 TypeExtMtdTuple = t.Tuple[str, t.Callable[[], t.Any], t.Sequence]
-"""Type annotation which extends TypeMtdTuple with extra field (for 'Args')"""
+"""Type annotation which extends TypeMtdTuple with extra field (``Args``)"""
 
 _TYPE_NUMERIC = (
     int,
@@ -132,12 +128,31 @@ TypeNumeric = t.TypeVar(
     float,
     np.number,
 )
-"""Typing alias for both numeric types."""
+"""Typing alias of generic numeric types for static code checking."""
 
 
-def warning_format(msg, *args, **kwargs):
-    """Change warnings format."""
-    return "Warning: {}\n".format(msg)
+def warning_format(message: str,
+                   category: t.Type[Warning],
+                   filename: str,
+                   lineno: int,
+                   line: str = None) -> str:
+    """Change warnings format to a simpler one.
+
+    Args:
+        message (:obj:`str`): warning message to print.
+
+        category: not used. Just to maintain consistency with warnings API.
+
+        filename: not used. Just to maintain consistency with warnings API.
+
+        lineno: not used. Just to maintain consistency with warnings API.
+
+        line: not used. Just to maintain consistency with warnings API.
+
+    Return:
+        str: formated warning message.
+    """
+    return "Warning: {}\n".format(message)
 
 
 warnings.formatwarning = warning_format
@@ -150,24 +165,26 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
     """Checks if a value is in a set or a set of values is a subset of a set.
 
     Args:
-        value (:obj:`Iterable` of :obj:`str` or :obj:`str): value(s) to be
-            checked if are in the given valid_group of strings.
+        value (:obj:`iterable` of :obj:`str` or :obj:`str): value(s) to check
+            if is (are) in the given valid_group of strings.
 
-        valid_group (:obj:`Iterable` of :obj:`str`): a valid_group of strings
-            representing the values such that `value` will be verified against.
+        valid_group (:obj:`iterable` of :obj:`str`): a valid_group of strings
+            representing the valid tokens which  ``value`` is verified against
+            it.
 
-        wildcard (:obj:`str`, optional): a value which represent 'all values'.
-            The case is ignored, so, for example, both values 'all', 'ALL' and
-            any mix of cases are considered to be the same wildcard token.
+        wildcard (:obj:`str`, optional): a value which represents ``all valu-
+            es``, ignoring capital letters, so, for example, values ``all``,
+            ``ALL`` and any mix of upper and lower case are all considered to
+            be the same wildcard token.
 
-    Returns:
-        tuple(tuple, tuple): A pair of tuples containing, respectively, values
-        that are in the given valid_group and those that are not. If no value
-        is in either valid_group, then this valid_group will be :obj:`None`.
+        Returns:
+            tuple(tuple, tuple): A pair of tuples containing, respectively,
+                values that are in the given valid_group and those that are
+                not.
 
-    Raises:
-        TypeError: if `value` is not a Iterable type or some of its elements
-            are not a :obj:`str` type.
+        Raises:
+            TypeError: if ``value`` is not an iterable type or some of its
+                elements are not a :obj:`str` type.
     """
 
     if not isinstance(value, collections.Iterable):
@@ -230,129 +247,78 @@ def _get_prefixed_mtds_from_class(class_obj: t.Any,
     return feat_mtd_list
 
 
-def _filter_mtd_dict(
-        ft_mtds_dict: t.Dict[str, t.List[TypeMtdTuple]],
-        groups: t.Optional[t.Tuple[str, ...]]) -> t.Tuple[TypeMtdTuple, ...]:
-    """Filter return of `_get_all_prefixed_mtds` function based on given `groups`.
-
-    This is an auxiliary function for ``process_features`` function.
-
-    Args:
-        ft_mtds_dict (:obj:`Dict`): return from ``_get_all_prefixed_mtds``
-            function.
-
-        groups (:obj:`Tuple` of :obj:`str`): a tuple of feature group names. It
-        can assume value :obj:`None`, which is interpreted as ``no filter``
-        (i.e. all features of all groups will be returned).
-
-    Returns:
-        tuple(str): containing only values of input `ft_mtds_dict` related
-        to the given `groups`.
-    """
-
-    if groups:
-        groups = tuple(set(groups).intersection(ft_mtds_dict.keys()))
-
-        ft_mtds_filtered = operator.itemgetter(*groups)(ft_mtds_dict)
-
-        if len(groups) == 1:
-            ft_mtds_filtered = (ft_mtds_filtered, )
-
-    else:
-        ft_mtds_filtered = tuple(ft_mtds_dict.values())
-
-    ft_mtds_filtered = tuple(
-        mtd_tuple for ft_group in ft_mtds_filtered for mtd_tuple in ft_group)
-
-    return ft_mtds_filtered
-
-
 def _get_all_prefixed_mtds(
-        prefix: str, groups: t.Tuple[str, ...]
-        ) -> t.Dict[str, t.List[TypeMtdTuple]]:
-    """Get all feature-extraction related methods in predefined Classes.
+        prefix: str,
+        groups: t.Tuple[str, ...]
+        ) -> t.Tuple[TypeMtdTuple, ...]:
+    """Get all methods prefixed with ``prefix`` in predefined feature ``groups``.
 
-    Feature-extraction methods are prefixed with ``prefix`` from all Clas-
-    ses predefined in :obj:`VALID_MFECLASSES` tuple.
+    The predefined metafeature groups are inside ``VALID_GROUPS`` attribute.
 
     Args:
-        prefix (:obj:`str`): prefix which method names must have in order
-            to it be gathered.
+        prefix (:obj:`str`): gather methods prefixed with this value.
 
         groups (:obj:`Tuple` of :obj:`str`): a tuple of feature group names.
-        It can assume value :obj:`NoneType`, which is interpreted as ``no
-        filter`` (i.e. all features of all groups will be returned).
+            It can assume value :obj:`NoneType`, which is interpreted as ``no
+            filter`` (i.e. all features of all groups will be returned).
 
     Returns:
-        dict: in the form {`group_name`: [(`mtd_name`, `mtd_address`)]},
-        i.e. the keys are the names of feature groups (e.g. `general` or
-        `landmarking`) and values are lists of tuples which first entry are
-        feature-extraction related method names. The second entries are
-        their correspondent addresses. For example:
-
-            {
-                `general`: [
-                    (`ft_nr_num`, <mtd_address>),
-                    (`ft_nr_inst`, <mtd_address>),
-                    ...
-                ],
-                `statistical`: [
-                    (`ft_mean`, <mtd_address>),
-                    (`ft_max`, <mtd_address>),
-                    ...
-                ],
-                ...
-            }
+        tuple: with all filtered methods by ``group``.
     """
     groups = tuple(set(VALID_GROUPS).intersection(groups))
 
     if not groups:
-        return {}
+        return tuple()
 
-    feat_mtd_dict = {
-        ft_type_id: _get_prefixed_mtds_from_class(
+    methods_by_group = (
+        _get_prefixed_mtds_from_class(
             class_obj=mfe_class,
             prefix=prefix)
+
         for ft_type_id, mfe_class in zip(VALID_GROUPS, VALID_MFECLASSES)
         if ft_type_id in groups
-    }  # type: t.Dict[str, t.List[TypeMtdTuple]]
+    )
 
-    return _filter_mtd_dict(ft_mtds_dict=feat_mtd_dict, groups=groups)
+    gathered_methods = []  # type: t.List[TypeMtdTuple]
+    for group_mtds in methods_by_group:
+        gathered_methods += group_mtds
+
+    return tuple(gathered_methods)
 
 
 def _preprocess_iterable_arg(
-        features: t.Union[str, t.Iterable[str]]) -> t.List[str]:
-    """Process `features` to a canonical form.
+        values: t.Union[str, t.Iterable[str]]) -> t.List[str]:
+    """Process ``values`` to a canonical form.
 
-    Remove repeated elements from a collection of features and cast all values
-    to lower-case.
+    This canonical form consists in removing repeated elements from ``values``,
+    and cast all elements to lower-case.
 
     Args:
-        features (:obj:`Iterable` of :obj:`str` or :obj:`str`): feature names
-            or a collection of to be processed into a lower-case form.
+        values (:obj:`iterable` of :obj:`str` or :obj:`str`): feature names or
+            a collection of to be processed into a canonical form.
 
     Returns:
-        list(str): `features` values as iterable. The values within strings
+        list: ``values`` values as iterable. The values within strings
             all lower-cased.
     """
-    if isinstance(features, str):
-        features = {features}
+    if isinstance(values, str):
+        values = {values}
 
-    return list(map(str.lower, set(features)))
+    return list(map(str.lower, set(values)))
 
 
 def _extract_mtd_args(ft_mtd_callable: t.Callable) -> t.Tuple[str, ...]:
     """Extracts arguments from given method.
 
     Args:
-        ft_mtd_callable (:obj:`Callable`): a callable related to a feature
+        ft_mtd_callable (:obj:`callable`): a callable related to a feature
             extraction method.
 
     Returns:
-        list(str): containing the name of arguments of `ft_mtd_callable`.
+        list: containing the name of arguments of ``ft_mtd_callable``.
 
     Raises:
-        TypeError: if 'ft_mtd_callable' is not a valid Callable.
+        TypeError: if ``ft_mtd_callable`` is not a valid callable.
     """
     ft_mtd_signature = inspect.signature(ft_mtd_callable)
     mtd_callable_args = tuple(ft_mtd_signature.parameters.keys())
@@ -365,32 +331,33 @@ def summarize(
         callable_args: t.Optional[t.Dict[str, t.Any]] = None,
         remove_nan: bool = True,
         ) -> t.Union[t.Sequence, TypeNumeric]:
-    """Returns feature summarized by `callable_sum`.
+    """Returns ``feature`` values summarized by ``callable_sum``.
 
     Args:
         features (:obj:`Sequence` of numerics): Sequence containing values
             to summarize.
 
-        callable_sum (:obj:`Callable`): Callable of the method which im-
+        callable_sum (:obj:`callable`): callable of the method which im-
             plements the desired summary function.
 
-        callable_args (:obj:`Dict`, optional): arguments to the summary
-            function. The expected dictionary format is the following:
-            {`argument_name`: value}. In order to know the summary func-
-            tion arguments you need to check out the documentation of
-            the method which implements it.
+        callable_args (:obj:`dict`, optional): arguments to the summary fun-
+            ction. The expected dictionary format is the following: {`argu-
+            ment_name`: value}. To know the summary function arguments, you
+            need to check out the documentation of the method which implemen-
+            ts it.
 
         remove_nan (:obj:`bool`, optional): check and remove all elements
             in `features` which are not numeric. Note that :obj:`np.inf`
             is still considered numeric (:obj:`float` type).
 
     Returns:
-        float: value of summarized feature values if possible. May
-        return :obj:`np.nan` if summary function call invokes TypeError.
+        float: value of summarized feature values, if possible. May return
+            :obj:`np.nan` if summary function call invokes TypeError, Value-
+            Error or ZeroDivisionError.
 
     Raises:
-        AttributeError: if `callable_sum` is invalid.
-        TypeError: if `features`  is not a sequence.
+        AttributeError: if ``callable_sum`` is invalid.
+        TypeError: if ``features``  is not a sequence.
     """
     processed_feat = np.array(features)
 
@@ -416,29 +383,30 @@ def get_feat_value(
         mtd_args: t.Dict[str, t.Any],
         mtd_callable: t.Callable,
         suppress_warnings: bool = False) -> t.Union[TypeNumeric, np.ndarray]:
-    """Extract feat. from `mtd_callable` with `mtd_args` as args.
+    """Extract features from ``mtd_callable`` with ``mtd_args`` as args.
 
     Args:
         mtd_name (:obj:`str`): name of the feature-extraction method
             to be invoked.
 
-        mtd_args (:obj:`Dic`): arguments of method to be invoked. The
+        mtd_args (:obj:`dict`): arguments of method to be invoked. The
             expected format of the arguments is {`argument_name`: value}.
             In order to know the method arguments available, you need to
             check its documentation.
 
-        mtd_callable(:obj:`Callable`): callable of the feature-extra-
-            ction method.
+        mtd_callable (:obj:`callable`): callable of the feature-extraction
+            method.
 
-        suppress_warnings(:obj:`bool`): if True, all warnings invoked whi-
-            before invoking the method (or after) will be ignored. The me-
-            thod itself may still invoke warnings.
+        suppress_warnings (:obj:`bool`, optional): if True, all warnings
+            invoked before invoking the method (or after) will be ignored.
+            The method (from ``mtd_callable``) itself may still invoke war-
+            nings.
 
     Returns:
         numeric or array: return value of the feature-extraction method.
 
     Raises:
-        AttributeError: if `mtd_callable` is not valid.
+        AttributeError: if ``mtd_callable`` is not valid.
     """
 
     try:
@@ -462,36 +430,35 @@ def build_mtd_kwargs(mtd_name: str,
                      user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
                      precomp_args: t.Optional[t.Dict[str, t.Any]] = None,
                      suppress_warnings: bool = False) -> t.Dict[str, t.Any]:
-    """Build a `kwargs` (:obj:`Dict`) for a feature-extraction :obj:`Callable`.
+    """Build a ``kwargs`` (:obj:`dict`) for a feature-extraction :obj:`callable`.
 
     Args:
         mtd_name (:obj:`str`): name of the method.
 
-        mtd_args (:obj:`Iterable` of :obj:`str`): Iterable containing
-            the name of all arguments of the callable.
+        mtd_args (:obj:`iterable` of :obj:`str`): iterable containing the name
+            of all arguments of the callable.
 
-        inner_custom_args (:obj:`Dict`, optional): custom arguments for
-            inner usage, for example, to pass ``X``, ``y`` or other user-
-            independent arguments necessary for the callable. The expected
-            format of this dict is {`argument_name`: value}.
+        inner_custom_args (:obj:`dict`, optional): custom arguments for inner
+            usage, for example, to pass ``X``, ``y`` or other user-independent
+            arguments necessary for the callable. The expected format of this
+            dict is {`argument_name`: value}.
 
-        user_custom_args (:obj:`Dict`, optional): assumes the same model
-            as the dict above, but this one is dedicated to keep user-dep-
-            endent arguments for method callable, for example, number of
-            bins of a histogram-like metafeature or degrees of freedom of
-            a standard deviation-related metafeature. The name of the ar-
-            guments must be verified in its correspondent method documen-
-            tation.
+        user_custom_args (:obj:`dict`, optional): assumes the same model as the
+            dict above, but this one keeps user-dependent arguments for method
+            callable, for example, number of bins of a histogram-like metafea-
+            ture or degrees of freedom of a standard deviation-related metafe-
+            ature. The name of the arguments must be verified in its correspon-
+            dent method documentation.
 
-        precomp_args (:obj:`Dict`, optional): precomputed cached arguments
-            which may be used for the feature-extraction method to speed
-            up its calculations.
+        precomp_args (:obj:`dict`, optional): precomputed cached arguments whi-
+            ch may be used for the feature-extraction method to speed up its
+            calculations.
 
-        suppress_warnings(:obj:`bool`, optional): if True, will not show
-            any warnings about unknown callable parameters.
+        suppress_warnings(:obj:`bool`, optional): if True, do not show any war-
+            nings about unknown callable parameters.
 
     Returns:
-        dict: a ready-to-use `kwargs` for the correspondent callable. The
+        dict: a ready-to-use ``kwargs`` for the correspondent callable. The
             format is {`argument_name`: value}.
     """
 
@@ -563,18 +530,21 @@ def process_generic_set(
     """Check if given ``values`` are in an internal valid set named ``group_name``.
 
     Args:
-        wildcard (:obj:`str`, optional): special value to ``accept any value``.
+        values (:obj:`iterable` of :obj:`str` or :obj:`str`): a group os values
+            or a single value to process.
 
-        group_name (:obj:`str`, optional): name of which internal group ``va-
-            lues`` should be searched inside. Please check this module Attri-
-            bute documentation in order to verify which groups are available
-            for valid options. They are always prefixed with ``VALID_GROUPS_-
-            PREFIX``, and this parameter must be the name of the group without
-            its prefix. For example, to select ``VALID_CLASSES`` group for
+        group_name (:obj:`str`, optional): name of which internal group ``valu-
+            es`` should be searched inside. Please check this module Attribute
+            documentation to verify which groups are available for valid opti-
+            ons. The constant ``VALID_GROUPS_PREFIX`` always should prefix gro-
+            up options, and this parameter must be the name of the group with-
+            out its prefix. For example, to select ``VALID_CLASSES`` group for
             ``values`` reference, then group_names must be just ``classes``.
 
+        wildcard (:obj:`str`, optional): special value to ``accept any value``.
+
         allow_none (:obj:`bool`, optional): if True, then :obj:`NoneType` is
-            a accepted as ``values``. Note that, if ``values`` is an Iterable,
+            a accepted as ``values``. Note that, if ``values`` is an iterable,
             it does not mean that :obj:`NoneType` will become a valid value wi-
             thin, but ``values`` can assume value :obj:`NoneType`.
 
@@ -582,7 +552,7 @@ def process_generic_set(
             zero-length iterable.
 
     Return:
-        tuple(str): lower-cased tuple with all valid values.
+        tuple: lower-cased tuple with all valid values.
 
     Raises:
         TypeError: if ``group_name`` is :obj:`NoneType`.
@@ -704,7 +674,7 @@ def process_summary(
         summary: t.Union[str, t.Iterable[str]],
         wildcard: str = "all"
         ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
-    """Process `summary` argument from MFE.__init__ to generate internal metadata.
+    """Generate metadata from ``summary`` MFE instantiation argument.
 
     Args:
         summary (:obj:`t.Iterable` of :obj:`str` or a :obj:`str`): a
@@ -718,7 +688,7 @@ def process_summary(
     Returns:
         tuple(tuple, tuple): the first field contains all valid lower-cased
             summary function names, where the last field contains internal
-            metadata about methods which implements each summary function.
+            metadata about methods which implement each summary function.
             This last tuple model is:
 
                 (
@@ -728,8 +698,8 @@ def process_summary(
                 )
 
     Raises:
-        TypeError: if `summary` is not :obj:`None`, empty, a valid string
-            nor a Iterable containing valid group identifiers as strings.
+        TypeError: if `summary` is not :obj:`NoneType`, empty, a valid string
+            nor an iterable containing valid group identifiers as strings.
     """
     if not summary:
         return tuple(), tuple()
@@ -779,14 +749,14 @@ def process_features(
         wildcard: str = "all",
         suppress_warnings: bool = False
         ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
-    """Process `features` argument from MFE.__init__ to generate internal metadata.
+    """Generate metadata from ``features`` MFE instantiation argument.
 
-    This function is expected to be used after `process_groups` function,
-    as `groups` parameter is expected to be in a canonical form (lower-cased
+    The use of this function to happen after ``process_groups`` function, as
+    ``groups`` parameter is expected to be in a canonical form (lower-cased
     values inside a tuple).
 
     Args:
-        features (:obj:`Iterable` of `str` or `str`): Iterable containing a
+        features (:obj:`iterable` of `str` or `str`): iterable containing a
             collection of features or a string describing a single feature. No-
             te that only features that are in the given `groups` will be retur-
             ned.
@@ -800,19 +770,23 @@ def process_features(
 
     Returns:
         tuple(tuple, tuple): A pair of tuples. The first Tuple is all feature
-        names extracted from this method, in order to give to the user an easy
-        access to available features in model. The second field is a tuple for
-        internal usage, containing metadata in the form of tuples in the follo-
-        wing format: (`mtd_name`, `mtd_callable`, `mtd_args`), i.e., the first
-        tuple item field is a string containing the name of a feature-extracti-
-        on related method, and the second field is a callable object for the
-        corresponding method, and the third is the method arguments.
+            names extracted from this method, to give the user easy access to
+            available features in the model. The second field is a tuple for
+            internal usage, containing metadata in the form of tuples in the
+            following format: (`mtd_name`, `mtd_callable`, `mtd_args`), i.e.,
+            the first tuple item field is a string containing the name of a
+            feature-extraction related method, and the second field is a cal-
+            lable object for the corresponding method, and the third is the
+            method arguments.
 
     Raises:
-        ValueError: if features is :obj:`None` or is empty.
+        ValueError: if features is :obj:`NoneType` or is empty.
     """
     if not features:
         raise ValueError('"features" can not be None nor empty.')
+
+    if groups is None:
+        groups = tuple()
 
     ft_mtds_filtered = _get_all_prefixed_mtds(
         prefix=MTF_PREFIX,
@@ -868,7 +842,7 @@ def process_precomp_groups(
     values inside a tuple).
 
     Args:
-        precomp_groups (:obj:`Iterable` of `str` or `str`): a single or a se-
+        precomp_groups (:obj:`iterable` of `str` or `str`): a single or a se-
             quence of metafeature group names whose precomputation methods
             should be taken. Note that any group not in ``groups`` (see argu-
             ment below) is completely ignored.
@@ -893,8 +867,11 @@ def process_precomp_groups(
     if not precomp_groups:
         return {}
 
+    if groups is None:
+        groups = tuple()
+
     processed_precomp_groups = _preprocess_iterable_arg(
-        precomp_groups)  # type: t.List[str]
+        precomp_groups)  # type: t.Sequence[str]
 
     if wildcard in processed_precomp_groups:
         processed_precomp_groups = groups
@@ -914,7 +891,7 @@ def process_precomp_groups(
         prefix=PRECOMPUTE_PREFIX,
         groups=processed_precomp_groups)  # type: t.Tuple[TypeMtdTuple, ...]
 
-    precomp_items = {}
+    precomp_items = {}  # type: t.Dict[str, t.Any]
 
     for precomp_mtd_tuple in precomp_mtds_filtered:
         precomp_mtd_name, precomp_mtd_callable = precomp_mtd_tuple
@@ -949,18 +926,18 @@ def process_precomp_groups(
 def check_data(X: t.Union[np.ndarray, list],
                y: t.Union[np.ndarray, list]
                ) -> t.Tuple[np.ndarray, np.ndarray]:
-    """Checks received `X` and `y` data type and shape.
+    """Checks ``X`` and ``y`` data type and shape and transform it if necessary.
 
     Args:
-        Check `mfe.fit` method for more information.
+        Check ``mfe.fit`` method for more information.
 
     Raises:
-        TypeError: if `X` or `y` is neither a np.ndarray nor a list-
+        TypeError: if ``X`` or ``y`` is neither a np.ndarray nor a list-
         type object.
 
     Returns:
-        tuple(np.ndarray, np.ndarray): X and y possibly reshaped and
-        casted to np.ndarray type.
+        tuple(np.ndarray, np.ndarray): ``X`` and ``y`` possibly reshaped and
+        casted to :obj:`np.ndarray` type.
     """
     if not isinstance(X, (np.ndarray, list)):
         raise TypeError('"X" is neither "list" nor "np.array".')
@@ -989,7 +966,7 @@ def check_data(X: t.Union[np.ndarray, list],
 def isnumeric(
         value: t.Any,
         check_subtype: bool = True) -> bool:
-    """Checks if `value` is a Numeric Type or a collection of Numerics.
+    """Checks if ``value`` is a numeric type or a collection of numerics.
 
     The ``Numeric Type`` is assumed to be one of the following:
         1. :obj:`int`
@@ -997,17 +974,17 @@ def isnumeric(
         3. :obj:`np.number`
 
     Args:
-        value (:obj:`Any`): any object to be checked as numeric or a
-            collection of numerics.
+        value (:obj:`Any`): any object to be checked as numeric or a collec-
+            tion of numerics.
 
         check_subtype (:obj:`bool`, optional): if True, check elements of
-            ``value`` if it is a Iterable object. Otherwise, only checks
-            ``value`` type ignoring the fact that it can be a Iterable ob-
+            ``value`` if it is an iterable object. Otherwise, only checks
+            ``value`` type, ignoring the fact that it can be an iterable ob-
             ject.
 
     Returns:
-        bool: True if `value` is a numeric type object or a collection
-            of numeric-only elements. False otherwise.
+        bool: True if `value` is a numeric type object or a collection of nume-
+            ric-only elements. False otherwise.
     """
     if (check_subtype
             and isinstance(value, (collections.Iterable, np.ndarray))
@@ -1026,17 +1003,15 @@ def isnumeric(
 def remove_prefix(value: str, prefix: str) -> str:
     """Remove ``prefix`` from ``value``.
 
-    The predefined prefix is stored in :obj:`prefix`.
-
     Args:
         value (:obj:`str`): method name prefixed with value stored in
             ``prefix``.
 
     Returns:
-        str: method name without prefix.
+        str: ``value`` without ``prefix``.
 
     Raises:
-        TypeError: if `value` is not a string.
+        TypeError: if ``value`` is not a string.
     """
     if value.startswith(prefix):
         return value[len(prefix):]
@@ -1045,22 +1020,21 @@ def remove_prefix(value: str, prefix: str) -> str:
 
 
 def timeit(func: t.Callable, *args) -> t.Tuple[t.Any, float]:
-    """Measure how much time is for calling ``func`` with ``args``.
+    """Measure how much time is necessary for calling ``func`` with ``args``.
 
     Args:
-        func (:obj:`Callable`): a callable which invokation time will be
+        func (:obj:`callable`): a callable which invokation time will be
             measured from.
 
-        *args: arguments for ``func``.
+        *args: additional arguments for ``func``.
 
     Return:
-        tuple[any, float]: the first element is the return value from
-            ``func``. The second argument is the time necessary for a
-            complement invokation of ``func``.
+        tuple[any, float]: the first element is the return value from ``func``.
+            The second argument is the time necessary for the invokation of
+            ``func``.
 
     Raises:
-        Any exception raised by ``func`` with arguments ``args`` is not
-        catched by this method.
+        This method raises all exceptions from ``func``.
     """
     t_start = time.time()
     ret_val = func(*args)
@@ -1118,7 +1092,7 @@ def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
 
 
 def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
-    """Discretize a 1-D numeric array into a equal-frequency histogram."""
+    """Discretize a 1-D numeric array into an equal-frequency histogram."""
     perc_interval = int(100.0 / num_bins)
     perc_range = range(perc_interval, 100, perc_interval)
     hist_divs = np.percentile(data, perc_range)
@@ -1131,19 +1105,19 @@ def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
 
 def transform_num(data_numeric: np.ndarray,
                   num_bins: t.Optional[int] = None) -> t.Optional[np.ndarray]:
-    """Discretize numeric data with a equal-frequency histogram.
+    """Discretize numeric data with an equal-frequency histogram.
 
-    The numeric values will be overwritten by the index of the his-
-    togram bin which each value will fall into.
+    The index of the histogram bin overwrites its correspondent numeric
+    values.
 
     Args:
         data_numeric (:obj:`np.ndarray`): 2-D numpy array of numeric-
-            only data to be discretized.
+            only data to discretize.
 
-        num_bins (:obj:`int`, optional): number of bins of the equal-
-            frequency histogram used to discretize the data. If no
-            value is given, then the default value is min(2, c), where
-            ``c`` is the cubic root of number of instances rounded down.
+        num_bins (:obj:`int`, optional): number of bins of the equal-frequen-
+            cy histogram used to discretize the data. If no value is given,
+            then the default value is min(2, c), where ``c`` is the cubic root
+            of the number of instances rounded down.
 
     Returns:
         np.ndarray: discretized version of ``data_numeric``.
@@ -1185,24 +1159,22 @@ def rescale_data(data: np.ndarray,
     """Rescale numeric fitted data accordingly to user select option.
 
     Args:
-        data (:obj:`np.ndarray`): data to be rescaled.
+        data (:obj:`np.ndarray`): data to rescale.
 
-        option (:obj:`str`): rescaling strategy. Must be one in
-            ``VALID_RESCALE`` attribute.
+        option (:obj:`str`): rescaling strategy. Must be one in ``VALID_RESCA-
+            LE`` attribute.
 
-        args (:obj:`dict`, optional): extra arguments for scaler. All
-            scaler used are from ``sklearn`` package, so you should
-            consult they documentation for a complete list of available
-            arguments to user costumization. The used scalers for each
-            available ``option`` are:
-
-                ``min-max``: ``sklearn.preprocessing.MinMaxScaler``
-                ``standard``: ``sklearn.preprocessing.StandardScale``
-                ``robust``: ``sklearn.preprocessing.RobustScaler``
+        args (:obj:`dict`, optional): additional arguments for the scaler. All
+            scaler used are from ``sklearn`` package, so you should consult
+            their documentation for a complete list of available arguments to
+            user customization. The used scalers for each  available ``option``
+            are:
+                    - ``min-max``: ``sklearn.preprocessing.MinMaxScaler``
+                    - ``standard``: ``sklearn.preprocessing.StandardScale``
+                    - ``robust``: ``sklearn.preprocessing.RobustScaler``
 
     Returns:
-        np.ndarray: scaled ``data`` based in ``option`` correspondent
-            strategy.
+        np.ndarray: scaled ``data`` based in ``option`` correspondent strategy.
 
     Raises:
         ValueError: if ``option`` is not in ``VALID_RESCALE``.

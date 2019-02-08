@@ -166,7 +166,7 @@ class MFE:
                 Rivolli et al. URL: https://arxiv.org/abs/1808.10406
         """
         self.groups = _internal.process_generic_set(
-            values=groups, group_name="groups")  # type: t.Sequence[str]
+            values=groups, group_name="groups")  # type: t.Tuple[str, ...]
 
         self.features, self._metadata_mtd_ft = _internal.process_features(
             features=features,
@@ -460,7 +460,7 @@ class MFE:
     def _timeopt_include_summary(self) -> bool:
         """Checks if user selected time option include ``summary`` time."""
         return (isinstance(self.timeopt, str)
-                and self.timeopt.endswith(_internal.TIMEOPT_SUMMARY_SUFIX))
+                and self.timeopt.endswith(_internal.TIMEOPT_SUMMARY_SUFFIX))
 
     def _combine_time(self, time_ft: float,
                       times_sm: t.List[float]) -> t.List[float]:
