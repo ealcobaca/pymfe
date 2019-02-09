@@ -152,6 +152,7 @@ def warning_format(message: str,
     Return:
         str: formated warning message.
     """
+    # pylint: disable=W0613
     return "Warning: {}\n".format(message)
 
 
@@ -881,8 +882,9 @@ def process_precomp_groups(
             unknown_groups = set(processed_precomp_groups).difference(groups)
 
             for unknown_precomp in unknown_groups:
-                warnings.warn('Unknown precomp_groups "{0}"'.format(
-                        unknown_precomp), UserWarning)
+                warnings.warn(
+                    'Unknown precomp_groups "{0}"'.format(unknown_precomp),
+                    UserWarning)
 
         processed_precomp_groups = tuple(
             set(processed_precomp_groups).intersection(groups))
