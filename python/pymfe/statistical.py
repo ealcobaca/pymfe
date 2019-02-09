@@ -42,6 +42,19 @@ class MFEStatistical:
         4. The return value of all feature-extraction methods should be
             a single value or a generic Sequence (preferably an np.ndarray)
             type with numeric values.
+
+    There is another type of method adopted for automatic detection. It is ad-
+    opted the prefix ``precompute_`` for automatic detection of these methods.
+    These methods run while fitting some data into an MFE model automatically,
+    and their objective is to precompute some common value shared between more
+    than one feature extraction method. This strategy is a trade-off between
+    more system memory consumption and speeds up of feature extraction. Their
+    return value must always be a dictionary whose keys are possible extra ar-
+    guments for both feature extraction methods and other precomputation me-
+    thods. Note that there is a share of precomputed values between all valid
+    feature-extraction modules (e.g., ``class_freqs`` computed in module ``sta-
+    tistical`` can freely be used for any precomputation or feature extraction
+    method of module ``landmarking``).
     """
 
     @classmethod
@@ -53,9 +66,9 @@ class MFEStatistical:
         Args:
             y (:obj:`np.ndarray`, optional): target attribute from fitted data.
 
-            **kwargs: extra arguments. May containg values thar are already
-                precomputed before this method, so it can help speed up the
-                precomputation.
+            **kwargs: additional arguments. May have previously precomputed be-
+                fore this method from other precomputed methods, so they can
+                help speed up this precomputation.
 
         Return:
             dict: with following precomputed items:
@@ -89,9 +102,9 @@ class MFEStatistical:
 
             y (:obj:`np.ndarray`, optional): target attribute from fitted data.
 
-            **kwargs: extra arguments. May containg values thar are already
-                precomputed before this method, so it can help speed up the
-                precomputation.
+            **kwargs: additional arguments. May have previously precomputed be-
+                fore this method from other precomputed methods, so they can
+                help speed up this precomputation.
 
         Return:
             dict: with following precomputed items:
@@ -152,9 +165,9 @@ class MFEStatistical:
             N (:obj:`np.ndarray`, optional): numerical attributes from fitted
                 data.
 
-            **kwargs: extra arguments. May containg values thar are already
-                precomputed before this method, so it can help speed up the
-                precomputation.
+            **kwargs: additional arguments. May have previously precomputed be-
+                fore this method from other precomputed methods, so they can
+                help speed up this precomputation.
 
         Return:
             dict: with following precomputed items:
