@@ -155,7 +155,7 @@ class MFEGeneral:
         """Returns the number of distinct classes.
 
         ``y`` and ``classes`` can not be :obj:`NoneType` simultaneously,
-        or else :obj:`np.nan` will be returned.
+        or else :obj:`np.nan` is returned.
 
         Args:
             y (:obj:`np.ndarray`, optional): target vector.
