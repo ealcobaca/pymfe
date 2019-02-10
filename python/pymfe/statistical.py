@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Statistical Metafeatures.
+"""A module dedicated to the extraction of Statistical Metafeatures.
 
 Notes:
     For more information about the metafeatures implemented here,
@@ -6,7 +6,7 @@ Notes:
 
 References:
     .. _Rivolli et al.:
-        "Towards Reproducible Empirical Research in Meta-Learning",
+        "Towards Reproducible Empirical Research in Meta-Learning,"
         Rivolli et al. URL: https://arxiv.org/abs/1808.10406
 """
 import typing as t
@@ -61,10 +61,11 @@ class MFEStatistical:
     def precompute_statistical_class(cls,
                                      y: t.Optional[np.ndarray] = None,
                                      **kwargs) -> t.Dict[str, t.Any]:
-        """Precompute distinct classes and its frequencies from ``y``.
+        """Precompute distinct classes and its abs. frequencies from ``y``.
 
         Args:
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+            y (:obj:`np.ndarray`, optional): the target attribute from fitted
+                data.
 
             **kwargs: additional arguments. May have previously precomputed be-
                 fore this method from other precomputed methods, so they can
@@ -76,8 +77,8 @@ class MFEStatistical:
             - ``classes`` (:obj:`np.ndarray`): distinct classes of ``y``,
                 if ``y`` is not :obj:`NoneType`.
 
-            - ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
-                ``y``, if ``y`` is not :obj:`NoneType`.
+            - ``class_freqs`` (:obj:`np.ndarray`): absolute class frequencies
+                of ``y``, if ``y`` is not :obj:`NoneType`.
         """
         precomp_vals = {}
 
@@ -94,7 +95,7 @@ class MFEStatistical:
                                      N: t.Optional[np.ndarray] = None,
                                      y: t.Optional[np.ndarray] = None,
                                      **kwargs) -> t.Dict[str, t.Any]:
-        """Precompute eigenvalues and eigenvectors of Fisher's LDA Matrix.
+        """Precompute eigenvalues and eigenvectors of LDA Matrix.
 
         Args:
             N (:obj:`np.ndarray`, optional): numerical attributes from fitted
@@ -156,10 +157,10 @@ class MFEStatistical:
     def precompute_statistical_cor_cov(cls,
                                        N: t.Optional[np.ndarray] = None,
                                        **kwargs) -> t.Dict[str, t.Any]:
-        """Precomputes Correlation and Covariance matrix of numerical data.
+        """Precomputes the correlation and covariance matrix of numerical data.
 
-        Caution in allowing this precomputation method on large datasets,
-        as this method is very memory hungry.
+        Be cautious in allowing this precomputation method on huge datasets, as
+        this precomputation method may be very memory hungry.
 
         Args:
             N (:obj:`np.ndarray`, optional): numerical attributes from fitted
@@ -205,18 +206,23 @@ class MFEStatistical:
             classes: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> t.Tuple[np.ndarray, np.ndarray]:
-        """Compute eigenvals/vecs of Fisher's Linear Discriminant Analysis.
+        """Compute eigenvalues/vecs of the Linear Discriminant Analysis Matrix.
 
-        More specificaly, the eigenvalues and eigenvectors are calculated
-        from matrix S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat).
+        More specifically, the eigenvalues and eigenvectors are calculated from
+        matrix S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat).
 
-        Check ``ft_can_cor`` documentation for more in-depth information
-        about this matrix.
+        Check ``ft_can_cor`` documentation for more in-depth information about
+        this matrix.
+
+        Args:
+            classes (:obj:`np.ndarray`, optional): distinct classes of ``y``.
+
+            class_freqs (:obj:`np.ndarray`, optional): absolute class frequen-
+                cies of ``y``.
 
         Return:
-            tuple(np.ndarray, np.ndarray): eigenvalues and eigenvectors
-                (in this order) of Fisher's Linear Discriminant Analysis
-                Matrix.
+            tuple(np.ndarray, np.ndarray): eigenvalues and eigenvectors (in
+                this order) of Linear Discriminant Analysis Matrix.
         """
 
         def compute_scatter_within(
@@ -282,7 +288,7 @@ class MFEStatistical:
 
         This function returns N eigenvalues, such that:
 
-            N < min(num_class, num_attr)
+            N <= min(num_class, num_attr)
 
         Args:
             eig_vals (:obj:`np.ndarray`): eigenvalues to be filtered.
@@ -296,13 +302,13 @@ class MFEStatistical:
                 alongside eigenvalues.
 
             filter_imaginary (:obj:`bool`, optional): if True, remove ima-
-                ginary valued eigenvalues and its correspondent eigenvect-
-                ors.
+                ginary valued eigenvalues and its correspondent eigenvec-
+                tors.
 
             filter_less_relevant (:obj:`bool`, optional): if True, remove
                 eigenvalues smaller than ``epsilon``.
 
-            epsilon (:obj:`float`, optional): a very small value used to
+            epsilon (:obj:`float`, optional): a tiny value used to
                 determine ``less relevant`` eigenvalues.
         """
         max_valid_eig = min(num_attr, num_classes)
@@ -360,41 +366,48 @@ class MFEStatistical:
                    y: np.ndarray,
                    epsilon: float = 1.0e-10,
                    eig_vals: t.Optional[np.ndarray] = None,
-                   classes: t.Optional[np.ndarray] = None) -> np.ndarray:
+                   classes: t.Optional[np.ndarray] = None,
+                   class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute canonical correlations of data.
 
         The canonical correlations p are defined as shown below:
 
             p_i = sqrt(lda_eig_i / (1.0 + lda_eig_i))
 
-        Where ``lda_eig_i`` is the ith eigenvalue of Fisher's Linear Discri-
-        minant Analysis Matrix S defined as:
+        Where ``lda_eig_i`` is the ith eigenvalue of Linear Discriminant Ana-
+        lysis Matrix S defined as:
 
             S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat),
 
         where
-            Scatter_Within_Mat = sum((N_c - 1.0) * Covariance(X_c)),
-            N_c is the number of instances of class c and X_c are the
-            instances of class c. Effectively, this is exactly just the
-            summation of all Covariance matrices between instances of the
-            same class without dividing then by the number of instances.
+            Scatter_Within_Mat = sum((N_c - 1.0) * Covariance(X_c)), ``N_c``
+            is the number of instances of class c and X_c are the instances of
+            class ``c``. Effectively, this is exactly just the summation of
+            all Covariance matrices between instances of the same class with-
+            out dividing then by the number of instances.
 
-            Scatter_Between_Mat = sum(N_c * (U_c - U) * (U_c - U)^T), N_c
-            is the number of instances of class c, U_c is the mean coordi-
-            nates of instances of class c, and U is the mean value of coor-
-            dinates of all instances in the dataset.
+            Scatter_Between_Mat = sum(N_c * (U_c - U) * (U_c - U)^T), `'N_c``
+            is the number of instances of class c, U_c is the mean coordinates
+            of instances of class ``c``, and ``U`` is the mean value of coordi-
+            nates of all instances in the dataset.
 
         Args:
-            epsilon (:obj:`float`): a very small value to prevent division by
-                zero.
+            epsilon (:obj:`float`, optional): a tiny value to prevent di-
+                vision by zero.
+
+            eig_vals (:obj:`np.ndarray`, optional): eigenvalues of LDA Matrix
+                ``S``, defined above.
+
+            classes (:obj:`np.ndarray`, optional): distinct classes of ``y``.
         """
         if eig_vals is None:
-            eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
+            if classes is None or class_freqs is None:
+                classes, class_freqs = np.unique(y, return_counts=True)
+
+            eig_vals, _ = MFEStatistical._linear_disc_mat_eig(
+                N, y, classes=classes, class_freqs=class_freqs)
 
             _, num_attr = N.shape
-
-            if classes is None:
-                classes = np.unique(y)
 
             eig_vals = MFEStatistical._filter_eig_vals(
                 eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
@@ -411,24 +424,27 @@ class MFEStatistical:
                    norm_ord: t.Union[int, float] = 2,
                    classes: t.Optional[np.ndarray] = None,
                    class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Computes distance between minority and majority classes center of mass.
+        """Computes the distance between minority and majority classes center of mass.
 
         The center of mass of a class is the average value of each attribute
         between instances of the same class.
 
-        The majority and minority classes can not be the same, even if
-        all classes have the same number of instances.
+        The majority and minority classes cannot be the same, even if every
+        class has the same number of instances.
 
         Args:
-            norm_ord (:obj:`numeric`): Minkowski distance parameter. Minkowski
-            distance has the following popular cases for this argument value:
+            norm_ord (:obj:`numeric`): Minkowski Distance parameter. Minkowski
+                Distance has the following popular cases for this argument va-
+                lue:
 
-                norm_ord    Distance name
-                -------------------------
-                -inf        Min value
-                1           Manhattan/cityblock
-                2           Euclidean
-                +inf        Max value (infinite norm)
+                +-----------+---------------------------+
+                |norm_ord   | Distance name             |
+                +-----------+---------------------------+
+                |-> -inf    | Min value                 |
+                |1.0        | Manhattan/City Block      |
+                |2.0        | Euclidean                 |
+                |-> +inf    | Max value (infinite norm) |
+                +-----------+---------------------------+
 
         Raises:
             ValueError: if ``norm_ord`` is not numeric.
@@ -455,7 +471,7 @@ class MFEStatistical:
     @classmethod
     def ft_cor(cls, N: np.ndarray,
                abs_corr_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """Absolute value of correlation between distinct column pairs."""
+        """The absolute value of the correlation of distinct column pairs."""
         if abs_corr_mat is None:
             abs_corr_mat = abs(np.corrcoef(N, rowvar=False))
 
@@ -471,7 +487,14 @@ class MFEStatistical:
     @classmethod
     def ft_cov(cls, N: np.ndarray,
                cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """Absolute value of covariance between distinct column pairs."""
+        """The absolute value of the covariance of distinct column pairs.
+
+        Args:
+            cov_mat (:obj:`np.ndarray`, optional): covariance matrix of ``N``.
+                Argument meant to exploit precomputations. Note that this ar-
+                gument value is not the same as this method return value, as
+                it only returns the lower-triangle values from ``cov_mat``.
+        """
         if cov_mat is None:
             cov_mat = np.cov(N, rowvar=False)
 
@@ -482,12 +505,26 @@ class MFEStatistical:
         return abs(inf_triang_vals)
 
     @classmethod
-    def ft_nr_disc(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Compute number of canonical corr. between each attr. and class.
+    def ft_nr_disc(cls,
+                   N: np.ndarray,
+                   y: np.ndarray,
+                   epsilon: float = 1.0e-10,
+                   eig_vals: t.Optional[np.ndarray] = None,
+                   classes: t.Optional[np.ndarray] = None,
+                   class_freqs: t.Optional[np.ndarray] = None) -> float:
+        """Compute the number of canonical corr. between each attr. and class.
 
-        This is effectively the size of return value of ``ft_can_cor`` method.
+        This method return value is effectively the size of the return value
+        of ``ft_can_cor`` method. Check its documentation for more in-depth
+        details.
         """
-        can_cor = MFEStatistical.ft_can_cor(N, y)
+        can_cor = MFEStatistical.ft_can_cor(
+            N=N,
+            y=y,
+            epsilon=epsilon,
+            eig_vals=eig_vals,
+            classes=classes,
+            class_freqs=class_freqs)
 
         if isinstance(can_cor, np.ndarray):
             return can_cor.size
@@ -498,8 +535,12 @@ class MFEStatistical:
     def ft_eigenvalues(cls,
                        N: np.ndarray,
                        cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """Absolute value of covariance between distinct column pairs."""
-        """Returns eigenvalues of covariance matrix of N attributes."""
+        """Returns the eigenvalues of ``N`` covariance matrix.
+
+        Args:
+            cov_mat (:obj:`np.ndarray`, optional): covariance matrix of ``N``.
+                Argument meant to exploit precomputations.
+        """
         if cov_mat is None:
             cov_mat = np.cov(N, rowvar=False)
 
@@ -516,15 +557,15 @@ class MFEStatistical:
                   N: np.ndarray,
                   allow_zeros: bool = False,
                   epsilon: float = 1.0e-10) -> np.ndarray:
-        """Geometric mean of each column.
+        """Computes the geometric mean of each attribute in ``N``.
 
         Args:
-            allow_zeros (:obj:`bool`): if True, than all attributes with zero
-                values will have geometric mean set to zero. Otherwise, their
-                geometric mean are set to :obj:`np.nan`.
+            allow_zeros (:obj:`bool`): if True, then the geometric mean of all
+                attributes with zero values is set to zero. Otherwise, is set
+                to :obj:`np.nan` these values.
 
-            epsilon (:obj:`float`): a very small value which all values with
-                absolute value lesser than it are considered zero-valued.
+            epsilon (:obj:`float`): a small value which all values with absolu-
+                te value lesser than it is considered zero-valued.
         """
         min_values = N.min(axis=0)
 
@@ -548,39 +589,51 @@ class MFEStatistical:
 
     @classmethod
     def ft_h_mean(cls, N: np.ndarray, epsilon: float = 1.0e-8) -> np.ndarray:
-        """Harmonic mean of each column."""
+        """The harmonic mean of each attribute in ``N``.
+
+        Args:
+            epsilon (:obj:`float`, optional): a tiny value to prevent di-
+                vision by zero.
+        """
         return scipy.stats.mstats.hmean(N + epsilon, axis=0)
 
     @classmethod
     def ft_iq_range(cls, N: np.ndarray) -> np.ndarray:
-        """Compute Interquartile Range (IQR) of each column."""
+        """Compute the interquartile range (IQR) of each attribute in ``N``."""
         return scipy.stats.iqr(N, axis=0)
 
     @classmethod
     def ft_kurtosis(cls, N: np.ndarray, method: int = 3,
                     bias: bool = True) -> np.ndarray:
-        """Compute Kurtosis of each attribute of N.
+        """Compute the kurtosis of each attribute in ``N``.
 
         Args:
+            method (:obj:`int`, optional): defines the strategy used for esti-
+                mate data kurtosis. Used for total compatibility with R package
+                ``e1071``. The options must be one of the following:
+
+                +--------+-----------------------------------------------+
+                |Option  | Formula                                       |
+                +--------+-----------------------------------------------+
+                |1       | Kurt_1 = m_4 / m_2**2 - 3                     |
+                |        | (default of ``scipy.stats``)                  |
+                +--------+-----------------------------------------------+
+                |2       | Kurt_2 = ((n+1) * Kurt_1 + 6) * (n-1) / f_2   |
+                |        | f_2 = ((n-2)*(n-3))                           |
+                +--------+-----------------------------------------------+
+                |3       | Kurt_3 = m_4 / s**4 - 3                       |
+                |        |        = (Kurt_1+3) * (1 - 1/n)**2 - 3        |
+                +--------+-----------------------------------------------+
+
+                Where ``n`` is the number of elements in ``values``, ``s`` is
+                the standard deviation of ``values`` and ``m_i`` is the ith
+                statistical momentum of ``values``.
+
+                Note that if the selected method is unable to be calculated due
+                to division by zero, then the first method is used instead.
+
             bias (:obj:`bool`): If False, then the calculations are corrected
                 for statistical bias.
-
-        method (:obj:`int`, optional): defines the strategy used for
-            estimate data kurtosis. Used for total compatibility with
-            R package ``e1071``. The options must be one of the follo-
-            wing:
-
-            Option      Formula
-            -------------------
-            1           Kurt_1 = m_4 / m_2^2 - 3. (default of ``scipy.stats``)
-            2           Kurt_2 = ((n+1) * Kurt_1 + 6) * (n-1) / ((n-2)*(n-3)).
-            3           Kurt_3 = m_4 / s^4 - 3 = (Kurt_1+3) * (1 - 1/n)^2 - 3.
-
-            Where ``n`` is the number of elements in ``values`` and
-            m_i is the ith momentum of ``values``.
-
-            Note that if the selected method is unable to be calculated due
-            to division by zero, then the first method will be used instead.
         """
         kurt_arr = np.apply_along_axis(
             func1d=_summary.sum_kurtosis,
@@ -593,35 +646,36 @@ class MFEStatistical:
 
     @classmethod
     def ft_mad(cls, N: np.ndarray, factor: float = 1.4826) -> np.ndarray:
-        """Computes Median Absolute Deviation (MAD) adjusted by a factor.
+        """Computes Median Absolute Deviation (MAD) adjusted by a ``factor``.
 
         Args:
             factor (:obj:`float`): multiplication factor for output correction.
-            The default ``factor`` is 1.4826 due to fact that it is an appro-
-            ximated result of MAD of a normally distributed data, so it make
-            this method result comparable with this sort of data.
-         """
+                The default ``factor`` is 1.4826 since it is an approximated
+                result of MAD of a normally distributed data (with any mean and
+                standard deviation of 1.0), so it makes this method result com-
+                parable with this sort of data.
+        """
         median_dev = abs(N - np.median(N, axis=0))
         return np.median(median_dev, axis=0) * factor
 
     @classmethod
     def ft_max(cls, N: np.ndarray) -> np.ndarray:
-        """Get maximum value from each N attribute."""
+        """Get the maximum value from each ``N`` attribute."""
         return N.max(axis=0)
 
     @classmethod
     def ft_mean(cls, N: np.ndarray) -> np.ndarray:
-        """Returns the mean value of each data column."""
+        """Returns the mean value of each ``N`` attribute."""
         return N.mean(axis=0)
 
     @classmethod
     def ft_median(cls, N: np.ndarray) -> np.ndarray:
-        """Get median value from each N attribute."""
+        """Get the median value from each ``N`` attribute."""
         return np.median(N, axis=0)
 
     @classmethod
     def ft_min(cls, N: np.ndarray) -> np.ndarray:
-        """Get minimum value from each N attribute."""
+        """Get the minimum value from each ``N`` attribute."""
         return N.min(axis=0)
 
     @classmethod
@@ -632,19 +686,22 @@ class MFEStatistical:
                        epsilon: float = 1.0e-8,
                        abs_corr_mat: t.Optional[np.ndarray] = None
                        ) -> t.Union[int, float]:
-        """Number of attribute pairs with corr. equal or greater than a threshold.
+        """The number of attribute pairs with corr. eq. to or greater than a threshold.
 
         Args:
-            threshold (:obj:`float`): value of threshold, where correlation is
-                assumed to be strong if its absolute value is equal or greater
-                than it.
+            threshold (:obj:`float`, optional): a value of the threshold, whe-
+                re correlation is assumed to be strong if its absolute value is
+                equal or greater than it.
 
-            normalize (:obj:`bool`): if True, the result will be normalized by
-                a factor of 2 / (d * (d - 1)), where d = number of attributes
-                (columns) in N.
+            normalize (:obj:`bool`, optional): if True, the result is normali-
+                zed by a factor of 2/(d*(d-1)), where ``d`` is number of attri-
+                butes (columns) in ``N``.
 
-            epsilon (:obj:`float`): a very small value to prevent division by
-                zero.
+            epsilon (:obj:`float`, optional): a tiny value to prevent division
+                by zero.
+
+            abs_corr_mat (:obj:`np.ndarray`, optional): absolute correlation
+                matrix of ``N``. Argument used to exploit precomputations.
         """
         abs_corr_vals = MFEStatistical.ft_cor(N, abs_corr_mat=abs_corr_mat)
 
@@ -658,21 +715,85 @@ class MFEStatistical:
         return sum(abs_corr_vals >= threshold) * norm_factor
 
     @classmethod
-    def ft_nr_norm(cls, N: np.ndarray, threshold: float = 0.1) -> int:
-        """Number of attr. with normal distribution based in Shapiro-Wilk test.
+    def ft_nr_norm(cls, N: np.ndarray,
+                   method: str = "shapiro-wilk",
+                   threshold: float = 0.05,
+                   max_samples: int = 5000) -> int:
+        """The number of attributes normally distributed based in ``method``.
 
         Args:
-            threshold (:obj:`float`): threshold to consider the p-value of
-                Shapiro-Wilk test of each attribute small enough to assume
-                normal distribution.
+            method (:obj:`str`, optional): select the normality test to be exe-
+                cuted. This argument must assume one of the options shown be-
+                low:
+                - ``shapiro-wilk``: directly from the ``scipy.stats.shapiro``
+                    documentation: ``the Shapiro-Wilk test tests the null hy-
+                    pothesis that the data was drawn from a normal distribu-
+                    tion.``
+                - ``dagostino-pearson``: directly from the ``scipy.stats.nor-
+                    maltest`` documentation: ``It is based on D'Agostino and
+                    Pearson's, test that combines skew and kurtosis to produce
+                    an omnibus test of normality.``
+                - ``anderson-darling``: ...
+                - ``all``: perform all tests cited above. An attribute is con-
+                    sidered normally distributed when rejecting a null hypothe-
+                    sis of any test.
+
+            threshold (:obj:`float`, optional): level of significance used to
+                reject the null hypothesis.
+
+            max_samples (:obj:`int`, optional): max samples used while perfor-
+                ming the normality tests. Shapiro-Wilks test p-value may not
+                be accurate when sample size is higher than 5000.
+
+        Returns:
+            int: the number of normally distributed attributes based on
+                ``method``.
+
+        Raises:
+            ValueError: if ``method`` is not a valid option.
         """
-        nr_norm = 0
+        ACCEPTED_TESTS = (
+            "shapiro-wilk",
+            "dagostino-pearson",
+            "anderson-darling",
+            "all",
+        )
 
-        for attr in N.T:
-            _, p_value = scipy.stats.shapiro(attr)
-            nr_norm += p_value < threshold
+        if method not in ACCEPTED_TESTS:
+            raise ValueError("Unknown method {0}. Select one between"
+                             "{1}".format(method, ACCEPTED_TESTS))
 
-        return nr_norm
+        num_inst, num_attr = N.shape
+        max_row_index = min(max_samples, num_inst)
+
+        attr_is_normal = np.repeat(False, num_attr)
+
+        if method in ("shapiro-wilk", "all"):
+            _, p_values_shapiro = np.apply_along_axis(
+                func1d=scipy.stats.shapiro,
+                axis=0,
+                arr=N[:max_row_index, :])
+
+            attr_is_normal[p_values_shapiro > threshold] = True
+
+        if method in ("dagostino-pearson", "all"):
+            _, p_values_dagostino = scipy.stats.normaltest(
+                N[:max_row_index, :],
+                axis=0)
+
+            attr_is_normal[p_values_dagostino > threshold] = True
+
+        """
+        if method in ("anderson-darling", "all"):
+            _, p_values_anderson, _ = np.apply_along_axis(
+                func1d=scipy.stats.anderson,
+                axis=0,
+                arr=N[:max_row_index, :],
+                dist="norm")
+
+            attr_is_normal[p_values_anderson > threshold] = True
+        """
+        return sum(attr_is_normal)
 
     @classmethod
     def ft_nr_outliers(cls, N: np.ndarray, whis: float = 1.5) -> int:
@@ -729,8 +850,7 @@ class MFEStatistical:
         """Statistic test for homogeneity of covariances.
 
         Args:
-            epsilon (:obj:`float`): a very small value to prevent division by
-                zero.
+            epsilon (:obj:`float`): a tiny value to prevent division by zero.
         """
         num_inst, num_col = N.shape
 
@@ -828,8 +948,7 @@ class MFEStatistical:
                 be multiplied by (1.0 / (n - 1.0)) factor (i.e. new
                 output is S'(x) = ((n / phi(x)) - 1.0)).
 
-            epsilon (:obj:`float`): a very small value to prevent division by
-                zero.
+            epsilon (:obj:`float`): a tiny value to prevent division by zero.
         """
 
         ans = np.array([attr.size / np.unique(attr).size for attr in N.T])
@@ -877,7 +996,8 @@ class MFEStatistical:
                     N: np.ndarray,
                     y: np.ndarray,
                     eig_vals: t.Optional[np.ndarray] = None,
-                    classes: t.Optional[np.ndarray] = None) -> float:
+                    classes: t.Optional[np.ndarray] = None,
+                    class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute Wilks' Lambda value.
 
         The Wilk's Lambda L is calculated as:
@@ -889,15 +1009,18 @@ class MFEStatistical:
         in-depth information about this value.
         """
         if eig_vals is None:
-            eig_vals, _ = MFEStatistical._linear_disc_mat_eig(N, y)
+            if classes is None or class_freqs is None:
+                classes, class_freqs = np.unique(y, return_counts=True)
+
+            eig_vals, _ = MFEStatistical._linear_disc_mat_eig(
+                N, y, classes=classes, class_freqs=class_freqs)
 
             _, num_attr = N.shape
 
-            if classes is None:
-                classes = np.unique(y)
-
             eig_vals = MFEStatistical._filter_eig_vals(
-                eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
+                eig_vals=eig_vals,
+                num_attr=num_attr,
+                num_classes=classes.size)
 
         if not isinstance(eig_vals, np.ndarray):
             eig_vals = np.array(eig_vals)
