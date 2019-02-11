@@ -888,9 +888,10 @@ if __name__ == "__main__":
 
     MODEL = MFE(
         groups="all",
-        features=["cat_to_num", "mean", "nr_inst", "nr_class", "w_lambda"],
+        features=["nr_norm"],
         summary=["histogram", "mean", "sd", "kurtosis"],
         measure_time="avg_summ")
+
     MODEL.fit(
         rescale="robust",
         precomp_groups="all",
@@ -898,13 +899,13 @@ if __name__ == "__main__":
         X=attr,
         y=labels,
         transform_num=True,
-        transform_cat=True)
+        transform_cat=False)
 
     names, vals, times = MODEL.extract(
         suppress_warnings=False,
         remove_nan=True,
         verbose=True,
-        kurtosis={"method": 1})
+        nr_norm={"method": "anderson-darling", "failure": "soft"})
 
     for n, v, i in zip(names, vals, times):
         print(n, v, i)

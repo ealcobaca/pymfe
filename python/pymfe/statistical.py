@@ -719,41 +719,62 @@ class MFEStatistical:
                    method: str = "shapiro-wilk",
                    threshold: float = 0.05,
                    failure: str = "soft",
-                   max_samples: int = 5000) -> int:
-        """The number of attributes normally distributed based in ``method``.
+                   max_samples: int = 5000) -> t.Union[float, int]:
+        """The number of attributes normally distributed based in some ``method``.
 
         Args:
             method (:obj:`str`, optional): select the normality test to be exe-
                 cuted. This argument must assume one of the options shown be-
                 low:
-                - ``shapiro-wilk``: directly from the ``scipy.stats.shapiro``
-                    documentation: ``the Shapiro-Wilk test tests the null hy-
-                    pothesis that the data was drawn from a normal distribu-
-                    tion.``
-                - ``dagostino-pearson``: directly from the ``scipy.stats.nor-
-                    maltest`` documentation: ``It is based on D'Agostino and
-                    Pearson's, test that combines skew and kurtosis to produce
-                    an omnibus test of normality.``
-                - ``anderson-darling``: ...
-                - ``all``: perform all tests cited above. An attribute is con-
-                    sidered normally distributed when rejecting a null hypothe-
-                    sis of any test.
+
+                - ``shapiro-wilk``: directly from `shapiro`_: ``the Shapiro-
+                    Wilk test tests the null hypothesis that the data was drawn
+                    from a normal distribution.``
+
+                - ``dagostino-pearson``: directly from `normaltest`_: ``It is
+                    based on D'Agostino and Pearson's, test that combines skew
+                    and kurtosis to produce an omnibus test of normality.``.
+
+                - ``anderson-darling``: directly from `anderson`_: The Ander-
+                    son-Darling tests the null hypothesis that a sample is
+                    drawn from a population that follows a particular distribu-
+                    tion.`` In this method context, that ``particular distribu-
+                    tion`` is fixed in the normal/gaussian.
+
+                - ``all``: perform all tests cited above. To consider an attri-
+                    bute normaly distributed all test results are taken into
+                    account with equal weight. Check ``failure`` argument for
+                    more information.
 
             threshold (:obj:`float`, optional): level of significance used to
-                reject the null hypothesis.
+                reject the null hypothesis of normality tests.
 
-            failure (:obj:`str`, optional): ...
+            failure (:obj:`str`, optional): used only if ``method`` argument
+                value is ``all``. This argument must assumed one value between
+                ``soft`` or ``hard``. If ``soft``, then if a single test can`t
+                have its null hypothesis (of the normal/Gaussian distribution
+                of the attribute data) rejected for some attribute, then that
+                attribute is considered normally distributed. If ``hard``, then
+                is necessary the rejection of the null hypothesis of every sin-
+                gle normality test to consider the attribute normally distribu-
+                ted.
 
             max_samples (:obj:`int`, optional): max samples used while perfor-
                 ming the normality tests. Shapiro-Wilks test p-value may not
                 be accurate when sample size is higher than 5000.
 
         Returns:
-            int: the number of normally distributed attributes based on
-                ``method``.
+            int: the number of normally distributed attributes based on the
+                ``method``. If ``max_samples`` is non-positive, :obj:`np.nan`
+                is returned instead.
 
         Raises:
-            ValueError: if ``method`` is not a valid option.
+            ValueError: if ``method`` or ``failure`` is not a valid option.
+
+        References:
+            .. _shapiro: :obj:`scipy.stats.shapiro` documentation.
+            .. _normaltest: :obj:`scipy.stats.normaltest` documentation.
+            .. _anderson: :obj:`scipy.stats.anderson` documentation.
         """
         accepted_tests = (
             "shapiro-wilk",
@@ -766,10 +787,18 @@ class MFEStatistical:
             raise ValueError("Unknown method {0}. Select one between"
                              "{1}".format(method, accepted_tests))
 
+        if failure not in ("hard", "soft"):
+            raise ValueError('"failure" argument must be either "soft"'
+                             'or "hard" (got "{}").'.format(failure))
+
+        if max_samples <= 0:
+            return np.nan
+
         num_inst, num_attr = N.shape
+
         max_row_index = min(max_samples, num_inst)
 
-        attr_is_normal = np.repeat(False, num_attr)
+        test_results = []
 
         if method in ("shapiro-wilk", "all"):
             _, p_values_shapiro = np.apply_along_axis(
@@ -777,25 +806,39 @@ class MFEStatistical:
                 axis=0,
                 arr=N[:max_row_index, :])
 
-            attr_is_normal[p_values_shapiro > threshold] = True
+            test_results.append(p_values_shapiro > threshold)
 
         if method in ("dagostino-pearson", "all"):
             _, p_values_dagostino = scipy.stats.normaltest(
                 N[:max_row_index, :],
                 axis=0)
 
-            attr_is_normal[p_values_dagostino > threshold] = True
+            test_results.append(p_values_dagostino > threshold)
 
-        """
         if method in ("anderson-darling", "all"):
-            _, p_values_anderson, _ = np.apply_along_axis(
-                func1d=scipy.stats.anderson,
-                axis=0,
-                arr=N[:max_row_index, :],
-                dist="norm")
+            anderson_stats = np.repeat(False, num_attr)
 
-            attr_is_normal[p_values_anderson > threshold] = True
-        """
+            for attr_ind, attr_vals in enumerate(N[:max_row_index, :].T):
+                stat_value, crit_values, signif_levels = scipy.stats.anderson(
+                    attr_vals, dist="norm")
+
+                # As scipy.stats.anderson gives critical values for fixed
+                # significance levels, then the strategy adopted is to use
+                # the nearest possible from the given threshold as an esti-
+                # mator.
+                stat_index = np.argmin(abs(signif_levels - threshold))
+                crit_val = crit_values[stat_index]
+
+                anderson_stats[attr_ind] = stat_value <= crit_val
+
+            test_results.append(anderson_stats)
+
+        if failure == "soft":
+            attr_is_normal = np.any(test_results, axis=0)
+
+        else:
+            attr_is_normal = np.all(test_results, axis=0)
+
         return sum(attr_is_normal)
 
     @classmethod
