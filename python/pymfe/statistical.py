@@ -718,6 +718,7 @@ class MFEStatistical:
     def ft_nr_norm(cls, N: np.ndarray,
                    method: str = "shapiro-wilk",
                    threshold: float = 0.05,
+                   failure: str = "soft",
                    max_samples: int = 5000) -> int:
         """The number of attributes normally distributed based in ``method``.
 
@@ -741,6 +742,8 @@ class MFEStatistical:
             threshold (:obj:`float`, optional): level of significance used to
                 reject the null hypothesis.
 
+            failure (:obj:`str`, optional): ...
+
             max_samples (:obj:`int`, optional): max samples used while perfor-
                 ming the normality tests. Shapiro-Wilks test p-value may not
                 be accurate when sample size is higher than 5000.
@@ -752,16 +755,16 @@ class MFEStatistical:
         Raises:
             ValueError: if ``method`` is not a valid option.
         """
-        ACCEPTED_TESTS = (
+        accepted_tests = (
             "shapiro-wilk",
             "dagostino-pearson",
             "anderson-darling",
             "all",
         )
 
-        if method not in ACCEPTED_TESTS:
+        if method not in accepted_tests:
             raise ValueError("Unknown method {0}. Select one between"
-                             "{1}".format(method, ACCEPTED_TESTS))
+                             "{1}".format(method, accepted_tests))
 
         num_inst, num_attr = N.shape
         max_row_index = min(max_samples, num_inst)
@@ -797,19 +800,19 @@ class MFEStatistical:
 
     @classmethod
     def ft_nr_outliers(cls, N: np.ndarray, whis: float = 1.5) -> int:
-        """Calculate number of attribute which has at least one outlier value.
+        """Calculate the number of attributes which has at least one outlier value.
 
-        An attribute has outlier if some value is outside the closed in-
-        terval [first_quartile - WHIS * IQR, third_quartile + WHIS * IQR],
-        where IQR is the Interquartile Range (third_quartile - first_quartile),
-        and WHIS is tipically `1.5`.
+        An attribute has outlier if some value is outside the closed interval
+        [first_quartile - WHIS * IQR, third_quartile + WHIS * IQR], where IQR
+        is the Interquartile Range (third_quartile - first_quartile), and WHIS
+        value is typically ``1.5``.
 
         Args:
-            whis (:obj:`float`): factor to multiply IQR and set up non-outlier
-                interval (as stated above). Higher values make the interval
-                greater, thus increasing the tolerance against outliers, where
-                lower values decreases non-outlier interval and therefore crea-
-                tes less tolerance against outliers.
+            whis (:obj:`float`): a factor to multiply IQR and set up non-outli-
+            er interval (as stated above). Higher values make the interval more
+            significant, thus increasing the tolerance against outliers, where
+            lower values decrease non-outlier interval and, therefore, creates
+            less tolerance against possible outliers.
         """
         v_min, q_1, q_3, v_max = np.percentile(N, (0, 25, 75, 100), axis=0)
 
@@ -822,16 +825,15 @@ class MFEStatistical:
 
     @classmethod
     def ft_range(cls, N: np.ndarray) -> np.ndarray:
-        """Compute range (max - min) of each attribute."""
+        """Compute the range (max - min) of each attribute in ``N``."""
         return np.ptp(N, axis=0)
 
     @classmethod
     def ft_sd(cls, N: np.ndarray, ddof: int = 1) -> np.ndarray:
-        """Compute standard deviation of each attribute.
+        """Compute the standard deviation of each attribute in ``N``.
 
         Args:
-            ddof (:obj:`float`): degrees of freedom for standard
-                deviation.
+            ddof (:obj:`float`): degrees of freedom for standard deviation.
         """
         sd_array = N.std(axis=0, ddof=ddof)
 
@@ -847,10 +849,19 @@ class MFEStatistical:
                     epsilon: float = 1.0e-8,
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Statistic test for homogeneity of covariances.
+        """Perform a statistical test for homogeneity of covariances.
 
         Args:
-            epsilon (:obj:`float`): a tiny value to prevent division by zero.
+            epsilon (:obj:`float`, optional): a tiny value to prevent division
+                by zero.
+
+            classes (:obj:`np.ndarray`, optional): all distinct classes in tar-
+                get attribute ``y``. Used to exploit precomputations.
+
+            class_freqs (:obj:`np.ndarray`, optional): absolute frequencies of
+                each distinct class in target attribute ``y`` or ``classes``.
+                If ``classes`` is given, then this argument must be paired with
+                it by index.
         """
         num_inst, num_col = N.shape
 
@@ -894,29 +905,35 @@ class MFEStatistical:
     @classmethod
     def ft_skewness(cls, N: np.ndarray, method: int = 3,
                     bias: bool = True) -> np.ndarray:
-        """Compute skewness for each attribute.
+        """Compute the skewness for each attribute in ``N``.
 
         Args:
-            bias (:obj:`bool`): If False, then the calculations are
+            method (:obj:`int`, optional): defines the strategy used for es-
+                timate data skewness. This argument is used fo compatibility
+                with R package ``e1071``. The options must be one of the fol-
+                lowing:
+
+                +--------+-----------------------------------------------+
+                |Option  | Formula                                       |
+                +--------+-----------------------------------------------+
+                |1       | Skew_1 = m_3 / m_2**(3/2)                     |
+                |        | (default of ``scipy.stats``)                  |
+                +--------+-----------------------------------------------+
+                |2       | Skew_2 = Skew_1 * sqrt(n(n-1)) / (n-2)        |
+                +--------+-----------------------------------------------+
+                |3       | Skew_3 = m_3 / s**3 = Skew_1 ((n-1)/n)**(3/2) |
+                +--------+-----------------------------------------------+
+
+                Where ``n`` is the number of elements in dataset, ``m_i`` is
+                the ith momentum of the attribute, and ``s`` is the standard
+                deviation of the attribute.
+
+                Note that if the selected method is unable to be calculated
+                due to division by zero, then the first method will be used
+                instead.
+
+            bias (:obj:`bool`, optional): If False, then the calculations are
                 corrected for statistical bias.
-
-
-        method (:obj:`int`, optional): defines the strategy used for
-            estimate data skewness. Used for total compatibility with
-            R package ``e1071``. The options must be one of the follo-
-            wing:
-
-            Option      Formula
-            -------------------
-            1           Skew_1 = m_3 / m_2^(3/2) (default of ``scipy.stats``)
-            2           Skew_2 = Skew_1 * sqrt(n(n-1)) / (n-2)
-            3           Skew_3 = m_3 / s^3 = Skew_1 ((n-1)/n)^(3/2)
-
-            Where ``n`` is the number of elements in ``values`` and
-            m_i is the ith momentum of ``values``.
-
-            Note that if the selected method is unable to be calculated due
-            to division by zero, then the first method will be used instead.
         """
         skew_arr = np.apply_along_axis(
             func1d=_summary.sum_skewness,
@@ -932,23 +949,24 @@ class MFEStatistical:
                     N: np.ndarray,
                     normalize: bool = True,
                     epsilon: float = 1.0e-8) -> np.ndarray:
-        """Compute (normalized) sparsity metric for each attribute.
+        """Compute (possibly normalized) sparsity metric for each attribute.
 
-        Sparcity S of a vector x of numeric values is defined as
+        Sparsity ``S`` of a vector ``x`` of numeric values is defined as
 
             S(x) = (1.0 / (n - 1.0)) * ((n / phi(x)) - 1.0),
 
         where
-            - n is the number of instances in dataset N.
-            - phi(x) is the number of distinct values in x.
+            - ``n`` is the number of instances in dataset ``N``.
+            - ``phi(x)`` is the number of distinct values in ``x``.
 
         Args:
-            normalize (:obj:`bool`): if True, then the output will be
-                S(x) as calculated above. Otherwise, output will not
-                be multiplied by (1.0 / (n - 1.0)) factor (i.e. new
-                output is S'(x) = ((n / phi(x)) - 1.0)).
+            normalize (:obj:`bool`, optional): if True, then the output will be
+                S(x) as shown above. Otherwise, the output is not be multiplied
+                by the ``(1.0 / (n - 1.0))`` factor (i.e. new output is defined
+                as S'(x) = ((n / phi(x)) - 1.0)).
 
-            epsilon (:obj:`float`): a tiny value to prevent division by zero.
+            epsilon (:obj:`float`, optional): a small value to prevent division
+                by zero.
         """
 
         ans = np.array([attr.size / np.unique(attr).size for attr in N.T])
@@ -963,23 +981,23 @@ class MFEStatistical:
 
     @classmethod
     def ft_t_mean(cls, N: np.ndarray, pcut: float = 0.2) -> np.ndarray:
-        """Compute trimmed mean of each attribute.
+        """Compute the trimmed mean of each attribute in ``N``.
 
         Args:
-            pcut (:obj:`float`): percentage of cut from both ``lower``
-                and ``higher`` values. This value should be in inter-
-                val [0.0, 0.5), where if 0.0 the return value is the
-                default mean calculation. If pcut < 0.0, then
-                :obj:`np.nan` will be returned.
+            pcut (:obj:`float`): percentage of cut from both the ``lower`` and
+                ``higher`` values. This value should be in interval [0.0, 0.5),
+                where if 0.0 the return value is the default mean calculation.
+                If this argument is not in mentioned interval, then the return
+                value is :obj:`np.nan` instead.
         """
-        if pcut < 0:
+        if not 0 <= pcut < 0.5:
             return np.array([np.nan])
 
         return scipy.stats.trim_mean(N, proportiontocut=pcut)
 
     @classmethod
     def ft_var(cls, N: np.ndarray, ddof: int = 1) -> np.ndarray:
-        """Compute variance of each attribute.
+        """Compute the variance of each attribute in ``N``.
 
         Args:
             ddof (:obj:`float`): degrees of freedom for variance.
@@ -998,15 +1016,27 @@ class MFEStatistical:
                     eig_vals: t.Optional[np.ndarray] = None,
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Compute Wilks' Lambda value.
+        """Compute the Wilks' Lambda value.
 
         The Wilk's Lambda L is calculated as:
 
             L = prod(1.0 / (1.0 + lda_eig_i))
 
-        Where ``lda_eig_i`` is the ith eigenvalue of Fisher's Linear Discri-
-        minant Analysis Matrix. Check ``ft_can_cor`` documentation for more
-        in-depth information about this value.
+        Where ``lda_eig_i`` is the ith eigenvalue of Linear Discriminant Ana-
+        lysis Matrix. Check ``ft_can_cor`` documentation for more in-depth
+        information about this value.
+
+        Args:
+            eig_vals (:obj:`np.ndarray`, optional): eigenvalues of LDA matrix.
+                This argument is used to exploit precomputations.
+
+            classes (:obj:`np.ndarray`, optional): all distinct classes in tar-
+                get attribute ``y``. Used to exploit precomputations.
+
+            class_freqs (:obj:`np.ndarray`, optional): absolute frequencies of
+                each distinct class in target attribute ``y`` or ``classes``.
+                If ``classes`` is given, then this argument must be paired with
+                it by index.
         """
         if eig_vals is None:
             if classes is None or class_freqs is None:
