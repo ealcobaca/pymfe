@@ -178,14 +178,13 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
             ``ALL`` and any mix of upper and lower case are all considered to
             be the same wildcard token.
 
-        Returns:
-            tuple(tuple, tuple): A pair of tuples containing, respectively,
-                values that are in the given valid_group and those that are
-                not.
+    Returns:
+        tuple(tuple, tuple): A pair of tuples containing, respectively, values
+            that are in the given valid_group and those that are not.
 
-        Raises:
-            TypeError: if ``value`` is not an iterable type or some of its
-                elements are not a :obj:`str` type.
+    Raises:
+        TypeError: if ``value`` is not an iterable type or some of its elements
+            are not a :obj:`str` type.
     """
 
     if not isinstance(value, collections.Iterable):
@@ -250,8 +249,10 @@ def _get_prefixed_mtds_from_class(class_obj: t.Any,
 
 def _get_all_prefixed_mtds(
         prefix: str,
-        groups: t.Tuple[str, ...]
-        ) -> t.Tuple[TypeMtdTuple, ...]:
+        groups: t.Tuple[str, ...],
+        update_groups_by: t.Optional[t.Union[t.FrozenSet[str],
+                                             t.Set[str]]] = None,
+        ) -> t.Dict[str, t.Tuple]:
     """Get all methods prefixed with ``prefix`` in predefined feature ``groups``.
 
     The predefined metafeature groups are inside ``VALID_GROUPS`` attribute.
@@ -263,28 +264,67 @@ def _get_all_prefixed_mtds(
             It can assume value :obj:`NoneType`, which is interpreted as ``no
             filter`` (i.e. all features of all groups will be returned).
 
+        return_groups (:obj:`bool`, optional): if True, then the returned value
+            will be a :obj:`dict` (instead of a :obj:`tuple`) which maps each
+            group (as keys) with its correspondent values (as :obj:`tuple`s).
+
+        update_groups_by (:obj:`set` of :obj:`str`, optional): values to filter
+            ``groups``. This function also returns a new version of ``groups``
+            with all its elements that do not contribute with any new method
+            for the final output. It other words, it is removed any group which
+            do not contribute to the output of this function. This is particu-
+            larly useful for precomputations, as it helps avoiding unecessary
+            precomputation methods from feature groups not related with user
+            selected features.
+
     Returns:
-        tuple: with all filtered methods by ``group``.
+        If ``filter_groups_by`` argument is :obj:`NoneType` or empty:
+            tuple: with all filtered methods by ``group``.
+
+        Else:
+            tuple(tuple, tuple): the first field is the output described above,
+                the second field is a new version of ``groups``, with all ele-
+                ments that do not contribute with any element listed in the set
+                ``update_groups_by`` removed.
     """
     groups = tuple(set(VALID_GROUPS).intersection(groups))
 
     if not groups:
-        return tuple()
+        return {"methods": tuple(), "groups": tuple()}
 
-    methods_by_group = (
-        _get_prefixed_mtds_from_class(
+    methods_by_group = {
+        ft_type_id: _get_prefixed_mtds_from_class(
             class_obj=mfe_class,
             prefix=prefix)
 
         for ft_type_id, mfe_class in zip(VALID_GROUPS, VALID_MFECLASSES)
         if ft_type_id in groups
-    )
+    }
 
     gathered_methods = []  # type: t.List[TypeMtdTuple]
-    for group_mtds in methods_by_group:
+    new_groups = []  # type: t.List[str]
+
+    for group_name in methods_by_group:
+        group_mtds = methods_by_group[group_name]
         gathered_methods += group_mtds
 
-    return tuple(gathered_methods)
+        if update_groups_by:
+            group_mtds_names = {
+                remove_prefix(mtd_name, prefix=MTF_PREFIX)
+                for mtd_name, _ in group_mtds
+            }
+
+            if not update_groups_by.isdisjoint(group_mtds_names):
+                new_groups.append(group_name)
+
+    ret_val = {
+        "methods": tuple(gathered_methods),
+    }  # type: t.Dict[str, t.Tuple]
+
+    if update_groups_by:
+        ret_val["groups"] = tuple(new_groups)
+
+    return ret_val
 
 
 def _preprocess_iterable_arg(
@@ -299,8 +339,8 @@ def _preprocess_iterable_arg(
             a collection of to be processed into a canonical form.
 
     Returns:
-        list: ``values`` values as iterable. The values within strings
-            all lower-cased.
+        list: ``values`` values as iterable. The values within strings all low-
+            er-cased.
     """
     if isinstance(values, str):
         values = {values}
@@ -460,7 +500,7 @@ def build_mtd_kwargs(mtd_name: str,
 
     Returns:
         dict: a ready-to-use ``kwargs`` for the correspondent callable. The
-            format is {`argument_name`: value}.
+            format is {``argument_name``: value}.
     """
 
     if user_custom_args is None:
@@ -746,10 +786,12 @@ def process_summary(
 
 def process_features(
         features: t.Union[str, t.Iterable[str]],
-        groups: t.Optional[t.Tuple[str, ...]] = None,
+        groups: t.Tuple[str, ...],
         wildcard: str = "all",
-        suppress_warnings: bool = False
-        ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[TypeExtMtdTuple, ...]]:
+        suppress_warnings: bool = False,
+        ) -> t.Tuple[t.Tuple[str, ...],
+                     t.Tuple[TypeExtMtdTuple, ...],
+                     t.Tuple[str, ...]]:
     """Generate metadata from ``features`` MFE instantiation argument.
 
     The use of this function to happen after ``process_groups`` function, as
@@ -766,8 +808,11 @@ def process_features(
             one or more group identifiers. Check out ``MFE`` class documenta-
             tion for more information.
 
-        wildcard (:obj:`str`): value to be used as `select all` for `features`
-            argument.
+        wildcard (:obj:`str`, optional): value to be used as ``select all`` for
+            ``features`` argument.
+
+        suppress_warnings (:obj:`bool`, optional): if True, hide all warnings
+            raised during this method processing.
 
     Returns:
         tuple(tuple, tuple): A pair of tuples. The first Tuple is all feature
@@ -789,11 +834,24 @@ def process_features(
     if groups is None:
         groups = tuple()
 
-    ft_mtds_filtered = _get_all_prefixed_mtds(
-        prefix=MTF_PREFIX,
-        groups=groups)  # type: t.Tuple[TypeMtdTuple, ...]
-
     processed_ft = _preprocess_iterable_arg(features)  # type: t.List[str]
+
+    reference_values = None
+    if wildcard not in processed_ft:
+        reference_values = frozenset(processed_ft)
+
+    mtds_metadata = _get_all_prefixed_mtds(
+        prefix=MTF_PREFIX,
+        update_groups_by=reference_values,
+        groups=groups,
+    )  # type: t.Dict[str, t.Tuple]
+
+    ft_mtds_filtered = mtds_metadata.get(
+        "methods", tuple())  # type: t.Tuple[TypeMtdTuple, ...]
+
+    groups = mtds_metadata.get("group", groups)
+
+    del mtds_metadata
 
     if wildcard in processed_ft:
         processed_ft = [
@@ -823,10 +881,10 @@ def process_features(
 
     if not suppress_warnings:
         for unknown_ft in processed_ft:
-            warnings.warn('Unknown feature "{0}"'.format(unknown_ft),
+            warnings.warn('Unknown feature "{}"'.format(unknown_ft),
                           UserWarning)
 
-    return tuple(available_feat_names), tuple(ft_mtd_processed)
+    return tuple(available_feat_names), tuple(ft_mtd_processed), groups
 
 
 def process_precomp_groups(
@@ -836,10 +894,10 @@ def process_precomp_groups(
         suppress_warnings: bool = False,
         **kwargs
         ) -> t.Dict[str, t.Any]:
-    """Process `precomp_groups` argument while fitting into a MFE model.
+    """Process ``precomp_groups`` argument while fitting into a MFE model.
 
-    This function is expected to be used after `process_groups` function,
-    as `groups` parameter is expected to be in a canonical form (lower-cased
+    This function is expected to be used after ``process_groups`` function,
+    as ``groups`` parameter is expected to be in a canonical form (lower-cased
     values inside a tuple).
 
     Args:
@@ -889,9 +947,15 @@ def process_precomp_groups(
         processed_precomp_groups = tuple(
             set(processed_precomp_groups).intersection(groups))
 
-    precomp_mtds_filtered = _get_all_prefixed_mtds(
+    mtds_metadata = _get_all_prefixed_mtds(
         prefix=PRECOMPUTE_PREFIX,
-        groups=processed_precomp_groups)  # type: t.Tuple[TypeMtdTuple, ...]
+        groups=processed_precomp_groups,
+    )  # type: t.Dict[str, t.Tuple]
+
+    precomp_mtds_filtered = mtds_metadata.get(
+        "methods", tuple())  # type: t.Tuple[TypeMtdTuple, ...]
+
+    del mtds_metadata
 
     precomp_items = {}  # type: t.Dict[str, t.Any]
 
@@ -935,11 +999,11 @@ def check_data(X: t.Union[np.ndarray, list],
 
     Raises:
         TypeError: if ``X`` or ``y`` is neither a np.ndarray nor a list-
-        type object.
+            type object.
 
     Returns:
         tuple(np.ndarray, np.ndarray): ``X`` and ``y`` possibly reshaped and
-        casted to :obj:`np.ndarray` type.
+            casted to :obj:`np.ndarray` type.
     """
     if not isinstance(X, (np.ndarray, list)):
         raise TypeError('"X" is neither "list" nor "np.array".')
@@ -1044,36 +1108,14 @@ def timeit(func: t.Callable, *args) -> t.Tuple[t.Any, float]:
     return ret_val, time_total
 
 
-def _unused_transform_cat(
-        data_categoric: np.ndarray
-        ) -> t.Optional[np.ndarray]:
-    """One Hot Encoding (Binarize) given categorical data.
-
-    Currently unused.
-    """
-    if data_categoric.size == 0:
-        return None
-
-    label_enc = sklearn.preprocessing.LabelEncoder()
-    hot_enc = sklearn.preprocessing.OneHotEncoder(sparse=False)
-
-    data_numeric = np.apply_along_axis(
-        func1d=label_enc.fit_transform,
-        axis=0,
-        arr=data_categoric)
-
-    num_row, _ = data_categoric.shape
-
-    dummies_vars = np.empty((num_row, 0), float)
-    for column in data_numeric.T:
-        new_dummies = hot_enc.fit_transform(column.reshape(-1, 1))
-        dummies_vars = np.concatenate((dummies_vars, new_dummies), axis=1)
-
-    return dummies_vars
-
-
 def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
-    """To do."""
+    """Transform categorical data using a model matrix.
+
+    The formula used for this transformation is just the union (+) of all cat-
+    egoric attributes using formula language from ``patsy`` package API, re-
+    moving the intercept terms: ``~ 0 + A_1 + ... + A_n``, where ``n`` is the
+    number of attributes and A_i is the ith categoric attribute, 1 <= i <= n.
+    """
     if data_categoric.size == 0:
         return None
 

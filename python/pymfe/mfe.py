@@ -164,12 +164,15 @@ class MFE:
         self.groups = _internal.process_generic_set(
             values=groups, group_name="groups")  # type: t.Tuple[str, ...]
 
-        self.features, self._metadata_mtd_ft = _internal.process_features(
+        proc_feat = _internal.process_features(
             features=features,
             groups=self.groups,
+            suppress_warnings=suppress_warnings,
             wildcard=wildcard,
-            suppress_warnings=suppress_warnings)  \
-            # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
+        )  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt, t.Tuple[str, ...]]
+
+        self.features, self._metadata_mtd_ft, self.groups = proc_feat
+        del proc_feat
 
         self.summary, self._metadata_mtd_sm = _internal.process_summary(
             summary)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
@@ -643,6 +646,12 @@ class MFE:
                 values, not the binarized ones. If False, then categorical at-
                 tributes are ignored for numeric-only metafeatures.
 
+                The formula used for this transformation is just the union (+)
+                of all categoric attributes using formula language from ``pat-
+                sy`` package API, removing the intercept terms: ``~ 0 + A_1 +
+                ... + A_n``, where ``n`` is the number of attributes and A_i is
+                the ith categoric attribute, 1 <= i <= n.
+
             rescale (:obj:`str`, optional): if :obj:`NoneType`, the model keeps
                 all numeric data with its original values. Otherwise, this ar-
                 gument can assume one of the string options below to rescale
@@ -865,7 +874,7 @@ class MFE:
             print(
                 "Metafeature extraction process done.",
                 "Total of {0} values obtained. Time elapsed "
-                "({1}) = {2:.8f}.".format(
+                "({1}) = {2:.8f} seconds.".format(
                     len(res_vals), time_type, sum(res_times)),
                 sep="\n")
 
@@ -888,9 +897,9 @@ if __name__ == "__main__":
 
     MODEL = MFE(
         groups="all",
-        features=["nr_norm"],
-        summary=["histogram", "mean", "sd", "kurtosis"],
-        measure_time="avg_summ")
+        features="all",
+        summary="all",
+        measure_time="total_summ")
 
     MODEL.fit(
         rescale="robust",
