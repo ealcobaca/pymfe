@@ -849,7 +849,7 @@ def process_features(
     ft_mtds_filtered = mtds_metadata.get(
         "methods", tuple())  # type: t.Tuple[TypeMtdTuple, ...]
 
-    groups = mtds_metadata.get("group", groups)
+    groups = mtds_metadata.get("groups", groups)
 
     del mtds_metadata
 

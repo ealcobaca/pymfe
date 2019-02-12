@@ -885,6 +885,8 @@ class MFE:
 
 
 if __name__ == "__main__":
+    from sklearn import datasets
+    iris = datasets.load_iris()
     attr = np.array([
         [1, -.2, '1', 4],
         [0, .0, 'a', -1],
@@ -897,18 +899,17 @@ if __name__ == "__main__":
 
     MODEL = MFE(
         groups="all",
-        features="all",
+        features=["nr_inst", "nr_norm"],
         summary="all",
         measure_time="total_summ")
 
     MODEL.fit(
-        rescale="robust",
         precomp_groups="all",
         rescale_args=None,
-        X=attr,
-        y=labels,
+        X=iris.data,
+        y=iris.target,
         transform_num=True,
-        transform_cat=False)
+        transform_cat=True)
 
     names, vals, times = MODEL.extract(
         suppress_warnings=False,
@@ -918,3 +919,6 @@ if __name__ == "__main__":
 
     for n, v, i in zip(names, vals, times):
         print(n, v, i)
+
+    print(MODEL._precomp_args_ft.keys())
+    print(MODEL.groups)
