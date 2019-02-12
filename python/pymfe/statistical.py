@@ -715,7 +715,8 @@ class MFEStatistical:
         return sum(abs_corr_vals >= threshold) * norm_factor
 
     @classmethod
-    def ft_nr_norm(cls, N: np.ndarray,
+    def ft_nr_norm(cls,
+                   N: np.ndarray,
                    method: str = "shapiro-wilk",
                    threshold: float = 0.05,
                    failure: str = "soft",
@@ -802,16 +803,13 @@ class MFEStatistical:
 
         if method in ("shapiro-wilk", "all"):
             _, p_values_shapiro = np.apply_along_axis(
-                func1d=scipy.stats.shapiro,
-                axis=0,
-                arr=N[:max_row_index, :])
+                func1d=scipy.stats.shapiro, axis=0, arr=N[:max_row_index, :])
 
             test_results.append(p_values_shapiro > threshold)
 
         if method in ("dagostino-pearson", "all"):
             _, p_values_dagostino = scipy.stats.normaltest(
-                N[:max_row_index, :],
-                axis=0)
+                N[:max_row_index, :], axis=0)
 
             test_results.append(p_values_dagostino > threshold)
 
@@ -1091,9 +1089,7 @@ class MFEStatistical:
             _, num_attr = N.shape
 
             eig_vals = MFEStatistical._filter_eig_vals(
-                eig_vals=eig_vals,
-                num_attr=num_attr,
-                num_classes=classes.size)
+                eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
 
         if not isinstance(eig_vals, np.ndarray):
             eig_vals = np.array(eig_vals)

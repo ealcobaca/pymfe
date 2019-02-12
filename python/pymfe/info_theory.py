@@ -136,7 +136,8 @@ class MFEInfoTheory:
 
             if "mut_inf" not in kwargs:
                 precomp_vals["mut_inf"] = MFEInfoTheory.ft_mut_inf(
-                    C=C, y=y,
+                    C=C,
+                    y=y,
                     attr_ent=precomp_vals.get("attr_ent"),
                     class_ent=precomp_vals.get("class_ent"),
                     joint_ent=precomp_vals.get("joint_ent"))
