@@ -308,8 +308,8 @@ class MFEStatistical:
             filter_less_relevant (:obj:`bool`, optional): if True, remove
                 eigenvalues smaller than ``epsilon``.
 
-            epsilon (:obj:`float`, optional): a tiny value used to
-                determine ``less relevant`` eigenvalues.
+            epsilon (:obj:`float`, optional): a tiny value used to determi-
+                ne ``less relevant`` eigenvalues.
         """
         max_valid_eig = min(num_attr, num_classes)
 
@@ -374,8 +374,9 @@ class MFEStatistical:
 
             p_i = sqrt(lda_eig_i / (1.0 + lda_eig_i))
 
-        Where ``lda_eig_i`` is the ith eigenvalue of Linear Discriminant Ana-
-        lysis Matrix S defined as:
+        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the ge-
+        neralized eigenvalue problem of Linear Discriminant Analysis Scatter
+        Matrix S defined as:
 
             S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat),
 
@@ -581,7 +582,7 @@ class MFEStatistical:
         _, num_col = N.shape
         g_mean = np.zeros(num_col)
 
-        g_mean[cols_valid] = scipy.stats.mstats.gmean(N[:, cols_valid], axis=0)
+        g_mean[cols_valid] = scipy.stats.gmean(N[:, cols_valid], axis=0)
 
         g_mean[cols_invalid] = np.nan
 
@@ -595,7 +596,11 @@ class MFEStatistical:
             epsilon (:obj:`float`, optional): a tiny value to prevent di-
                 vision by zero.
         """
-        return scipy.stats.mstats.hmean(N + epsilon, axis=0)
+        try:
+            return scipy.stats.hmean(N + epsilon, axis=0)
+
+        except ValueError:
+            return np.array([np.nan])
 
     @classmethod
     def ft_iq_range(cls, N: np.ndarray) -> np.ndarray:
@@ -1063,9 +1068,10 @@ class MFEStatistical:
 
             L = prod(1.0 / (1.0 + lda_eig_i))
 
-        Where ``lda_eig_i`` is the ith eigenvalue of Linear Discriminant Ana-
-        lysis Matrix. Check ``ft_can_cor`` documentation for more in-depth
-        information about this value.
+        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the ge-
+        neralized eigenvalue problem of Linear Discriminant Analysis Scatter
+        Matrix. Check ``ft_can_cor`` documentation for more in-depth informati-
+        on about this value.
 
         Args:
             eig_vals (:obj:`np.ndarray`, optional): eigenvalues of LDA matrix.

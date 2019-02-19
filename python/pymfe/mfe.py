@@ -885,40 +885,37 @@ class MFE:
 
 
 if __name__ == "__main__":
-    from sklearn import datasets
-    iris = datasets.load_iris()
-    attr = np.array([
-        [1, -.2, '1', 4],
-        [0, .0, 'a', -1],
-        [1, 2.2, '0', -1.2],
-        [1, -1, 'b', .12],
-    ],
-                    dtype=object)
+    import pandas as pd
+    import os
 
-    labels = np.array([1, 1, 0, 0])
+    def _get_test_data(path: str, file_extension: str = ".csv") -> None:
+        test_dataset_list = os.listdir(path)
 
-    MODEL = MFE(
-        groups="all",
-        features=["nr_inst", "nr_norm"],
-        summary="all",
-        measure_time="total_summ")
+        for dataset_name in sorted(test_dataset_list):
+            if dataset_name.endswith(file_extension):
+                dataset = (
+                    pd.read_csv(
+                        "{0}{1}".format(path, dataset_name),
+                        index_col=0,
+                        na_values=("?", ),
+                        keep_default_na=True,
+                    ))
 
-    MODEL.fit(
-        precomp_groups="all",
-        rescale_args=None,
-        X=iris.data,
-        y=iris.target,
-        transform_num=True,
-        transform_cat=True)
+                indep = dataset.iloc[:, :-1].values
+                target = dataset.iloc[:, -1].values
 
-    names, vals, times = MODEL.extract(
-        suppress_warnings=False,
-        remove_nan=True,
-        verbose=True,
-        nr_norm={"method": "anderson-darling", "failure": "soft"})
+                model = MFE(summary=("sd", "mean", "max")).fit(
+                    X=indep, y=target)
 
-    for n, v, i in zip(names, vals, times):
-        print(n, v, i)
+                names, vals = model.extract(
+                    transform_cat=True,
+                    transform_num=True,
+                    suppress_warnings=True,
+                    verbose=False)
 
-    print(MODEL._precomp_args_ft.keys())
-    print(MODEL.groups)
+                print(len(vals))
+
+    _get_test_data("/home/felipe/Documentos/machine-"
+                   "learning-learning/metalearning/a"
+                   "lgorithm-recommendation-experime"
+                   "nt/datasets/openml-datasets/")

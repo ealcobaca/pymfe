@@ -12,6 +12,7 @@ References:
 import typing as t
 import itertools
 
+import pandas as pd
 import numpy as np
 import scipy
 
@@ -164,29 +165,13 @@ class MFEInfoTheory:
         return scipy.stats.entropy(value_freqs, base=2)
 
     @classmethod
-    def _joint_prob_mat(cls, vec_x: np.ndarray,
-                        vec_y: np.ndarray) -> np.ndarray:
-        """Compute joint probability matrix P(a, b), a in vec_x and b in vec_y.
-
-        Used for ``_conc`` method and ``ft_joint_ent``.
-        """
-        x_vals = np.unique(vec_x)
-        y_vals = np.unique(vec_y)
-
-        joint_prob_mat = np.array([
-            sum((vec_x == x_val) & (vec_y == y_val))
-            for y_val, x_val in itertools.product(y_vals, x_vals)
-        ]).reshape((y_vals.size, x_vals.size)) / vec_x.size
-
-        return joint_prob_mat
-
-    @classmethod
     def _joint_ent(cls,
                    vec_x: np.ndarray,
                    vec_y: np.ndarray,
                    epsilon: float = 1.0e-10) -> float:
         """Compute joint entropy between vectorx ``x`` and ``y``."""
-        joint_prob_mat = MFEInfoTheory._joint_prob_mat(vec_x, vec_y) + epsilon
+        joint_prob_mat = pd.crosstab(
+            vec_y, vec_x, normalize=True).values + epsilon
 
         joint_ent = np.multiply(joint_prob_mat,
                                 np.log2(joint_prob_mat)).sum().sum()
@@ -206,13 +191,13 @@ class MFEInfoTheory:
             epsilon (:obj:`float`, optional): tiny numeric value to avoid divi-
                 sion by zero.
         """
-        pij = MFEInfoTheory._joint_prob_mat(vec_x, vec_y)
+        pij = pd.crosstab(vec_x, vec_y, normalize=True).values + epsilon
 
-        isum = pij.sum(axis=1)
-        jsum2 = sum(pij.sum(axis=0)**2.0)
+        isum = pij.sum(axis=0)
+        jsum2 = sum(pij.sum(axis=1)**2.0)
 
-        conc = ((((pij**2.0).T / isum).sum().sum() - jsum2) /
-                (1.0 - jsum2 + epsilon))
+        conc = ((
+            (pij**2.0 / isum).sum().sum() - jsum2) / (1.0 - jsum2 + epsilon))
 
         return conc
 
