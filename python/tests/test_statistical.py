@@ -13,7 +13,6 @@ class TestInfoTheory:
         (
             (0, {}, "gravity", {}, "gravity", "all", {}),
             (0, {}, "nr_cor_attr", {}, "nrCorAttr", "all", {}),
-            (0, {}, "nr_norm", {}, "nrNorm", "all", {}),
             (0, {}, "nr_outliers", {}, "nrOutliers", "all", {}),
             (0, {}, "sd_ratio", {}, "sdRatio", "all", {}),
             (0, {}, "w_lambda", {}, "wLambda", "all", {}),
@@ -103,11 +102,6 @@ class TestInfoTheory:
             (2, {
                 "transform_cat": True,
             }, "nr_cor_attr", {}, "nrCorAttr", "all", {
-                "transform": True,
-            }),
-            (2, {
-                "transform_cat": True,
-            }, "nr_norm", {}, "nrNorm", "all", {
                 "transform": True,
             }),
             (2, {
