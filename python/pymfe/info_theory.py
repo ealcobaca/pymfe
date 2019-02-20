@@ -127,10 +127,10 @@ class MFEInfoTheory:
             precomp_vals["class_ent"] = MFEInfoTheory.ft_class_ent(
                 y, class_freqs=class_freqs)
 
-        if C is not None and "attr_ent" not in kwargs:
+        if C is not None and C.size and "attr_ent" not in kwargs:
             precomp_vals["attr_ent"] = MFEInfoTheory.ft_attr_ent(C)
 
-        if y is not None and C is not None:
+        if y is not None and C is not None and C.size:
             if "joint_ent" not in kwargs:
                 precomp_vals["joint_ent"] = np.apply_along_axis(
                     func1d=MFEInfoTheory._joint_ent, axis=0, arr=C, vec_y=y)
