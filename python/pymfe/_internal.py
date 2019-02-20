@@ -963,7 +963,7 @@ def process_precomp_groups(
         precomp_mtd_name, precomp_mtd_callable = precomp_mtd_tuple
 
         try:
-            new_precomp_vals = precomp_mtd_callable(**kwargs)
+            new_precomp_vals = precomp_mtd_callable(**kwargs)  # type: ignore
 
         except (AttributeError, TypeError, ValueError) as type_err:
             new_precomp_vals = {}
