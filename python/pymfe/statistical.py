@@ -127,7 +127,7 @@ class MFEStatistical:
         """
         precomp_vals = {}
 
-        if (y is not None and N is not None
+        if (y is not None and N is not None and N.size
                 and not {"eig_vals", "eig_vecs"}.issubset(kwargs)):
             classes = kwargs.get("classes")
             class_freqs = kwargs.get("class_freqs")
@@ -181,7 +181,7 @@ class MFEStatistical:
         """
         precomp_vals = {}
 
-        if N is not None:
+        if N is not None and N.size:
             N = N.astype(float)
 
             if "cov_mat" not in kwargs:
@@ -568,6 +568,9 @@ class MFEStatistical:
             epsilon (:obj:`float`): a small value which all values with absolu-
                 te value lesser than it is considered zero-valued.
         """
+        if N.size == 0:
+            return np.array([np.nan])
+
         min_values = N.min(axis=0)
 
         if allow_zeros:
