@@ -907,7 +907,7 @@ if __name__ == "__main__":
                 model = MFE(summary=("sd", "mean", "max")).fit(
                     X=indep, y=target)
 
-                names, vals = model.extract(
+                _, vals = model.extract(
                     transform_cat=True,
                     transform_num=True,
                     suppress_warnings=True,
