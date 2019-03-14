@@ -26,7 +26,7 @@ def extract(model, X, y):
     tmp = np.array([leaf, y])
 
     for x in set(leaf):
-        table[x,3] = Counter(tmp[1,tmp[0,:] == x]).items()[0][0] + 1
+        table[x,3] = list(Counter(tmp[1,tmp[0,:] == x]).keys())[0] + 1
         table[x,1] = 1
 
     return table
