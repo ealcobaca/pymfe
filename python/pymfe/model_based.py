@@ -7,34 +7,33 @@ Todo:
 
 import math
 import numpy as np
+from collections import Counter
 from sklearn import tree
 
 def dt(X, y):
     model = tree.DecisionTreeClassifier()
-    return model.fit(X, Y)
+    return model.fit(X, y)
 
 def treeDepth(tree):
 
-    def nodeDepth(c_node, c_depth, l, r, depths):
-        depths += [c_depth]
-        if l[c_node] != -1 and r[c_node] != -1:
-            nodeDepth(l[c_node], c_depth + 1, l, r, depths)
-            nodeDepth(r[c_node], c_depth + 1, l, r, depths)
+    def nodeDepth(node, depth, l, r, depths):
+        depths += [depth]
+        if l[node] != -1 and r[node] != -1:
+            nodeDepth(l[node], depth + 1, l, r, depths)
+            nodeDepth(r[node], depth + 1, l, r, depths)
 
     depths = []
-    nodeDepth(0, 0, tree.tree_.children_left, tree.tree_.children_right, depths)
+    nodeDepth(0, 0, tree.children_left, tree.children_right, depths)
     return np.array(depths)
 
-def extract(tree, X, y):
+def extract(model, X, y):
 
-    leaf = tree.apply(X)
-    traverse = tree.decision_path(X).todense()
-    nodes = traverse.shape[1]
+    leaf = model.apply(X)
+    node = model.tree_.node_count
 
-    table = np.zeros((nodes, 4))
-    table[:,0] = range(nodes)
-
-    table[:,2] = tree.tree_.n_node_samples
+    table = np.zeros((node, 4))
+    table[:,0] = range(node)
+    table[:,2] = model.tree_.n_node_samples
 
     tmp = np.array([leaf, y])
 
@@ -44,26 +43,28 @@ def extract(tree, X, y):
 
     return table
 
-def _leaves(tree, X):
-    aux = extract(tree, X)
+def _leaves(model, X, y):
+    aux = extract(model, X, y)
     return aux.sum(axis=0)[1]
 
-def _leavesBranch(tree, X):
-    return treeDepth(tree)[extract(tree, X)[:,1] == 1]
+def _leavesBranch(model, X, y):
+    return treeDepth(model.tree_)[extract(model, X, y)[:,1] == 1]
 
-def _leavesCorrob(tree, X):
-    aux = extract(tree, X)
+def _leavesCorrob(model, X, y):
+    aux = extract(model, X, y)
     return aux[:,2][aux[:,1] == 1]/len(X)
 
-def _treeShape(tree, X):
-    aux = treeDepth(tree)[extract(tree, X)[:,1] == 1]
-    return -(1 / 2 ^ aux) * np.log2(1 / 2 ^ aux)
+def _treeShape(model, X, y):
+    aux = treeDepth(model.tree_)[extract(model, X, y)[:,1] == 1]
+    return np.log2(aux)
 
-def _leavesHomo(tree, X):
-    return _leaves(tree, X)/_treeShape(tree, X)
+def _leavesHomo(model, X, y):
+    return _leaves(model, X, y)/_treeShape(model, X, y)
 
-def _leavesPerClass(tree, X):
-    pass
+def _leavesPerClass(model, X, y):
+    aux = Counter(extract(model, X, y)[:,3]).items()[1:]
+    aux = aux/_leaves(model, X, y)
+    return aux[:,1]
 
-def _nodes(tree, X):
-    sum(extract(tree, X)[:,1] != 1)
+def _nodes(model, X, y):
+    return sum(extract(model, X, y)[:,1] != 1)
