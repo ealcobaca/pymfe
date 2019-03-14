@@ -20,13 +20,13 @@ def extract(model, X, y):
     node = model.tree_.node_count
 
     table = np.zeros((node, 4))
-    table[:,0] = range(node)
+    table[:,0] = model.tree_.feature
     table[:,2] = model.tree_.n_node_samples
 
     tmp = np.array([leaf, y])
 
     for x in set(leaf):
-        table[x,3] = list(Counter(tmp[1,tmp[0,:] == x]).keys())[0] + 1
+        table[x,3] = Counter(tmp[1,tmp[0,:] == x]).keys()[0] + 1
         table[x,1] = 1
 
     return table
@@ -62,9 +62,9 @@ def _leavesHomo(model, X, y):
     return _leaves(model, X, y)/_treeShape(model, X, y)
 
 def _leavesPerClass(model, X, y):
-    aux = Counter(extract(model, X, y)[:,3]).items()[1:]
+    aux = Counter(extract(model, X, y)[:,3]).items()
     aux = aux/_leaves(model, X, y)
-    return aux[:,1]
+    return aux[1:,1]
 
 def _nodes(model, X, y):
     return sum(extract(model, X, y)[:,1] != 1)
@@ -76,10 +76,15 @@ def _nodesPerInst(model, X, y):
     return _nodes(model, X, y)/len(X)
 
 def _nodesPerLevel(model, X, y):
-    pass
+    aux = _treeDepth(model.tree_)[extract(model, X, y)[:,1] == 0]
+    aux = np.array(Counter(aux).items())[:,1]
+    return aux/_leaves(model, X, y)
 
 def _nodesRepeated(model, X, y):
-    pass
+    aux = extract(model, X, y)[:,0] 
+    aux = aux[aux > 0]
+    aux = np.array(Counter(aux).items())[:,1]
+    return aux
 
 def _treeImbalance(model, X, y):
     pass
