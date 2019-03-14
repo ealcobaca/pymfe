@@ -14,18 +14,6 @@ def dt(X, y):
     model = tree.DecisionTreeClassifier()
     return model.fit(X, y)
 
-def treeDepth(tree):
-
-    def nodeDepth(node, depth, l, r, depths):
-        depths += [depth]
-        if l[node] != -1 and r[node] != -1:
-            nodeDepth(l[node], depth + 1, l, r, depths)
-            nodeDepth(r[node], depth + 1, l, r, depths)
-
-    depths = []
-    nodeDepth(0, 0, tree.children_left, tree.children_right, depths)
-    return np.array(depths)
-
 def extract(model, X, y):
 
     leaf = model.apply(X)
@@ -47,15 +35,27 @@ def _leaves(model, X, y):
     aux = extract(model, X, y)
     return aux.sum(axis=0)[1]
 
+def _treeDepth(tree):
+
+    def nodeDepth(node, depth, l, r, depths):
+        depths += [depth]
+        if l[node] != -1 and r[node] != -1:
+            nodeDepth(l[node], depth + 1, l, r, depths)
+            nodeDepth(r[node], depth + 1, l, r, depths)
+
+    depths = []
+    nodeDepth(0, 0, tree.children_left, tree.children_right, depths)
+    return np.array(depths)
+
 def _leavesBranch(model, X, y):
-    return treeDepth(model.tree_)[extract(model, X, y)[:,1] == 1]
+    return _treeDepth(model.tree_)[extract(model, X, y)[:,1] == 1]
 
 def _leavesCorrob(model, X, y):
     aux = extract(model, X, y)
     return aux[:,2][aux[:,1] == 1]/len(X)
 
 def _treeShape(model, X, y):
-    aux = treeDepth(model.tree_)[extract(model, X, y)[:,1] == 1]
+    aux = _treeDepth(model.tree_)[extract(model, X, y)[:,1] == 1]
     return np.log2(aux)
 
 def _leavesHomo(model, X, y):
@@ -68,3 +68,22 @@ def _leavesPerClass(model, X, y):
 
 def _nodes(model, X, y):
     return sum(extract(model, X, y)[:,1] != 1)
+
+def _nodesPerAttr(model, X, y):
+    return _nodes(model, X, y)/X.shape[1]
+
+def _nodesPerInst(model, X, y):
+    return _nodes(model, X, y)/len(X)
+
+def _nodesPerLevel(model, X, y):
+    pass
+
+def _nodesRepeated(model, X, y):
+    pass
+
+def _treeImbalance(model, X, y):
+    pass
+
+def _varImportance(model, X, y):
+    return model.tree_.compute_feature_importances()
+
