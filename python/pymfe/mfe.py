@@ -14,7 +14,7 @@ import copy
 
 import numpy as np
 
-import _internal
+import pymfe._internal as _internal
 
 _TypeSeqExt = t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
 """Type annotation for a sequence of TypeExtMtdTuple objects."""
