@@ -14,7 +14,7 @@ import typing as t
 import numpy as np
 import scipy
 
-import _summary
+import pymfe._summary as _summary
 
 
 class MFEStatistical:

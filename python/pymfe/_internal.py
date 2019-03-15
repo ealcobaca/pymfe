@@ -59,12 +59,12 @@ import numpy as np
 import sklearn.preprocessing
 import patsy
 
-import _summary
-import general
-import statistical
-import info_theory
-import landmarking
-import model_based
+import pymfe._summary as _summary
+import pymfe.general as general
+import pymfe.statistical as statistical
+import pymfe.info_theory as info_theory
+import pymfe.landmarking as landmarking
+import pymfe.model_based as model_based
 
 VALID_VALUE_PREFIX = "VALID_"
 
