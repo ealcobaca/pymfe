@@ -61,6 +61,10 @@ class MFEModelBased:
         return sum(aux[:, 1])
 
     @classmethod
+    def ft_treeDepth(cls, tree_depth):
+        return tree_depth
+
+    @classmethod
     def tree_depth(cls, model):
         def nodeDepth(node, depth, l, r, depths):
             depths += [depth]
@@ -82,18 +86,18 @@ class MFEModelBased:
         aux = table
         return aux[:, 2][aux[:, 1] == 1]/X.shape[0]
 
-    @classmethod
-    def ft_treeShape(cls, table, tree_depth):
-        aux = tree_depth[table[:, 1] == 1]
-        return np.log2(aux)
-
-    @classmethod
-    def ft_leavesHomo(cls, table, tree_depth):
-        leaves = MFEModelBased.ft_leaves(table)
-        tree_shape = MFEModelBased.ft_treeShape(table, tree_depth)
-        print(leaves)
-        print(tree_shape)
-        return leaves/tree_shape
+    # @classmethod
+    # def ft_treeShape(cls, table, tree_depth):
+    #     aux = tree_depth[table[:, 1] == 1]
+    #     return np.log2(aux)
+    #
+    # @classmethod
+    # def ft_leavesHomo(cls, table, tree_depth):
+    #     leaves = MFEModelBased.ft_leaves(table)
+    #     tree_shape = MFEModelBased.ft_treeShape(table, tree_depth)
+    #     print(leaves)
+    #     print(tree_shape)
+    #     return leaves/tree_shape
 
     # def ft_leavesPerClass(model, X, y):
     #     aux = Counter(extract(model, X, y)[:,3]).items()
