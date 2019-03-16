@@ -114,7 +114,7 @@ class MFEModelBased:
     def ft_nodesPerLevel(cls, table, tree_depth):
         aux = tree_depth[table[:, 1] == 0]
         aux = np.array(list(Counter(aux).values()))
-        returnaux
+        return aux
 
     @classmethod
     def ft_nodesRepeated(cls, table):
