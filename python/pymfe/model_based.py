@@ -84,7 +84,7 @@ class MFEModelBased:
     @classmethod
     def ft_treeShape(cls, table, tree_depth):
         aux = tree_depth[table[:, 1] == 1]
-        return -(1/2**aux) * np.log2(1/2**aux)
+        return -(1.0/2**aux) * np.log2(1.0/2**aux)
 
     @classmethod
     def ft_leavesHomo(cls, table, tree_depth):
@@ -126,6 +126,8 @@ class MFEModelBased:
     def ft_varImportance(cls, model):
         return model.tree_.compute_feature_importances()
 
-    # def ft_treeImbalance(model, X, y):
-    #     pass
-    #
+    def ft_treeImbalance(cls, table, tree_depth):
+        aux = 1.0/2**tree_depth[table[:, 1] == 1]
+        tmp = np.unique(aux, return_counts=True)
+        tmp = tmp[0] * tmp[1]
+        return -(1.0/2**tmp) * np.log2(1.0/2**tmp)
