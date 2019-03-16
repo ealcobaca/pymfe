@@ -35,10 +35,6 @@ class MFEModelBased:
 
         return prepcomp_vals
 
-    # def dt(X, y):
-    #     model = tree.DecisionTreeClassifier()
-    #     return model.fit(X, y)
-
     @classmethod
     def extract_table(cls, X: np.array, y: np.array, model):
 
@@ -57,8 +53,7 @@ class MFEModelBased:
 
     @classmethod
     def ft_leaves(cls, table):
-        aux = table
-        return sum(aux[:, 1])
+        return sum(table[:, 1])
 
     @classmethod
     def ft_treeDepth(cls, tree_depth):
@@ -66,6 +61,7 @@ class MFEModelBased:
 
     @classmethod
     def tree_depth(cls, model):
+
         def nodeDepth(node, depth, l, r, depths):
             depths += [depth]
             if l[node] != -1 and r[node] != -1:
@@ -83,39 +79,36 @@ class MFEModelBased:
 
     @classmethod
     def ft_leavesCorrob(cls, X: np.array, table):
-        aux = table
-        return aux[:, 2][aux[:, 1] == 1]/X.shape[0]
+        return table[:, 2][table[:, 1] == 1]/X.shape[0]
 
-    # @classmethod
-    # def ft_treeShape(cls, table, tree_depth):
-    #     aux = tree_depth[table[:, 1] == 1]
-    #     return np.log2(aux)
-    #
-    # @classmethod
-    # def ft_leavesHomo(cls, table, tree_depth):
-    #     leaves = MFEModelBased.ft_leaves(table)
-    #     tree_shape = MFEModelBased.ft_treeShape(table, tree_depth)
-    #     print(leaves)
-    #     print(tree_shape)
-    #     return leaves/tree_shape
+    @classmethod
+    def ft_treeShape(cls, table, tree_depth):
+        aux = tree_depth[table[:, 1] == 1]
+        return -(1/2**aux) * np.log2(1/2**aux)
 
-    # def ft_leavesPerClass(model, X, y):
-    #     aux = Counter(extract(model, X, y)[:,3]).items()
-    #     aux = aux/_leaves(model, X, y)
-    #     return aux[1:,1]
-    #
+    @classmethod
+    def ft_leavesHomo(cls, table, tree_depth):
+        leaves = MFEModelBased.ft_leaves(table)
+        tree_shape = MFEModelBased.ft_treeShape(table, tree_depth)
+        return leaves/tree_shape
+
+    @classmethod
+    def ft_leavesPerClass(cls, table):
+        aux = np.array(list(Counter(table[:,3]).values()))
+        aux = aux[1:]/MFEModelBased.ft_leaves(table)
+        return aux
 
     @classmethod
     def ft_nodes(cls, table):
         return sum(table[:, 1] != 1)
 
     @classmethod
-    def ft_nodesPerAttr(cls, X: np.array, table):
+    def ft_nodesPerAttr(cls, table, X: np.array):
         return MFEModelBased.ft_nodes(table)/X.shape[1]
 
     @classmethod
     def ft_nodesPerInst(cls, table, X: np.array):
-        return float(MFEModelBased.ft_nodes(table))/X.shape[0]
+        return MFEModelBased.ft_nodes(table)/X.shape[0]
 
     @classmethod
     def ft_nodesPerLevel(cls, table, tree_depth):
@@ -124,8 +117,7 @@ class MFEModelBased:
 
     @classmethod
     def ft_nodesRepeated(cls, table):
-        aux = table[:, 0]
-        aux = aux[aux > 0]
+        aux = table[:, 0][table[:, 0] > 0]
         aux = np.array(list(Counter(aux).values()))
         return aux
 
