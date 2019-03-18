@@ -10,7 +10,7 @@ import typing as t
 import math
 import numpy as np
 from collections import Counter
-from sklearn import tree
+from sklearn.tree import DecisionTreeClassifier
 
 
 class MFEModelBased:
@@ -25,7 +25,7 @@ class MFEModelBased:
 
         if X is not None and y is not None\
            and not {"model", "table"}.issubset(kwargs):
-            model = tree.DecisionTreeClassifier()
+            model = DecisionTreeClassifier()
             model.fit(X, y)
             table = MFEModelBased.extract_table(X, y, model)
             tree_depth = MFEModelBased.tree_depth(model)
@@ -36,7 +36,8 @@ class MFEModelBased:
         return prepcomp_vals
 
     @classmethod
-    def extract_table(cls, X: np.array, y: np.array, model):
+    def extract_table(cls, X: np.array, y: np.array, model:
+                      DecisionTreeClassifier):
 
         table = np.zeros((model.tree_.node_count, 4))
         table[:, 0] = model.tree_.feature
@@ -46,21 +47,21 @@ class MFEModelBased:
         tmp = np.array([leaves, y + 1])
 
         for x in set(leaves):
-            table[x, 3] = list(Counter(tmp[1,tmp[0,:] == x]).keys())[0] + 1
+            table[x, 3] = list(Counter(tmp[1, tmp[0, :] == x]).keys())[0] + 1
             table[x, 1] = 1
 
         return table
 
     @classmethod
-    def ft_leaves(cls, table):
+    def ft_leaves(cls, table: np.array):
         return sum(table[:, 1])
 
     @classmethod
-    def ft_treeDepth(cls, tree_depth):
+    def ft_treeDepth(cls, tree_depth: np.array):
         return tree_depth
 
     @classmethod
-    def tree_depth(cls, model):
+    def tree_depth(cls, model: DecisionTreeClassifier):
 
         def nodeDepth(node, depth, l, r, depths):
             depths += [depth]
@@ -74,59 +75,60 @@ class MFEModelBased:
         return np.array(depths)
 
     @classmethod
-    def ft_leavesBranch(cls, tree_depth, table):
+    def ft_leavesBranch(cls, tree_depth: np.array, table: np.array):
         return tree_depth[table[:, 1] == 1]
 
     @classmethod
-    def ft_leavesCorrob(cls, X: np.array, table):
+    def ft_leavesCorrob(cls, X: np.array, table: np.array):
         return table[:, 2][table[:, 1] == 1]/X.shape[0]
 
     @classmethod
-    def ft_treeShape(cls, table, tree_depth):
+    def ft_treeShape(cls, table: np.array, tree_depth: np.array):
         aux = tree_depth[table[:, 1] == 1]
         return -(1.0/2**aux) * np.log2(1.0/2**aux)
 
     @classmethod
-    def ft_leavesHomo(cls, table, tree_depth):
+    def ft_leavesHomo(cls, table: np.array, tree_depth: np.array):
         leaves = MFEModelBased.ft_leaves(table)
         tree_shape = MFEModelBased.ft_treeShape(table, tree_depth)
         return leaves/tree_shape
 
     @classmethod
-    def ft_leavesPerClass(cls, table):
-        aux = np.array(list(Counter(table[:,3]).values()))
+    def ft_leavesPerClass(cls, table: np.array):
+        aux = np.array(list(Counter(table[:, 3]).values()))
         aux = aux[1:]/MFEModelBased.ft_leaves(table)
         return aux
 
     @classmethod
-    def ft_nodes(cls, table):
+    def ft_nodes(cls, table: np.array):
         return sum(table[:, 1] != 1)
 
     @classmethod
-    def ft_nodesPerAttr(cls, table, X: np.array):
+    def ft_nodesPerAttr(cls, table: np.array, X: np.array):
         return MFEModelBased.ft_nodes(table)/X.shape[1]
 
     @classmethod
-    def ft_nodesPerInst(cls, table, X: np.array):
+    def ft_nodesPerInst(cls, table: np.array, X: np.array):
         return MFEModelBased.ft_nodes(table)/X.shape[0]
 
     @classmethod
-    def ft_nodesPerLevel(cls, table, tree_depth):
+    def ft_nodesPerLevel(cls, table: np.array, tree_depth: np.array):
         aux = tree_depth[table[:, 1] == 0]
         aux = np.array(list(Counter(aux).values()))
         return aux
 
     @classmethod
-    def ft_nodesRepeated(cls, table):
+    def ft_nodesRepeated(cls, table: np.array):
         aux = table[:, 0][table[:, 0] > 0]
         aux = np.array(list(Counter(aux).values()))
         return aux
 
     @classmethod
-    def ft_varImportance(cls, model):
+    def ft_varImportance(cls, model: DecisionTreeClassifier):
         return model.tree_.compute_feature_importances()
 
-    def ft_treeImbalance(cls, table, tree_depth):
+    @classmethod
+    def ft_treeImbalance(cls, table: np.array, tree_depth: np.array):
         aux = 1.0/2**tree_depth[table[:, 1] == 1]
         tmp = np.unique(aux, return_counts=True)
         tmp = tmp[0] * tmp[1]
