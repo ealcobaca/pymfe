@@ -43,12 +43,13 @@ class MFELandmarking:
     def ft_best_node(cls, X, y, skf, metric, random_state):
         result = []
         for train_index, test_index in skf.split(X, y):
-            importance = MFELandmarking.importance(X[train_index],
-                                                   y[train_index],
-                                                   random_state)
-            model = DecisionTreeClassifier(max_depth=1)
-            X_train = X[train_index, :][:, [importance[-1]]]
-            X_test = X[test_index, :][:, [importance[-1]]]
+            # importance = MFELandmarking.importance(X[train_index],
+            #                                        y[train_index],
+            #                                        random_state)
+            model = DecisionTreeClassifier(max_depth=1,
+                                           random_state=random_state)
+            X_train = X[train_index, :]
+            X_test = X[test_index, :]
             y_train, y_test = y[train_index], y[test_index]
 
             model.fit(X_train, y_train)
