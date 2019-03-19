@@ -25,7 +25,7 @@ class MFEModelBased:
 
         if X is not None and y is not None\
            and not {"model", "table"}.issubset(kwargs):
-            model = DecisionTreeClassifier()
+            model = DecisionTreeClassifier(random_state=0)
             model.fit(X, y)
             table = MFEModelBased.extract_table(X, y, model)
             tree_depth = MFEModelBased.tree_depth(model)
