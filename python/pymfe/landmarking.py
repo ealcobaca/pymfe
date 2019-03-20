@@ -19,7 +19,7 @@ class MFELandmarking:
     """To do this documentation."""
 
     @classmethod
-    def precompute_landmarking_class(cls, X: np.array, y: np.array,
+    def precompute_landmarking_class(cls, X: np.ndarray, y: np.ndarray,
                                      folds: int, random_state: t.Optional[int],
                                      **kwargs) -> t.Dict[str, t.Any]:
         prepcomp_vals = {}
@@ -32,12 +32,14 @@ class MFELandmarking:
         return prepcomp_vals
 
     @classmethod
-    def importance(cls, X, y, random_state):
+    def importance(cls, X: np.ndarray, y: np.ndarray,
+                   random_state: t.Optional[int]) -> np.ndarray:
         clf = DecisionTreeClassifier(random_state=random_state).fit(X, y)
         return np.argsort(clf.feature_importances_)
 
     @classmethod
-    def ft_best_node(cls, X, y, skf, score, random_state):
+    def ft_best_node(cls, X: np.ndarray, y: np.ndarray,
+                     skf, score, random_state: t.Optional[int]) -> np.ndarray:
         result = []
         for train_index, test_index in skf.split(X, y):
             # importance = MFELandmarking.importance(X[train_index],
@@ -53,7 +55,7 @@ class MFELandmarking:
             pred = model.predict(X_test)
             result.append(score(y_test, pred))
 
-        return np.array(result)
+        return np.ndarray(result)
 
     @classmethod
     def ft_random_node(cls, X, y, skf, score, random_state):
@@ -70,7 +72,7 @@ class MFELandmarking:
             pred = model.predict(X_test)
             result.append(score(y_test, pred))
 
-        return np.array(result)
+        return np.ndarray(result)
 
     @classmethod
     def ft_worst_node(cls, X, y, skf, score, random_state):
@@ -89,7 +91,7 @@ class MFELandmarking:
             pred = model.predict(X_test)
             result.append(score(y_test, pred))
 
-        return np.array(result)
+        return np.ndarray(result)
 
     @classmethod
     def ft_elite_nn(cls, X, y, skf, score, random_state):
@@ -107,7 +109,7 @@ class MFELandmarking:
             pred = model.predict(X_test)
             result.append(score(y_test, pred))
 
-        return np.array(result)
+        return np.ndarray(result)
 
     @classmethod
     def ft_linear_discr(cls, X, y, skf, score):
@@ -122,7 +124,7 @@ class MFELandmarking:
             pred = model.predict(X_test)
             result.append(score(y_test, pred))
 
-        return np.array(result)
+        return np.ndarray(result)
 
     @classmethod
     def ft_naive_bayes(cls, X, y, skf, score):
@@ -137,7 +139,7 @@ class MFELandmarking:
             pred = model.predict(X_test)
             result.append(score(y_test, pred))
 
-        return np.array(result)
+        return np.ndarray(result)
 
     @classmethod
     def ft_one_nn(cls, X, y, skf, score):
@@ -152,4 +154,4 @@ class MFELandmarking:
             pred = model.predict(X_test)
             result.append(score(y_test, pred))
 
-        return np.array(result)
+        return np.ndarray(result)
