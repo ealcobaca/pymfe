@@ -65,6 +65,7 @@ import pymfe.statistical as statistical
 import pymfe.info_theory as info_theory
 import pymfe.landmarking as landmarking
 import pymfe.model_based as model_based
+import pymfe.scoring as scoring
 
 VALID_VALUE_PREFIX = "VALID_"
 
@@ -1236,3 +1237,23 @@ def rescale_data(data: np.ndarray,
     scaler_model = _RESCALE_SCALERS.get(option, "min-max")(**args)
 
     return scaler_model.fit_transform(data)
+
+
+def _check_score(score, groups):
+    if score is None or isinstance(score, str):
+        if score is None and groups in ["landmarking"]:
+            raise ValueError()
+        else:
+            valid_scoring = {
+                "accuracy": scoring.accuracy,
+                "balanced-accuracy": scoring.balanced_accuracy,
+                "f1": scoring.f1,
+                "kappa": scoring.kappa,
+                "auc": scoring.auc,
+            }
+            if score in valid_scoring:
+                return valid_scoring[score]
+            else:
+                raise ValueError()
+    else:
+        raise ValueError()

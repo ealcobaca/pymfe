@@ -48,6 +48,8 @@ class MFE:
                  summary: t.Union[str, t.Iterable[str]] = ("mean", "sd"),
                  measure_time: t.Optional[str] = None,
                  wildcard: str = "all",
+                 score="accuracy",
+                 folds=5,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
         """This class provides easy access for metafeature extraction from datasets.
@@ -208,6 +210,15 @@ class MFE:
             raise ValueError('Invalid "random_state" argument ({0}). '
                              'Expecting None or an integer.'.format(
                                  random_state))
+
+        if isinstance(folds, int):
+            self.folds = folds
+        else:
+            raise ValueError('Invalid "folds" argument ({0}). '
+                             'Expecting an integer.'.format(
+                                 random_state))
+
+        self.score = _internal._check_score(score, self.groups)
 
     def _call_summary_methods(
             self,
@@ -750,6 +761,8 @@ class MFE:
             "C": data_cat,
             "y": self.y,
             "splits": self.splits,
+            "folds": self.folds,
+            "score": self.score,
             "random_state": self.random_state
         }
 
