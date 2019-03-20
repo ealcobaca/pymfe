@@ -48,7 +48,8 @@ class MFE:
                  summary: t.Union[str, t.Iterable[str]] = ("mean", "sd"),
                  measure_time: t.Optional[str] = None,
                  wildcard: str = "all",
-                 suppress_warnings: bool = False) -> None:
+                 suppress_warnings: bool = False,
+                 random_state: t.Optional[int] = None) -> None:
         """This class provides easy access for metafeature extraction from datasets.
 
         It expected that user first calls `fit` method after instantiation and
@@ -200,6 +201,13 @@ class MFE:
 
         self._precomp_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
         """Precomputed common feature-extraction method arguments."""
+
+        if random_state is None or isinstance(random_state, int):
+            self.random_state = random_state
+        else:
+            raise ValueError('Invalid "random_state" argument ({0}). '
+                             'Expecting None or an integer.'.format(
+                                 random_state))
 
     def _call_summary_methods(
             self,
@@ -742,6 +750,7 @@ class MFE:
             "C": data_cat,
             "y": self.y,
             "splits": self.splits,
+            "random_state": self.random_state
         }
 
         if precomp_groups:
