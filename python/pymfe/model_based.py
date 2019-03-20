@@ -9,7 +9,7 @@ import typing as t
 
 import math
 import numpy as np
-from collections import Counter #TODO: remove this
+from collections import Counter
 from sklearn.tree import DecisionTreeClassifier
 
 
@@ -17,6 +17,7 @@ class MFEModelBased:
 
     @classmethod
     def precompute_model_based_class(cls, X: np.ndarray, y: np.ndarray,
+                                     random_state,
                                      **kwargs) -> t.Dict[str, t.Any]:
         """
         To do the doc string
@@ -25,7 +26,7 @@ class MFEModelBased:
 
         if X is not None and y is not None\
            and not {"model", "table"}.issubset(kwargs):
-            model = DecisionTreeClassifier(random_state=0)
+            model = DecisionTreeClassifier(random_state=random_state)
             model.fit(X, y)
             table = MFEModelBased.extract_table(X, y, model)
             tree_depth = MFEModelBased.tree_depth(model)
