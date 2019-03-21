@@ -14,7 +14,7 @@ In MtL, meta-features are designed to extract general properties able to charact
 * **Landmarking**: Represents the performance of simple and efficient learning algorithms.
 
 ## Dependencies
-scikit-learn requires:
+pymfe requires:
 * Python (>= 3.6)
 
 ## Installation
