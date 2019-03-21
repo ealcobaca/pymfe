@@ -75,4 +75,4 @@ In the current version, the meta-feature extractor supports only classification 
 
 To cite `mfe` in publications use: Alcobaça, E., Siqueira, F., Rivolli, A., Garcia, L. P. F. and de Carvalho, A. C. P. L. F. (2019). MFE: Extracting metafeatures in python and R.
 
-To submit bugs and feature requests, report at [project issues](https://github.com/alcobaca/pymfe/issues).
+To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
