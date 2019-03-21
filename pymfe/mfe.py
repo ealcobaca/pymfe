@@ -460,7 +460,7 @@ class MFE:
         elif (isinstance(cat_cols, (np.ndarray, collections.Iterable))
               and not isinstance(cat_cols, str)
               and all(isinstance(x, int) for x in cat_cols)):
-            categorical_cols = (i in cat_cols for i in range(self.X.shape[1]))
+            categorical_cols = [i in cat_cols for i in range(self.X.shape[1])]
 
         else:
             raise ValueError(
