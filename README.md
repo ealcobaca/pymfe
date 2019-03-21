@@ -73,6 +73,6 @@ print(ft)
 
 In the current version, the meta-feature extractor supports only classification problems. The authors plan to extend the package to add clustering and regression measures and to support MtL evaluation measures. For more specific information on how to extract each group of measures, please refer to the functions documentation page and the examples contained therein. For a general overview of the `pymfe` package, please have a look at the associated documentation.
 
-To cite `mfe` in publications use: Alcobaça, E., Siqueira, F., Rivolli, A., Garcia, L. P. F. and de Carvalho, A. C. P. L. F. (2019). MFE: Extracting metafeatures in python and R.
+To cite `mfe` in publications use: Alcobaça, E., Siqueira, F., Rivolli, A., Garcia, L. P. F., Oliva, J. T. and de Carvalho, A. C. P. L. F. (2019). MFE: Extracting metafeatures in python and R.
 
 To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
