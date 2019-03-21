@@ -20,7 +20,7 @@ import numpy as np
 
 
 class MFELandmarking:
-    """Keep methods for metafeatures of ``Landmarking`` group.
+    """Keep methods for metafeatures of ``landmarking`` group.
 
     The convention adopted for metafeature extraction related methods is to
     always start with ``ft_`` prefix to allow automatic method detection. This
@@ -62,16 +62,20 @@ class MFELandmarking:
     def precompute_landmarking_class(cls, X: np.ndarray, y: np.ndarray,
                                      folds: int, random_state: t.Optional[int],
                                      **kwargs) -> t.Dict[str, t.Any]:
-        """Precompute distinct classes and its frequencies from ``y``.
+        """Precompute k-fold cross validation strategy.
 
         Args:
             X (:obj:`np.ndarray`, optional): attributes from fitted data.
+
             y (:obj:`np.ndarray`, optional): target attribute from fitted data.
-            folds (int): number of folds to k-fold cross validation.
+
+            folds (:obj: `int`): number of folds to k-fold cross validation.
+
             random_state (int, optional): If int, random_state is the seed used
-            by the random number generator; If RandomState instance, random_st-
-            ate is the random number generator; If None, the random number gen-
-            erator is the RandomState instance used by np.random.
+                by the random number generator; If RandomState instance,
+                random_state is the random number generator; If None, the ran-
+                dom number generator is the RandomState instance used by
+                np.random.
 
             **kwargs: additional arguments. May have previously precomputed be-
                 fore this method from other precomputed methods, so they can
@@ -96,6 +100,24 @@ class MFELandmarking:
     @classmethod
     def importance(cls, X: np.ndarray, y: np.ndarray,
                    random_state: t.Optional[int]) -> np.ndarray:
+        """Compute de gini index importance of a decision tree building using
+        ``X`` and ``y``. We use sklearn ``DecisionTreeClassifier`` implementa-
+        tion.
+
+        Args:
+            X (:obj:`np.ndarray`): attributes from fitted data.
+
+            y (:obj:`np.ndarray`): target attribute from fitted data.
+
+            random_state (int, optional): If int, random_state is the seed used
+                by the random number generator; If RandomState instance, ran-
+                dom_state is the random number generator; If None, the random
+                number generator is the RandomState instance used by np.random.
+
+        Return:
+            np.ndarray: Return the decision tree features importance.
+        """
+
         clf = DecisionTreeClassifier(random_state=random_state).fit(X, y)
         return np.argsort(clf.feature_importances_)
 
@@ -151,9 +173,9 @@ class MFELandmarking:
         attribute.
 
         Args:
-            X (:obj:`np.ndarray`, optional): attributes from fitted data.
+            X (:obj:`np.ndarray`): attributes from fitted data.
 
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+            y (:obj:`np.ndarray`): target attribute from fitted data.
 
             skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
                 Provides train/test indices to split data in train/test sets.
@@ -196,9 +218,9 @@ class MFELandmarking:
         informative attribute.
 
         Args:
-            X (:obj:`np.ndarray`, optional): attributes from fitted data.
+            X (:obj:`np.ndarray`): attributes from fitted data.
 
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+            y (:obj:`np.ndarray`): target attribute from fitted data.
 
             skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
                 Provides train/test indices to split data in train/test sets.
@@ -244,9 +266,9 @@ class MFELandmarking:
         (non parallel axis) in the data to establish the linear separability.
 
         Args:
-            X (:obj:`np.ndarray`, optional): attributes from fitted data.
+            X (:obj:`np.ndarray`): attributes from fitted data.
 
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+            y (:obj:`np.ndarray`): target attribute from fitted data.
 
             skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
                 Provides train/test indices to split data in train/test sets.
@@ -284,9 +306,9 @@ class MFELandmarking:
         tain class based on the Bayes probability.
 
         Args:
-            X (:obj:`np.ndarray`, optional): attributes from fitted data.
+            X (:obj:`np.ndarray`): attributes from fitted data.
 
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+            y (:obj:`np.ndarray`): target attribute from fitted data.
 
             skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
                 Provides train/test indices to split data in train/test sets.
@@ -324,9 +346,9 @@ class MFELandmarking:
         noisy is the data.
 
         Args:
-            X (:obj:`np.ndarray`, optional): attributes from fitted data.
+            X (:obj:`np.ndarray`): attributes from fitted data.
 
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+            y (:obj:`np.ndarray`): target attribute from fitted data.
 
             skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
                 Provides train/test indices to split data in train/test sets.
@@ -364,9 +386,9 @@ class MFELandmarking:
         ve attributes is expected that the models should be noise tolerant.
 
         Args:
-            X (:obj:`np.ndarray`, optional): attributes from fitted data.
+            X (:obj:`np.ndarray`): attributes from fitted data.
 
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+            y (:obj:`np.ndarray`): target attribute from fitted data.
 
             skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
                 Provides train/test indices to split data in train/test sets.
