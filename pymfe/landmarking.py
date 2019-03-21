@@ -1,8 +1,13 @@
 """Module dedicated to extraction of Landmarking Metafeatures.
 
-Todo:
-    * Implement metafeatures.
-    * Improve documentation.
+Notes:
+    For more information about the metafeatures implemented here,
+    check out `Rivolli et al.`_.
+
+References:
+    .. _Rivolli et al.:
+        "Towards Reproducible Empirical Research in Meta-Learning,"
+        Rivolli et al. URL: https://arxiv.org/abs/1808.10406
 """
 
 import typing as t
@@ -15,7 +20,43 @@ import numpy as np
 
 
 class MFELandmarking:
-    """To do this documentation."""
+    """Keep methods for metafeatures of ``Landmarking`` group.
+
+    The convention adopted for metafeature extraction related methods is to
+    always start with ``ft_`` prefix to allow automatic method detection. This
+    prefix is predefined within ``_internal`` module.
+
+    All method signature follows the conventions and restrictions listed below:
+        1. For independent attribute data, ``X`` means ``every type of attribu-
+            te``, ``N`` means ``Numeric attributes only`` and ``C`` stands for
+            ``Categorical attributes only``.
+
+        2. Only ``X``, ``y``, ``N``, ``C``, ``splits``, ``folds``, ``score``
+        and ``random_state`` are allowed to be required method arguments. All
+        other arguments must be strictly optional (i.e., has a predefined de-
+        fault value).
+
+        3. The initial assumption is that the user can change any optional ar-
+            gument, without any previous verification of argument value or its
+            type, via **kwargs argument of ``extract`` method of MFE class.
+
+        4. The return value of all feature extraction methods should be a sin-
+            gle value or a generic Sequence (preferably a :obj:`np.ndarray`)
+            type with numeric values.
+
+    There is another type of method adopted for automatic detection. It is ad-
+    opted the prefix ``precompute_`` for automatic detection of these methods.
+    These methods run while fitting some data into an MFE model automatically,
+    and their objective is to precompute some common value shared between more
+    than one feature extraction method. This strategy is a trade-off between
+    more system memory consumption and speeds up of feature extraction. Their
+    return value must always be a dictionary whose keys are possible extra ar-
+    guments for both feature extraction methods and other precomputation me-
+    thods. Note that there is a share of precomputed values between all valid
+    feature-extraction modules (e.g., ``class_freqs`` computed in module ``sta-
+    tistical`` can freely be used for any precomputation or feature extraction
+    method of module ``landmarking``).
+    """
 
     @classmethod
     def precompute_landmarking_class(cls, X: np.ndarray, y: np.ndarray,
