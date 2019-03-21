@@ -14,7 +14,6 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import numpy as np
 
 
-
 class MFELandmarking:
     """To do this documentation."""
 
@@ -38,13 +37,11 @@ class MFELandmarking:
         return np.argsort(clf.feature_importances_)
 
     @classmethod
-    def ft_best_node(cls, X: np.ndarray, y: np.ndarray,
-                     skf, score, random_state: t.Optional[int]) -> np.ndarray:
+    def ft_best_node(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+                     score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+                     random_state: t.Optional[int]) -> np.ndarray:
         result = []
         for train_index, test_index in skf.split(X, y):
-            # importance = MFELandmarking.importance(X[train_index],
-            #                                        y[train_index],
-            #                                        random_state)
             model = DecisionTreeClassifier(max_depth=1,
                                            random_state=random_state)
             X_train = X[train_index, :]
@@ -58,7 +55,9 @@ class MFELandmarking:
         return np.ndarray(result)
 
     @classmethod
-    def ft_random_node(cls, X, y, skf, score, random_state):
+    def ft_random_node(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+                       score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+                       random_state: t.Optional[int]) -> np.ndarray:
         result = []
         for train_index, test_index in skf.split(X, y):
             attr = np.random.randint(0, X.shape[1], size=(1,))
@@ -75,7 +74,9 @@ class MFELandmarking:
         return np.ndarray(result)
 
     @classmethod
-    def ft_worst_node(cls, X, y, skf, score, random_state):
+    def ft_worst_node(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+                      score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+                      random_state: t.Optional[int]) -> np.ndarray:
         result = []
         for train_index, test_index in skf.split(X, y):
             importance = MFELandmarking.importance(X[train_index],
@@ -94,7 +95,9 @@ class MFELandmarking:
         return np.ndarray(result)
 
     @classmethod
-    def ft_elite_nn(cls, X, y, skf, score, random_state):
+    def ft_elite_nn(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+                    score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+                    random_state: t.Optional[int]) -> np.ndarray:
         result = []
         for train_index, test_index in skf.split(X, y):
             importance = MFELandmarking.importance(X[train_index],
@@ -112,7 +115,10 @@ class MFELandmarking:
         return np.ndarray(result)
 
     @classmethod
-    def ft_linear_discr(cls, X, y, skf, score):
+    def ft_linear_discr(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+                        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+                        ) -> np.ndarray:
+
         result = []
         for train_index, test_index in skf.split(X, y):
             model = LinearDiscriminantAnalysis()
@@ -127,7 +133,10 @@ class MFELandmarking:
         return np.ndarray(result)
 
     @classmethod
-    def ft_naive_bayes(cls, X, y, skf, score):
+    def ft_naive_bayes(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+                       score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+                       ) -> np.ndarray:
+
         result = []
         for train_index, test_index in skf.split(X, y):
             model = GaussianNB()
@@ -142,7 +151,10 @@ class MFELandmarking:
         return np.ndarray(result)
 
     @classmethod
-    def ft_one_nn(cls, X, y, skf, score):
+    def ft_one_nn(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+                  score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+                  ) -> np.ndarray:
+
         result = []
         for train_index, test_index in skf.split(X, y):
             model = KNeighborsClassifier(n_neighbors=1)
