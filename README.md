@@ -13,18 +13,21 @@ In MtL, meta-features are designed to extract general properties able to charact
 * **Model-based**: Measures designed to extract characteristics like the depth, the shape and size of a Decision Tree (DT) model induced from a dataset.
 * **Landmarking**: Represents the performance of simple and efficient learning algorithms.
 
-## Installation
+## Dependencies
+scikit-learn requires:
+* Python (>= 3.6)
 
+## Installation
 The installation process is similar to other packages available on pip:
 
 ```python
-pip install pymfe
+pip install -U pymfe
 ```
 
 It is possible to install the development version using:
 
 ```python
-pip install git+https://github.com/ealcobaca/pymfe
+pip install -U git+https://github.com/ealcobaca/pymfe
 ```
 
 ## Example of use
