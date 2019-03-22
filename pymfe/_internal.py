@@ -54,6 +54,7 @@ import collections
 import warnings
 import time
 import sys
+from collections import OrderedDict
 
 import numpy as np
 import sklearn.preprocessing
@@ -208,7 +209,6 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
 
     else:
         value_set = set(map(str.lower, value))
-
         if wildcard and wildcard.lower() in value_set:
             in_group = tuple(valid_group)
 
@@ -216,7 +216,7 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
             in_group = tuple(value_set.intersection(valid_group))
             not_in_group = tuple(value_set.difference(valid_group))
 
-    return in_group, not_in_group
+    return sorted(in_group), sorted(not_in_group)
 
 
 def _get_prefixed_mtds_from_class(class_obj: t.Any,
