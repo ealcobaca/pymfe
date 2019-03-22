@@ -1239,21 +1239,45 @@ def rescale_data(data: np.ndarray,
     return scaler_model.fit_transform(data)
 
 
-def _check_score(score, groups):
-    if score is None or isinstance(score, str):
-        if score is None and groups in ["landmarking"]:
-            raise ValueError()
-        else:
-            valid_scoring = {
-                "accuracy": scoring.accuracy,
-                "balanced-accuracy": scoring.balanced_accuracy,
-                "f1": scoring.f1,
-                "kappa": scoring.kappa,
-                "auc": scoring.auc,
-            }
-            if score in valid_scoring:
-                return valid_scoring[score]
-            else:
-                raise ValueError()
-    else:
-        raise ValueError()
+def check_score(score: str, groups: t.Tuple[str, ...]):
+    """Checks if a given score is valid.
+
+    Args:
+        score (:obj: `str`): the score metrics name.
+
+        groups (:obj:`Tuple` of :obj:`str`): a tuple of feature group names.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: if ``score`` is not None or ``str``.
+        ValueError: if ``score`` is not valid.
+
+    """
+    valid_scoring = {
+        "accuracy": scoring.accuracy,
+        "balanced-accuracy": scoring.balanced_accuracy,
+        "f1": scoring.f1,
+        "kappa": scoring.kappa,
+        "auc": scoring.auc
+    }  # type: t.Dict[str, t.Callable[[np.ndarray, np.ndarray], float]]
+
+    if score is not None and not isinstance(score, str):
+        raise ValueError('"score" is not None or str but "{0}" was passed.'
+                         'The valid values are {1}'.format(
+                             score, list(valid_scoring.keys())))
+
+    if "landmarking" in groups:
+        if score is None:
+            raise ValueError(
+                'Landmarking metafeatures need a score metric.'
+                'One of the following "score" values is required:'
+                '{0}'.format(list(valid_scoring.keys())))
+        if score not in valid_scoring:
+            raise ValueError(
+                'One of the following "score" values is required:'
+                '{0}'.format(list(valid_scoring.keys())))
+        return valid_scoring[score]
+
+    return None
