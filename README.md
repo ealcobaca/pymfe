@@ -14,10 +14,12 @@ In MtL, meta-features are designed to extract general properties able to charact
 * **Landmarking**: Represents the performance of simple and efficient learning algorithms.
 
 ## Dependencies
-pymfe requires:
+
+The main `pymfe` requirement is:
 * Python (>= 3.6)
 
 ## Installation
+
 The installation process is similar to other packages available on pip:
 
 ```python
@@ -76,6 +78,10 @@ print(ft)
 
 In the current version, the meta-feature extractor supports only classification problems. The authors plan to extend the package to add clustering and regression measures and to support MtL evaluation measures. For more specific information on how to extract each group of measures, please refer to the functions documentation page and the examples contained therein. For a general overview of the `pymfe` package, please have a look at the associated documentation.
 
-To cite `mfe` in publications use: Alcobaça, E., Siqueira, F., Rivolli, A., Garcia, L. P. F., Oliva, J. T. and de Carvalho, A. C. P. L. F. (2019). MFE: Extracting metafeatures in python and R.
+To cite `pymfe` in publications use: 
+
+* Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406
+
+* Alcobaça, E., Siqueira, F., Rivolli, A., Garcia, L. P. F., Oliva, J. T. and de Carvalho, A. C. P. L. F. (2019). MFE: Extracting metafeatures in python and R.
 
 To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
