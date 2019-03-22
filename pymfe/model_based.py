@@ -10,11 +10,9 @@ References:
         Rivolli et al. URL: https://arxiv.org/abs/1808.10406
 """
 
-import typing as t
-
-import math
-import numpy as np
 from collections import Counter
+import typing as t
+import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 
 
