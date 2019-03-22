@@ -218,7 +218,7 @@ class MFE:
                              'Expecting an integer.'.format(
                                  random_state))
 
-        self.score = _internal._check_score(score, self.groups)
+        self.score = _internal.check_score(score, self.groups)
 
     def _call_summary_methods(
             self,
@@ -343,7 +343,7 @@ class MFE:
     def _call_feature_methods(self,
                               remove_nan: bool = True,
                               verbose: bool = False,
-                              enable_parallel: bool = False,
+                              # enable_parallel: bool = False,
                               suppress_warnings: bool = False,
                               **kwargs) -> t.Tuple[t.List, ...]:
         """Invoke feature methods/functions loaded in the model and gather results.
@@ -632,7 +632,7 @@ class MFE:
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
             check_bool: bool = False,
-            missing_data: str = "ignore",
+            # missing_data: str = "ignore",
             precomp_groups: str = "all",
             wildcard: str = "all",
             suppress_warnings: bool = False,
@@ -784,7 +784,7 @@ class MFE:
                 remove_nan: bool = True,
                 verbose: bool = False,
                 enable_parallel: bool = False,
-                by_class: bool = False,
+                # by_class: bool = False,
                 suppress_warnings: bool = False,
                 **kwargs) -> t.Tuple[t.List, ...]:
         """Extracts metafeatures from the previously fitted dataset.
