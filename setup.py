@@ -14,12 +14,12 @@ with open("README.md", "r") as fh:
 setuptools.setup(
     name="pymfe",
     version="0.0.1",
-    author="Edesio Alcobaça, Felipe Alves Siqueira",
-    author_email="edesio@usp.br, felipe.siqueira@usp.br",
-    description="Metafeature extractor",
+    author="Edesio Alcobaça, Felipe Alves Siqueira, Luis Paulo Faina Garcia",
+    author_email="edesio@usp.br, felipe.siqueira@usp.br, lpgarcia@icmc.usp.br",
+    description="Meta-feature Extractor",
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
-    url="https://github.com/ealcobaca/pyMFE",
+    url="https://github.com/ealcobaca/pymfe",
     packages=setuptools.find_packages(),
     install_requires=install_reqs,
     classifiers=[
