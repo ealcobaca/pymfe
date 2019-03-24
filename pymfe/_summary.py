@@ -5,6 +5,7 @@ Attributes:
         names as keys with methods callables which implements then as values.
 """
 import typing as t
+import collections
 
 import scipy.stats
 import numpy as np
@@ -223,18 +224,18 @@ def sum_kurtosis(values: TypeValList, method: int = 3,
     return kurt_val
 
 
-SUMMARY_METHODS = {
-    "mean": np.mean,
-    "sd": np.std,
-    "var": np.var,
-    "count": len,
-    "histogram": sum_histogram,
-    "iq_range": scipy.stats.iqr,
-    "kurtosis": sum_kurtosis,
-    "max": max,
-    "median": np.median,
-    "min": min,
-    "quantiles": sum_quantiles,
-    "range": np.ptp,
-    "skewness": sum_skewness,
-}
+SUMMARY_METHODS = collections.OrderedDict((
+    ("mean", np.mean),
+    ("sd", np.std),
+    ("var", np.var),
+    ("count", len),
+    ("histogram", sum_histogram),
+    ("iq_range", scipy.stats.iqr),
+    ("kurtosis", sum_kurtosis),
+    ("max", max),
+    ("median", np.median),
+    ("min", min),
+    ("quantiles", sum_quantiles),
+    ("range", np.ptp),
+    ("skewness", sum_skewness),
+))

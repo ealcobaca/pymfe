@@ -885,6 +885,12 @@ class MFE:
             suppress_warnings=suppress_warnings,
             **kwargs)
 
+        if results:
+            # Sort results by metafeature name
+            results = zip(*sorted(zip(*results),
+                                  key=lambda item: item[0]))
+            results = list(map(list, results))
+
         res_names, res_vals, res_times = results
 
         if verbose:
