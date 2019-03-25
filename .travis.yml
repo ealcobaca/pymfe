@@ -5,7 +5,7 @@ python:
     - "3.7-dev"
 
 install:
-    - pip install pytest mypy pylint
+    - pip install pytest mypy pylint liac-arff
     # - pip install -r ./requirements.txt
     - pip install .
 
