@@ -207,16 +207,15 @@ class MFE:
         if random_state is None or isinstance(random_state, int):
             self.random_state = random_state
         else:
-            raise ValueError('Invalid "random_state" argument ({0}). '
-                             'Expecting None or an integer.'.format(
-                                 random_state))
+            raise ValueError(
+                'Invalid "random_state" argument ({0}). '
+                'Expecting None or an integer.'.format(random_state))
 
         if isinstance(folds, int):
             self.folds = folds
         else:
             raise ValueError('Invalid "folds" argument ({0}). '
-                             'Expecting an integer.'.format(
-                                 random_state))
+                             'Expecting an integer.'.format(random_state))
 
         self.score = _internal.check_score(score, self.groups)
 
@@ -340,12 +339,13 @@ class MFE:
 
         return metafeat_names, metafeat_vals, metafeat_times
 
-    def _call_feature_methods(self,
-                              remove_nan: bool = True,
-                              verbose: bool = False,
-                              # enable_parallel: bool = False,
-                              suppress_warnings: bool = False,
-                              **kwargs) -> t.Tuple[t.List, ...]:
+    def _call_feature_methods(
+            self,
+            remove_nan: bool = True,
+            verbose: bool = False,
+            # enable_parallel: bool = False,
+            suppress_warnings: bool = False,
+            **kwargs) -> t.Tuple[t.List, ...]:
         """Invoke feature methods/functions loaded in the model and gather results.
 
         The returned values are already summarized if needed.
@@ -780,13 +780,14 @@ class MFE:
 
         return self
 
-    def extract(self,
-                remove_nan: bool = True,
-                verbose: bool = False,
-                enable_parallel: bool = False,
-                # by_class: bool = False,
-                suppress_warnings: bool = False,
-                **kwargs) -> t.Tuple[t.List, ...]:
+    def extract(
+            self,
+            remove_nan: bool = True,
+            verbose: bool = False,
+            enable_parallel: bool = False,
+            # by_class: bool = False,
+            suppress_warnings: bool = False,
+            **kwargs) -> t.Tuple[t.List, ...]:
         """Extracts metafeatures from the previously fitted dataset.
 
         Args:
@@ -887,8 +888,9 @@ class MFE:
 
         if results and results[0]:
             # Sort results by metafeature name
-            results = tuple(map(list, zip(*sorted(zip(*results),
-                                          key=lambda item: item[0]))))
+            results = tuple(
+                map(list, zip(*sorted(zip(*results),
+                                      key=lambda item: item[0]))))
 
         res_names, res_vals, res_times = results
 
