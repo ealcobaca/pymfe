@@ -887,9 +887,8 @@ class MFE:
 
         if results and results[0]:
             # Sort results by metafeature name
-            results = zip(*sorted(zip(*results),
-                                  key=lambda item: item[0]))
-            results = list(map(list, results))
+            results = tuple(map(list, zip(*sorted(zip(*results),
+                                          key=lambda item: item[0]))))
 
         res_names, res_vals, res_times = results
 
