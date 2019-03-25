@@ -215,7 +215,7 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
             in_group = tuple(value_set.intersection(valid_group))
             not_in_group = tuple(value_set.difference(valid_group))
 
-    return tuple(sorted(in_group)), tuple(sorted(not_in_group))
+    return tuple(in_group), tuple(not_in_group)
 
 
 def _get_prefixed_mtds_from_class(class_obj: t.Any,
