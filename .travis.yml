@@ -6,7 +6,7 @@ python:
 
 install:
     - pip install pytest mypy pylint liac-arff
-    # - pip install -r ./requirements.txt
+    - pip install --user codecov
     - pip install .
 
 env:
@@ -33,3 +33,6 @@ notifications:
     email:
         on_success: never
         on_failure: never
+
+after_success:
+  - codecov
