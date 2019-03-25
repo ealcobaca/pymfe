@@ -5,8 +5,12 @@ python:
     - "3.7-dev"
 
 install:
-    - pip install pytest pytest-cov mypy pylint liac-arff
+    - pip install mypy 
+    - pip pylint
+    - pip install pytest pytest-cov coverage
     - pip install .
+    # test dependencies
+    - pip install liac-arff
 
 env:
     global:
