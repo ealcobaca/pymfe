@@ -59,13 +59,13 @@ class MFELandmarking:
     """
 
     @classmethod
-    def precompute_landmarking_class(cls, X: np.ndarray, y: np.ndarray,
+    def precompute_landmarking_class(cls, N: np.ndarray, y: np.ndarray,
                                      folds: int, random_state: t.Optional[int],
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute k-fold cross validation strategy.
 
         Args:
-            X (:obj:`np.ndarray`, optional): attributes from fitted data.
+            N (:obj:`np.ndarray`, optional): attributes from fitted data.
 
             y (:obj:`np.ndarray`, optional): target attribute from fitted data.
 
@@ -90,7 +90,7 @@ class MFELandmarking:
 
         prepcomp_vals = {}
 
-        if X is not None and y is not None\
+        if N is not None and y is not None\
            and not {"skf"}.issubset(kwargs):
             skf = StratifiedKFold(n_splits=folds, random_state=random_state)
             prepcomp_vals["skf"] = skf
@@ -98,14 +98,14 @@ class MFELandmarking:
         return prepcomp_vals
 
     @classmethod
-    def importance(cls, X: np.ndarray, y: np.ndarray,
+    def importance(cls, N: np.ndarray, y: np.ndarray,
                    random_state: t.Optional[int]) -> np.ndarray:
         """Compute de gini index importance of a decision tree building using
         ``X`` and ``y``. We use sklearn ``DecisionTreeClassifier`` implementa-
         tion.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             y (:obj:`np.ndarray`): target attribute from fitted data.
 
@@ -118,18 +118,18 @@ class MFELandmarking:
             np.ndarray: Return the decision tree features importance.
         """
 
-        clf = DecisionTreeClassifier(random_state=random_state).fit(X, y)
+        clf = DecisionTreeClassifier(random_state=random_state).fit(N, y)
         return np.argsort(clf.feature_importances_)
 
     @classmethod
-    def ft_best_node(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+    def ft_best_node(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
                      score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
                      random_state: t.Optional[int]) -> np.ndarray:
         """Construct a single decision tree node model induced by the most
         informative attribute to establish the linear separability.
 
         Args:
-            X (:obj:`np.ndarray`, optional): attributes from fitted data.
+            N (:obj:`np.ndarray`, optional): attributes from fitted data.
 
             y (:obj:`np.ndarray`, optional): target attribute from fitted data.
 
@@ -152,11 +152,11 @@ class MFELandmarking:
             np.ndarray: The performance of each fold.
         """
         result = []
-        for train_index, test_index in skf.split(X, y):
+        for train_index, test_index in skf.split(N, y):
             model = DecisionTreeClassifier(max_depth=1,
                                            random_state=random_state)
-            X_train = X[train_index, :]
-            X_test = X[test_index, :]
+            X_train = N[train_index, :]
+            X_test = N[test_index, :]
             y_train, y_test = y[train_index], y[test_index]
 
             model.fit(X_train, y_train)
@@ -166,14 +166,14 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_random_node(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+    def ft_random_node(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
                        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
                        random_state: t.Optional[int]) -> np.ndarray:
         """Construct a single decision tree node model induced by a random
         attribute.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             y (:obj:`np.ndarray`): target attribute from fitted data.
 
@@ -196,12 +196,12 @@ class MFELandmarking:
             np.ndarray: The performance of each fold.
         """
         result = []
-        for train_index, test_index in skf.split(X, y):
-            attr = np.random.randint(0, X.shape[1], size=(1,))
+        for train_index, test_index in skf.split(N, y):
+            attr = np.random.randint(0, N.shape[1], size=(1,))
             model = DecisionTreeClassifier(max_depth=1,
                                            random_state=random_state)
-            X_train = X[train_index, :][:, attr]
-            X_test = X[test_index, :][:, attr]
+            X_train = N[train_index, :][:, attr]
+            X_test = N[test_index, :][:, attr]
             y_train, y_test = y[train_index], y[test_index]
 
             model.fit(X_train, y_train)
@@ -211,14 +211,14 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_worst_node(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+    def ft_worst_node(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
                       score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
                       random_state: t.Optional[int]) -> np.ndarray:
         """Construct a single decision tree node model induced by the worst
         informative attribute.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             y (:obj:`np.ndarray`): target attribute from fitted data.
 
@@ -241,14 +241,14 @@ class MFELandmarking:
             np.ndarray: The performance of each fold.
         """
         result = []
-        for train_index, test_index in skf.split(X, y):
-            importance = MFELandmarking.importance(X[train_index],
+        for train_index, test_index in skf.split(N, y):
+            importance = MFELandmarking.importance(N[train_index],
                                                    y[train_index],
                                                    random_state)
             model = DecisionTreeClassifier(max_depth=1,
                                            random_state=random_state)
-            X_train = X[train_index, :][:, [importance[0]]]
-            X_test = X[test_index, :][:, [importance[0]]]
+            X_train = N[train_index, :][:, [importance[0]]]
+            X_test = N[test_index, :][:, [importance[0]]]
             y_train, y_test = y[train_index], y[test_index]
 
             model.fit(X_train, y_train)
@@ -258,7 +258,7 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_linear_discr(cls, X: np.ndarray, y: np.ndarray,
+    def ft_linear_discr(cls, N: np.ndarray, y: np.ndarray,
                         skf: StratifiedKFold,
                         score: t.Callable[[np.ndarray, np.ndarray], np.ndarray]
                         ) -> np.ndarray:
@@ -266,7 +266,7 @@ class MFELandmarking:
         (non parallel axis) in the data to establish the linear separability.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             y (:obj:`np.ndarray`): target attribute from fitted data.
 
@@ -285,10 +285,10 @@ class MFELandmarking:
         """
 
         result = []
-        for train_index, test_index in skf.split(X, y):
+        for train_index, test_index in skf.split(N, y):
             model = LinearDiscriminantAnalysis()
-            X_train = X[train_index, :]
-            X_test = X[test_index, :]
+            X_train = N[train_index, :]
+            X_test = N[test_index, :]
             y_train, y_test = y[train_index], y[test_index]
 
             model.fit(X_train, y_train)
@@ -298,7 +298,7 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_naive_bayes(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+    def ft_naive_bayes(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
                        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
                        ) -> np.ndarray:
         """Evaluate the performance of the Naive Bayes classifier. It assumes
@@ -306,7 +306,7 @@ class MFELandmarking:
         tain class based on the Bayes probability.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             y (:obj:`np.ndarray`): target attribute from fitted data.
 
@@ -325,10 +325,10 @@ class MFELandmarking:
         """
 
         result = []
-        for train_index, test_index in skf.split(X, y):
+        for train_index, test_index in skf.split(N, y):
             model = GaussianNB()
-            X_train = X[train_index, :]
-            X_test = X[test_index, :]
+            X_train = N[train_index, :]
+            X_test = N[test_index, :]
             y_train, y_test = y[train_index], y[test_index]
 
             model.fit(X_train, y_train)
@@ -338,7 +338,7 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_one_nn(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+    def ft_one_nn(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
                   score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
                   ) -> np.ndarray:
         """Evaluate the performance of the 1-nearest neighbor classifier. It
@@ -346,7 +346,7 @@ class MFELandmarking:
         noisy is the data.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             y (:obj:`np.ndarray`): target attribute from fitted data.
 
@@ -365,10 +365,10 @@ class MFELandmarking:
         """
 
         result = []
-        for train_index, test_index in skf.split(X, y):
+        for train_index, test_index in skf.split(N, y):
             model = KNeighborsClassifier(n_neighbors=1)
-            X_train = X[train_index, :]
-            X_test = X[test_index, :]
+            X_train = N[train_index, :]
+            X_test = N[test_index, :]
             y_train, y_test = y[train_index], y[test_index]
 
             model.fit(X_train, y_train)
@@ -378,7 +378,7 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_elite_nn(cls, X: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+    def ft_elite_nn(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
                     score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
                     random_state: t.Optional[int]) -> np.ndarray:
         """Elite nearest neighbor uses the most informative attribute in the
@@ -386,7 +386,7 @@ class MFELandmarking:
         ve attributes is expected that the models should be noise tolerant.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             y (:obj:`np.ndarray`): target attribute from fitted data.
 
@@ -409,13 +409,13 @@ class MFELandmarking:
             np.ndarray: The performance of each fold.
         """
         result = []
-        for train_index, test_index in skf.split(X, y):
-            importance = MFELandmarking.importance(X[train_index],
+        for train_index, test_index in skf.split(N, y):
+            importance = MFELandmarking.importance(N[train_index],
                                                    y[train_index],
                                                    random_state)
             model = KNeighborsClassifier(n_neighbors=1)
-            X_train = X[train_index, :][:, [importance[-1]]]
-            X_test = X[test_index, :][:, [importance[-1]]]
+            X_train = N[train_index, :][:, [importance[-1]]]
+            X_test = N[test_index, :][:, [importance[-1]]]
             y_train, y_test = y[train_index], y[test_index]
 
             model.fit(X_train, y_train)
