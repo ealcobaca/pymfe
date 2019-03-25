@@ -6,7 +6,6 @@ python:
 
 install:
     - pip install pytest pytest-cov mypy pylint liac-arff
-    - pip install --user codecov
     - pip install .
 
 env:
