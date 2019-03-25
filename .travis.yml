@@ -6,7 +6,7 @@ python:
 
 install:
     - pip install mypy 
-    - pip pylint
+    - pip install pylint
     - pip install pytest pytest-cov coverage
     - pip install .
     # test dependencies
