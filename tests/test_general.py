@@ -2,7 +2,7 @@
 import pytest
 
 from pymfe.mfe import MFE
-import utils
+from tests.utils import load_xy
 import numpy as np
 
 GNAME = "general"
@@ -57,7 +57,7 @@ class TestGeneral():
     def test_ft_methods_general(self, dt_id, ft_name, exp_value):
         """Function to test each meta-feature belongs to general group.
         """
-        X, y = utils.load_xy(dt_id)
+        X, y = load_xy(dt_id)
         mfe = MFE(groups=["general"],
                   features=[ft_name]).fit(X.values, y.values)
         value = mfe.extract()
