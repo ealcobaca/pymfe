@@ -56,13 +56,13 @@ class MFEModelBased:
     """
 
     @classmethod
-    def precompute_model_based_class(cls, X: np.ndarray, y: np.ndarray,
+    def precompute_model_based_class(cls, N: np.ndarray, y: np.ndarray,
                                      random_state: t.Optional[int],
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute ``model``, ``table`` and ``tree_depth``.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             y (:obj:`np.ndarray`): target attribute from fitted data.
 
@@ -87,11 +87,11 @@ class MFEModelBased:
         """
         prepcomp_vals = {}  # type: t.Dict[str, t.Any]
 
-        if X is not None and y is not None\
+        if N is not None and y is not None\
            and not {"model", "table", "tree_depth"}.issubset(kwargs):
             model = DecisionTreeClassifier(random_state=random_state)
-            model.fit(X, y)
-            table = MFEModelBased.extract_table(X, y, model)
+            model.fit(N, y)
+            table = MFEModelBased.extract_table(N, y, model)
             tree_depth = MFEModelBased.tree_depth(model)
             prepcomp_vals["model"] = model
             prepcomp_vals["table"] = table
@@ -100,12 +100,12 @@ class MFEModelBased:
         return prepcomp_vals
 
     @classmethod
-    def extract_table(cls, X: np.ndarray, y: np.ndarray, model:
+    def extract_table(cls, N: np.ndarray, y: np.ndarray, model:
                       DecisionTreeClassifier) -> np.ndarray:
         """Precompute ``model``, ``table`` and ``tree_depth``.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             y (:obj:`np.ndarray`): target attribute from fitted data.
 
@@ -134,7 +134,9 @@ class MFEModelBased:
         table[:, 0] = model.tree_.feature
         table[:, 2] = model.tree_.n_node_samples
 
-        leaves = model.apply(X)  # type: DecisionTreeClassifier
+        leaves = model.apply(N)  # type: DecisionTreeClassifier
+        if not isinstance(y, np.number):
+            _, y = np.unique(y, return_inverse=True)
         tmp = np.array([leaves, y + 1])  # type: np.ndarray
 
         x = 0  # type: int
@@ -213,19 +215,19 @@ class MFEModelBased:
         return tree_depth[table[:, 1] == 1]
 
     @classmethod
-    def ft_leaves_corrob(cls, X: np.ndarray, table: np.ndarray) -> np.ndarray:
+    def ft_leaves_corrob(cls, N: np.ndarray, table: np.ndarray) -> np.ndarray:
         """Leaves corroboration, which is the proportion of examples that
         belong to each leaf of the DT model.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             table (:obj:`np.ndarray`): tree property table.
 
         Return:
             np.ndarray: leaves corroboration.
         """
-        return table[:, 2][table[:, 1] == 1]/X.shape[0]
+        return table[:, 2][table[:, 1] == 1]/N.shape[0]
 
     @classmethod
     def ft_tree_shape(cls, table: np.ndarray,
@@ -293,12 +295,12 @@ class MFEModelBased:
         return np.sum(table[:, 1] != 1)
 
     @classmethod
-    def ft_nodes_per_attr(cls, X: np.ndarray, table: np.ndarray) -> float:
+    def ft_nodes_per_attr(cls, N: np.ndarray, table: np.ndarray) -> float:
         """Ratio of the number of nodes of the DT model per the number of
         attributes.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             table (:obj:`np.ndarray`): tree property table.
 
@@ -306,16 +308,16 @@ class MFEModelBased:
             np.ndarray: ratio of the number of nodes.
         """
         nodes = MFEModelBased.ft_nodes(table)  # type: int
-        attr = X.shape[1]  # type: float
+        attr = N.shape[1]  # type: float
         return nodes/attr
 
     @classmethod
-    def ft_nodes_per_inst(cls, X: np.ndarray, table: np.ndarray) -> float:
+    def ft_nodes_per_inst(cls, N: np.ndarray, table: np.ndarray) -> float:
         """Ratio of the number of nodes of the DT model per the number of
         instances.
 
         Args:
-            X (:obj:`np.ndarray`): attributes from fitted data.
+            N (:obj:`np.ndarray`): attributes from fitted data.
 
             table (:obj:`np.ndarray`): tree property table.
 
@@ -323,7 +325,7 @@ class MFEModelBased:
             np.ndarray: ratio of the number of nodes per instances.
         """
         nodes = MFEModelBased.ft_nodes(table)  # type: int
-        inst = X.shape[0]  # type: float
+        inst = N.shape[0]  # type: float
         return nodes/inst
 
     @classmethod
