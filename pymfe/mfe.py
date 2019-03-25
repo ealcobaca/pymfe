@@ -885,7 +885,7 @@ class MFE:
             suppress_warnings=suppress_warnings,
             **kwargs)
 
-        if results:
+        if results and len(results[0]):
             # Sort results by metafeature name
             results = zip(*sorted(zip(*results),
                                   key=lambda item: item[0]))
