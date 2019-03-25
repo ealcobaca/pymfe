@@ -11,7 +11,7 @@ install:
 env:
     global:
         - SOURCE_FILES=`find ./pymfe/ -name '*.py'`
-        - TEST_FILES=`find ./tests/ -name '*.py'`
+        - TEST_FILES=./tests/
 
 # Disabled messages in Pylint
 #     C0103: Argument name "example" doesn't conform to snake_case naming style
