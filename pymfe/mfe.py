@@ -1,12 +1,9 @@
 """Main module for extracting metafeatures from datasets.
 
 Todo:
-    * Precomputation options, to avoid frequent recalculations.
     * Implement parallel computing.
-    * Handle missing data.
     * By-class feature extraction.
     * Support for multiclass, regression and unsupervised tasks.
-    * Remove program driver for quick tests.
 """
 import typing as t
 import collections
