@@ -29,12 +29,17 @@ class MFELandmarking:
     All method signature follows the conventions and restrictions listed below:
         1. For independent attribute data, ``X`` means ``every type of attribu-
             te``, ``N`` means ``Numeric attributes only`` and ``C`` stands for
-            ``Categorical attributes only``.
+            ``Categorical attributes only``. It is important to note that the
+            categorical attribute sets between ``X`` and ``C`` and the numeri-
+            cal attribute sets between ``X`` and ``N`` may differ due to data
+            transformations, performed while fitting data into MFE model, en-
+            abled by, respectively, ``transform_num`` and ``transform_cat``
+            arguments from ``fit`` (MFE method).
 
-        2. Only ``X``, ``y``, ``N``, ``C``, ``splits``, ``folds``, ``score``
-        and ``random_state`` are allowed to be required method arguments. All
-        other arguments must be strictly optional (i.e., has a predefined de-
-        fault value).
+        2. Only arguments in MFE ``_custom_args_ft`` attribute (set up inside
+            ``fit`` method) are allowed to be required method arguments. All
+            other arguments must be strictly optional (i.e., has a predefined
+            default value).
 
         3. The initial assumption is that the user can change any optional ar-
             gument, without any previous verification of argument value or its
@@ -153,8 +158,8 @@ class MFELandmarking:
         """
         result = []
         for train_index, test_index in skf.split(N, y):
-            model = DecisionTreeClassifier(max_depth=1,
-                                           random_state=random_state)
+            model = DecisionTreeClassifier(
+                max_depth=1, random_state=random_state)
             X_train = N[train_index, :]
             X_test = N[test_index, :]
             y_train, y_test = y[train_index], y[test_index]
@@ -197,9 +202,9 @@ class MFELandmarking:
         """
         result = []
         for train_index, test_index in skf.split(N, y):
-            attr = np.random.randint(0, N.shape[1], size=(1,))
-            model = DecisionTreeClassifier(max_depth=1,
-                                           random_state=random_state)
+            attr = np.random.randint(0, N.shape[1], size=(1, ))
+            model = DecisionTreeClassifier(
+                max_depth=1, random_state=random_state)
             X_train = N[train_index, :][:, attr]
             X_test = N[test_index, :][:, attr]
             y_train, y_test = y[train_index], y[test_index]
@@ -242,11 +247,10 @@ class MFELandmarking:
         """
         result = []
         for train_index, test_index in skf.split(N, y):
-            importance = MFELandmarking.importance(N[train_index],
-                                                   y[train_index],
-                                                   random_state)
-            model = DecisionTreeClassifier(max_depth=1,
-                                           random_state=random_state)
+            importance = MFELandmarking.importance(
+                N[train_index], y[train_index], random_state)
+            model = DecisionTreeClassifier(
+                max_depth=1, random_state=random_state)
             X_train = N[train_index, :][:, [importance[0]]]
             X_test = N[test_index, :][:, [importance[0]]]
             y_train, y_test = y[train_index], y[test_index]
@@ -298,9 +302,13 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_naive_bayes(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
-                       score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                       ) -> np.ndarray:
+    def ft_naive_bayes(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            skf: StratifiedKFold,
+            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+    ) -> np.ndarray:
         """Evaluate the performance of the Naive Bayes classifier. It assumes
         that the attributes are independent and each example belongs to a cer-
         tain class based on the Bayes probability.
@@ -338,9 +346,13 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_one_nn(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
-                  score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                  ) -> np.ndarray:
+    def ft_one_nn(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            skf: StratifiedKFold,
+            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+    ) -> np.ndarray:
         """Evaluate the performance of the 1-nearest neighbor classifier. It
         uses the euclidean distance of the nearest neighbor to determine how
         noisy is the data.
@@ -410,9 +422,8 @@ class MFELandmarking:
         """
         result = []
         for train_index, test_index in skf.split(N, y):
-            importance = MFELandmarking.importance(N[train_index],
-                                                   y[train_index],
-                                                   random_state)
+            importance = MFELandmarking.importance(
+                N[train_index], y[train_index], random_state)
             model = KNeighborsClassifier(n_neighbors=1)
             X_train = N[train_index, :][:, [importance[-1]]]
             X_test = N[test_index, :][:, [importance[-1]]]

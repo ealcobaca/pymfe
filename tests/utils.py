@@ -10,13 +10,13 @@ import pandas as pd
 DATA_ID = [
     "tests/test_datasets/mix_aids.arff",
     "tests/test_datasets/cat_kr-vs-kp.arff",
-    "tests/test_datasets/num_Iris.arff"
+    "tests/test_datasets/num_Iris.arff",
 ]
 
 DATA_ = [
     None,
     None,
-    None
+    None,
 ]
 
 
