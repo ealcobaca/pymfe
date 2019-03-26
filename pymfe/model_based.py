@@ -105,8 +105,8 @@ class MFEModelBased:
         return prepcomp_vals
 
     @classmethod
-    def extract_table(cls, N: np.ndarray, y: np.ndarray, model:
-                      DecisionTreeClassifier) -> np.ndarray:
+    def extract_table(cls, N: np.ndarray, y: np.ndarray,
+                      model: DecisionTreeClassifier) -> np.ndarray:
         """Precompute ``model``, ``table`` and ``tree_depth``.
 
         Args:
@@ -197,8 +197,8 @@ class MFEModelBased:
                 node_depth(r[node], depth + 1, l, r, depths)
 
         depths = []  # type: t.List[int]
-        node_depth(0, 0, model.tree_.children_left,
-                   model.tree_.children_right, depths)
+        node_depth(0, 0, model.tree_.children_left, model.tree_.children_right,
+                   depths)
         return np.array(depths)
 
     @classmethod
@@ -232,7 +232,7 @@ class MFEModelBased:
         Return:
             np.ndarray: leaves corroboration.
         """
-        return table[:, 2][table[:, 1] == 1]/N.shape[0]
+        return table[:, 2][table[:, 1] == 1] / N.shape[0]
 
     @classmethod
     def ft_tree_shape(cls, table: np.ndarray,
@@ -250,7 +250,7 @@ class MFEModelBased:
             np.ndarray: the tree shape.
         """
         aux = tree_depth[table[:, 1] == 1]  # type: np.ndarray
-        return -(1.0/2**aux) * np.log2(1.0/2**aux)
+        return -(1.0 / 2**aux) * np.log2(1.0 / 2**aux)
 
     @classmethod
     def ft_leaves_homo(cls, table: np.ndarray,
@@ -270,7 +270,7 @@ class MFEModelBased:
         leaves = MFEModelBased.ft_leaves(table)  # type: int
         tree_shape = MFEModelBased.ft_tree_shape(
             table, tree_depth)  # type: np.ndarray
-        return leaves/tree_shape
+        return leaves / tree_shape
 
     @classmethod
     def ft_leaves_per_class(cls, table: np.ndarray) -> np.ndarray:
@@ -284,7 +284,7 @@ class MFEModelBased:
             np.ndarray: leaves per class.
         """
         aux = np.array(list(Counter(table[:, 3]).values()))  # np.ndarray
-        aux = aux[1:]/MFEModelBased.ft_leaves(table)
+        aux = aux[1:] / MFEModelBased.ft_leaves(table)
         return aux
 
     @classmethod
@@ -314,7 +314,7 @@ class MFEModelBased:
         """
         nodes = MFEModelBased.ft_nodes(table)  # type: int
         attr = N.shape[1]  # type: float
-        return nodes/attr
+        return nodes / attr
 
     @classmethod
     def ft_nodes_per_inst(cls, N: np.ndarray, table: np.ndarray) -> float:
@@ -331,7 +331,7 @@ class MFEModelBased:
         """
         nodes = MFEModelBased.ft_nodes(table)  # type: int
         inst = N.shape[0]  # type: float
-        return nodes/inst
+        return nodes / inst
 
     @classmethod
     def ft_nodes_per_level(cls, table: np.ndarray,
@@ -394,7 +394,7 @@ class MFEModelBased:
         Return:
             np.ndarray: tree imbalance values.
         """
-        aux = 1.0/2**tree_depth[table[:, 1] == 1]  # np.ndarray
+        aux = 1.0 / 2**tree_depth[table[:, 1] == 1]  # np.ndarray
         tmp = np.unique(aux, return_counts=True)  # np.ndarray
         tmp = tmp[0] * tmp[1]
-        return -(1.0/2**tmp) * np.log2(1.0/2**tmp)
+        return -(1.0 / 2**tmp) * np.log2(1.0 / 2**tmp)
