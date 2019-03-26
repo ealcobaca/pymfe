@@ -465,7 +465,7 @@ class MFE:
         else:
             raise ValueError(
                 'Invalid "cat_cols" argument ({0}). '
-                'Expecting "auto" or a integer Iterable.'.format(cat_cols))
+                'Expecting "auto" or an integer Iterable.'.format(cat_cols))
 
         categorical_cols = np.array(categorical_cols)
 
@@ -755,6 +755,7 @@ class MFE:
             rescale=rescale,
             rescale_args=rescale_args)
 
+        # Custom arguments for metafeature extraction methods
         self._custom_args_ft = {
             "X": self.X,
             "N": data_num,
@@ -763,7 +764,8 @@ class MFE:
             "splits": self.splits,
             "folds": self.folds,
             "score": self.score,
-            "random_state": self.random_state
+            "random_state": self.random_state,
+            "cat_cols": self._attr_indexes_cat,
         }
 
         if precomp_groups:
@@ -774,6 +776,7 @@ class MFE:
                 suppress_warnings=suppress_warnings,
                 **self._custom_args_ft)
 
+        # Custom arguments for summarization methods
         self._custom_args_sum = {
             "ddof": 1,
         }
