@@ -49,7 +49,7 @@ class MFE:
                  measure_time: t.Optional[str] = None,
                  wildcard: str = "all",
                  score="accuracy",
-                 folds=5,
+                 folds=10,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
         """This class provides easy access for metafeature extraction from datasets.
