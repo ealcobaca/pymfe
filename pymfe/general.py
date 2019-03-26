@@ -23,11 +23,17 @@ class MFEGeneral:
     All method signature follows the conventions and restrictions listed below:
         1. For independent attribute data, ``X`` means ``every type of attribu-
             te``, ``N`` means ``Numeric attributes only`` and ``C`` stands for
-            ``Categorical attributes only``.
+            ``Categorical attributes only``. It is important to note that the
+            categorical attribute sets between ``X`` and ``C`` and the numeri-
+            cal attribute sets between ``X`` and ``N`` may differ due to data
+            transformations, performed while fitting data into MFE model, en-
+            abled by, respectively, ``transform_num`` and ``transform_cat``
+            arguments from ``fit`` (MFE method).
 
-        2. Only ``X``, ``y``, ``N``, ``C`` and ``splits`` are allowed to be re-
-            quired method arguments. All other arguments must be strictly opti-
-            onal (i.e., has a predefined default value).
+        2. Only arguments in MFE ``_custom_args_ft`` attribute (set up inside
+            ``fit`` method) are allowed to be required method arguments. All
+            other arguments must be strictly optional (i.e., has a predefined
+            default value).
 
         3. The initial assumption is that the user can change any optional ar-
             gument, without any previous verification of argument value or its
@@ -90,8 +96,8 @@ class MFEGeneral:
         return X.shape[1] / X.shape[0]
 
     @classmethod
-    def ft_cat_to_num(cls, C: np.ndarray,
-                      N: np.ndarray) -> t.Union[int, np.float]:
+    def ft_cat_to_num(cls, X: np.ndarray,
+                      cat_cols: t.Sequence[int]) -> t.Union[int, np.float]:
         """Returns ratio between the number of categoric and numeric features.
 
         If the number of numeric features is zero, :obj:`np.nan` is returned
@@ -99,13 +105,17 @@ class MFEGeneral:
 
         Effectively the inverse of value given by ``ft_num_to_cat``.
         """
-        if N.shape[1] == 0:
+        num_cat = len(cat_cols)
+
+        if X.shape[1] == num_cat:
             return np.nan
 
-        return C.shape[1] / N.shape[1]
+        return num_cat / (X.shape[1] - num_cat)
 
     @classmethod
-    def ft_freq_class(cls, y: np.ndarray, class_freqs: np.ndarray = None
+    def ft_freq_class(cls,
+                      y: np.ndarray,
+                      class_freqs: t.Optional[np.ndarray] = None
                       ) -> t.Union[np.ndarray, np.float]:
         """Returns an array of the relative frequency of each distinct class.
 
@@ -143,9 +153,9 @@ class MFEGeneral:
         return sum(bin_cols)
 
     @classmethod
-    def ft_nr_cat(cls, C: np.ndarray) -> int:
+    def ft_nr_cat(cls, cat_cols: t.Sequence[int]) -> int:
         """Returns the number of categorical attributes."""
-        return C.shape[1]
+        return len(cat_cols)
 
     @classmethod
     def ft_nr_class(
@@ -183,13 +193,13 @@ class MFEGeneral:
         return X.shape[0]
 
     @classmethod
-    def ft_nr_num(cls, N: np.ndarray) -> int:
+    def ft_nr_num(cls, X: np.ndarray, cat_cols: t.Sequence[int]) -> int:
         """Returns the number of numeric features."""
-        return N.shape[1]
+        return X.shape[1] - len(cat_cols)
 
     @classmethod
-    def ft_num_to_cat(cls, C: np.ndarray,
-                      N: np.ndarray) -> t.Union[int, np.float]:
+    def ft_num_to_cat(cls, X: np.ndarray,
+                      cat_cols: t.Sequence[int]) -> t.Union[int, np.float]:
         """Returns the ratio between the number of numeric and categoric features.
 
         If the number of categoric features is zero, :obj:`np.nan` is returned
@@ -197,7 +207,9 @@ class MFEGeneral:
 
         Effectively the inverse of the value given by ``ft_cat_to_num``.
         """
-        if C.shape[1] == 0:
+        if not cat_cols:
             return np.nan
 
-        return N.shape[1] / C.shape[1]
+        num_cat = len(cat_cols)
+
+        return (X.shape[1] - num_cat) / num_cat
