@@ -158,8 +158,8 @@ class MFELandmarking:
         """
         result = []
         for train_index, test_index in skf.split(N, y):
-            model = DecisionTreeClassifier(max_depth=1,
-                                           random_state=random_state)
+            model = DecisionTreeClassifier(
+                max_depth=1, random_state=random_state)
             X_train = N[train_index, :]
             X_test = N[test_index, :]
             y_train, y_test = y[train_index], y[test_index]
@@ -202,9 +202,9 @@ class MFELandmarking:
         """
         result = []
         for train_index, test_index in skf.split(N, y):
-            attr = np.random.randint(0, N.shape[1], size=(1,))
-            model = DecisionTreeClassifier(max_depth=1,
-                                           random_state=random_state)
+            attr = np.random.randint(0, N.shape[1], size=(1, ))
+            model = DecisionTreeClassifier(
+                max_depth=1, random_state=random_state)
             X_train = N[train_index, :][:, attr]
             X_test = N[test_index, :][:, attr]
             y_train, y_test = y[train_index], y[test_index]
@@ -247,11 +247,10 @@ class MFELandmarking:
         """
         result = []
         for train_index, test_index in skf.split(N, y):
-            importance = MFELandmarking.importance(N[train_index],
-                                                   y[train_index],
-                                                   random_state)
-            model = DecisionTreeClassifier(max_depth=1,
-                                           random_state=random_state)
+            importance = MFELandmarking.importance(
+                N[train_index], y[train_index], random_state)
+            model = DecisionTreeClassifier(
+                max_depth=1, random_state=random_state)
             X_train = N[train_index, :][:, [importance[0]]]
             X_test = N[test_index, :][:, [importance[0]]]
             y_train, y_test = y[train_index], y[test_index]
@@ -303,9 +302,13 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_naive_bayes(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
-                       score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                       ) -> np.ndarray:
+    def ft_naive_bayes(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            skf: StratifiedKFold,
+            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+    ) -> np.ndarray:
         """Evaluate the performance of the Naive Bayes classifier. It assumes
         that the attributes are independent and each example belongs to a cer-
         tain class based on the Bayes probability.
@@ -343,9 +346,13 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_one_nn(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
-                  score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                  ) -> np.ndarray:
+    def ft_one_nn(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            skf: StratifiedKFold,
+            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+    ) -> np.ndarray:
         """Evaluate the performance of the 1-nearest neighbor classifier. It
         uses the euclidean distance of the nearest neighbor to determine how
         noisy is the data.
@@ -415,9 +422,8 @@ class MFELandmarking:
         """
         result = []
         for train_index, test_index in skf.split(N, y):
-            importance = MFELandmarking.importance(N[train_index],
-                                                   y[train_index],
-                                                   random_state)
+            importance = MFELandmarking.importance(
+                N[train_index], y[train_index], random_state)
             model = KNeighborsClassifier(n_neighbors=1)
             X_train = N[train_index, :][:, [importance[-1]]]
             X_test = N[test_index, :][:, [importance[-1]]]

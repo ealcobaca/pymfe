@@ -113,7 +113,8 @@ class MFEGeneral:
         return num_cat / (X.shape[1] - num_cat)
 
     @classmethod
-    def ft_freq_class(cls, y: np.ndarray,
+    def ft_freq_class(cls,
+                      y: np.ndarray,
                       class_freqs: t.Optional[np.ndarray] = None
                       ) -> t.Union[np.ndarray, np.float]:
         """Returns an array of the relative frequency of each distinct class.
@@ -194,7 +195,7 @@ class MFEGeneral:
     @classmethod
     def ft_nr_num(cls, X: np.ndarray, cat_cols: t.Sequence[int]) -> int:
         """Returns the number of numeric features."""
-        return (X.shape[1] - len(cat_cols))
+        return X.shape[1] - len(cat_cols)
 
     @classmethod
     def ft_num_to_cat(cls, X: np.ndarray,
