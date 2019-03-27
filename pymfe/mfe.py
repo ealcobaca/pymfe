@@ -765,13 +765,12 @@ class MFE:
             "cat_cols": self._attr_indexes_cat,
         }
 
-        if precomp_groups:
-            self._precomp_args_ft = _internal.process_precomp_groups(
-                precomp_groups=precomp_groups,
-                groups=self.groups,
-                wildcard=wildcard,
-                suppress_warnings=suppress_warnings,
-                **self._custom_args_ft)
+        self._precomp_args_ft = _internal.process_precomp_groups(
+            precomp_groups=precomp_groups,
+            groups=self.groups,
+            wildcard=wildcard,
+            suppress_warnings=suppress_warnings,
+            **self._custom_args_ft)
 
         # Custom arguments for summarization methods
         self._custom_args_sum = {

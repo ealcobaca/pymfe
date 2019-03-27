@@ -923,11 +923,23 @@ def process_precomp_groups(
         dict: precomputed values given by ``kwargs`` using convenient methods
             based in valid selected metafeature groups.
     """
-    if not precomp_groups:
-        return {}
-
     if groups is None:
         groups = tuple()
+
+    if not precomp_groups:
+        precomp_groups = set()
+
+    # Enforce precomputation from landmarking and model-based metafeature
+    # group due to strong dependencies of machine learning models.
+    if not isinstance(precomp_groups, str):
+        if "landmarking" in groups and "landmarking" not in precomp_groups:
+            precomp_groups = set(precomp_groups).union({"landmarking"})
+
+        if "model-based" in groups and "model-based" not in precomp_groups:
+            precomp_groups = set(precomp_groups).union({"model-based"})
+
+    if not precomp_groups:
+        return {}
 
     processed_precomp_groups = _preprocess_iterable_arg(
         precomp_groups)  # type: t.Sequence[str]
