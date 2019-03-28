@@ -8,7 +8,7 @@ import numpy as np
 GNAME = "info-theory"
 
 
-class TestGeneral():
+class TestInfoTheo():
     """TestClass dedicated to test Information Theory metafeatures."""
 
     @pytest.mark.parametrize(
