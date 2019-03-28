@@ -5,11 +5,11 @@ from pymfe.mfe import MFE
 from tests.utils import load_xy
 import numpy as np
 
-GNAME = "general"
+GNAME = "statistical"
 
 
 class TestGeneral():
-    """TestClass dedicated to test General metafeatures."""
+    """TestClass dedicated to test Statistical metafeatures."""
 
     @pytest.mark.parametrize(
         "dt_id, ft_name, exp_value, precompute",
@@ -98,6 +98,32 @@ class TestGeneral():
             # (1, "t_mean", [0.74908425, 0.35654219], True),
             (1, "var", [0.12702470, 0.08652912], True),
             # (1, "w_lambda", np.nan, True),
+            # (1, "can_cor", [0.79982271, np.nan], False),
+            (1, "gravity", 0.76488534, False),
+            # (1, "cor", [np.nan, np.nan], False),
+            (1, "cov", [0.01065760, 0.01849074], False),
+            # (1, "nr_disc", 1, False),
+            (1, "eigenvalues", [0.12702470, 0.15885051], False),
+            # (1, "g_mean", [0, 0], False),
+            (1, "h_mean", [0, 0], False),
+            (1, "iq_range", [0.33333333, 0.47756693], False),
+            # (1, "kurtosis", [np.nan, np.nan], False),
+            (1, "mad", [0, 0], False),
+            # (1, "max", [0.97435897, 0.16012815], False),
+            # (1, "mean", [0.70575399, 0.28775599], False),
+            # (1, "median", [0.79487179, 0.40907387], False),
+            (1, "min", [0, 0], False),
+            # (1, "nr_cor_attr", np.nan, False),
+            (1, "nr_norm", 0, False),
+            (1, "nr_outliers", 25, False),
+            # (1, "range", [0.97435897, 0.16012815], False),
+            (1, "sd", [0.32349560, 0.15153916], False),
+            # (1, "sd_ratio", np.nan, False),
+            # (1, "skewness", [np.nan, np.nan], False),
+            # (1, "sparsity", [0.49521243, 0.02778647], False),
+            # (1, "t_mean", [0.74908425, 0.35654219], False),
+            (1, "var", [0.12702470, 0.08652912], False),
+            # (1, "w_lambda", np.nan, False),
             ###################
             # Numerical data
             ###################
@@ -155,7 +181,7 @@ class TestGeneral():
             # (2, "w_lambda", 0.02352545, False),
         ])
     def test_ft_methods_general(self, dt_id, ft_name, exp_value, precompute):
-        """Function to test each meta-feature belongs to general group.
+        """Function to test each meta-feature belongs to statistical group.
         """
         precomp_group = "statistical" if precompute else None
         X, y = load_xy(dt_id)
