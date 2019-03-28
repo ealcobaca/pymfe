@@ -23,12 +23,14 @@ class TestLandmarking():
             (0, 'naive_bayes', [0.6166667, 0.15811387], False),
             (0, 'one_nn', [0.525, 0.07905694], False),
             (0, 'worst_node', [0.5, 0.0], False),
+            (0, 'random_node', [0.5, 0.0], False),
             (0, 'best_node', [0.6, 0.116534315], True),
             (0, 'elite_nn', [0.55833334, 0.15239853], True),
             (0, 'linear_discr', [0.6666667, 0.20786986], True),
             (0, 'naive_bayes', [0.6166667, 0.15811387], True),
             (0, 'one_nn', [0.525, 0.07905694], True),
             (0, 'worst_node', [0.5, 0.0], True),
+            (0, 'random_node', [0.5, 0.0], True),
             ###################
             # Categorical data
             ###################
@@ -38,12 +40,14 @@ class TestLandmarking():
             (1, 'naive_bayes', [0.60906017, 0.09429], False),
             (1, 'one_nn', [0.78222924, 0.056062974], False),
             (1, 'worst_node', [0.4896993, 0.1311027], False),
+            (1, 'random_node', [0.52478671, 0.043479178], False),
             (1, 'best_node', [0.4899618, 0.12725325], True),
             (1, 'elite_nn', [0.56567013, 0.080344684], True),
             (1, 'linear_discr', [0.890417, 0.07505906], True),
             (1, 'naive_bayes', [0.60906017, 0.09429], True),
             (1, 'one_nn', [0.78222924, 0.056062974], True),
             (1, 'worst_node', [0.4896993, 0.1311027], True),
+            (1, 'random_node', [0.52478671, 0.043479178], True),
             ###################
             # Numerical data
             ###################
@@ -53,12 +57,14 @@ class TestLandmarking():
             (2, 'naive_bayes', [0.9533334, 0.044996567], False),
             (2, 'one_nn', [0.96000004, 0.056218266], False),
             (2, 'worst_node', [0.6, 0.08888889], False),
+            (2, 'random_node', [0.61333334, 0.098381981], False),
             (2, 'best_node', [0.6666666, 6.282881e-08], True),
             (2, 'elite_nn', [0.88, 0.061262432], True),
             (2, 'linear_discr', [0.98, 0.044996567], True),
             (2, 'naive_bayes', [0.9533334, 0.044996567], True),
             (2, 'one_nn', [0.96000004, 0.056218266], True),
             (2, 'worst_node', [0.6, 0.08888889], True),
+            (2, 'random_node', [0.61333334, 0.098381981], True),
         ])
     def test_ft_methods_landmarking(self, dt_id, ft_name, exp_value,
                                     precompute):
