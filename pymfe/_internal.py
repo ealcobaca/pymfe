@@ -887,6 +887,26 @@ def process_features(
     return tuple(available_feat_names), tuple(ft_mtd_processed), groups
 
 
+def _patch_precomp_groups(
+        precomp_groups: t.Union[str, t.Iterable[str]],
+        groups: t.Optional[t.Tuple[str, ...]] = None,
+        ) -> t.Union[str, t.Iterable[str]]:
+    """Enforce precomputation in landmarking and model-based metafeatures."""
+    if not precomp_groups:
+        precomp_groups = set()
+
+    # Enforce precomputation from landmarking and model-based metafeature
+    # group due to strong dependencies of machine learning models.
+    if groups and not isinstance(precomp_groups, str):
+        if "landmarking" in groups and "landmarking" not in precomp_groups:
+            precomp_groups = set(precomp_groups).union({"landmarking"})
+
+        if "model-based" in groups and "model-based" not in precomp_groups:
+            precomp_groups = set(precomp_groups).union({"model-based"})
+
+    return precomp_groups
+
+
 def process_precomp_groups(
         precomp_groups: t.Union[str, t.Iterable[str]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
@@ -923,11 +943,13 @@ def process_precomp_groups(
         dict: precomputed values given by ``kwargs`` using convenient methods
             based in valid selected metafeature groups.
     """
-    if not precomp_groups:
-        return {}
-
     if groups is None:
         groups = tuple()
+
+    precomp_groups = _patch_precomp_groups(precomp_groups, groups)
+
+    if not precomp_groups:
+        return {}
 
     processed_precomp_groups = _preprocess_iterable_arg(
         precomp_groups)  # type: t.Sequence[str]
