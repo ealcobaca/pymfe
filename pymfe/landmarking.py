@@ -202,6 +202,9 @@ class MFELandmarking:
         """
         result = []
         for train_index, test_index in skf.split(N, y):
+            if isinstance(random_state, int):
+                np.random.seed(random_state)
+
             attr = np.random.randint(0, N.shape[1], size=(1, ))
             model = DecisionTreeClassifier(
                 max_depth=1, random_state=random_state)
