@@ -8,7 +8,7 @@ import numpy as np
 GNAME = "statistical"
 
 
-class TestGeneral():
+class TestStatistical():
     """TestClass dedicated to test Statistical metafeatures."""
 
     @pytest.mark.parametrize(

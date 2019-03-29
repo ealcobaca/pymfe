@@ -203,6 +203,8 @@ class MFE:
 
         if random_state is None or isinstance(random_state, int):
             self.random_state = random_state
+            np.random.seed(random_state)
+
         else:
             raise ValueError(
                 'Invalid "random_state" argument ({0}). '
