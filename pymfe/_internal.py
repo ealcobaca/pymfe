@@ -1023,6 +1023,9 @@ def check_data(X: t.Union[np.ndarray, list],
         TypeError: if ``X`` or ``y`` is neither a np.ndarray nor a list-
             type object.
 
+        ValueError: if ``X`` is empty or number of rows between X and Y
+            mismatch.
+
     Returns:
         tuple(np.ndarray, np.ndarray): ``X`` and ``y`` possibly reshaped and
             casted to :obj:`np.ndarray` type.
@@ -1041,8 +1044,11 @@ def check_data(X: t.Union[np.ndarray, list],
 
     y = y.flatten()
 
-    if len(X.shape) == 1:
+    if len(X.shape) == 1 and X.shape[0]:
         X = X.reshape(*X.shape, -1)
+
+    if X.shape[0] == 0 or y.shape[0] == 0:
+        raise ValueError('Neither "X" nor "y" can be empty.')
 
     if X.shape[0] != y.shape[0]:
         raise ValueError('"X" number of rows and "y" '
