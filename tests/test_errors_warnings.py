@@ -9,7 +9,6 @@ GNAME = "errors-warnings"
 
 class TestErrorsWarnings:
     """TestClass dedicated to test General metafeatures."""
-
     def test_error_empty_data_1(self):
         with pytest.raises(TypeError):
             MFE().fit(X=None, y=None)
@@ -72,3 +71,18 @@ class TestErrorsWarnings:
             X, y = load_xy(0)
             model = MFE(features="invalid").fit(X=X.values, y=y.values)
             model.extract()
+
+    def test_verbose(self, capsys):
+        X, y = load_xy(0)
+        model = MFE(features=["freq_class",
+                              "mean",
+                              "class_conc",
+                              "one_nn",
+                              "nodes"]).fit(X=X.values, y=y.values)
+        model.extract(verbose=True)
+        captured = capsys.readouterr().out
+
+        # Expected number of messages in verbose mode of mtf extraction
+        expected_msg_num = 21
+
+        assert captured.count("\n") == expected_msg_num
