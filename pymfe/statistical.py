@@ -100,6 +100,7 @@ class MFEStatistical:
     def precompute_statistical_eigen(cls,
                                      N: t.Optional[np.ndarray] = None,
                                      y: t.Optional[np.ndarray] = None,
+                                     ddof: int = 1,
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute eigenvalues and eigenvectors of LDA Matrix.
 
@@ -108,6 +109,9 @@ class MFEStatistical:
                 data.
 
             y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+
+            ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
+                trix calculated during LDA.
 
             **kwargs: additional arguments. May have previously precomputed be-
                 fore this method from other precomputed methods, so they can
@@ -142,7 +146,7 @@ class MFEStatistical:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
             eig_vals, eig_vecs = MFEStatistical._linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs)
+                N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
 
             _, num_attr = N.shape
 
@@ -162,6 +166,7 @@ class MFEStatistical:
     @classmethod
     def precompute_statistical_cor_cov(cls,
                                        N: t.Optional[np.ndarray] = None,
+                                       ddof: int = 1,
                                        **kwargs) -> t.Dict[str, t.Any]:
         """Precomputes the correlation and covariance matrix of numerical data.
 
@@ -171,6 +176,9 @@ class MFEStatistical:
         Args:
             N (:obj:`np.ndarray`, optional): numerical attributes from fitted
                 data.
+
+            ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
+                trix.
 
             **kwargs: additional arguments. May have previously precomputed be-
                 fore this method from other precomputed methods, so they can
@@ -191,7 +199,7 @@ class MFEStatistical:
             N = N.astype(float)
 
             if "cov_mat" not in kwargs:
-                precomp_vals["cov_mat"] = np.cov(N, rowvar=False)
+                precomp_vals["cov_mat"] = np.cov(N, rowvar=False, ddof=ddof)
 
             if "abs_corr_mat" not in kwargs:
                 abs_corr_mat = abs(np.corrcoef(N, rowvar=False))
@@ -209,6 +217,7 @@ class MFEStatistical:
             cls,
             N: np.ndarray,
             y: np.ndarray,
+            ddof: int = 1,
             classes: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> t.Tuple[np.ndarray, np.ndarray]:
@@ -221,6 +230,9 @@ class MFEStatistical:
         this matrix.
 
         Args:
+            ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
+                trix calculated during LDA.
+
             classes (:obj:`np.ndarray`, optional): distinct classes of ``y``.
 
             class_freqs (:obj:`np.ndarray`, optional): absolute class frequen-
@@ -232,11 +244,14 @@ class MFEStatistical:
         """
 
         def compute_scatter_within(
-                N: np.ndarray, y: np.ndarray,
-                class_val_freq: t.Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+                N: np.ndarray,
+                y: np.ndarray,
+                class_val_freq: t.Tuple[np.ndarray, np.ndarray],
+                ddof: int = 1) -> np.ndarray:
             """Compute Scatter Within matrix. Check doc above for more info."""
             scatter_within = np.array(
-                [(cl_frq - 1.0) * np.cov(N[y == cl_val, :], rowvar=False)
+                [(cl_frq - 1.0) * np.cov(
+                    N[y == cl_val, :], rowvar=False, ddof=ddof)
                  for cl_val, cl_frq in zip(*class_val_freq)]).sum(axis=0)
 
             return scatter_within
@@ -267,7 +282,8 @@ class MFEStatistical:
 
         N = N.astype(float)
 
-        scatter_within = compute_scatter_within(N, y, class_val_freq)
+        scatter_within = compute_scatter_within(
+            N, y, class_val_freq, ddof=ddof)
         scatter_between = compute_scatter_between(N, y, class_val_freq)
 
         try:
@@ -371,6 +387,7 @@ class MFEStatistical:
                    N: np.ndarray,
                    y: np.ndarray,
                    epsilon: float = 1.0e-10,
+                   ddof: int = 1,
                    eig_vals: t.Optional[np.ndarray] = None,
                    classes: t.Optional[np.ndarray] = None,
                    class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
@@ -399,6 +416,9 @@ class MFEStatistical:
             nates of all instances in the dataset.
 
         Args:
+            ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
+                trix calculated during LDA.
+
             epsilon (:obj:`float`, optional): a tiny value to prevent di-
                 vision by zero.
 
@@ -412,7 +432,7 @@ class MFEStatistical:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
             eig_vals, _ = MFEStatistical._linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs)
+                N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
 
             _, num_attr = N.shape
 
@@ -492,18 +512,23 @@ class MFEStatistical:
         return abs(inf_triang_vals)
 
     @classmethod
-    def ft_cov(cls, N: np.ndarray,
+    def ft_cov(cls,
+               N: np.ndarray,
+               ddof: int = 1,
                cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """The absolute value of the covariance of distinct column pairs.
 
         Args:
+            ddof (:obj:`int`, optional): degrees of freedom for covariance ma-
+                trix.
+
             cov_mat (:obj:`np.ndarray`, optional): covariance matrix of ``N``.
                 Argument meant to exploit precomputations. Note that this ar-
                 gument value is not the same as this method return value, as
                 it only returns the lower-triangle values from ``cov_mat``.
         """
         if cov_mat is None:
-            cov_mat = np.cov(N, rowvar=False)
+            cov_mat = np.cov(N, rowvar=False, ddof=ddof)
 
         res_num_rows, _ = cov_mat.shape
 
@@ -541,15 +566,19 @@ class MFEStatistical:
     @classmethod
     def ft_eigenvalues(cls,
                        N: np.ndarray,
+                       ddof: int = 1,
                        cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Returns the eigenvalues of ``N`` covariance matrix.
 
         Args:
+            ddof (:obj:`int`, optional): degrees of freedom for covariance ma-
+                trix.
+
             cov_mat (:obj:`np.ndarray`, optional): covariance matrix of ``N``.
                 Argument meant to exploit precomputations.
         """
         if cov_mat is None:
-            cov_mat = np.cov(N, rowvar=False)
+            cov_mat = np.cov(N, rowvar=False, ddof=ddof)
 
         try:
             eigvals = np.linalg.eigvals(cov_mat)
@@ -902,6 +931,7 @@ class MFEStatistical:
                     N: np.ndarray,
                     y: np.ndarray,
                     epsilon: float = 1.0e-8,
+                    ddof: int = 1,
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Perform a statistical test for homogeneity of covariances.
@@ -910,6 +940,9 @@ class MFEStatistical:
             epsilon (:obj:`float`, optional): a tiny value to prevent division
                 by zero.
 
+            ddof (:obj:`int`, optional): degrees of freedom for covariance ma-
+                trix, calculated during this test.
+
             classes (:obj:`np.ndarray`, optional): all distinct classes in tar-
                 get attribute ``y``. Used to exploit precomputations.
 
@@ -917,31 +950,51 @@ class MFEStatistical:
                 each distinct class in target attribute ``y`` or ``classes``.
                 If ``classes`` is given, then this argument must be paired with
                 it by index.
+
+        Notes:
+            For details about how this test is applied, check out `Rivolli
+            et al.`_ (pag. 32).
+
+        References:
+            .. _Rivolli et al.:
+                "Towards Reproducible Empirical Research in Meta-Learning,"
+                Rivolli et al. URL: https://arxiv.org/abs/1808.10406
         """
-        num_inst, num_col = N.shape
 
-        if classes is None or class_freqs is None:
-            classes, class_freqs = np.unique(y, return_counts=True)
+        def calc_sample_cov_mat(N, y, epsilon, ddof):
+            """Calculate the Sample Covariance Matrix for each class."""
+            sample_cov_matrices = np.array([
+                np.cov(N[y == cl, :] + epsilon, rowvar=False, ddof=ddof)
+                for cl in classes
+            ])
 
-        num_classes = classes.size
+            return np.flip(np.flip(sample_cov_matrices, 0), 1)
 
-        sample_cov_matrices = np.array(
-            [np.cov(N[y == cl, :], rowvar=False) for cl in classes])
+        def calc_pooled_cov_mat(sample_cov_matrices: np.ndarray,
+                                vec_weight: np.ndarray, num_inst: int,
+                                num_classes: int) -> np.ndarray:
+            """Calculate the Pooled Covariance Matrix."""
+            pooled_cov_mat = np.array([
+                weight * S_i
+                for weight, S_i in zip(vec_weight, sample_cov_matrices)
+            ]).sum(axis=0) / (num_inst - num_classes)
 
-        vec_weight = class_freqs - 1.0 + epsilon
+            return pooled_cov_mat
 
-        pooled_cov_mat = np.array([
-            weight * S_i
-            for weight, S_i in zip(vec_weight, sample_cov_matrices)
-        ]).sum(axis=0) / (num_inst - num_classes)
+        def calc_gamma_factor(num_col, num_classes, num_inst, epsilon):
+            """Calculate the gamma factor which adjust the output."""
+            gamma = 1.0 - (
+                (2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
+                (epsilon + 6.0 * (num_col + 1.0) *
+                 (num_classes - 1.0))) * (sum(1.0 / vec_weight) - 1.0 /
+                                          (epsilon + num_inst - num_classes))
+            return gamma
 
-        gamma = 1.0 - (
-            (2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
-            (epsilon + 6.0 * (num_col + 1.0) *
-             (num_classes - 1.0))) * (sum(1.0 / vec_weight) - 1.0 /
-                                      (epsilon + num_inst - num_classes))
-
-        try:
+        def calc_m_factor(sample_cov_matrices: np.ndarray,
+                          pooled_cov_mat: np.ndarray, num_inst: int,
+                          num_classes: int, gamma: float,
+                          vec_weight: np.ndarray) -> float:
+            """Calculate the M factor."""
             vec_logdet = [
                 np.math.log(epsilon + np.linalg.det(S_i))
                 for S_i in sample_cov_matrices
@@ -950,6 +1003,28 @@ class MFEStatistical:
             m_factor = (gamma * ((num_inst - num_classes) * np.math.log(
                 np.linalg.det(pooled_cov_mat)) - np.dot(
                     vec_weight, vec_logdet)))
+
+            return m_factor
+
+        num_inst, num_col = N.shape
+
+        if classes is None or class_freqs is None:
+            classes, class_freqs = np.unique(y, return_counts=True)
+
+        num_classes = classes.size
+
+        sample_cov_matrices = calc_sample_cov_mat(N, y, epsilon, ddof)
+
+        vec_weight = class_freqs - 1.0 + epsilon
+
+        pooled_cov_mat = calc_pooled_cov_mat(sample_cov_matrices, vec_weight,
+                                             num_inst, num_classes)
+
+        gamma = calc_gamma_factor(num_col, num_classes, num_inst, epsilon)
+
+        try:
+            m_factor = calc_m_factor(sample_cov_matrices, pooled_cov_mat,
+                                     num_inst, num_classes, gamma, vec_weight)
 
         except np.linalg.LinAlgError:
             return np.nan
@@ -1001,32 +1076,32 @@ class MFEStatistical:
 
     @classmethod
     def ft_sparsity(cls,
-                    N: np.ndarray,
+                    X: np.ndarray,
                     normalize: bool = True,
                     epsilon: float = 1.0e-8) -> np.ndarray:
         """Compute (possibly normalized) sparsity metric for each attribute.
 
-        Sparsity ``S`` of a vector ``x`` of numeric values is defined as
+        Sparsity ``S`` of a vector ``v`` of numeric values is defined as
 
-            S(x) = (1.0 / (n - 1.0)) * ((n / phi(x)) - 1.0),
+            S(v) = (1.0 / (n - 1.0)) * ((n / phi(v)) - 1.0),
 
         where
-            - ``n`` is the number of instances in dataset ``N``.
-            - ``phi(x)`` is the number of distinct values in ``x``.
+            - ``n`` is the number of instances in dataset ``X``.
+            - ``phi(v)`` is the number of distinct values in ``v``.
 
         Args:
             normalize (:obj:`bool`, optional): if True, then the output will be
-                S(x) as shown above. Otherwise, the output is not be multiplied
+                S(v) as shown above. Otherwise, the output is not be multiplied
                 by the ``(1.0 / (n - 1.0))`` factor (i.e. new output is defined
-                as S'(x) = ((n / phi(x)) - 1.0)).
+                as S'(v) = ((n / phi(v)) - 1.0)).
 
             epsilon (:obj:`float`, optional): a small value to prevent division
                 by zero.
         """
 
-        ans = np.array([attr.size / np.unique(attr).size for attr in N.T])
+        ans = np.array([attr.size / np.unique(attr).size for attr in X.T])
 
-        num_inst, _ = N.shape
+        num_inst, _ = X.shape
 
         norm_factor = 1.0
         if normalize:
@@ -1068,6 +1143,7 @@ class MFEStatistical:
     def ft_w_lambda(cls,
                     N: np.ndarray,
                     y: np.ndarray,
+                    ddof: int = 1,
                     eig_vals: t.Optional[np.ndarray] = None,
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
@@ -1083,6 +1159,9 @@ class MFEStatistical:
         on about this value.
 
         Args:
+            ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
+                trix calculated during LDA.
+
             eig_vals (:obj:`np.ndarray`, optional): eigenvalues of LDA matrix.
                 This argument is used to exploit precomputations.
 
@@ -1099,7 +1178,7 @@ class MFEStatistical:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
             eig_vals, _ = MFEStatistical._linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs)
+                N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
 
             _, num_attr = N.shape
 

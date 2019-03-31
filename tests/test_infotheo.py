@@ -18,21 +18,21 @@ class TestInfoTheo():
             # Mixed data
             ###################
             (0, 'attr_conc', [2.098425e-01, 2.139363e-01], False),
-            # (0, 'attr_ent', [1.953155e+00, 4.258227e-01], False),
-            # (0, 'class_conc', [7.803121e-03, 1.075977e-02], False),
+            (0, 'attr_ent', [1.953155e+00, 4.258227e-01], False),
+            (0, 'class_conc', [7.803121e-03, 1.075977e-02], False),
             (0, 'class_ent', 1, False),
-            # (0, 'eq_num_attr', 8.894722e+01, False),
-            # (0, 'joint_ent', [2.941912e+00, 4.388859e-01], False),
-            # (0, 'mut_inf', [1.124262e-02, 1.548654e-02], False),
-            # (0, 'ns_ratio', 1.727277e+02, False),
+            (0, 'eq_num_attr', 8.894722e+01, False),
+            (0, 'joint_ent', [2.941912e+00, 4.388859e-01], False),
+            (0, 'mut_inf', [1.124262e-02, 1.548654e-02], False),
+            (0, 'ns_ratio', 1.727277e+02, False),
             (0, 'attr_conc', [2.098425e-01, 2.139363e-01], True),
-            # (0, 'attr_ent', [1.953155e+00, 4.258227e-01], True),
-            # (0, 'class_conc', [7.803121e-03, 1.075977e-02], True),
+            (0, 'attr_ent', [1.953155e+00, 4.258227e-01], True),
+            (0, 'class_conc', [7.803121e-03, 1.075977e-02], True),
             (0, 'class_ent', 1, True),
-            # (0, 'eq_num_attr', 8.894722e+01, True),
-            # (0, 'joint_ent', [2.941912e+00, 4.388859e-01], True),
-            # (0, 'mut_inf', [1.124262e-02, 1.548654e-02], True),
-            # (0, 'ns_ratio', 1.727277e+02, True),
+            (0, 'eq_num_attr', 8.894722e+01, True),
+            (0, 'joint_ent', [2.941912e+00, 4.388859e-01], True),
+            (0, 'mut_inf', [1.124262e-02, 1.548654e-02], True),
+            (0, 'ns_ratio', 1.727277e+02, True),
             ###################
             # Categorical data
             ###################
