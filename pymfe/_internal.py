@@ -1165,8 +1165,8 @@ def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
 
 def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
     """Discretize a 1-D numeric array into an equal-frequency histogram."""
-    perc_interval = int(100.0 / num_bins)
-    perc_range = range(perc_interval, 100, perc_interval)
+    perc_interval = 100.0 / num_bins
+    perc_range = np.arange(perc_interval, 100, perc_interval)
     hist_divs = np.percentile(data, perc_range)
 
     if hist_divs.size == 0:
@@ -1287,7 +1287,7 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
         "balanced-accuracy": scoring.balanced_accuracy,
         "f1": scoring.f1,
         "kappa": scoring.kappa,
-        "auc": scoring.auc
+        "auc": scoring.auc,
     }  # type: t.Dict[str, t.Callable[[np.ndarray, np.ndarray], float]]
 
     if score is not None and not isinstance(score, str):
