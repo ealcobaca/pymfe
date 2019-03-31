@@ -116,7 +116,7 @@ class MFEGeneral:
     def ft_freq_class(cls,
                       y: np.ndarray,
                       class_freqs: t.Optional[np.ndarray] = None
-                      ) -> t.Union[np.ndarray, np.float]:
+                      ) -> np.ndarray:
         """Returns an array of the relative frequency of each distinct class.
 
         Args:
@@ -124,7 +124,7 @@ class MFEGeneral:
                 not relative) frequency of each class in data.
         """
         if y.size == 0:
-            return np.nan
+            return np.array([np.nan])
 
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
