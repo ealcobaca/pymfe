@@ -902,6 +902,7 @@ class MFEStatistical:
                     N: np.ndarray,
                     y: np.ndarray,
                     epsilon: float = 1.0e-8,
+                    ddof: int = 1,
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Perform a statistical test for homogeneity of covariances.
@@ -917,31 +918,56 @@ class MFEStatistical:
                 each distinct class in target attribute ``y`` or ``classes``.
                 If ``classes`` is given, then this argument must be paired with
                 it by index.
+
+        Notes:
+            For details about how this test is applied, check out `Rivolli
+            et al.`_ (pag. 32).
+
+        References:
+            .. _Rivolli et al.:
+                "Towards Reproducible Empirical Research in Meta-Learning,"
+                Rivolli et al. URL: https://arxiv.org/abs/1808.10406
         """
-        num_inst, num_col = N.shape
+        def calc_sample_cov_mat(N, y, epsilon, ddof):
+            """Calculate the Sample Covariance Matrix for each class."""
+            sample_cov_matrices = np.array(
+                [np.cov(N[y == cl, :] + epsilon,
+                 rowvar=False,
+                 ddof=ddof) for cl in classes])
 
-        if classes is None or class_freqs is None:
-            classes, class_freqs = np.unique(y, return_counts=True)
+            return np.flip(np.flip(sample_cov_matrices, 0), 1)
 
-        num_classes = classes.size
+        def calc_pooled_cov_mat(
+                sample_cov_matrices:
+                np.ndarray, vec_weight:
+                np.ndarray,
+                num_inst: int,
+                num_classes: int) -> np.ndarray:
+            """Calculate the Pooled Covariance Matrix."""
+            pooled_cov_mat = np.array([
+                weight * S_i
+                for weight, S_i in zip(vec_weight, sample_cov_matrices)
+            ]).sum(axis=0) / (num_inst - num_classes)
 
-        sample_cov_matrices = np.array(
-            [np.cov(N[y == cl, :], rowvar=False) for cl in classes])
+            return pooled_cov_mat
 
-        vec_weight = class_freqs - 1.0 + epsilon
+        def calc_gamma_factor(num_col, num_classes, num_inst, epsilon):
+            """Calculate the gamma factor which adjust the output."""
+            gamma = 1.0 - (
+                (2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
+                (epsilon + 6.0 * (num_col + 1.0) *
+                 (num_classes - 1.0))) * (sum(1.0 / vec_weight) - 1.0 /
+                                          (epsilon + num_inst - num_classes))
+            return gamma
 
-        pooled_cov_mat = np.array([
-            weight * S_i
-            for weight, S_i in zip(vec_weight, sample_cov_matrices)
-        ]).sum(axis=0) / (num_inst - num_classes)
-
-        gamma = 1.0 - (
-            (2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
-            (epsilon + 6.0 * (num_col + 1.0) *
-             (num_classes - 1.0))) * (sum(1.0 / vec_weight) - 1.0 /
-                                      (epsilon + num_inst - num_classes))
-
-        try:
+        def calc_m_factor(
+                sample_cov_matrices: np.ndarray,
+                pooled_cov_mat: np.ndarray,
+                num_inst: int,
+                num_classes: int,
+                gamma: float,
+                vec_weight: np.ndarray) -> float:
+            """Calculate the M factor."""
             vec_logdet = [
                 np.math.log(epsilon + np.linalg.det(S_i))
                 for S_i in sample_cov_matrices
@@ -950,6 +976,36 @@ class MFEStatistical:
             m_factor = (gamma * ((num_inst - num_classes) * np.math.log(
                 np.linalg.det(pooled_cov_mat)) - np.dot(
                     vec_weight, vec_logdet)))
+
+            return m_factor
+
+        num_inst, num_col = N.shape
+
+        if classes is None or class_freqs is None:
+            classes, class_freqs = np.unique(y, return_counts=True)
+
+        num_classes = classes.size
+
+        sample_cov_matrices = calc_sample_cov_mat(N, y, epsilon, ddof)
+
+        vec_weight = class_freqs - 1.0 + epsilon
+
+        pooled_cov_mat = calc_pooled_cov_mat(
+            sample_cov_matrices,
+            vec_weight,
+            num_inst,
+            num_classes)
+
+        gamma = calc_gamma_factor(num_col, num_classes, num_inst, epsilon)
+
+        try:
+            m_factor = calc_m_factor(
+                sample_cov_matrices,
+                pooled_cov_mat,
+                num_inst,
+                num_classes,
+                gamma,
+                vec_weight)
 
         except np.linalg.LinAlgError:
             return np.nan
@@ -1001,32 +1057,32 @@ class MFEStatistical:
 
     @classmethod
     def ft_sparsity(cls,
-                    N: np.ndarray,
+                    X: np.ndarray,
                     normalize: bool = True,
                     epsilon: float = 1.0e-8) -> np.ndarray:
         """Compute (possibly normalized) sparsity metric for each attribute.
 
-        Sparsity ``S`` of a vector ``x`` of numeric values is defined as
+        Sparsity ``S`` of a vector ``v`` of numeric values is defined as
 
-            S(x) = (1.0 / (n - 1.0)) * ((n / phi(x)) - 1.0),
+            S(v) = (1.0 / (n - 1.0)) * ((n / phi(v)) - 1.0),
 
         where
-            - ``n`` is the number of instances in dataset ``N``.
-            - ``phi(x)`` is the number of distinct values in ``x``.
+            - ``n`` is the number of instances in dataset ``X``.
+            - ``phi(v)`` is the number of distinct values in ``v``.
 
         Args:
             normalize (:obj:`bool`, optional): if True, then the output will be
-                S(x) as shown above. Otherwise, the output is not be multiplied
+                S(v) as shown above. Otherwise, the output is not be multiplied
                 by the ``(1.0 / (n - 1.0))`` factor (i.e. new output is defined
-                as S'(x) = ((n / phi(x)) - 1.0)).
+                as S'(v) = ((n / phi(v)) - 1.0)).
 
             epsilon (:obj:`float`, optional): a small value to prevent division
                 by zero.
         """
 
-        ans = np.array([attr.size / np.unique(attr).size for attr in N.T])
+        ans = np.array([attr.size / np.unique(attr).size for attr in X.T])
 
-        num_inst, _ = N.shape
+        num_inst, _ = X.shape
 
         norm_factor = 1.0
         if normalize:
