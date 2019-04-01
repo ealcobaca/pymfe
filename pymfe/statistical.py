@@ -831,11 +831,11 @@ class MFEStatistical:
         )
 
         if method not in accepted_tests:
-            raise ValueError("Unknown method {0}. Select one between"
+            raise ValueError("Unknown method {0}. Select one between "
                              "{1}".format(method, accepted_tests))
 
         if failure not in ("hard", "soft"):
-            raise ValueError('"failure" argument must be either "soft"'
+            raise ValueError('"failure" argument must be either "soft" '
                              'or "hard" (got "{}").'.format(failure))
 
         if max_samples <= 0:
