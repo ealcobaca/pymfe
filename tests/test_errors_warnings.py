@@ -189,6 +189,36 @@ class TestErrorsWarnings:
             MFE(features=features)
 
     @pytest.mark.parametrize(
+        "score",
+        [
+            None,
+            [],
+            "",
+            "invalid",
+            "accuracyaccuracy",
+        ])
+    def test_error_invalid_score(self, score):
+        with pytest.raises(ValueError):
+            MFE(score=score)
+
+    @pytest.mark.parametrize(
+        "rescale",
+        [
+            "",
+            "invalid",
+            "minmax",
+        ])
+    def test_error_invalid_rescale_1(self, rescale):
+        with pytest.raises(ValueError):
+            X, y = load_xy(0)
+            MFE().fit(X=X.values, y=y.values, rescale=rescale)
+
+    def test_error_invalid_rescale_2(self):
+        with pytest.raises(TypeError):
+            X, y = load_xy(0)
+            MFE().fit(X=X.values, y=y.values, rescale=[])
+
+    @pytest.mark.parametrize(
         "features, groups",
         [
             ("invalid", "all"),
