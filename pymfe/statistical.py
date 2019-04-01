@@ -805,7 +805,10 @@ class MFEStatistical:
 
             max_samples (:obj:`int`, optional): max samples used while perfor-
                 ming the normality tests. Shapiro-Wilks test p-value may not
-                be accurate when sample size is higher than 5000.
+                be accurate when sample size is higher than 5000. Note that
+                the instances are NOT shuffled before doing this cutoff. This
+                means that the very first ``max_samples`` instances of the da-
+                taset ``N`` will be considered in the statistical tests.
 
         Returns:
             int: the number of normally distributed attributes based on the
