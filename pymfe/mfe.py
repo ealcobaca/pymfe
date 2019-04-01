@@ -7,7 +7,6 @@ Todo:
 """
 import typing as t
 import collections
-import copy
 
 import numpy as np
 
@@ -24,9 +23,6 @@ class MFE:
         X (:obj:`Sequence`): independent attributes of the dataset.
 
         y (:obj:`Sequence`): target attributes of the dataset.
-
-        splits (:obj:`Iterable`): Iterable/generator for K-Fold Cross
-            Validation train and test indexes splits.
 
         groups (:obj:`tuple` of :obj:`str`): tuple object containing fitted
             metafeature groups loaded in the model at instantiation.
@@ -183,8 +179,6 @@ class MFE:
 
         self.X = None  # type: t.Optional[np.ndarray]
         self.y = None  # type: t.Optional[np.ndarray]
-
-        self.splits = None  # type: t.Optional[t.Iterable[int]]
 
         self._custom_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
         """User-independent arguments for ft. methods (e.g. ``X`` and ``y``)"""
@@ -624,7 +618,6 @@ class MFE:
             self,
             X: t.Sequence,
             y: t.Sequence,
-            splits: t.Optional[t.Iterable[int]] = None,
             transform_num: bool = True,
             transform_cat: bool = True,
             rescale: t.Optional[str] = None,
@@ -643,11 +636,6 @@ class MFE:
 
             y (:obj:`Sequence`): target attributes of the dataset, assuming
                 that it is a supervised task.
-
-            splits (:obj:`Iterable`, optional): iterable which contains k-fold
-                cross validation index splits to use mainly in landmarking me-
-                tafeatures. If not given, then the extraction of every metafe-
-                ature is done a single time, which may give poor results.
 
             transform_num (:obj:`bool`, optional): if True, numeric attributes
                 are discretized using equal-frequency histogram technique to
@@ -734,17 +722,10 @@ class MFE:
             de such as ``model = MFE(...).fit(...)`` or inline fit-and-extrac-
             tion ``result = MFE(...).fit(...).extract(...)``.
         """
-        if (splits is not None
-                and (not isinstance(splits, collections.Iterable)
-                     or isinstance(splits, str))):
-            raise TypeError('"splits" argument must be iterable.')
-
         self.X, self.y = _internal.check_data(X, y)
 
         rescale = _internal.process_generic_option(
             value=rescale, group_name="rescale", allow_none=True)
-
-        self.splits = copy.deepcopy(splits)
 
         self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
 
@@ -760,7 +741,6 @@ class MFE:
             "N": data_num,
             "C": data_cat,
             "y": self.y,
-            "splits": self.splits,
             "folds": self.folds,
             "score": self.score,
             "random_state": self.random_state,
