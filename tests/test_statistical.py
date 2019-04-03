@@ -196,3 +196,75 @@ class TestStatistical():
         else:
             assert np.allclose(value, exp_value, atol=0.001,
                                rtol=0.05, equal_nan=True)
+
+    @pytest.mark.parametrize(
+        "dt_id, exp_value, precompute, test, failure",
+        [
+            (0, 0, False, "shapiro-wilk", "soft"),
+            (1, 0, False, "shapiro-wilk", "soft"),
+            (2, 1, False, "shapiro-wilk", "soft"),
+            (0, 0, True, "shapiro-wilk", "soft"),
+            (1, 0, True, "shapiro-wilk", "soft"),
+            (2, 1, True, "shapiro-wilk", "soft"),
+            (0, 0, False, "dagostino-pearson", "soft"),
+            (1, 0, False, "dagostino-pearson", "soft"),
+            (2, 2, False, "dagostino-pearson", "soft"),
+            (0, 0, True, "dagostino-pearson", "soft"),
+            (1, 0, True, "dagostino-pearson", "soft"),
+            (2, 2, True, "dagostino-pearson", "soft"),
+            (0, 0, False, "anderson-darling", "soft"),
+            (1, 0, False, "anderson-darling", "soft"),
+            (2, 2, False, "anderson-darling", "soft"),
+            (0, 0, True, "anderson-darling", "soft"),
+            (1, 0, True, "anderson-darling", "soft"),
+            (2, 2, True, "anderson-darling", "soft"),
+            (0, 0, False, "all", "soft"),
+            (1, 0, False, "all", "soft"),
+            (2, 2, False, "all", "soft"),
+            (0, 0, True, "all", "soft"),
+            (1, 0, True, "all", "soft"),
+            (2, 2, True, "all", "soft"),
+            (0, 0, False, "all", "hard"),
+            (1, 0, False, "all", "hard"),
+            (2, 1, False, "all", "hard"),
+            (0, 0, True, "all", "hard"),
+            (1, 0, True, "all", "hard"),
+            (2, 1, True, "all", "hard"),
+        ])
+    def test_normality_tests(self,
+                             dt_id,
+                             exp_value,
+                             precompute,
+                             test,
+                             failure):
+        """Test normality tests included in ``nr_norm`` statistical method.
+        """
+        precomp_group = "statistical" if precompute else None
+        X, y = load_xy(dt_id)
+        mfe = MFE(
+            groups=["statistical"], features="nr_norm").fit(
+                X.values, y.values, precomp_groups=precomp_group)
+        value = mfe.extract(nr_norm={"failure": failure, "method": test})[1]
+
+        if exp_value is np.nan:
+            assert value[0] is exp_value
+
+        else:
+            assert np.allclose(value, exp_value, atol=0.001,
+                               rtol=0.05, equal_nan=True)
+
+    @pytest.mark.parametrize(
+        "test, failure",
+        [
+            ("invalid", "soft"),
+            ("anderson-darling", "invalid"),
+            ("invalid", "invalid"),
+            (None, "soft"),
+            ("all", None),
+        ])
+    def test_error_normality_tests(self, test, failure):
+        with pytest.warns(RuntimeWarning):
+            X, y = load_xy(0)
+            mfe = MFE(groups=["statistical"], features="nr_norm")
+            mfe.fit(X.values, y.values, precomp_groups=None)
+            mfe.extract(nr_norm={"failure": failure, "method": test})
