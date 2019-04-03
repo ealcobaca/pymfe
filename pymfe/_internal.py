@@ -1263,7 +1263,7 @@ def rescale_data(data: np.ndarray,
 
     scaler_model = _RESCALE_SCALERS.get(option, "min-max")(**args)
 
-    return scaler_model.fit_transform(data)
+    return scaler_model.fit_transform(data.astype(float))
 
 
 def check_score(score: str, groups: t.Tuple[str, ...]):
