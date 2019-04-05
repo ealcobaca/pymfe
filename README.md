@@ -75,6 +75,20 @@ ft = mfe.extract()
 print(ft)
 ```
 
+It is possible to pass custom arguments to every metafeature using MFE `extract` method kwargs. The keywords must be the target metafeature name, and the value must be a dictionary in the format {`argument`: `value`}, i.e., each key in the dictionary is a target argument with its respective value. In the example below, the extraction of metafeatures `min` and `max`  happens as usual, but the metafeatures `sd,` `nr_norm` and `nr_cor_attr` will receive user custom argument values, which will interfere in each metafeature result.
+
+```
+# Extract measures with custom user arguments
+mfe = MFE(features=["sd", "nr_norm", "nr_cor_attr", "min", "max"])
+mfe.fit(X, y)
+ft = mfe.extract(
+    sd={"ddof": 0},
+    nr_norm={"method": "all", "failure": "hard", "threshold": 0.025},
+    nr_cor_attr={"threshold": 0.6},
+)
+print(ft)
+```
+
 ## Developer notes
 
 In the current version, the meta-feature extractor supports only classification problems. The authors plan to extend the package to add clustering and regression measures and to support MtL evaluation measures. For more specific information on how to extract each group of measures, please refer to the functions documentation page and the examples contained therein. For a general overview of the `pymfe` package, please have a look at the associated documentation.
