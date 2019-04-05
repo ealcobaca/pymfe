@@ -20,6 +20,7 @@ setuptools.setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     url="https://github.com/ealcobaca/pymfe",
+    download_url="https://github.com/ealcobaca/pymfe/releases",
     packages=setuptools.find_packages(),
     install_requires=install_reqs,
     classifiers=[
