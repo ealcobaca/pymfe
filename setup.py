@@ -13,7 +13,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pymfe",
-    version="0.0.1",
+    version="v0.0.1",
     author="Edesio Alcobaça, Felipe Alves Siqueira, Luis Paulo Faina Garcia",
     author_email="edesio@usp.br, felipe.siqueira@usp.br, lpgarcia@icmc.usp.br",
     description="Meta-feature Extractor",
