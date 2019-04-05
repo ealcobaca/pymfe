@@ -77,7 +77,7 @@ print(ft)
 
 It is possible to pass custom arguments to every metafeature using MFE `extract` method kwargs. The keywords must be the target metafeature name, and the value must be a dictionary in the format {`argument`: `value`}, i.e., each key in the dictionary is a target argument with its respective value. In the example below, the extraction of metafeatures `min` and `max`  happens as usual, but the metafeatures `sd,` `nr_norm` and `nr_cor_attr` will receive user custom argument values, which will interfere in each metafeature result.
 
-```
+```python
 # Extract measures with custom user arguments
 mfe = MFE(features=["sd", "nr_norm", "nr_cor_attr", "min", "max"])
 mfe.fit(X, y)
