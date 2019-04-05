@@ -3,11 +3,6 @@ import setuptools
 import os
 
 
-my_path = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(my_path, 'requirements.txt')) as fp:
-    install_reqs = [r.rstrip() for r in fp.readlines()]
-    print(install_reqs)
-
 with open("README.md", "r") as fh:
     LONG_DESCRIPTION = fh.read()
 
@@ -22,7 +17,7 @@ setuptools.setup(
     url="https://github.com/ealcobaca/pymfe",
     download_url="https://github.com/ealcobaca/pymfe/releases",
     packages=setuptools.find_packages(),
-    install_requires=install_reqs,
+    install_requires=["numpy", "scipy", "sklearn", "patsy", "pandas"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
