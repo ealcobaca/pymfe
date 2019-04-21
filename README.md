@@ -99,6 +99,4 @@ To cite `pymfe` in publications use:
 
 * Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406
 
-* Alcobaça, E., Siqueira, F., Rivolli, A., Garcia, L. P. F., Oliva, J. T. and de Carvalho, A. C. P. L. F. (2019). MFE: Extracting metafeatures in python and R.
-
 To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
