@@ -1,9 +1,4 @@
 """Main module for extracting metafeatures from datasets.
-
-Todo:
-    * Implement parallel computing.
-    * By-class feature extraction.
-    * Support for multiclass, regression and unsupervised tasks.
 """
 import typing as t
 import collections

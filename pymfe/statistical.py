@@ -1,13 +1,4 @@
 """A module dedicated to the extraction of Statistical Metafeatures.
-
-Notes:
-    For more information about the metafeatures implemented here,
-    check out `Rivolli et al.`_.
-
-References:
-    .. _Rivolli et al.:
-        "Towards Reproducible Empirical Research in Meta-Learning,"
-        Rivolli et al. URL: https://arxiv.org/abs/1808.10406
 """
 import typing as t
 
@@ -43,7 +34,7 @@ class MFEStatistical:
 
         3. It is assumed that the user can change any optional argument,
             without any previous verification for both type or value, via
-            **kwargs argument of ``extract`` method of MFE class.
+            kwargs argument of ``extract`` method of MFE class.
 
         4. The return value of all feature-extraction methods should be
             a single value or a generic Sequence (preferably an np.ndarray)
