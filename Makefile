@@ -2,7 +2,7 @@ all: clean code_check test
 
 clean:
 	find . -name "*.so" -o -name "*.pyc" -o -name "*.md5" -o -name "*.pyd" -o -name "*~" | xargs rm -f
-	rm -rf coverage
+	rm -rf .coverage.*
 	rm -rf dist
 	rm -rf build
 	rm -rf docs/_build
