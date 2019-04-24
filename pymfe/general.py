@@ -1,13 +1,4 @@
 """A module dedicated to the extraction of General Metafeatures.
-
-Notes:
-    For more information about the metafeatures implemented here,
-    check out `Rivolli et al.`_.
-
-References:
-    .. _Rivolli et al.:
-        "Towards Reproducible Empirical Research in Meta-Learning,"
-        Rivolli et al. URL: https://arxiv.org/abs/1808.10406
 """
 import typing as t
 import numpy as np
@@ -37,7 +28,7 @@ class MFEGeneral:
 
         3. The initial assumption is that the user can change any optional ar-
             gument, without any previous verification of argument value or its
-            type, via **kwargs argument of ``extract`` method of MFE class.
+            type, via kwargs argument of ``extract`` method of MFE class.
 
         4. The return value of all feature extraction methods should be a sin-
             gle value or a generic Sequence (preferably a :obj:`np.ndarray`)
