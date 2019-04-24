@@ -79,3 +79,6 @@ linkcode_resolve = make_linkcode_resolve('pymfe',
 
 print(linkcode_resolve('py', {'module': 'pymfe.mfe', 'fullname': 'MFE'}))
 
+
+# The master toctree document.
+master_doc = 'index'
