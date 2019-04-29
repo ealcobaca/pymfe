@@ -1,5 +1,5 @@
-formats:
-  - none
+formats: all
+
 requirements_file: requirements.txt
 
 # Build documentation in the docs/ directory with Sphinx
