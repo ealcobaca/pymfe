@@ -7,6 +7,7 @@ clean:
 	rm -rf build
 	rm -rf docs/_build
 	rm -rf docs/source/generated
+	rm -rf docs/source/auto_examples
 
 test:
 	rm -rf coverage .coverage
