@@ -2,7 +2,7 @@
 [![Build Status](https://travis-ci.org/ealcobaca/pymfe.svg?branch=master)](https://travis-ci.org/ealcobaca/pymfe)
 [![codecov](https://codecov.io/gh/ealcobaca/pymfe/branch/master/graph/badge.svg)](https://codecov.io/gh/ealcobaca/pymfe)
 [![Documentation Status](https://readthedocs.org/projects/pymfe/badge/?version=latest)](https://pymfe.readthedocs.io/en/latest/?badge=latest)
-[![PythonVersion](https://img.shields.io/pypi/pyversions/pymfe.svg)](https://img.shields.io/pypi/pyversions/pymfe)
+[![PythonVersion](https://img.shields.io/pypi/pyversions/pymfe.svg)](https://www.python.org/downloads/release/python-370/)
 [![Pypi](https://badge.fury.io/py/pymfe.svg)](https://badge.fury.io/py/pymfe)
 
 
