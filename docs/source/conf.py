@@ -15,7 +15,7 @@ import sphinx_rtd_theme
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../sphinxext'))
 from github_link import make_linkcode_resolve
-# import sphinx_gallery
+import sphinx_gallery
 
 
 # -- Project information -----------------------------------------------------
