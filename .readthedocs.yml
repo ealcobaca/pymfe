@@ -12,7 +12,7 @@ sphinx:
 # docs
 python:
   version: 3.7
-  pip_install:
+  install:
     - requirements: docs/requirements.txt
   extra_requirements:
     - tests
