@@ -78,5 +78,5 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     classifiers=CLASSIFIERS,
     install_requires=INSTALL_REQUIRES,
-    extras_requires=EXTRAS_REQUIRE,
+    extras_require=EXTRAS_REQUIRE,
 )
