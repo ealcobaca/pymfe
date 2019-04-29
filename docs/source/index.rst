@@ -25,7 +25,7 @@ Welcome to pymfe's documentation!
    :hidden:
    :caption: Tutorial - Examples
 
-   examples/index
+   auto_examples/index
 
 .. toctree::
    :maxdepth: 2
@@ -53,7 +53,7 @@ doctring. The API documents expected types and allowed features for
 all functions, and all parameters available for the meta-feature extraction.
 
 
-`Examples <examples/index.html>`_
+`Examples <auto_examples/index.html>`_
 --------------------------------------
 A set of examples illustrating the use of the different meta-features.
 

@@ -36,7 +36,8 @@ release = '0.0.2'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'sphinx.ext.linkcode'
+    'sphinx.ext.linkcode',
+    'sphinx_gallery.gen_gallery'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -82,3 +83,11 @@ print(linkcode_resolve('py', {'module': 'pymfe.mfe', 'fullname': 'MFE'}))
 
 # The master toctree document.
 master_doc = 'index'
+
+# sphinx gallery
+sphinx_gallery_conf = {
+     # path to your example scripts
+     'examples_dirs': 'examples',
+     # path where to save gallery generated examples
+     'gallery_dirs': 'auto_examples',
+}
