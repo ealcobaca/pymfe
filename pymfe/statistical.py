@@ -18,40 +18,41 @@ class MFEStatistical:
 
     All method signature follows the conventions and restrictions listed
     below:
-        1. For independent attribute data, ``X`` means ``every type of attribu-
-            te``, ``N`` means ``Numeric attributes only`` and ``C`` stands for
-            ``Categorical attributes only``. It is important to note that the
-            categorical attribute sets between ``X`` and ``C`` and the numeri-
-            cal attribute sets between ``X`` and ``N`` may differ due to data
-            transformations, performed while fitting data into MFE model, en-
-            abled by, respectively, ``transform_num`` and ``transform_cat``
-            arguments from ``fit`` (MFE method).
 
-        2. Only arguments in MFE ``_custom_args_ft`` attribute (set up inside
-            ``fit`` method) are allowed to be required method arguments. All
-            other arguments must be strictly optional (i.e., has a predefined
-            default value).
+    1. For independent attribute data, ``X`` means ``every type of attribute``,
+       ``N`` means ``Numeric attributes only`` and ``C`` stands for
+       ``Categorical attributes only``. It is important to note that the
+       categorical attribute sets between ``X`` and ``C`` and the numerical
+       attribute sets between ``X`` and ``N`` may differ due to data
+       transformations, performed while fitting data into MFE model,
+       enabled by, respectively, ``transform_num`` and ``transform_cat``
+       arguments from ``fit`` (MFE method).
 
-        3. It is assumed that the user can change any optional argument,
-            without any previous verification for both type or value, via
-            kwargs argument of ``extract`` method of MFE class.
+    2. Only arguments in MFE ``_custom_args_ft`` attribute (set up inside
+       ``fit`` method) are allowed to be required method arguments. All other
+       arguments must be strictly optional (i.e., has a predefined
+       default value).
 
-        4. The return value of all feature-extraction methods should be
-            a single value or a generic Sequence (preferably an np.ndarray)
-            type with numeric values.
+    3. It is assumed that the user can change any optional argument, without
+       any previous verification for both type or value, via kwargs argument of
+       ``extract`` method of MFE class.
 
-    There is another type of method adopted for automatic detection. It is ad-
-    opted the prefix ``precompute_`` for automatic detection of these methods.
-    These methods run while fitting some data into an MFE model automatically,
-    and their objective is to precompute some common value shared between more
-    than one feature extraction method. This strategy is a trade-off between
-    more system memory consumption and speeds up of feature extraction. Their
-    return value must always be a dictionary whose keys are possible extra ar-
-    guments for both feature extraction methods and other precomputation me-
-    thods. Note that there is a share of precomputed values between all valid
-    feature-extraction modules (e.g., ``class_freqs`` computed in module ``sta-
-    tistical`` can freely be used for any precomputation or feature extraction
-    method of module ``landmarking``).
+    4. The return value of all feature-extraction methods should be a single
+       value or a generic Sequence (preferably an np.ndarray)
+       type with numeric values.
+
+    There is another type of method adopted for automatic detection. It is
+    adopted the prefix ``precompute_`` for automatic detection of these
+    methods. These methods run while fitting some data into an MFE model
+    automatically, and their objective is to precompute some common value
+    shared between more than one feature extraction method. This strategy is a
+    trade-off between more system memory consumption and speeds up of feature
+    extraction. Their return value must always be a dictionary whose keys are
+    possible extra arguments for both feature extraction methods and other
+    precomputation methods. Note that there is a share of precomputed values
+    between all valid feature-extraction modules (e.g., ``class_freqs``
+    computed in module ``statistical`` can freely be used for any
+    precomputation or feature extraction method of module ``landmarking``).
     """
 
     @classmethod
@@ -64,8 +65,8 @@ class MFEStatistical:
             y (:obj:`np.ndarray`, optional): the target attribute from fitted
                 data.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
+            kwargs: additional arguments. May have previously precomputed
+                before this method from other precomputed methods, so they can
                 help speed up this precomputation.
 
         Return:
@@ -104,8 +105,8 @@ class MFEStatistical:
             ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
                 trix calculated during LDA.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
+            kwargs: additional arguments. May have previously precomputed
+                before this method from other precomputed methods, so they can
                 help speed up this precomputation.
 
         Return:
