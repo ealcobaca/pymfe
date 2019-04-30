@@ -1,4 +1,4 @@
-all: clean code_check test
+all: clean code_check test test-cov
 
 clean:
 	find . -name "*.so" -o -name "*.pyc" -o -name "*.md5" -o -name "*.pyd" -o -name "*~" | xargs rm -f
@@ -10,8 +10,11 @@ clean:
 	rm -rf docs/source/auto_examples
 
 test:
+	pytest tests/
+
+test-cov:
 	rm -rf coverage .coverage
-	pytest tests/ --showlocals -v --cov=pymfe/
+	pytest --cov=pymfe/ tests/
 
 code_check:
 	flake8 pymfe | grep -v __init__
