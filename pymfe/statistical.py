@@ -18,13 +18,13 @@ class MFEStatistical:
 
     All method signature follows the conventions and restrictions listed
     below:
-        1. For independent attribute data, ``X`` means ``every type of attribu-
-            te``, ``N`` means ``Numeric attributes only`` and ``C`` stands for
-            ``Categorical attributes only``. It is important to note that the
-            categorical attribute sets between ``X`` and ``C`` and the numeri-
-            cal attribute sets between ``X`` and ``N`` may differ due to data
-            transformations, performed while fitting data into MFE model, en-
-            abled by, respectively, ``transform_num`` and ``transform_cat``
+        1. For independent attribute data, ``X`` means ``every type of
+            attribute``, ``N`` means ``Numeric attributes only`` and ``C``
+            stands for ``Categorical attributes only``. It is important to note
+            that the categorical attribute sets between ``X`` and ``C`` and the
+            numerical attribute sets between ``X`` and ``N`` may differ due to
+            data transformations, performed while fitting data into MFE model,
+            enabled by, respectively, ``transform_num`` and ``transform_cat``
             arguments from ``fit`` (MFE method).
 
         2. Only arguments in MFE ``_custom_args_ft`` attribute (set up inside
@@ -40,18 +40,18 @@ class MFEStatistical:
             a single value or a generic Sequence (preferably an np.ndarray)
             type with numeric values.
 
-    There is another type of method adopted for automatic detection. It is ad-
-    opted the prefix ``precompute_`` for automatic detection of these methods.
-    These methods run while fitting some data into an MFE model automatically,
-    and their objective is to precompute some common value shared between more
-    than one feature extraction method. This strategy is a trade-off between
-    more system memory consumption and speeds up of feature extraction. Their
-    return value must always be a dictionary whose keys are possible extra ar-
-    guments for both feature extraction methods and other precomputation me-
-    thods. Note that there is a share of precomputed values between all valid
-    feature-extraction modules (e.g., ``class_freqs`` computed in module ``sta-
-    tistical`` can freely be used for any precomputation or feature extraction
-    method of module ``landmarking``).
+    There is another type of method adopted for automatic detection. It is
+    adopted the prefix ``precompute_`` for automatic detection of these
+    methods. These methods run while fitting some data into an MFE model
+    automatically, and their objective is to precompute some common value
+    shared between more than one feature extraction method. This strategy is a
+    trade-off between more system memory consumption and speeds up of feature
+    extraction. Their return value must always be a dictionary whose keys are
+    possible extra arguments for both feature extraction methods and other
+    precomputation methods. Note that there is a share of precomputed values
+    between all valid feature-extraction modules (e.g., ``class_freqs``
+    computed in module ``statistical`` can freely be used for any
+    precomputation or feature extraction method of module ``landmarking``).
     """
 
     @classmethod
@@ -64,9 +64,9 @@ class MFEStatistical:
             y (:obj:`np.ndarray`, optional): the target attribute from fitted
                 data.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+            kwargs: additional arguments. May have previously precomputed
+            before this method from other precomputed methods, so they can
+            help speed up this precomputation.
 
         Return:
             dict: with following precomputed items:
@@ -104,18 +104,18 @@ class MFEStatistical:
             ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
                 trix calculated during LDA.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
+            kwargs: additional arguments. May have previously precomputed
+                before this method from other precomputed methods, so they can
                 help speed up this precomputation.
 
         Return:
             dict: with following precomputed items:
 
-            - ``eig_vals`` (:obj:`np.ndarray`): array with filtered eigen-
-                values of Fisher's Linear Discriminant Analysis Matrix.
+            - ``eig_vals`` (:obj:`np.ndarray`): array with filtered
+                eigen-values of Fisher's Linear Discriminant Analysis Matrix.
 
-            - ``eig_vecs`` (:obj:`np.ndarray`): array with filtered eigen-
-                vectors of Fisher's Linear Discriminant Analysis Matrix.
+            - ``eig_vecs`` (:obj:`np.ndarray`): array with filtered
+                eigen-vectors of Fisher's Linear Discriminant Analysis Matrix.
 
             The following items are used by this method, so they must be
             precomputed too (and, therefore, are also in this return dict):
@@ -168,11 +168,11 @@ class MFEStatistical:
             N (:obj:`np.ndarray`, optional): numerical attributes from fitted
                 data.
 
-            ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
-                trix.
+            ddof (:obj:`int`, optional): degrees of freedom of covariance
+                matrix.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
+            kwargs: additional arguments. May have previously precomputed
+                before this method from other precomputed methods, so they can
                 help speed up this precomputation.
 
         Return:
@@ -221,13 +221,13 @@ class MFEStatistical:
         this matrix.
 
         Args:
-            ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
-                trix calculated during LDA.
+            ddof (:obj:`int`, optional): degrees of freedom of covariance
+                matrix calculated during LDA.
 
             classes (:obj:`np.ndarray`, optional): distinct classes of ``y``.
 
-            class_freqs (:obj:`np.ndarray`, optional): absolute class frequen-
-                cies of ``y``.
+            class_freqs (:obj:`np.ndarray`, optional): absolute class
+                frequencies of ``y``.
 
         Return:
             tuple(np.ndarray, np.ndarray): eigenvalues and eigenvectors (in
@@ -314,15 +314,15 @@ class MFEStatistical:
             eig_vecs (:obj:`np.ndarray`, optional): eigenvectors to filter
                 alongside eigenvalues.
 
-            filter_imaginary (:obj:`bool`, optional): if True, remove ima-
-                ginary valued eigenvalues and its correspondent eigenvec-
-                tors.
+            filter_imaginary (:obj:`bool`, optional): if True, remove
+                imaginary valued eigenvalues and its correspondent
+                eigenvectors.
 
             filter_less_relevant (:obj:`bool`, optional): if True, remove
                 eigenvalues smaller than ``epsilon``.
 
-            epsilon (:obj:`float`, optional): a tiny value used to determi-
-                ne ``less relevant`` eigenvalues.
+            epsilon (:obj:`float`, optional): a tiny value used to determine
+                ``less relevant`` eigenvalues.
         """
         max_valid_eig = min(num_attr, num_classes)
 
@@ -388,8 +388,8 @@ class MFEStatistical:
 
             p_i = sqrt(lda_eig_i / (1.0 + lda_eig_i))
 
-        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the ge-
-        neralized eigenvalue problem of Linear Discriminant Analysis Scatter
+        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the
+        generalized eigenvalue problem of Linear Discriminant Analysis Scatter
         Matrix S defined as:
 
             S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat),
@@ -398,20 +398,20 @@ class MFEStatistical:
             Scatter_Within_Mat = sum((N_c - 1.0) * Covariance(X_c)), ``N_c``
             is the number of instances of class c and X_c are the instances of
             class ``c``. Effectively, this is exactly just the summation of
-            all Covariance matrices between instances of the same class with-
-            out dividing then by the number of instances.
+            all Covariance matrices between instances of the same class without
+            dividing then by the number of instances.
 
             Scatter_Between_Mat = sum(N_c * (U_c - U) * (U_c - U)^T), `'N_c``
             is the number of instances of class c, U_c is the mean coordinates
-            of instances of class ``c``, and ``U`` is the mean value of coordi-
-            nates of all instances in the dataset.
+            of instances of class ``c``, and ``U`` is the mean value of
+            coordinates of all instances in the dataset.
 
         Args:
-            ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
-                trix calculated during LDA.
+            ddof (:obj:`int`, optional): degrees of freedom of covariance
+                matrix calculated during LDA.
 
-            epsilon (:obj:`float`, optional): a tiny value to prevent di-
-                vision by zero.
+            epsilon (:obj:`float`, optional): a tiny value to prevent
+                division by zero.
 
             eig_vals (:obj:`np.ndarray`, optional): eigenvalues of LDA Matrix
                 ``S``, defined above.
@@ -442,7 +442,8 @@ class MFEStatistical:
                    norm_ord: t.Union[int, float] = 2,
                    classes: t.Optional[np.ndarray] = None,
                    class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Computes the distance between minority and majority classes center of mass.
+        """Computes the distance between minority and majority classes center
+        of mass.
 
         The center of mass of a class is the average value of each attribute
         between instances of the same class.
@@ -452,8 +453,8 @@ class MFEStatistical:
 
         Args:
             norm_ord (:obj:`numeric`): Minkowski Distance parameter. Minkowski
-                Distance has the following popular cases for this argument va-
-                lue:
+                Distance has the following popular cases for this argument
+                value:
 
                 +-----------+---------------------------+
                 |norm_ord   | Distance name             |
@@ -510,12 +511,12 @@ class MFEStatistical:
         """The absolute value of the covariance of distinct column pairs.
 
         Args:
-            ddof (:obj:`int`, optional): degrees of freedom for covariance ma-
-                trix.
+            ddof (:obj:`int`, optional): degrees of freedom for covariance
+                matrix.
 
             cov_mat (:obj:`np.ndarray`, optional): covariance matrix of ``N``.
-                Argument meant to exploit precomputations. Note that this ar-
-                gument value is not the same as this method return value, as
+                Argument meant to exploit precomputations. Note that this
+                argument value is not the same as this method return value, as
                 it only returns the lower-triangle values from ``cov_mat``.
         """
         if cov_mat is None:
@@ -562,8 +563,8 @@ class MFEStatistical:
         """Returns the eigenvalues of ``N`` covariance matrix.
 
         Args:
-            ddof (:obj:`int`, optional): degrees of freedom for covariance ma-
-                trix.
+            ddof (:obj:`int`, optional): degrees of freedom for covariance
+                matrix.
 
             cov_mat (:obj:`np.ndarray`, optional): covariance matrix of ``N``.
                 Argument meant to exploit precomputations.
@@ -591,8 +592,8 @@ class MFEStatistical:
                 attributes with zero values is set to zero. Otherwise, is set
                 to :obj:`np.nan` these values.
 
-            epsilon (:obj:`float`): a small value which all values with absolu-
-                te value lesser than it is considered zero-valued.
+            epsilon (:obj:`float`): a small value which all values with
+                absolute value lesser than it is considered zero-valued.
         """
         if N.size == 0:
             return np.array([np.nan])
@@ -622,8 +623,8 @@ class MFEStatistical:
         """The harmonic mean of each attribute in ``N``.
 
         Args:
-            epsilon (:obj:`float`, optional): a tiny value to prevent di-
-                vision by zero.
+            epsilon (:obj:`float`, optional): a tiny value to prevent division
+                by zero.
         """
         try:
             return scipy.stats.hmean(N + epsilon, axis=0)
@@ -642,9 +643,9 @@ class MFEStatistical:
         """Compute the kurtosis of each attribute in ``N``.
 
         Args:
-            method (:obj:`int`, optional): defines the strategy used for esti-
-                mate data kurtosis. Used for total compatibility with R package
-                ``e1071``. The options must be one of the following:
+            method (:obj:`int`, optional): defines the strategy used for
+                estimate data kurtosis. Used for total compatibility with R
+                package ``e1071``. The options must be one of the following:
 
                 +--------+-----------------------------------------------+
                 |Option  | Formula                                       |
@@ -686,8 +687,8 @@ class MFEStatistical:
             factor (:obj:`float`): multiplication factor for output correction.
                 The default ``factor`` is 1.4826 since it is an approximated
                 result of MAD of a normally distributed data (with any mean and
-                standard deviation of 1.0), so it makes this method result com-
-                parable with this sort of data.
+                standard deviation of 1.0), so it makes this method result
+                comparable with this sort of data.
         """
         median_dev = abs(N - np.median(N, axis=0))
         return np.median(median_dev, axis=0) * factor
@@ -720,16 +721,17 @@ class MFEStatistical:
                        epsilon: float = 1.0e-8,
                        abs_corr_mat: t.Optional[np.ndarray] = None
                        ) -> t.Union[int, float]:
-        """The number of attribute pairs with corr. eq. to or greater than a threshold.
+        """The number of attribute pairs with corr. eq. to or greater than a
+        threshold.
 
         Args:
-            threshold (:obj:`float`, optional): a value of the threshold, whe-
-                re correlation is assumed to be strong if its absolute value is
-                equal or greater than it.
+            threshold (:obj:`float`, optional): a value of the threshold,
+                where correlation is assumed to be strong if its absolute value
+                is equal or greater than it.
 
-            normalize (:obj:`bool`, optional): if True, the result is normali-
-                zed by a factor of 2/(d*(d-1)), where ``d`` is number of attri-
-                butes (columns) in ``N``.
+            normalize (:obj:`bool`, optional): if True, the result is
+                normalized by a factor of 2/(d*(d-1)), where ``d`` is number of
+                attributes (columns) in ``N``.
 
             epsilon (:obj:`float`, optional): a tiny value to prevent division
                 by zero.
@@ -755,14 +757,15 @@ class MFEStatistical:
                    threshold: float = 0.05,
                    failure: str = "soft",
                    max_samples: int = 5000) -> t.Union[float, int]:
-        """The number of attributes normally distributed based in some ``method``.
+        """The number of attributes normally distributed based in some
+        ``method``.
 
         Args:
-            method (:obj:`str`, optional): select the normality test to be exe-
-                cuted. This argument must assume one of the options shown be-
-                low:
+            method (:obj:`str`, optional): select the normality test to be
+                executed. This argument must assume one of the options shown
+                below:
 
-                - ``shapiro-wilk``: directly from `shapiro`_: ``the Shapiro-
+                - ``shapiro-wilk``: directly from `shapiro`_: ``the Shapiro
                     Wilk test tests the null hypothesis that the data was drawn
                     from a normal distribution.``
 
@@ -770,16 +773,16 @@ class MFEStatistical:
                     based on D'Agostino and Pearson's, test that combines skew
                     and kurtosis to produce an omnibus test of normality.``.
 
-                - ``anderson-darling``: directly from `anderson`_: The Ander-
-                    son-Darling tests the null hypothesis that a sample is
-                    drawn from a population that follows a particular distribu-
-                    tion.`` In this method context, that ``particular distribu-
-                    tion`` is fixed in the normal/gaussian.
+                - ``anderson-darling``: directly from `anderson`_: The
+                    Ander-son-Darling tests the null hypothesis that a sample
+                    is drawn from a population that follows a particular
+                    distribution.`` In this method context, that ``particular
+                    distribution`` is fixed in the normal/gaussian.
 
-                - ``all``: perform all tests cited above. To consider an attri-
-                    bute normaly distributed all test results are taken into
-                    account with equal weight. Check ``failure`` argument for
-                    more information.
+                - ``all``: perform all tests cited above. To consider an
+                    attribute normaly distributed all test results are taken
+                    into account with equal weight. Check ``failure`` argument
+                    for more information.
 
             threshold (:obj:`float`, optional): level of significance used to
                 reject the null hypothesis of normality tests.
@@ -790,16 +793,16 @@ class MFEStatistical:
                 have its null hypothesis (of the normal/Gaussian distribution
                 of the attribute data) rejected for some attribute, then that
                 attribute is considered normally distributed. If ``hard``, then
-                is necessary the rejection of the null hypothesis of every sin-
-                gle normality test to consider the attribute normally distribu-
-                ted.
+                is necessary the rejection of the null hypothesis of every
+                single normality test to consider the attribute normally
+                distributed.
 
-            max_samples (:obj:`int`, optional): max samples used while perfor-
-                ming the normality tests. Shapiro-Wilks test p-value may not
-                be accurate when sample size is higher than 5000. Note that
+            max_samples (:obj:`int`, optional): max samples used while
+                performing the normality tests. Shapiro-Wilks test p-value may
+                not be accurate when sample size is higher than 5000. Note that
                 the instances are NOT shuffled before doing this cutoff. This
-                means that the very first ``max_samples`` instances of the da-
-                taset ``N`` will be considered in the statistical tests.
+                means that the very first ``max_samples`` instances of the
+                dataset ``N`` will be considered in the statistical tests.
 
         Returns:
             int: the number of normally distributed attributes based on the
@@ -878,7 +881,8 @@ class MFEStatistical:
 
     @classmethod
     def ft_nr_outliers(cls, N: np.ndarray, whis: float = 1.5) -> int:
-        """Calculate the number of attributes which has at least one outlier value.
+        """Calculate the number of attributes which has at least one outlier
+        value.
 
         An attribute has outlier if some value is outside the closed interval
         [first_quartile - WHIS * IQR, third_quartile + WHIS * IQR], where IQR
@@ -886,11 +890,11 @@ class MFEStatistical:
         value is typically ``1.5``.
 
         Args:
-            whis (:obj:`float`): a factor to multiply IQR and set up non-outli-
-            er interval (as stated above). Higher values make the interval more
-            significant, thus increasing the tolerance against outliers, where
-            lower values decrease non-outlier interval and, therefore, creates
-            less tolerance against possible outliers.
+            whis (:obj:`float`): a factor to multiply IQR and set up
+            non-outlier interval (as stated above). Higher values make the
+            interval more significant, thus increasing the tolerance against
+            outliers, where lower values decrease non-outlier interval and,
+            therefore, creates less tolerance against possible outliers.
         """
         v_min, q_1, q_3, v_max = np.percentile(N, (0, 25, 75, 100), axis=0)
 
@@ -934,11 +938,11 @@ class MFEStatistical:
             epsilon (:obj:`float`, optional): a tiny value to prevent division
                 by zero.
 
-            ddof (:obj:`int`, optional): degrees of freedom for covariance ma-
-                trix, calculated during this test.
+            ddof (:obj:`int`, optional): degrees of freedom for covariance
+                matrix, calculated during this test.
 
-            classes (:obj:`np.ndarray`, optional): all distinct classes in tar-
-                get attribute ``y``. Used to exploit precomputations.
+            classes (:obj:`np.ndarray`, optional): all distinct classes in
+                target attribute ``y``. Used to exploit precomputations.
 
             class_freqs (:obj:`np.ndarray`, optional): absolute frequencies of
                 each distinct class in target attribute ``y`` or ``classes``.
@@ -1032,10 +1036,10 @@ class MFEStatistical:
         """Compute the skewness for each attribute in ``N``.
 
         Args:
-            method (:obj:`int`, optional): defines the strategy used for es-
-                timate data skewness. This argument is used fo compatibility
-                with R package ``e1071``. The options must be one of the fol-
-                lowing:
+            method (:obj:`int`, optional): defines the strategy used for
+                estimate data skewness. This argument is used fo compatibility
+                with R package ``e1071``. The options must be one of the
+                following:
 
                 +--------+-----------------------------------------------+
                 |Option  | Formula                                       |
@@ -1147,20 +1151,20 @@ class MFEStatistical:
 
             L = prod(1.0 / (1.0 + lda_eig_i))
 
-        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the ge-
-        neralized eigenvalue problem of Linear Discriminant Analysis Scatter
-        Matrix. Check ``ft_can_cor`` documentation for more in-depth informati-
-        on about this value.
+        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the
+        generalized eigenvalue problem of Linear Discriminant Analysis Scatter
+        Matrix. Check ``ft_can_cor`` documentation for more in-depth
+        information about this value.
 
         Args:
-            ddof (:obj:`int`, optional): degrees of freedom of covariance ma-
-                trix calculated during LDA.
+            ddof (:obj:`int`, optional): degrees of freedom of covariance
+                matrix calculated during LDA.
 
             eig_vals (:obj:`np.ndarray`, optional): eigenvalues of LDA matrix.
                 This argument is used to exploit precomputations.
 
-            classes (:obj:`np.ndarray`, optional): all distinct classes in tar-
-                get attribute ``y``. Used to exploit precomputations.
+            classes (:obj:`np.ndarray`, optional): all distinct classes in
+                target attribute ``y``. Used to exploit precomputations.
 
             class_freqs (:obj:`np.ndarray`, optional): absolute frequencies of
                 each distinct class in target attribute ``y`` or ``classes``.
