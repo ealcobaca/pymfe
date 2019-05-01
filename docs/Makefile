@@ -21,5 +21,5 @@ help:
 # clean all
 clean_all:
 	make clean
-	rm -rf docs/source/generated
-	rm -rf docs/source/auto_examples
+	rm -rf source/generated
+	rm -rf source/auto_examples
