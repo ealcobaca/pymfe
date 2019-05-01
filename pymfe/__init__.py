@@ -3,3 +3,5 @@
 Todo:
     More information here.
 """
+
+from ._version import __version__
