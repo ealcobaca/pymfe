@@ -61,22 +61,23 @@ class MFEStatistical:
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute distinct classes and its abs. frequencies from ``y``.
 
-        Args:
-            y (:obj:`np.ndarray`, optional): the target attribute from fitted
-                data.
+        Parameters
+        ----------
+            y : :obj:`np.ndarray`, optional
+                The target attribute from fitted data.
+            kwargs:
+                Additional arguments. May have previously precomputed before
+                this method from other precomputed methods, so they can help
+                speed up this precomputation.
 
-            kwargs: additional arguments. May have previously precomputed
-                before this method from other precomputed methods, so they can
-                help speed up this precomputation.
-
-        Return:
-            dict: with following precomputed items:
-
-            - ``classes`` (:obj:`np.ndarray`): distinct classes of ``y``,
-                if ``y`` is not :obj:`NoneType`.
-
-            - ``class_freqs`` (:obj:`np.ndarray`): absolute class frequencies
-                of ``y``, if ``y`` is not :obj:`NoneType`.
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
+                * ``classes`` (:obj:`np.ndarray`): distinct classes of ``y``,
+                  if ``y`` is not :obj:`NoneType`.
+                * ``class_freqs`` (:obj:`np.ndarray`): absolute class
+                  frequencies of ``y``, if ``y`` is not :obj:`NoneType`.
         """
         precomp_vals = {}
 
