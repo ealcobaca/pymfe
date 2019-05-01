@@ -55,19 +55,25 @@ class MFEGeneral:
                                  **kwargs) -> t.Dict[str, t.Any]:
         """Precompute distinct classes and its frequencies from ``y``.
 
-        Args:
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+        Parameters
+        ----------
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        **kwargs
+            Additional arguments. May have previously precomputed before
+            this method from other precomputed methods, so they can help
+            speed up this precomputation.
 
-        Return:
-            dict: with following precomputed items:
-                - ``classes`` (:obj:`np.ndarray`): distinct classes of ``y``,
-                    if ``y`` is not :obj:`NoneType`.
-                - ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
-                    ``y``, if ``y`` is not :obj:`NoneType`.
+        Returns
+        -------
+        :obj:`dict`
+
+            The following precomputed items are returned:
+                * ``classes`` (:obj:`np.ndarray`):  distinct classes of
+                  ``y``, if ``y`` is not :obj:`NoneType`.
+                * ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
+                  ``y``, if ``y`` is not :obj:`NoneType`.
         """
         precomp_vals = {}
 
@@ -81,9 +87,15 @@ class MFEGeneral:
 
     @classmethod
     def ft_attr_to_inst(cls, X: np.ndarray) -> int:
-        """Returns ration between the number of attributes and instances.
+        """Ratio between the number of attributes.
 
         It is effectively the inverse of value given by ``ft_inst_to_attr``.
+
+        Returns
+        -------
+        float
+            The ration between the number of attributes and instances.
+
         """
         return X.shape[1] / X.shape[0]
 
@@ -111,9 +123,11 @@ class MFEGeneral:
                       ) -> np.ndarray:
         """Returns an array of the relative frequency of each distinct class.
 
-        Args:
-            class_freqs (:obj:`np.ndarray`, optional): vector of (absolute,
-                not relative) frequency of each class in data.
+        Parameters
+        ----------
+            class_freqs : :obj:`np.ndarray`, optional
+                Vector of (absolute, not relative) frequency of each class in
+                data.
         """
         if y.size == 0:
             return np.array([np.nan])
@@ -159,17 +173,20 @@ class MFEGeneral:
         ``y`` and ``classes`` can not be :obj:`NoneType` simultaneously,
         or else :obj:`np.nan` is returned.
 
-        Args:
-            y (:obj:`np.ndarray`, optional): target vector.
+        Parameters
+        ----------
+            y : :obj:`np.ndarray`, optional
+                Target vector.
 
-            classes (:obj:`np.ndarray`, optional): vector with all distinct
-                classes. This argument purpose is mainly for benefit from
-                precomputations.
+            classes : :obj:`np.ndarray`, optional
+                Vector with all distinct classes. This argument purpose is
+                mainly for benefit from precomputations.
 
-        Return:
-            int or float: number of distinct classes in a target vector if
-                either ``y`` or ``classes`` is given. Otherwise, returns
-                :obj:`np.nan`.
+        Returns
+        -------
+        :obj:`int` | :obj:`float`
+            Number of distinct classes in a target vector if either ``y`` or
+            ``classes`` is given. Otherwise, returns :obj:`np.nan`.
         """
         if classes is not None:
             return classes.size
