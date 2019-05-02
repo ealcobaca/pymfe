@@ -20,3 +20,7 @@ code_check:
 	flake8 pymfe | grep -v __init__
 	pylint pymfe -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
 	mypy pymfe --ignore-missing-imports
+
+pypi: clean
+	python3 setup.py sdist bdist_wheel
+	twine upload dist/*
