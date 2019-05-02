@@ -61,28 +61,35 @@ class MFELandmarking:
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute k-fold cross validation strategy.
 
-        Args:
-            N (:obj:`np.ndarray`, optional): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
 
-            folds (:obj: `int`): number of folds to k-fold cross validation.
+        folds : :obj: `int`
+            Number of folds to k-fold cross validation.
 
-            random_state (int, optional): If int, random_state is the seed used
-                by the random number generator; If RandomState instance,
-                random_state is the random number generator; If None, the ran-
-                dom number generator is the RandomState instance used by
-                np.random.
+        random_state : :obj:`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If RandomState instance, random_state is the random
+            number generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            dict: with following precomputed items:
-                - ``skf`` (:obj:`StratifiedKFold`): Stratified K-Folds cross-
-                validator. Provides train/test indices to split data in
-                train/test sets.
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
+                - ``skf`` (:obj:`StratifiedKFold`): Stratified K-Folds
+                  cross-validator. Provides train/test indices to split data in
+                  train/test sets.
         """
 
         prepcomp_vals = {}
@@ -101,18 +108,24 @@ class MFELandmarking:
         ``X`` and ``y``. We use sklearn ``DecisionTreeClassifier`` implementa-
         tion.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`): target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
 
-            random_state (int, optional): If int, random_state is the seed used
-                by the random number generator; If RandomState instance, ran-
-                dom_state is the random number generator; If None, the random
-                number generator is the RandomState instance used by np.random.
+        random_state : :obj:`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If RandomState instance, random_state is the random
+            number generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
-        Return:
-            np.ndarray: Return the decision tree features importance.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Return the decision tree features importance.
         """
 
         clf = DecisionTreeClassifier(random_state=random_state).fit(N, y)
@@ -125,28 +138,37 @@ class MFELandmarking:
         """Construct a single decision tree node model induced by the most
         informative attribute to establish the linear separability.
 
-        Args:
-            N (:obj:`np.ndarray`, optional): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`, optional): target attribute from fitted data.
+        y :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
 
-            skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
-                Provides train/test indices to split data in train/test sets.
+        skf :obj:`StratifiedKFold`
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
 
-            score (callable): function to compute score of the K-fold evalua-
-                tions. Possible functions are described in `scoring.py` module.
+        score : :obj:`callable`
+            Function to compute score of the K-fold evaluations. Possible
+            functions are described in `scoring.py` module.
 
-            random_state (int, optional): If int, random_state is the seed used
-                by the random number generator; If RandomState instance, ran-
-                dom_state is the random number generator; If None, the random
-                number generator is the RandomState instance used by np.random.
+        random_state : :obj:`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If RandomState instance, random_state is the random
+            number generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            np.ndarray: The performance of each fold.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The performance of each fold.
         """
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -169,28 +191,37 @@ class MFELandmarking:
         """Construct a single decision tree node model induced by a random
         attribute.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`): target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
 
-            skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
-                Provides train/test indices to split data in train/test sets.
+        skf : :obj:`StratifiedKFold`
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
 
-            score (callable): function to compute score of the K-fold evalua-
-                tions. Possible functions are described in `scoring.py` module.
+        score : :obj:`callable`
+            Function to compute score of the K-fold evaluations. Possible
+            functions are described in `scoring.py` module.
 
-            random_state (int, optional): If int, random_state is the seed used
-                by the random number generator; If RandomState instance, ran-
-                dom_state is the random number generator; If None, the random
-                number generator is the RandomState instance used by np.random.
+        random_state : :obj`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If RandomState instance, random_state is the random
+            number generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            np.ndarray: The performance of each fold.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The performance of each fold.
         """
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -217,28 +248,37 @@ class MFELandmarking:
         """Construct a single decision tree node model induced by the worst
         informative attribute.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`): target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
 
-            skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
-                Provides train/test indices to split data in train/test sets.
+        skf : :obj:`StratifiedKFold`
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
 
-            score (callable): function to compute score of the K-fold evalua-
-                tions. Possible functions are described in `scoring.py` module.
+        score : obj:`callable`
+            Function to compute score of the K-fold evaluations. Possible
+            functions are described in `scoring.py` module.
 
-            random_state (int, optional): If int, random_state is the seed used
-                by the random number generator; If RandomState instance, ran-
-                dom_state is the random number generator; If None, the random
-                number generator is the RandomState instance used by np.random.
+        random_state : :obj`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If RandomState instance, random_state is the random
+            number generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            np.ndarray: The performance of each fold.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The performance of each fold.
         """
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -264,23 +304,31 @@ class MFELandmarking:
         """Apply the Linear Discriminant classifier to construct a linear split
         (non parallel axis) in the data to establish the linear separability.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`): target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
 
-            skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
-                Provides train/test indices to split data in train/test sets.
+        skf : :obj:`StratifiedKFold`
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
 
-            score (callable): function to compute score of the K-fold evalua-
-                tions. Possible functions are described in `scoring.py` module.
+        score : :obj:`callable`
+            Function to compute score of the K-fold evaluations. Possible
+            functions are described in `scoring.py` module.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            np.ndarray: The performance of each fold.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The performance of each fold.
         """
 
         result = []
@@ -308,23 +356,31 @@ class MFELandmarking:
         that the attributes are independent and each example belongs to a cer-
         tain class based on the Bayes probability.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`): target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
 
-            skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
-                Provides train/test indices to split data in train/test sets.
+        skf : :obj:`StratifiedKFold`
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
 
-            score (callable): function to compute score of the K-fold evalua-
-                tions. Possible functions are described in `scoring.py` module.
+        score : :obj:`callable`
+            Function to compute score of the K-fold evaluations. Possible
+            functions are described in `scoring.py` module.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            np.ndarray: The performance of each fold.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The performance of each fold.
         """
 
         result = []
@@ -352,23 +408,31 @@ class MFELandmarking:
         uses the euclidean distance of the nearest neighbor to determine how
         noisy is the data.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`): target attribute from fitted data.
+        y :obj:`np.ndarray`
+            Target attribute from fitted data.
 
-            skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
-                Provides train/test indices to split data in train/test sets.
+        skf :obj:`StratifiedKFold`
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
 
-            score (callable): function to compute score of the K-fold evalua-
-                tions. Possible functions are described in `scoring.py` module.
+        score : :obj:`callable`
+            Function to compute score of the K-fold evaluations. Possible
+            functions are described in `scoring.py` module.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            np.ndarray: The performance of each fold.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The performance of each fold.
         """
 
         result = []
@@ -392,28 +456,37 @@ class MFELandmarking:
         dataset to induce the 1-nearest neighbor. With the subset of informati-
         ve attributes is expected that the models should be noise tolerant.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`): target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
 
-            skf (:obj:`StratifiedKFold`): stratified K-Folds cross-validator.
-                Provides train/test indices to split data in train/test sets.
+        skf : :obj:`StratifiedKFold`
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
 
-            score (callable): function to compute score of the K-fold evalua-
-                tions. Possible functions are described in `scoring.py` module.
+        score : :obj:`callable`
+            Function to compute score of the K-fold evaluations. Possible
+            functions are described in `scoring.py` module.
 
-            random_state (int, optional): If int, random_state is the seed used
-                by the random number generator; If RandomState instance, ran-
-                dom_state is the random number generator; If None, the random
-                number generator is the RandomState instance used by np.random.
+        random_state : :obj:`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If RandomState instance, random_state is the random
+            number generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+            kwargs:
+                Additional arguments. May have previously precomputed before
+                this method from other precomputed methods, so they can help
+                speed up this precomputation.
 
-        Return:
-            np.ndarray: The performance of each fold.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The performance of each fold.
         """
         result = []
         for train_index, test_index in skf.split(N, y):

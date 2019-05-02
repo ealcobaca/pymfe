@@ -14,20 +14,26 @@ _TypeSeqExt = t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
 class MFE:
     """Core class for metafeature extraction.
 
-    Attributes:
-        X (:obj:`Sequence`): independent attributes of the dataset.
+    Attributes
+    ----------
+    X : :obj:`Sequence`
+        Independent attributes of the dataset.
 
-        y (:obj:`Sequence`): target attributes of the dataset.
+    y : :obj:`Sequence`
+        Target attributes of the dataset.
 
-        groups (:obj:`tuple` of :obj:`str`): tuple object containing fitted
-            metafeature groups loaded in the model at instantiation.
+    groups : :obj:`tuple` of :obj:`str`
+        Tuple object containing fitted meta-feature groups loaded in the model
+        at instantiation.
 
-        features (:obj:`tuple` of :obj:`str`): contains loaded metafeature-
-            extraction method names available for metafeature extraction, from
-            selected metafeatures groups and features listed at instantiation
+    features : :obj:`tuple` of :obj:`str`
+        Contains loaded meta-feature extraction method names available for
+        meta-feature extraction, from selected metafeatures groups and features
+        listed at instantiation.
 
-        summary (:obj:`tuple` of :obj:`str`): tuple object which contains sum-
-            mary functions names for features summarization.
+        summary : :obj:`tuple` of :obj:`str`
+            Tuple object which contains summary functions names for features
+            summarization.
     """
 
     def __init__(self,
@@ -40,117 +46,149 @@ class MFE:
                  folds=10,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
-        """This class provides easy access for metafeature extraction from datasets.
+        """This class provides easy access for metafeature extraction from
+        datasets.
 
-        It expected that user first calls `fit` method after instantiation and
-        then ``extract`` for effectively extract the selected metafeatures.
-        Check reference `Rivolli et al.`_ for more information.
+        It expected that user first calls ``fit`` method after instantiation
+        and then ``extract`` for effectively extract the selected metafeatures.
+        Check reference [1]_ for more information.
 
-        Attributes:
-            groups (:obj:`Iterable` of :obj:`str` or :obj:`str`): a collection
-                or a single metafeature group name representing the desired gr-
-                oup of metafeatures for extraction. The supported groups are:
+        Parameters
+        ----------
+        groups : :obj:`Iterable` of :obj:`str` or :obj:`str`
+            A collection or a single metafeature group name representing the
+            desired group of metafeatures for extraction. The supported groups
+            are:
 
                 1. ``general``: general/simples metafeatures.
                 2. ``statistical``: statistical metafeatures.
                 3. ``info-theory``: information-theoretic type of metafeature.
-                4. ``model-based``: metafeatures based on machine learning mo-
-                    del characteristics.
-                5. ``landmarking``: metafeatures representing performance met-
-                    rics from simple machine learning models or machine learn-
-                    ing models induced with sampled data.
+                4. ``model-based``: metafeatures based on machine learning
+                   model characteristics.
+                5. ``landmarking``: metafeatures representing performance
+                   metrics from simple machine learning models or machine
+                   learning models induced with sampled data.
 
-                The value provided by the argument ``wildcard`` can be used to
-                select all metafeature groups rapidly.
+            The value provided by the argument ``wildcard`` can be used to
+            select all metafeature groups rapidly.
 
-            features (:obj:`Iterable` of :obj:`str` or :obj:`str`, optional): a
-                collection or a single metafeature name desired for extraction.
-                Keep in mind that the extraction only gathers features also in
-                the selected ``groups``. Check this class ``feature`` attribute
-                to get a list of available metafeatures from selected groups.
+        features : :obj:`Iterable` of :obj:`str` or :obj:`str`, optional
+            A collection or a single metafeature name desired for extraction.
+            Keep in mind that the extraction only gathers features also in the
+            selected ``groups``. Check this class ``feature`` attribute to get
+            a list of available metafeatures from selected groups.
 
-                The value provided by the argument ``wildcard`` can be used to
-                select all features from all selected groups rapidly.
+            The value provided by the argument ``wildcard`` can be used to
+            select all features from all selected groups rapidly.
 
-            summary (:obj:`Iterable` of :obj:`str` or :obj:`str`, optional): a
-                collection or a single summary function to summarize a group of
-                metafeature measures into a fixed-length group of value, typi-
-                cally a single value. The values must be one of the following:
+        summary : :obj:`Iterable` of :obj:`str` or :obj:`str`, optional
+            A collection or a single summary function to summarize a group of
+            metafeature measures into a fixed-length group of value, typically
+            a single value. The values must be one of the following:
 
                 1. ``mean``: Average of the values.
                 2. ``sd``: Standard deviation of the values.
                 3. ``count``: Computes the cardinality of the measure. Suitable
-                    for variable cardinality.
+                   for variable cardinality.
                 4. ``histogram``: Describes the distribution of the measured
-                    values. Suitable for high cardinality.
-                5. ``iq_range``: Computes the interquartile range of the measu-
-                    red values.
-                6. ``kurtosis``: Describes the shape of the measures values di-
-                    stribution.
+                   values. Suitable for high cardinality.
+                5. ``iq_range``: Computes the interquartile range of the
+                   measured values.
+                6. ``kurtosis``: Describes the shape of the measures values
+                   distribution.
                 7. ``max``: Results in the maximum value of the measure.
                 8. ``median``: Results in the central value of the measure.
                 9. ``min``: Results in the minimum value of the measure.
-                10. ``quantiles``: Results in the minimum, first quartile, me-
-                    dian, third quartile and maximum of the measured values.
+                10. ``quantiles``: Results in the minimum, first quartile,
+                    median, third quartile and maximum of the measured values.
                 11. ``range``: Computes the range of the measured values.
                 12. ``skewness``: Describes the shape of the measure values
                     distribution in terms of symmetry.
 
-                If more than one summary function is selected, then all multi-
-                valued extracted metafeatures are summarized with each summary
-                function.
+            If more than one summary function is selected, then all multivalued
+            extracted metafeatures are summarized with each summary function.
 
-                The particular value provided by the argument ``wildcard`` can
-                be used to select all summary functions rapidly.
+            The particular value provided by the argument ``wildcard`` can be
+            used to select all summary functions rapidly.
 
-            measure_time (:obj:`str`, optional): options for measuring the time
-                elapsed during metafeature extraction. If this argument value
-                is :obj:`NoneType`, no time elapsed is measured. Otherwise,
-                this argument must be a :obj:`str` valued as one of the options
-                below:
+        measure_time : :obj:`str`, optional
+            Options for measuring the time elapsed during metafeature
+            extraction. If this argument value is :obj:`NoneType`, no time
+            elapsed is measured. Otherwise, this argument must be a :obj:`str`
+            valued as one of the options below:
 
-                1. ``avg``: average time for each metafeature (total time divi-
-                    ded by the feature cardinality, i.e., number of features
-                    extracted by a single feature-extraction related method),
-                    without summarization time.
+                1. ``avg``: average time for each metafeature (total time
+                   divided by the feature cardinality, i.e., number of features
+                   extracted by a single feature-extraction related method),
+                   without summarization time.
                 2. ``avg_summ``: average time for each metafeature (total time
-                    of extraction divided by feature cardinality) including re-
-                    quired time for summarization.
-                3. ``total``: total time for each metafeature, without summari-
-                    zation time.
+                   of extraction divided by feature cardinality) including
+                   required time for summarization.
+                3. ``total``: total time for each metafeature, without
+                   summarization time.
                 4. ``total_summ``: total time for each metafeature including
-                    the required time for summarization.
+                   the required time for summarization.
 
-                The ``cardinality`` of the feature is the number of values ex-
-                tracted by a single calculation method.
+            The ``cardinality`` of the feature is the number of values
+            extracted by a single calculation method.
 
-                For example, ``mean`` feature has cardinality equal to the num-
-                ber of numeric features in the dataset, where ``cor`` (from
-                ``correlation``) has cardinality equals to (N - 1)/2, where N
-                is the number of numeric features in the dataset.
+            For example, ``mean`` feature has cardinality equal to the number
+            of numeric features in the dataset, where ``cor`` (from
+            ``correlation``) has cardinality equals to (N - 1)/2, where N is
+            the number of numeric features in the dataset.
 
-                The cardinality is used to divide the total execution time of
-                that method if an option starting with ``avg`` is selected.
+            The cardinality is used to divide the total execution time of that
+            method if an option starting with ``avg`` is selected.
 
-                If a summary method has cardinality higher than one (more than
-                one value returned after summarization and, thus, creating more
-                than one entry in the result lists) like, for example, ``histo-
-                gram`` summary method, then the corresponding time of this sum-
-                mary will be inserted only in the first correspondent element
-                of the time list. The remaining entries are all filled with 0
-                value, to keep consistency between the size of all lists retur-
-                ned and index correspondence between they.
+            If a summary method has cardinality higher than one (more than one
+            value returned after summarization and, thus, creating more than
+            one entry in the result lists) like, for example, ``histogram``
+            summary method, then the corresponding time of this summary will be
+            inserted only in the first correspondent element of the time list.
+            The remaining entries are all filled with 0 value, to keep
+            consistency between the size of all lists returned and index
+            correspondence between they.
 
-            wildcard (:obj:`str`, optional): value used as ``select all`` for
-                ``groups``, ``features`` and ``summary`` arguments.
+        wildcard : :obj:`str`, optional
+            Value used as ``select all`` for ``groups``, ``features`` and
+            ``summary`` arguments.
 
-            suppress_warnings (:obj:`bool`, optional): if True, then ignore all
-                warnings invoked at the instantiation time.
+        suppress_warnings : :obj:`bool`, optional
+            If True, then ignore all warnings invoked at the instantiation
+            time.
 
-        References:
-            .. _Rivolli et al.:
-                "Towards Reproducible Empirical Research in Meta-Learning,"
-                Rivolli et al. URL: https://arxiv.org/abs/1808.10406
+        Notes
+        -----
+            .. [1] Rivolli et al. "Towards Reproducible Empirical
+               Research in Meta-Learning,".
+               Rivolli et al. URL: https://arxiv.org/abs/1808.10406
+
+        Examples
+        --------
+
+        Load a dataset
+
+        >>> from sklearn.datasets import load_iris
+        >>> from pymfe.mfe import MFE
+
+        >>> data = load_iris()
+        >>> y = data.target
+        >>> X = data.data
+
+        Extract all measures
+
+        >>> mfe = MFE()
+        >>> mfe.fit(X, y)
+        >>> ft = mfe.extract()
+        >>> print(ft)
+
+        Extract general, statistical and information-theoretic measures
+
+        >>> mfe = MFE(groups=["general", "statistical", "info-theory"])
+        >>> mfe.fit(X, y)
+        >>> ft = mfe.extract()
+        >>> print(ft)
+
         """
         self.groups = _internal.process_generic_set(
             values=groups, group_name="groups")  # type: t.Tuple[str, ...]
@@ -217,57 +255,61 @@ class MFE:
             **kwargs
     ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]], t.
                  List[float]]:
-        """Invoke summary functions loaded in the model on given feature values.
+        """Invoke summary functions loaded in the model on given feature
+        values.
 
-        Args:
-            feature_values (:obj:`sequence` of numerics): sequence containing
-                values from feature-extraction methods.
+        Parameters
+        ----------
+        feature_values : :obj:`sequence` of numerics
+            Sequence containing values from feature-extraction methods.
 
-            feature_name (:obj:`str`): name of the feature method used for pro-
-                duce the ``feature_value.``
+        feature_name : :obj:`str`
+            Name of the feature method used for produce the ``feature_value.``
 
-            remove_nan (:obj:`bool`, optional): if True, all non-numeric values
-                are removed from ``feature_values`` before calling each summary
-                method. Note that the summary method itself may still remove
-                non-numeric values and, in this case, the user must suppress
-                these warnings using some built-in argument of the summary me-
-                thod using the **kwargs argument, if possible.
+        remove_nan : :obj:`bool`, optional
+            If True, all non-numeric values are removed from ``feature_values``
+            before calling each summary method. Note that the summary method
+            itself may still remove non-numeric values and, in this case, the
+            user must suppress these warnings using some built-in argument of
+            the summary method using the kwargs argument, if possible.
 
-            verbose (:obj:`bool`, optional): if True, then messages about the
-                summarization process may be printed. Note that there is no re-
-                lation between this argument and warnings (see ``suppress_warn-
-                ings`` argument below).
+        verbose : :obj:`bool`, optional
+            If True, then messages about the summarization process may be
+            printed. Note that there is no relation between this argument and
+            warnings (see ``suppress_warnings`` argument below).
 
-            suppress_warnings (:obj:`bool`, optional): if True, ignore all war-
-                nings invoked before and after summary method calls. Note that,
-                as seen in the ``remove_nan`` argument, the summary callables
-                may still invoke warnings by itself and the user need to ignore
-                them, if possible, via **kwargs.
+        suppress_warnings : :obj:`bool`, optional
+            If True, ignore all warnings invoked before and after summary
+            method calls. Note that, as seen in the ``remove_nan`` argument,
+            the summary callables may still invoke warnings by itself and the
+            user need to ignore them, if possible, via kwargs.
 
-            **kwargs: user-defined arguments for the summary callables.
+        kwargs:
+            User-defined arguments for the summary callables.
 
-            Returns:
-                tuple(list, list, list): a tuple containing three lists.
+        Returns
+        -------
+        :obj:`tuple`(:obj:`list`, :obj:`list`, :obj:`list`)
+            A tuple containing three lists.
 
-                The first field is the identifiers of each summarized value in
-                the form ``feature_name.summary_mtd_name`` (i.e., the feature-
-                extraction name concatenated by the summary method name, sepa-
-                rated by a dot). If the summary function return more than one
-                value (cardinality greater than 1), then each value name have
-                an extra concatenated id starting from 0 to differ between va-
-                lues (i.e. ``feature_name.summary_mtd_name.id``).
+            The first field is the identifiers of each summarized value in the
+            form ``feature_name.summary_mtd_name`` (i.e., the feature
+            extraction name concatenated by the summary method name, separated
+            by a dot). If the summary function return more than one value
+            (cardinality greater than 1), then each value name have an extra
+            concatenated id starting from 0 to differ between values (i.e.
+            ``feature_name.summary_mtd_name.id``).
 
-                The second field is the summarized values. Both lists have a
-                1-1 correspondence by the index of each element (i.e., the va-
-                lue at index ``i`` in the second list has its identifier at
-                the same index in the first list and vice-versa).
+            The second field is the summarized values. Both lists have a 1-1
+            correspondence by the index of each element (i.e., the value at
+            index ``i`` in the second list has its identifier at the same index
+            in the first list and vice-versa).
 
-                The third field is a list with measured time wasted by each
-                summary function. If the cardinality of the summary function is
-                greater than 1, then the correspondent measured time is kept
-                only in the first correspondent field, and the extra fields are
-                filled with 0 to keep the consistency of the size between all
-                lists.
+            The third field is a list with measured time wasted by each summary
+            function. If the cardinality of the summary function is greater
+            than 1, then the correspondent measured time is kept only in the
+            first correspondent field, and the extra fields are filled with 0
+            to keep the consistency of the size between all lists.
 
                 Example:
                     ([``attr_ent.mean``, ``attr_ent.sd``], [0.98346, 0.34436])
@@ -334,12 +376,13 @@ class MFE:
             # enable_parallel: bool = False,
             suppress_warnings: bool = False,
             **kwargs) -> t.Tuple[t.List, ...]:
-        """Invoke feature methods/functions loaded in the model and gather results.
+        """Invoke feature methods/functions loaded in the model and gather
+        results.
 
         The returned values are already summarized if needed.
 
-        For more information, check ``extract`` method documentation for in-
-        depth information about arguments and return value.
+        For more information, check ``extract`` method documentation for
+        in-depth information about arguments and return value.
         """
         metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
         metafeat_names = []  # type: t.List[str]
@@ -406,19 +449,22 @@ class MFE:
         respectively, at ``_attr_indexes_num`` and ``_attr_indexes_cat``
         instance attributes.
 
-        Args:
-            cat_cols (:obj:`str` or :obj:`iterable` of :obj:`int`, optional):
-                Iterable of indexes identifying categorical columns. If spe-
-                cial keyword ``auto`` is given, then an automatic verification
-                is done in the fitted attributes.
+        Parameters
+        ----------
+        cat_cols : :obj:`str` or :obj:`iterable` of :obj:`int`, optional
+            Iterable of indexes identifying categorical columns. If special
+            keyword ``auto`` is given, then an automatic verification is done
+            in the fitted attributes.
 
-            check_bool (:obj:`bool`, optional): check ``fit`` method corres-
-                ponding argument for more information.
+        check_bool : :obj:`bool`, optional
+            Check ``fit`` method corresponding argument for more information.
 
-        Raises:
-            TypeError: if ``X`` attribute is :obj:`NoneType`.
-            ValueError: if ``cat_cols`` is neither ``auto`` or a valid
-                integer iterable.
+        Raises
+        ------
+        TypeError
+            If ``X`` attribute is :obj:`NoneType`.
+        ValueError
+            If ``cat_cols`` is neither ``auto`` or a valid integer iterable.
         """
 
         if self.X is None:
@@ -473,22 +519,28 @@ class MFE:
 
     def _combine_time(self, time_ft: float,
                       times_sm: t.List[float]) -> t.List[float]:
-        """Treat time from feature extraction and summarization based in ``timeopt``.
+        """Treat time from feature extraction and summarization based in
+        ``timeopt``.
 
-        Args:
-            time_ft (:obj:`float`): time necessary to extract some feature.
+        Parameters
+        ----------
+        time_ft : :obj:`float`
+            Time necessary to extract some feature.
 
-            times_sm (:obj:`list` of :obj:`float`): list of values to summa-
-                rize the metafeature value with each summary function.
+        times_sm : :obj:`list` of :obj:`float`
+            List of values to summarize the metafeature value with each summary
+            function.
 
-        Returns:
-            list: if ``timeopt`` attribute considers ``summary`` time (i.e.,
-                selected option ends with ``summ``), then these returned list
-                values are the combination of times gathered in feature extra-
-                ction and summarization methods. Otherwise, the list values are
-                the value of ``time_ft`` copied ``len(times_sm)`` times, to
-                keep consistency with the correspondence between the values of
-                all lists returned by ``extract`` method.
+        Returns
+        -------
+        :obj:`list`
+            If ``timeopt`` attribute considers ``summary`` time (i.e., selected
+            option ends with ``summ``), then these returned list values are the
+            combination of times gathered in feature extraction and
+            summarization methods. Otherwise, the list values are the value of
+            ``time_ft`` copied ``len(times_sm)`` times, to keep consistency
+            with the correspondence between the values of all lists returned by
+            ``extract`` method.
         """
         total_time = np.array([time_ft] * len(times_sm))
 
@@ -507,29 +559,35 @@ class MFE:
                             num_bins: bool = None) -> np.ndarray:
         """Returns categorical data from the fitted dataset.
 
-        Args:
-            transform_num (:obj:`bool`): if True, then all numeric-type data
-                are discretized using an equal-frequency histogram. Otherwise,
-                this method ignores these attributes.
+        Parameters
+        ----------
+        transform_num : :obj:`bool`
+            If True, then all numeric-type data are discretized using an
+            equal-frequency histogram. Otherwise, this method ignores these
+            attributes.
 
-            num_bins (:obj:`bool`, optional): number of bins of the discretiza-
-                tion histogram. This argument is used only if ``transform_num``
-                is True. If this argument value is :obj:`NoneType`, then it is
-                set to min(2, c), where ``c`` is the cubic root of the number
-                of instances of the fitted dataset.
+        num_bins : :obj:`bool`, optional
+            Number of bins of the discretization histogram. This argument is
+            used only if ``transform_num`` is True. If this argument value is
+            :obj:`NoneType`, then it is set to min(2, c), where ``c`` is the
+            cubic root of the number of instances of the fitted dataset.
 
-        Returns:
-            np.ndarray: processed categorical data. If no need for changes
-                from the original dataset, then this method does not create
-                a copy of it to prevent unnecessary memory usage. Otherwise,
-                this method returns a modified version of the original cate-
-                gorical data, thus consuming more memory.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Processed categorical data. If no need for changes from the
+            original dataset, then this method does not create a copy of it to
+            prevent unnecessary memory usage. Otherwise, this method returns a
+            modified version of the original categorical data, thus consuming
+            more memory.
 
-        Raises:
-            TypeError: if either ``X`` or ``_attr_indexes_cat`` instance
-                attributes are :obj:`NoneType`. This can be avoided passing
-                valid data to fit and first calling ``_fill_col_ind_by_type``
-                instance method before this method.
+        Raises
+        ------
+        TypeError:
+            If either ``X`` or ``_attr_indexes_cat`` instance attributes are
+            :obj:`NoneType`. This can be avoided passing valid data to fit and
+            first calling ``_fill_col_ind_by_type`` instance method before this
+            method.
         """
         if self.X is None:
             raise TypeError("It is necessary to fit valid data into the "
@@ -560,28 +618,35 @@ class MFE:
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None) -> np.ndarray:
         """Returns numeric data from the fitted dataset.
 
-        Args:
-            transform_cat (:obj:`bool`): if True, then all categoric-type
-                data will be binarized with a model matrix strategy.
+        Parameters
+        ----------
+        transform_cat: :obj:`bool`
+            If True, then all categoric-type data will be binarized with a
+            model matrix strategy.
 
-            rescale (:obj:`str`, optional): check ``fit`` documentation for
-                more information about this parameter.
+        rescale : :obj:`str`, optional
+            Check ``fit`` documentation for more information about this
+            parameter.
 
-            rescale_args (:obj:`dict`, optional): check ``fit`` documentation
-                for more information about this parameter.
+        rescale_args : :obj:`dict`, optional
+            Check ``fit`` documentation for more information about this
+            parameter.
 
-        Returns:
-            np.ndarray: processed numerical data. If no need for changes from
-                the original dataset, then this method does not create a copy
-                of it to prevent unnecessary memory usage. Otherwise, this me-
-                thod returns a modified version of the original numerical data,
-                thus consuming more memory.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Processed numerical data. If no need for changes from the original
+            dataset, then this method does not create a copy of it to prevent
+            unnecessary memory usage. Otherwise, this method returns a modified
+            version of the original numerical data, thus consuming more memory.
 
-        Raises:
-            TypeError: if ``X`` or ``_attr_indexes_num`` instance attributes
-                are :obj:`NoneType`. This can be avoided passing valid data
-                to fit and first calling ``_fill_col_ind_by_type`` instance
-                method before this method.
+        Raises
+        ------
+        TypeError
+            If ``X`` or ``_attr_indexes_num`` instance attributes are
+            :obj:`NoneType`. This can be avoided passing valid data to fit and
+            first calling ``_fill_col_ind_by_type`` instance method before
+            this method.
         """
         if self.X is None:
             raise TypeError("It is necessary to fit valid data into the "
@@ -626,96 +691,103 @@ class MFE:
     ) -> "MFE":
         """Fits dataset into an MFE model.
 
-        Args:
-            X (:obj:`Sequence`): predictive attributes of the dataset.
+        Parameters
+        ----------
+        X : :obj:`Sequence`
+            Predictive attributes of the dataset.
 
-            y (:obj:`Sequence`): target attributes of the dataset, assuming
-                that it is a supervised task.
+        y : :obj:`Sequence`
+            Target attributes of the dataset, assuming that it is a supervised
+            task.
 
-            transform_num (:obj:`bool`, optional): if True, numeric attributes
-                are discretized using equal-frequency histogram technique to
-                use alongside categorical data when extracting categoric-only
-                metafeatures. Note that numeric-only features still uses the
-                original numeric values, not the discretized ones. If False,
-                then numeric attributes are ignored for categorical-only meta-
-                features.
+        transform_num : :obj:`bool`, optional
+            If True, numeric attributes are discretized using equal-frequency
+            histogram technique to use alongside categorical data when
+            extracting categoric-only metafeatures. Note that numeric-only
+            features still uses the original numeric values, not the
+            discretized ones. If False, then numeric attributes are ignored for
+            categorical-only meta-features.
 
-            transform_cat (:obj:`bool`, optional): if True, categorical attri-
-                butes are binarized using a model matrix to use when alongside
-                numerical data while extracting numeric-only metafeatures. Note
-                that categoric-only features still uses the original categoric
-                values, not the binarized ones. If False, then categorical at-
-                tributes are ignored for numeric-only metafeatures.
+        transform_cat : :obj:`bool`, optional
+            If True, categorical attributes are binarized using a model matrix
+            to use when alongside numerical data while extracting numeric-only
+            metafeatures. Note that categoric-only features still uses the
+            original categoric values, not the binarized ones. If False, then
+            categorical attributes are ignored for numeric-only metafeatures.
 
-                The formula used for this transformation is just the union (+)
-                of all categoric attributes using formula language from ``pat-
-                sy`` package API, removing the intercept terms: ``~ 0 + A_1 +
-                ... + A_n``, where ``n`` is the number of attributes and A_i is
-                the ith categoric attribute, 1 <= i <= n.
+            The formula used for this transformation is just the union (+) of
+            all categoric attributes using formula language from ``patsy``
+            package API, removing the intercept terms:
+            ``~ 0 + A_1 + ... + A_n``, where ``n`` is the number of attributes
+            and A_i is the ith categoric attribute, 1 <= i <= n.
 
-            rescale (:obj:`str`, optional): if :obj:`NoneType`, the model keeps
-                all numeric data with its original values. Otherwise, this ar-
-                gument can assume one of the string options below to rescale
-                all numeric values:
+        rescale : :obj:`str`, optional
+            If :obj:`NoneType`, the model keeps all numeric data with its
+            original values. Otherwise, this argument can assume one of the
+            string options below to rescale all numeric values:
 
                 1. ``standard``: set numeric data to zero mean, unit variance.
-                    Also known as ``z-score`` normalization. Check the documen-
-                    tation of ``sklearn.preprocessing.StandardScaler`` for in-
-                    depth information.
+                   Also known as ``z-score`` normalization. Check the
+                   documentation of ``sklearn.preprocessing.StandardScaler``
+                   for in-depth information.
 
                 2. `'min-max``: set numeric data to interval [a, b], a < b. It
-                    is possible to define values to ``a`` and ``b`` using argu-
-                    ment ``rescale_args``. The default values are a = 0.0  and
-                    b = 1.0. Check ``sklearn.preprocessing.MinMaxScaler`` docu-
-                    mentation for more information.
+                   is possible to define values to ``a`` and ``b`` using
+                   argument ``rescale_args``. The default values are a = 0.0
+                   and b = 1.0. Check ``sklearn.preprocessing.MinMaxScaler``
+                   documentation for more information.
 
-                3. ``robust``: rescale data using statistics robust to the pre-
-                    sence of outliers. For in-depth information, check documen-
-                    tation of ``sklearn.preprocessing.RobustScaler``.
+                3. ``robust``: rescale data using statistics robust to the
+                   presence of outliers. For in-depth information, check
+                   documentation of ``sklearn.preprocessing.RobustScaler``.
 
-            rescale_args (:obj:`dict`, optional): dictionary containing parame-
-                ters for rescaling data. Used only if ``rescale`` argument is
-                not :obj:`NoneType`. These dictionary keys are the parameter
-                names as strings and the values, the corresponding parameter
-                value.
+        rescale_args : :obj:`dict`, optional
+            Dictionary containing parameters for rescaling data. Used only if
+            ``rescale`` argument is not :obj:`NoneType`. These dictionary keys
+            are the parameter names as strings and the values, the
+            corresponding parameter value.
 
-            cat_cols (:obj:`Sequence` of :obj:`int` or :obj:`str`, optional):
-                categorical columns of dataset. If given :obj:`NoneType` or an
-                empty sequence, assume all columns as numeric. If given value
-                ``auto``, then an attempt of automatic detection is performed
-                while fitting the dataset.
+        cat_cols :obj:`Sequence` of :obj:`int` or :obj:`str`, optional
+            Categorical columns of dataset. If given :obj:`NoneType` or an
+            empty sequence, assume all columns as numeric. If given value
+            ``auto``, then an attempt of automatic detection is performed while
+            fitting the dataset.
 
-            check_bool (:obj:`bool`, optional): if `cat_cols` is ``auto``, and
-                this flag is True, assume that all columns with precisely two
-                different values is also a categorical (boolean) column, inde-
-                pendently of its data type. Otherwise, these columns may be
-                considered numeric depending on their data type.
+        check_bool : :obj:`bool`, optional
+            If `cat_cols` is ``auto``, and this flag is True, assume that all
+            columns with precisely two different values is also a categorical
+            (boolean) column, independently of its data type. Otherwise, these
+            columns may be considered numeric depending on their data type.
 
-            missing_data (:obj:`str`, optional): defines the strategy to handle
-                missing values in data. Still not implemented.
+        missing_data : :obj:`str`, optional
+            Defines the strategy to handle missing values in data. Still not
+            implemented.
 
-            precomp_groups (:obj:`str`, optional): defines which metafeature
-                groups common values should be cached to share among various
-                metafeature-extraction related methods (e.g. ``classes``, or
-                ``covariance``). This argument may speed up metafeature extrac-
-                tion but also consumes more memory, so it may not be suitable
-                for huge datasets.
+        precomp_groups : :obj:`str`, optional
+            Defines which metafeature groups common values should be cached to
+            share among various meta-feature extraction related methods (e.g.
+            ``classes``, or ``covariance``). This argument may speed up
+            meta-feature extraction but also consumes more memory, so it may
+            not be suitable for huge datasets.
 
-            wildcard (:obj:`str`, optional): value used as ``select all`` for
-                ``precomp_groups``.
+        wildcard : :obj:`str`, optional
+            Value used as ``select all`` for ``precomp_groups``.
 
-            suppress_warnings (:obj:`bool`, optional): if True, ignore all war-
-                nings invoked while fitting dataset.
+        suppress_warnings : :obj:`bool`, optional
+            If True, ignore all warnings invoked while fitting dataset.
 
-        Raises:
-            ValueError: if the number of rows of X and y length does not match.
-            TypeError: if X or y (or both) is neither a :obj:`list` or a
-                :obj:`np.ndarray` object.
+        Returns
+        -------
+        self
 
-        Returns:
-            MFE: the instance itself, to allow inline instantiation-and-fit co-
-            de such as ``model = MFE(...).fit(...)`` or inline fit-and-extrac-
-            tion ``result = MFE(...).fit(...).extract(...)``.
+        Raises
+        ------
+        ValueError
+            If the number of rows of X and y length does not match.
+        TypeError
+            If X or y (or both) is neither a :obj:`list` or a :obj:`np.ndarray`
+            object.
+
         """
         self.X, self.y = _internal.check_data(X, y)
 
@@ -766,74 +838,65 @@ class MFE:
             **kwargs) -> t.Tuple[t.List, ...]:
         """Extracts metafeatures from the previously fitted dataset.
 
-        Args:
-            remove_nan (:obj:`bool`, optional): if True, remove any non-numeric
-                values features before summarizing values from all feature-ex-
-                traction methods. Note that the summary methods may still remo-
-                ve non-numeric values by itself. In this case, the user must
-                modify this behavior using built-in summary method arguments
-                via **kwargs, if possible.
+        Parameters
+        ----------
+        remove_nan : :obj:`bool`, optional
+            If True, remove any non-numeric values features before summarizing
+            values from all feature extraction methods. Note that the summary
+            methods may still remove non-numeric values by itself. In this
+            case, the user must modify this behavior using built-in summary
+            method arguments via kwargs, if possible.
 
-            verbose (:obj:`bool`, optional): if True, print messages related to
-                the metafeature extraction process. Note that warning messages
-                are not affected by this option (see ``suppress_warnings`` ar-
-                gument below).
+        verbose : :obj:`bool`, optional
+            If True, print messages related to the metafeature extraction
+            process. Note that warning messages are not affected by this option
+            (see ``suppress_warnings`` argument below).
 
-            enable_parallel (:obj:`bool`, optional): if True, then the metafea-
-                ture extraction is done with multi-processes. Currently, this
-                argument has no effect by now (to be implemented).
+        enable_parallel : :obj:`bool`, optional
+            If True, then the meta-feature extraction is done with
+            multi-processes. Currently, this argument has no effect by now
+            (to be implemented).
 
-            by_class (:obj:`bool, optional): not implemented yet.
+        by_class : :obj:`bool`, optional
+            Not implemented yet.
 
-            suppress_warnings (:obj:`bool`, optional): if True, do not show
-                warnings about unknown user custom parameters for feature ex-
-                traction and summary methods passed via **kwargs. Note that
-                both feature-extraction and summary methods may still raise
-                warnings by itself. In this case, just like the ``remove_nan``
-                situation, the user must suppress them by built-in args from
-                these methods via **kwargs, if possible.
+        suppress_warnings : :obj:`bool`, optional
+            If True, do not show warnings about unknown user custom parameters
+            for feature extraction and summary methods passed via kwargs. Note
+            that both feature extraction and summary methods may still raise
+            warnings by itself. In this case, just like the ``remove_nan``
+            situation, the user must suppress them by built-in args from these
+            methods via kwargs, if possible.
 
-            **kwargs: used to pass custom arguments for both feature-extraction
-                and summary methods. The expected format is the following:
+        kwargs:
+            Used to pass custom arguments for both feature-extraction and
+            summary methods. The expected format is the following:
 
-                {``mtd_name``: {``arg_name``: arg_value, ...}, ...}
+            {``mtd_name``: {``arg_name``: arg_value, ...}, ...}
 
-                In words, the key values of ``**kwargs`` should be the target
-                methods which receives the custom arguments, and each method
-                has another dictionary containing customs method argument na-
-                mes as keys and their correspondent values, as values. See
-                ``Examples`` subsection for a clearer explanation.
+            In words, the key values of ``**kwargs`` should be the target
+            methods which receives the custom arguments, and each method has
+            another dictionary containing customs method argument names as keys
+            and their correspondent values, as values. See ``Examples``
+            subsection for a clearer explanation.
 
-                Example:
-                    # Option 1 to pass ft. extraction custom arguments:
-                    args = {
-                    'sd': {'ddof': 2},
-                    '1NN': {'metric': 'minkowski', 'p': 2},
-                    'leaves': {'max_depth': 4},
-                    }
+            For more information see Examples.
 
-                    model = MFE().fit(X=data, y=labels)
-                    result = model.extract(**args)
+        Returns
+        -------
+        :obj:`tuple`(:obj:`list`, :obj:`list`)
+            A tuple containing two lists.
 
-                    # Option 2 (note: metafeatures with name starting
-                    # with numbers are not allowed!):
+            The first field is the identifiers of each summarized value in the
+            form ``feature_name.summary_mtd_name`` (i.e., the feature
+            extraction name concatenated by the summary method name, separated
+            by a dot).
 
-                    model = MFE().fit(X=data, y=labels)
-                    res = extract(sd={'ddof': 2}, leaves={'max_depth': 4})
+            The second field is the summarized values.
 
-            Returns:
-                tuple(list, list): a tuple containing two lists.
-
-                The first field is the identifiers of each summarized value in
-                the form ``feature_name.summary_mtd_name`` (i.e., the feature-
-                extraction name concatenated by the summary method name, sepa-
-                rated by a dot).
-
-                The second field is the summarized values.
-
-                Both lists have a 1-1 correspondence by the index of each ele-
-                ment (i.e., the value at index ``i`` in the second list has its
-                identifier at the same index in the first list and vice-versa).
+            Both lists have a 1-1 correspondence by the index of each element
+            (i.e., the value at index ``i`` in the second list has its
+            identifier at the same index in the first list and vice-versa).
 
             Example:
                 ([``attr_ent.mean``, ``attr_ent.sd``], [``0.983``, ``0.344``])
@@ -841,8 +904,30 @@ class MFE:
                 both ``mean`` and ``sd`` (standard deviation), giving the valu-
                 es ``0.983`` and ``0.344``, respectively.
 
-            Raises:
-                TypeError: if calling ``extract`` method before ``fit`` method.
+        Raises
+        ------
+        TypeError
+            If calling ``extract`` method before ``fit`` method.
+
+        Examples
+        --------
+        Using kwargs. Option 1 to pass ft. extraction custom arguments:
+
+        >>> args = {
+        >>> 'sd': {'ddof': 2},
+        >>> '1NN': {'metric': 'minkowski', 'p': 2},
+        >>> 'leaves': {'max_depth': 4},
+        >>> }
+
+        >>> model = MFE().fit(X=data, y=labels)
+        >>> result = model.extract(**args)
+
+        Option 2 (note: metafeatures with name starting with numbers are not
+        allowed!):
+
+        >>> model = MFE().fit(X=data, y=labels)
+        >>> res = extract(sd={'ddof': 2}, leaves={'max_depth': 4})
+
         """
         if self.X is None or self.y is None:
             raise TypeError("Fitted data not found. Call "
