@@ -60,6 +60,7 @@ EXTRAS_REQUIRE = {
         'sphinx',
         'sphinx-gallery',
         'sphinx_rtd_theme',
+        'numpydoc'
     ]
 }
 
