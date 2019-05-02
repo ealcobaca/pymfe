@@ -50,8 +50,6 @@ extensions = [
 # see https://github.com/numpy/numpydoc/issues/69
 numpydoc_show_class_members = False
 
-# The master toctree document.
-master_doc = 'index'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -99,12 +97,12 @@ htmlhelp_basename = 'pymfe-docs'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    "index", "pymfe_docs.tex", "pymfe Documentation",
-    "E. Alcobaça, F. Siqueira and L. Garcia",
-    "manual"
-    ]
-
+# latex_documents = [
+#     "index", "pymfe_docs.tex", "pymfe Documentation",
+#     "E. Alcobaça, F. Siqueira and L. Garcia",
+#     "manual"
+#     ]
+#
 
 # -- Options for manual page output ---------------------------------------
 
@@ -114,10 +112,10 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ("index", "pymfe", "pymfe Documentation",
-     ["E. Alcobaça, F. Siqueira and L. P. F. Garcia"], 1)
-]
+# man_pages = [
+#     ("index", "pymfe", "pymfe Documentation",
+#      ["E. Alcobaça, F. Siqueira and L. P. F. Garcia"], 1)
+# ]
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -125,12 +123,12 @@ man_pages = [
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
-texinfo_documents = [
-    ("index", "pymfe", "pymfe Documentation",
-     "E. Alcobaça, F. Siqueira and L. P. F. Garcia", 'pymfe',
-     "Toolbox for meta-feature extraction of datasets in machine learning.",
-     "Miscellaneous")
-]
+# texinfo_documents = [
+#     ("index", "pymfe", "pymfe Documentation",
+#      "E. Alcobaça, F. Siqueira and L. P. F. Garcia", 'pymfe',
+#      "Toolbox for meta-feature extraction of datasets in machine learning.",
+#      "Miscellaneous")
+# ]
 
 
 # ------ sphinx gallery ----------------------------------------------------
