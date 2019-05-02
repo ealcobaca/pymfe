@@ -15,40 +15,41 @@ class MFEModelBased:
     prefix is predefined within ``_internal`` module.
 
     All method signature follows the conventions and restrictions listed below:
-        1. For independent attribute data, ``X`` means ``every type of attribu-
-            te``, ``N`` means ``Numeric attributes only`` and ``C`` stands for
-            ``Categorical attributes only``. It is important to note that the
-            categorical attribute sets between ``X`` and ``C`` and the numeri-
-            cal attribute sets between ``X`` and ``N`` may differ due to data
-            transformations, performed while fitting data into MFE model, en-
-            abled by, respectively, ``transform_num`` and ``transform_cat``
-            arguments from ``fit`` (MFE method).
 
-        2. Only arguments in MFE ``_custom_args_ft`` attribute (set up inside
-            ``fit`` method) are allowed to be required method arguments. All
-            other arguments must be strictly optional (i.e., has a predefined
-            default value).
+    1. For independent attribute data, ``X`` means ``every type of attribute``,
+       ``N`` means ``Numeric attributes only`` and ``C`` stands for
+       ``Categorical attributes only``. It is important to note that the
+       categorical attribute sets between ``X`` and ``C`` and the numerical
+       attribute sets between ``X`` and ``N`` may differ due to data
+       transformations, performed while fitting data into MFE model,
+       enabled by, respectively, ``transform_num`` and ``transform_cat``
+       arguments from ``fit`` (MFE method).
 
-        3. The initial assumption is that the user can change any optional ar-
-            gument, without any previous verification of argument value or its
-            type, via kwargs argument of ``extract`` method of MFE class.
+    2. Only arguments in MFE ``_custom_args_ft`` attribute (set up inside
+       ``fit`` method) are allowed to be required method arguments. All other
+       arguments must be strictly optional (i.e., has a predefined
+       default value).
 
-        4. The return value of all feature extraction methods should be a sin-
-            gle value or a generic Sequence (preferably a :obj:`np.ndarray`)
-            type with numeric values.
+    3. The initial assumption is that the user can change any optional
+       argument, without any previous verification of argument value or its
+       type, via kwargs argument of ``extract`` method of MFE class.
 
-    There is another type of method adopted for automatic detection. It is ad-
-    opted the prefix ``precompute_`` for automatic detection of these methods.
-    These methods run while fitting some data into an MFE model automatically,
-    and their objective is to precompute some common value shared between more
-    than one feature extraction method. This strategy is a trade-off between
-    more system memory consumption and speeds up of feature extraction. Their
-    return value must always be a dictionary whose keys are possible extra ar-
-    guments for both feature extraction methods and other precomputation me-
-    thods. Note that there is a share of precomputed values between all valid
-    feature-extraction modules (e.g., ``class_freqs`` computed in module ``sta-
-    tistical`` can freely be used for any precomputation or feature extraction
-    method of module ``landmarking``).
+     4. The return value of all feature extraction methods should be a single
+        value or a generic Sequence (preferably a :obj:`np.ndarray`)
+        type with numeric values.
+
+    There is another type of method adopted for automatic detection. It is
+    adopted the prefix ``precompute_`` for automatic detection of these
+    methods. These methods run while fitting some data into an MFE model
+    automatically, and their objective is to precompute some common value
+    shared between more than one feature extraction method. This strategy is a
+    trade-off between more system memory consumption and speeds up of feature
+    extraction. Their return value must always be a dictionary whose keys are
+    possible extra arguments for both feature extraction methods and other
+    precomputation methods. Note that there is a share of precomputed values
+    between all valid feature-extraction modules (e.g., ``class_freqs``
+    computed in module ``statistical`` can freely be used for any
+    precomputation or feature extraction method of module ``landmarking``).
     """
 
     @classmethod
@@ -57,29 +58,35 @@ class MFEModelBased:
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute ``model``, ``table`` and ``tree_depth``.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`): target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
 
-            random_state (int, optional): If int, random_state is the seed used
-                by the random number generator; If RandomState instance,
-                random_state is the random number generator; If None, the ran-
-                dom number generator is the RandomState instance used by
-                np.random.
+        random_state : :obj:`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If RandomState instance, random_state is the random
+            number generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            dict: with following precomputed items:
+        Returns
+        -------
+        dict
+            With following precomputed items:
                 - ``model`` (:obj:`DecisionTreeClassifier`): decision tree
-                classifier.
+                  classifier.
                 - ``table`` (:obj:`np.ndarray`): tree property table.
                 - ``tree_depth`` (:obj: `np.ndarray`): the depth of each tree
-                node ordered by node (e.g., index one contain the node one
-                depth, the index two the node two depth and so on).
+                  node ordered by node (e.g., index one contain the node one
+                  depth, the index two the node two depth and so on).
         """
         prepcomp_vals = {}  # type: t.Dict[str, t.Any]
 
@@ -100,31 +107,37 @@ class MFEModelBased:
                       model: DecisionTreeClassifier) -> np.ndarray:
         """Precompute ``model``, ``table`` and ``tree_depth``.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            y (:obj:`np.ndarray`): target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
 
-            random_state (int, optional): If int, random_state is the seed used
-                by the random number generator; If RandomState instance,
-                random_state is the random number generator; If None, the ran-
-                dom number generator is the RandomState instance used by
-                np.random.
+        random_state : :obj:`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If RandomState instance, random_state is the random
+            number generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            np.ndarray: tree property table.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Tree property table.
                 - Each line represents a node.
                 - Column 0: It is the id of the attributed splited in that
-                node.
+                  node.
                 - Column 1: It is 1 if the node is a leaf node, otherwise 0.
                 - Columns 2: It is the number of examples that fall on that
-                node.
+                  node.
                 - Columns 3: It is 0 if the node is not a leaf, otherwise is
-                the class number represented by that leaf node.
+                  the class number represented by that leaf node.
         """
         table = np.zeros((model.tree_.node_count, 4))  # type: np.ndarray
         table[:, 0] = model.tree_.feature
@@ -146,11 +159,15 @@ class MFEModelBased:
     def ft_leaves(cls, table: np.ndarray) -> int:
         """Number of leaves of the DT model.
 
-        Args:
-            table (:obj:`np.ndarray`): tree property table.
+        Parameters
+        ----------
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-        Return:
-            np.ndarray: Number of leaves.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Number of leaves.
         """
 
         return np.sum(table[:, 1], dtype=int)
@@ -160,12 +177,15 @@ class MFEModelBased:
         """Tree depth, which is the level of all tree nodes and leaves of the
         DT model.
 
-        Args:
-            tree_depth (:obj:`np.ndarray`): tree depth from ``tree_depth``
-                method.
+        Parameters
+        ----------
+        tree_depth : :obj:`np.ndarray`
+            Tree depth from ``tree_depth`` method.
 
-        Return:
-            np.ndarray: tree depth.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Tree depth.
         """
 
         return tree_depth
@@ -174,11 +194,15 @@ class MFEModelBased:
     def tree_depth(cls, model: DecisionTreeClassifier) -> np.ndarray:
         """Compute the depth of each node.
 
-        Args:
-            model (:obj:`DecisionTreeClassifier`): the DT model.
+        Parameters
+        ----------
+        model : :obj:`DecisionTreeClassifier`
+            The DT model.
 
-        Return:
-            np.ndarray: the depth of each node.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The depth of each node.
         """
 
         def node_depth(node: int, depth: int, l, r, depths: t.List[int]):
@@ -198,14 +222,18 @@ class MFEModelBased:
         """Size of branches, which consists in the level of all leaves of the
         DT model.
 
-        Args:
-            table (:obj:`np.ndarray`): tree property table.
+        Parameters
+        ----------
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-            tree_depth (:obj:`np.ndarray`): tree depth from ``tree_depth``
-                method.
+        tree_depth : :obj:`np.ndarray`
+            Tree depth from ``tree_depth`` method.
 
-        Return:
-            np.ndarray: size of branches.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Size of branches.
         """
 
         return tree_depth[table[:, 1] == 1]
@@ -215,13 +243,18 @@ class MFEModelBased:
         """Leaves corroboration, which is the proportion of examples that
         belong to each leaf of the DT model.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            table (:obj:`np.ndarray`): tree property table.
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-        Return:
-            np.ndarray: leaves corroboration.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Leaves corroboration.
         """
         return table[:, 2][table[:, 1] == 1] / N.shape[0]
 
@@ -231,14 +264,18 @@ class MFEModelBased:
         """Tree shape, which is the probability of arrive in each leaf given a
         random walk. We call this as the structural shape of the DT model.
 
-        Args:
-            table (:obj:`np.ndarray`): tree property table.
+        Parameters
+        ----------
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-            tree_depth (:obj:`np.ndarray`): tree depth from ``tree_depth``
-                method.
+        tree_depth : :obj:`np.ndarray`
+            Tree depth from ``tree_depth`` method.
 
-        Return:
-            np.ndarray: the tree shape.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The tree shape.
         """
         aux = tree_depth[table[:, 1] == 1]  # type: np.ndarray
         return -(1.0 / 2**aux) * np.log2(1.0 / 2**aux)
@@ -249,14 +286,18 @@ class MFEModelBased:
         """Homogeneity, which is the number of leaves divided by the structural
         shape of the DT model.
 
-        Args:
-            table (:obj:`np.ndarray`): tree property table.
+        Parameters
+        ----------
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-            tree_depth (:obj:`np.ndarray`): tree depth from ``tree_depth``
-                method.
+        tree_depth : :obj:`np.ndarray`
+            Tree depth from ``tree_depth`` method.
 
-        Return:
-            np.ndarray: the homogeneity.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The homogeneity.
         """
         leaves = MFEModelBased.ft_leaves(table)  # type: int
         tree_shape = MFEModelBased.ft_tree_shape(
@@ -268,11 +309,15 @@ class MFEModelBased:
         """Leaves per class, which is the proportion of leaves of the DT model
         associated with each class.
 
-        Args:
-            table (:obj:`np.ndarray`): tree property table.
+        Parameters
+        ----------
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-        Return:
-            np.ndarray: leaves per class.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Leaves per class.
         """
         aux = np.array(list(Counter(table[:, 3]).values()))  # np.ndarray
         aux = aux[1:] / MFEModelBased.ft_leaves(table)
@@ -282,11 +327,15 @@ class MFEModelBased:
     def ft_nodes(cls, table: np.ndarray) -> int:
         """Number of nodes of the DT model.
 
-        Args:
-            table (:obj:`np.ndarray`): tree property table.
+        Parameters
+        ----------
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-        Return:
-            np.ndarray: number of nodes.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Number of nodes.
         """
         return np.sum(table[:, 1] != 1)
 
@@ -295,13 +344,18 @@ class MFEModelBased:
         """Ratio of the number of nodes of the DT model per the number of
         attributes.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            table (:obj:`np.ndarray`): tree property table.
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-        Return:
-            np.ndarray: ratio of the number of nodes.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Ratio of the number of nodes.
         """
         nodes = MFEModelBased.ft_nodes(table)  # type: int
         attr = N.shape[1]  # type: float
@@ -312,13 +366,18 @@ class MFEModelBased:
         """Ratio of the number of nodes of the DT model per the number of
         instances.
 
-        Args:
-            N (:obj:`np.ndarray`): attributes from fitted data.
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-            table (:obj:`np.ndarray`): tree property table.
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-        Return:
-            np.ndarray: ratio of the number of nodes per instances.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Ratio of the number of nodes per instances.
         """
         nodes = MFEModelBased.ft_nodes(table)  # type: int
         inst = N.shape[0]  # type: float
@@ -329,14 +388,18 @@ class MFEModelBased:
                            tree_depth: np.ndarray) -> float:
         """Number of nodes of the DT model per level.
 
-        Args:
-            table (:obj:`np.ndarray`): tree property table.
+        Parameters
+        ----------
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-            tree_depth (:obj:`np.ndarray`): tree depth from ``tree_depth``
-                method.
+        tree_depth : :obj:`np.ndarray`
+            Tree depth from ``tree_depth`` method.
 
-        Return:
-            np.ndarray: number of nodes per level.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Number of nodes per level.
         """
         aux = tree_depth[table[:, 1] == 0]  # type: np.ndarray
         aux = np.array(list(Counter(aux).values()))
@@ -347,11 +410,15 @@ class MFEModelBased:
         """Repeated nodes, which is the number of repeated attributes that
         appear in the DT model.
 
-        Args:
-            table (:obj:`np.ndarray`): tree property table.
+        Parameters
+        ----------
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-        Return:
-            np.ndarray: repeated nodes.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Repeated nodes.
         """
         aux = table[:, 0][table[:, 0] > 0]  # type: np.ndarray
         aux = np.array(list(Counter(aux).values()))
@@ -362,11 +429,14 @@ class MFEModelBased:
         """Features importance. It is calculated using the Gini index to
         estimate the amount of information used in the DT model.
 
-        Args:
-            model (:obj:`DecisionTreeClassifier`): the DT model.
+        Parameters
+        ----------
+        model : :obj:`DecisionTreeClassifier`
+            The DT model.
 
         Return:
-            np.ndarray: features importance.
+        :obj:`np.ndarray`
+            Features importance.
         """
         importance = model.tree_.compute_feature_importances()  # np.ndarray
         return importance
@@ -376,14 +446,18 @@ class MFEModelBased:
                           tree_depth: np.ndarray) -> np.ndarray:
         """Tree imbalance.
 
-        Args:
-            table (:obj:`np.ndarray`): tree property table.
+        Parameters
+        ----------
+        table : :obj:`np.ndarray`
+            Tree property table.
 
-            tree_depth (:obj:`np.ndarray`): tree depth from ``tree_depth``
-                method.
+        tree_depth : :obj:`np.ndarray`
+            Tree depth from ``tree_depth`` method.
 
-        Return:
-            np.ndarray: tree imbalance values.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Tree imbalance values.
         """
         aux = 1.0 / 2**tree_depth[table[:, 1] == 1]  # np.ndarray
         tmp = np.unique(aux, return_counts=True)  # np.ndarray

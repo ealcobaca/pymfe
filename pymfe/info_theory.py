@@ -16,40 +16,41 @@ class MFEInfoTheory:
     prefix is predefined within ``_internal`` module.
 
     All method signature follows the conventions and restrictions listed below:
-        1. For independent attribute data, ``X`` means ``every type of attribu-
-            te``, ``N`` means ``Numeric attributes only`` and ``C`` stands for
-            ``Categorical attributes only``. It is important to note that the
-            categorical attribute sets between ``X`` and ``C`` and the numeri-
-            cal attribute sets between ``X`` and ``N`` may differ due to data
-            transformations, performed while fitting data into MFE model, en-
-            abled by, respectively, ``transform_num`` and ``transform_cat``
-            arguments from ``fit`` (MFE method).
 
-        2. Only arguments in MFE ``_custom_args_ft`` attribute (set up inside
-            ``fit`` method) are allowed to be required method arguments. All
-            other arguments must be strictly optional (i.e., has a predefined
-            default value).
+    1. For independent attribute data, ``X`` means ``every type of attribute``,
+       ``N`` means ``Numeric attributes only`` and ``C`` stands for
+       ``Categorical attributes only``. It is important to note that the
+       categorical attribute sets between ``X`` and ``C`` and the numerical
+       attribute sets between ``X`` and ``N`` may differ due to data
+       transformations, performed while fitting data into MFE model, enabled
+       by, respectively, ``transform_num`` and ``transform_cat`` arguments from
+       ``fit`` (MFE method).
 
-        3. The initial assumption is that the user can change any optional ar-
-            gument, without any previous verification of argument value or its
-            type, via kwargs argument of ``extract`` method of MFE class.
+    2. Only arguments in MFE ``_custom_args_ft`` attribute (set up inside
+       ``fit`` method) are allowed to be required method arguments. All other
+       arguments must be strictly optional (i.e., has a predefined default
+       value).
 
-        4. The return value of all feature extraction methods should be a sin-
-            gle value or a generic Sequence (preferably a :obj:`np.ndarray`)
-            type with numeric values.
+    3. The initial assumption is that the user can change any optional
+       argument, without any previous verification of argument value or its
+       type, via kwargs argument of ``extract`` method of MFE class.
 
-    There is another type of method adopted for automatic detection. It is ad-
-    opted the prefix ``precompute_`` for automatic detection of these methods.
-    These methods run while fitting some data into an MFE model automatically,
-    and their objective is to precompute some common value shared between more
-    than one feature extraction method. This strategy is a trade-off between
-    more system memory consumption and speeds up of feature extraction. Their
-    return value must always be a dictionary whose keys are possible extra ar-
-    guments for both feature extraction methods and other precomputation me-
-    thods. Note that there is a share of precomputed values between all valid
-    feature-extraction modules (e.g., ``class_freqs`` computed in module ``sta-
-    tistical`` can freely be used for any precomputation or feature extraction
-    method of module ``landmarking``).
+    4. The return value of all feature extraction methods should be a single
+       value or a generic Sequence (preferably a :obj:`np.ndarray`) type with
+       numeric values.
+
+    There is another type of method adopted for automatic detection. It is
+    adopted the prefix ``precompute_`` for automatic detection of these
+    methods. These methods run while fitting some data into an MFE model
+    automatically, and their objective is to precompute some common value
+    shared between more than one feature extraction method. This strategy is a
+    trade-off between more system memory consumption and speeds up of feature
+    extraction. Their return value must always be a dictionary whose keys are
+    possible extra arguments for both feature extraction methods and other
+    precomputation methods. Note that there is a share of precomputed values
+    between all valid feature-extraction modules (e.g., ``class_freqs``
+    computed in module ``statistical`` can freely be used for any
+    precomputation or feature extraction method of module ``landmarking``).
     """
 
     @classmethod
@@ -57,19 +58,23 @@ class MFEInfoTheory:
                               **kwargs) -> t.Dict[str, t.Any]:
         """Precompute each distinct class (absolute) frequencies.
 
-        Args:
-            y (:obj:`np.ndarray`, optional): the target attribute vector.
+        Parameters
+        ----------
+        y : :obj:`np.ndarray`, optional
+            The target attribute vector.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            dict: with following precomputed items:
-
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
                 - ``class_freqs`` (:obj:`np.ndarray`): absolute frequency of
-                    each distinct class in ``y``, if ``y`` is not :obj:`None-
-                    Type`.
+                  each distinct class in ``y``, if ``y`` is not
+                  :obj:`None-Type`.
         """
         precomp_vals = {}
 
@@ -88,35 +93,36 @@ class MFEInfoTheory:
                            **kwargs) -> t.Dict[str, t.Any]:
         """Precompute various values related to Shannon's Entropy.
 
-        Args:
-            y (:obj:`np.ndarray`, optional): the target attribute vector.
+        Parameters
+        ----------
+        y : :obj:`np.ndarray`, optional
+            The target attribute vector.
 
-            C (:obj:`np.ndarray`, optional): categorical attributes from fitted
-                data.
+        C : :obj:`np.ndarray`, optional
+            Categorical attributes from fitted data.
 
-            class_freqs (:obj:`np.ndarray`, optional): absolute frequency of
-                each distinct class in ``y``.
+        class_freqs : :obj:`np.ndarray`, optional
+            Absolute frequency of each distinct class in ``y``.
 
-            **kwargs: additional arguments. May have previously precomputed be-
-                fore this method from other precomputed methods, so they can
-                help speed up this precomputation.
+        kwargs:
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
 
-        Return:
-            dict: with following precomputed items:
-
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
                 - ``class_ent`` (:obj:`float`): Shannon's Entropy of ``y``, if
-                    it is not :obj:`NoneType`.
-
+                  it is not :obj:`NoneType`.
                 - ``attr_ent`` (:obj:`np.ndarray`): Shannon's Entropy of each
-                    attribute in ``C``, if it is not :obj:`NoneType`.
-
+                  attribute in ``C``, if it is not :obj:`NoneType`.
                 - ``joint_ent`` (:obj:`np.ndarray`): Joint Entropy between each
-                    attribute in ``C`` and target attribute ``y`` if both are
-                    not :obj:`NoneType`.
-
+                  attribute in ``C`` and target attribute ``y`` if both are
+                  not :obj:`NoneType`.
                 - ``mut_inf`` (:obj:`np.ndarray`): mutual information between
-                    each attribute in ``C`` and ``y``, if they both are not
-                    :obj:`NoneType`.
+                  each attribute in ``C`` and ``y``, if they both are not
+                  :obj:`NoneType`.
         """
         precomp_vals = {}
 
@@ -151,10 +157,11 @@ class MFEInfoTheory:
         Check ``ft_attr_ent`` and ``ft_class_ent`` methods for more informa-
         tion.
 
-        Args:
-            value_freqs (:obj:`np.ndarray`, optional): absolute frequency of
-                each distinct value in ``values``. This argument is meant to
-                exploit precomputations.
+        Parameters
+        ----------
+        value_freqs : :obj:`np.ndarray`, optional
+            Absolute frequency of each distinct value in ``values``. This
+            argument is meant to exploit precomputations.
         """
         if value_freqs is None:
             _, value_freqs = np.unique(values, return_counts=True)
@@ -184,9 +191,10 @@ class MFEInfoTheory:
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
 
-        Args:
-            epsilon (:obj:`float`, optional): tiny numeric value to avoid divi-
-                sion by zero.
+        Parameters
+        ----------
+        epsilon : :obj:`float`, optional
+            Tiny numeric value to avoid division by zero.
         """
         pij = pd.crosstab(vec_x, vec_y, normalize=True).values + epsilon
 
@@ -227,10 +235,11 @@ class MFEInfoTheory:
         ``x`` and P(x = val) is the probability of x assume some value ``val``
         in phi_x.
 
-        Args:
-            attr_ent (:obj:`np.ndarray`, optional): this argument is this me-
-                thod own return value, meant to exploit possible attribute en-
-                tropy precomputations.
+        Parameters
+        ----------
+        attr_ent : :obj:`np.ndarray`, optional
+            This argument is this method own return value, meant to exploit
+            possible attribute entropy precomputations.
         """
         if attr_ent is not None:
             return attr_ent
@@ -263,14 +272,17 @@ class MFEInfoTheory:
         ``y`` and P(y = val) is the probability of y assume some value ``val``
         in phi_y.
 
-        Args:
-            class_ent (:obj:`float`, optional): entropy of the target attribute
-                ``y``. Used to explot precomputations. If :obj:`NoneType`, this
-                argument is calculated using the method ``ft_class_ent``.
+        Parameters
+        ----------
+        class_ent : :obj:`float`, optional
+            Entropy of the target attribute ``y``. Used to explot
+            precomputations. If :obj:`NoneType`, this argument is calculated
+            using the method ``ft_class_ent``.
 
-            class_freqs (:obj:`np.ndarray`, optional): absolute frequency of
-                each distinct class in ``y``. This argument is meant to exploit
-                precomputations, used if ``class_ent`` is :obj:`NoneType`.
+        class_freqs : :obj:`np.ndarray`, optional
+            Absolute frequency of each distinct class in ``y``. This argument
+            is meant to exploit precomputations, used if ``class_ent`` is
+            :obj:`NoneType`.
         """
         if class_ent is not None:
             return class_ent
@@ -295,24 +307,27 @@ class MFEInfoTheory:
         is the Mutual Information between the predictive attribute ``x`` and
         target attribute ``y``.
 
-        Args:
-            epsilon (:obj:`float`, optional): tiny numeric value to avoid divi-
-                sion by zero.
+        Parameters
+        ----------
+        epsilon : :obj:`float`, optional
+            Tiny numeric value to avoid division by zero.
 
-            class_ent (:obj:`float`, optional): entropy of the target attribute
-                ``y``. Used to explot precomputations. If :obj:`NoneType`, this
-                argument is calculated using the method ``ft_class_ent``.
+        class_ent : :obj:`float`, optional
+            Entropy of the target attribute ``y``. Used to explot
+            precomputations. If :obj:`NoneType`, this argument is calculated
+            using the method ``ft_class_ent``.
 
-            class_freqs (:obj:`np.ndarray`, optional): absolute frequency of
-                each distinct class in ``y``. This argument is meant to exploit
-                precomputations, used if ``class_ent`` is :obj:`NoneType`.
+        class_freqs : :obj:`np.ndarray`, optional
+            Absolute frequency of each distinct class in ``y``. This argument
+            is meant to exploit precomputations, used if ``class_ent`` is
+            :obj:`NoneType`.
 
-            mut_inf (:obj:`np.ndarray`, optional): values of mutual information
-                between each numeric attribute of ``N`` and target ``y``. Simi-
-                larly, from the argument above, this argument purpose is to ex-
-                ploit the precomputations of mutual information. If this argu-
-                ment value is :obj:`NoneType`, then it is calculated using the
-                method ``ft_mut_int``.
+        mut_inf : :obj:`np.ndarray`, optional
+            Values of mutual information between each numeric attribute of
+            ``N`` and target ``y``. Similarly, from the argument above, this
+            argument purpose is to exploit the precomputations of mutual
+            information. If this argument value is :obj:`NoneType`, then it is
+            calculated using the method ``ft_mut_int``.
         """
         if class_ent is None:
             class_ent = MFEInfoTheory.ft_class_ent(y, class_freqs=class_freqs)
@@ -345,10 +360,11 @@ class MFEInfoTheory:
         fic value ``i`` in the set ``phi_x`` simultaneously with ``y`` assuming
         a specific value ``j`` in the set ``phi_y``.
 
-        Args:
-            joint_ent (:obj:`np.ndarray`, optional): this argument is this me-
-                thod own return value, meant to exploit possible joint entropy
-                precomputations.
+        Parameters
+        ----------
+        joint_ent : :obj:`np.ndarray`, optional
+            This argument is this method own return value, meant to exploit
+            possible joint entropy precomputations.
         """
         if joint_ent is None:
             joint_ent = np.apply_along_axis(
@@ -377,24 +393,27 @@ class MFEInfoTheory:
         on) for ``x`` and ``y`` and H(x, y) is the joint entropy between ``x``
         and ``y`` (see ``ft_joint_ent`` documentation more details).
 
-        Args:
-            attr_ent (:obj:`np.ndarray`, optional): values of each attribute
-                entropy in ``N``. This argument purpose is to exploit possible
-                precomputations of attribute entropy. If :obj:`NoneType`, this
-                argument is calculated using ``ft_attr_ent`` method.
+        Parameters
+        ----------
+        attr_ent : :obj:`np.ndarray`, optional
+            Values of each attribute entropy in ``N``. This argument purpose is
+            to exploit possible precomputations of attribute entropy. If
+            :obj:`NoneType`, this argument is calculated using ``ft_attr_ent``
+            method.
 
-            mut_inf (:obj:`np.ndarray`, optional): this argument is this me-
-                thod own return value, meant to exploit possible mutual infor-
-                mation precomputations.
+        mut_inf : :obj:`np.ndarray`, optional
+            This argument is this method own return value, meant to exploit
+            possible mutual information precomputations.
 
-            class_ent (:obj:`float`, optional): entropy of the target attribute
-                ``y``. Used to explot precomputations. If :obj:`NoneType`, this
-                argument is calculated using the method ``ft_class_ent``.
+        class_ent : :obj:`float`, optional
+            Entropy of the target attribute ``y``. Used to explot
+            precomputations. If :obj:`NoneType`, this argument is calculated
+            using the method ``ft_class_ent``.
 
-            joint_ent (:obj:`np.ndarray`, optional): joint entropy between each
-                independent attribute in ``N`` and target attribute ``y``. If
-                :obj:`NoneType`, this argument is calculated using the method
-                ``ft_joint_ent``.
+        joint_ent : :obj:`np.ndarray`, optional
+            Joint entropy between each independent attribute in ``N`` and
+            target attribute ``y``. If :obj:`NoneType`, this argument is
+            calculated using the method ``ft_joint_ent``.
         """
         if mut_inf is not None:
             return mut_inf
@@ -428,21 +447,23 @@ class MFEInfoTheory:
         and predictive attribute ``x``, and all ``sum`` is performed for all
         distinct ``x`` in ``N``.
 
-        Args:
-            epsilon (:obj:`float`, optional): tiny numeric value to avoid divi-
-                sion by zero.
+        Parameters
+        ----------
+        epsilon : :obj:`float`, optional
+            Tiny numeric value to avoid division by zero.
 
-            attr_ent (:obj:`np.ndarray`, optional): values of each attribute
-                entropy in ``N``. This argument purpose is to exploit possible
-                precomputations of attribute entropy. If :obj:`NoneType`, this
-                argument is calculated using ``ft_attr_ent`` method.
+        attr_ent : :obj:`np.ndarray`, optional
+            Values of each attribute entropy in ``N``. This argument purpose is
+            to exploit possible precomputations of attribute entropy. If
+            :obj:`NoneType`, this argument is calculated using ``ft_attr_ent``
+            method.
 
-            mut_inf (:obj:`np.ndarray`, optional): values of mutual information
-                between each numeric attribute of ``N`` and target ``y``. Simi-
-                larly, from the argument above, this argument purpose is to ex-
-                ploit the precomputations of mutual information. If this argu-
-                ment value is :obj:`NoneType`, then it is calculated using the
-                method ``ft_mut_int``.
+        mut_inf : :obj:`np.ndarray`, optional
+            Values of mutual information between each numeric attribute of
+            ``N`` and target ``y``. Similarly, from the argument above, this
+            argument purpose is to exploit the precomputations of mutual
+            information. If this argument value is :obj:`NoneType`, then it is
+            calculated using the method ``ft_mut_int``.
         """
         if attr_ent is None:
             attr_ent = MFEInfoTheory.ft_attr_ent(C)
