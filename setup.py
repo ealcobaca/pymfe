@@ -72,7 +72,7 @@ setuptools.setup(
     author_email=AUTHOR_EMAIL,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
-    long_description_content_type="tex/markdown",
+    long_description_content_type="text/markdown",
     license=LICENSE,
     url=URL,
     download_url=DOWNLOAD_URL,
