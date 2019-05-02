@@ -1,5 +1,5 @@
-Contributing code
-=================
+Contributing with pymfe
+=======================
 
 How to contribute
 -----------------
@@ -33,7 +33,7 @@ When you're done editing, do:
 
 Finally, go to the web page of your fork of the pymfe repo,
 and click 'Pull request' to send your changes to the maintainers for
-review. This will send an email to the committers.
+review. This will send an email to the Collaborators.
 
 (If any of the above seems like magic to you, then look up the
 [Git documentation](https://git-scm.com/documentation) on the web.)
@@ -62,25 +62,25 @@ following rules before submitting a pull request:
    contribution is complete and should be subjected to a detailed review.
    Incomplete contributions should be prefixed `[WIP]` to indicate a work
    in progress (and changed to `[MRG]` when it matures). WIPs may be useful
-   to: indicate you are working on something to avoid duplicated work,
-   request broad review of functionality or API, or seek collaborators.
+   to indicate you are working on something to avoid duplicated work,
+   request a broad review of functionality or API, or seek collaborators.
 
 -  All other tests pass when everything is rebuilt from scratch. On
-   Unix-like systems, check with (from the toplevel source folder):
+   Unix-like systems, check with (from the top-level source folder):
 
         $ make
 
 -  Documentation and high-coverage tests are necessary for enhancements
    to be accepted.
 
--  At least one paragraph of narrative documentation with links to
+-  At least one paragraph of documentation with links to
    references in the literature (with PDF links when possible) and
    the example.
 
 You can also check for common programming errors with the following
 tools:                           
  
--  Code with good unittest coverage (at least 90%), check with:
+-  Code with good unit test coverage (at least 90%), check with:
 
         $ pip install pytest pytest-cov
         $ pytest tests/ --showlocals -v --cov=pymfe/
@@ -96,7 +96,7 @@ tools:
         $ mypy path/to/module.py --ignore-missing-imports
 
 
-Filing bugs
+Report bugs
 -----------
 We use Github issues to track all bugs and feature requests; feel free to
 open an issue if you have found a bug or wish to see a feature implemented.
@@ -108,7 +108,7 @@ following rules before submitting:
    [issues](https://github.com/ealcobaca/pymfe/issues)
    or [pull requests](https://github.com/ealcobaca/pymfe/pulls).
 
--  Please ensure all code snippets and error messages are formatted in
+-  Please ensure all code snippets and error messages are formatted on
    appropriate code blocks.
    See [Creating and highlighting code blocks](https://help.github.com/articles/creating-and-highlighting-code-blocks).
 
@@ -131,7 +131,7 @@ following rules before submitting:
 Documentation
 -------------
 
-We are glad to accept any sort of documentation: function docstrings,
+We are glad to accept any documentation: function docstrings,
 reStructuredText documents (like this one), tutorials, etc.
 reStructuredText documents live in the source code repository under the
 doc/ directory.
@@ -144,7 +144,7 @@ See the README file in the docs/ directory for more information.
 For building the documentation, you will need
 [sphinx](http://sphinx-doc.org).
 
-When you are writing documentation, it is important to keep a good
+When you are writing documentation, it is essential to keep a good
 compromise between mathematical and algorithmic details, and give
 intuition to the reader on what the algorithm does. It is best to always
 start with a small paragraph with a hand-waving explanation of what the

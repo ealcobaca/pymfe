@@ -6,7 +6,7 @@
 [![Pypi](https://badge.fury.io/py/pymfe.svg)](https://badge.fury.io/py/pymfe)
 
 
-Extracts meta-features from datasets to support the design of recommendation systems based on Meta-Learning (MtL). The meta-features, also called characterization measures, are able to characterize the complexity of datasets and to provide estimates of algorithm performance. The package contains not only the standard, but also more recent characterization measures. By making available a large set of meta-feature extraction functions, this package allows a comprehensive data characterization, a deep data exploration and a large number of MtL-based data analysis.
+Extracts meta-features from datasets to support the design of recommendation systems based on Meta-Learning (MtL). The meta-features are able to characterize the complexity of datasets and to provide estimates of algorithm performance. The package contains not only the standard, but also more recent characterization measures. By making available a large set of meta-feature extraction functions, this package allows a comprehensive data characterization, a deep data exploration and a large number of MtL-based data analysis.
 
 ## Measures
 
@@ -39,7 +39,7 @@ pip install -U git+https://github.com/ealcobaca/pymfe
 
 ## Example of use
 
-The simplest way to extract meta-features is using the `metafeatures` method. The method can be called by a symbolic description of the model or by a data frame. The parameters are the dataset and the group of measures to be extracted. The default parameter is extract all the measures. To extract a specific measure, use the function related with the group. A simple example is given next:
+The simplest way to extract meta-features is instantiating the `MFE` class. The parameters are the measures, the group of measures and the summarization functions to be extracted. The default parameter is extract all the measures. The `fit` function can be called by passing the `X` and `y`. The `extract` function is used to extract the related measures. A simple example is given next:
 
 ```python
 # Load a dataset
@@ -63,7 +63,7 @@ ft = mfe.extract()
 print(ft)
 ```
 
-Several measures return more than one value. To aggregate the returned values, post processed methods can be used. This method can compute min, max, mean, median, kurtosis, standard deviation, among others. The default methods are the `mean` and the `sd`. Next, it is possible to see an example of the use of this method:
+Several measures return more than one value. To aggregate the returned values, summarization function can be used. This method can compute `min`, `max`, `mean`, `median`, `kurtosis`, `standard deviation`, among others. The default methods are the `mean` and the `sd`. Next, it is possible to see an example of the use of this method:
 
 ```python
 ## Extract all measures using min, median and max 

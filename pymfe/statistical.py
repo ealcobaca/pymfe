@@ -113,7 +113,8 @@ class MFEStatistical:
             method from other precomputed methods, so they can help speed up
             this precomputation.
 
-        Return:
+        Returns
+        -------
             :obj:`dict`
                 With following precomputed items:
                     - ``eig_vals`` (:obj:`np.ndarray`): array with filtered
@@ -407,8 +408,8 @@ class MFEStatistical:
 
             p_i = sqrt(lda_eig_i / (1.0 + lda_eig_i))
 
-        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the ge-
-        neralized eigenvalue problem of Linear Discriminant Analysis Scatter
+        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the
+        generalized eigenvalue problem of Linear Discriminant Analysis Scatter
         Matrix S defined as:
 
             S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat),
@@ -417,13 +418,13 @@ class MFEStatistical:
             Scatter_Within_Mat = sum((N_c - 1.0) * Covariance(X_c)), ``N_c``
             is the number of instances of class c and X_c are the instances of
             class ``c``. Effectively, this is exactly just the summation of
-            all Covariance matrices between instances of the same class with-
-            out dividing then by the number of instances.
+            all Covariance matrices between instances of the same class without
+            dividing then by the number of instances.
 
             Scatter_Between_Mat = sum(N_c * (U_c - U) * (U_c - U)^T), `'N_c``
             is the number of instances of class c, U_c is the mean coordinates
-            of instances of class ``c``, and ``U`` is the mean value of coordi-
-            nates of all instances in the dataset.
+            of instances of class ``c``, and ``U`` is the mean value of
+            coordinates of all instances in the dataset.
 
         Parameters
         ----------
@@ -463,7 +464,8 @@ class MFEStatistical:
                    norm_ord: t.Union[int, float] = 2,
                    classes: t.Optional[np.ndarray] = None,
                    class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Computes the distance between minority and majority classes center of mass.
+        """Computes the distance between minority and majority classes center
+        of mass.
 
         The center of mass of a class is the average value of each attribute
         between instances of the same class.
@@ -1205,10 +1207,10 @@ class MFEStatistical:
 
             L = prod(1.0 / (1.0 + lda_eig_i))
 
-        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the ge-
-        neralized eigenvalue problem of Linear Discriminant Analysis Scatter
-        Matrix. Check ``ft_can_cor`` documentation for more in-depth informati-
-        on about this value.
+        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the
+        generalized eigenvalue problem of Linear Discriminant Analysis Scatter
+        Matrix. Check ``ft_can_cor`` documentation for more in-depth
+        information about this value.
 
         Parameters
         ----------

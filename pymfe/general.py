@@ -209,7 +209,8 @@ class MFEGeneral:
     @classmethod
     def ft_num_to_cat(cls, X: np.ndarray,
                       cat_cols: t.Sequence[int]) -> t.Union[int, np.float]:
-        """Returns the ratio between the number of numeric and categoric features.
+        """Returns the ratio between the number of numeric and categoric
+        features.
 
         If the number of categoric features is zero, :obj:`np.nan` is returned
         instead.
