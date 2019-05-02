@@ -1,3 +1,4 @@
+#################
 API Documentation
 #################
 This is the full API documentation of the `pymfe` toolbox.
@@ -15,7 +16,7 @@ This is the full API documentation of the `pymfe` toolbox.
 
 .. autosummary::
    :toctree: generated/
-
+   
    mfe.MFE
 
 
