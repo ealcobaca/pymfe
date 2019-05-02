@@ -10,6 +10,7 @@ The pymfe package requires the following dependencies:
 * scipy
 * scikit-learn
 * pandas
+* patsy
 
 
 Install
@@ -36,13 +37,9 @@ commands to get a copy from Github and install all dependencies::
 Test and coverage
 =================
 
-You want to test the code before to install::
+You want to test/test-coverage the code before to install::
 
   $ make test
-
-You wish to test the coverage of your version::
-
-  $ make coverage
 
 You can also use `pytest`::
 
