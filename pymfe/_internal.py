@@ -65,6 +65,7 @@ import pymfe.statistical as statistical
 import pymfe.info_theory as info_theory
 import pymfe.landmarking as landmarking
 import pymfe.model_based as model_based
+import pymfe.clustering as clustering
 import pymfe.scoring as scoring
 
 VALID_VALUE_PREFIX = "VALID_"
@@ -75,6 +76,7 @@ VALID_GROUPS = (
     "statistical",
     "model-based",
     "info-theory",
+    "clustering",
 )  # type: t.Tuple[str, ...]
 
 VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
@@ -85,6 +87,7 @@ VALID_MFECLASSES = (
     statistical.MFEStatistical,
     model_based.MFEModelBased,
     info_theory.MFEInfoTheory,
+    clustering.MFEClustering,
 )  # type: t.Tuple
 
 VALID_TIMEOPT = (
@@ -1168,11 +1171,7 @@ def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
     perc_interval = 100.0 / num_bins
     perc_range = np.arange(perc_interval, 100, perc_interval)
     hist_divs = np.percentile(data, perc_range)
-
-    if hist_divs.size == 0:
-        hist_divs = [np.median(data)]
-
-    return np.digitize(data, hist_divs, right=True)
+    return np.digitize(x=data, bins=hist_divs, right=True)
 
 
 def transform_num(data_numeric: np.ndarray,
