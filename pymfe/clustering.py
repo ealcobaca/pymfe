@@ -1,9 +1,11 @@
 """A module dedicated to the extraction of Clustering Metafeatures.
 """
 import typing as t
+
 import numpy as np
 import scipy.spatial.distance
 import itertools
+import sklearn.metrics
 
 
 class MFEClustering:
@@ -88,38 +90,29 @@ class MFEClustering:
         return precomp_vals
 
     @classmethod
-    def precompute_group_distances(
-            cls,
-            X: np.ndarray,
-            y: np.ndarray,
-            dist_metric: str = "gower",
-            classes: t.Optional[np.ndarray] = None,
-            **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_group_distances(cls,
+                                   X: np.ndarray,
+                                   y: np.ndarray,
+                                   dist_metric: str = "gower",
+                                   classes: t.Optional[np.ndarray] = None,
+                                   **kwargs) -> t.Dict[str, t.Any]:
         """."""
         precomp_vals = {}
 
-        if not {"pairwise_norm_interclass_dist",
-                "intraclass_dist"}.issubset(kwargs):
+        if not {"pairwise_norm_interclass_dist", "intraclass_dists"
+                }.issubset(kwargs):
             precomp_vals["pairwise_norm_interclass_dist"] = (
                 MFEClustering._pairwise_norm_interclass_dist(
-                    X=X,
-                    y=y,
-                    dist_metric=dist_metric,
-                    classes=classes))
+                    X=X, y=y, dist_metric=dist_metric, classes=classes))
 
-            precomp_vals["intraclass_dist"] = (
+            precomp_vals["intraclass_dists"] = (
                 MFEClustering._all_intraclass_dists(
-                    X=X,
-                    y=y,
-                    dist_metric=dist_metric,
-                    classes=classes))
+                    X=X, y=y, dist_metric=dist_metric, classes=classes))
 
         return precomp_vals
 
     @classmethod
-    def _gower_dist(cls,
-                    vec_x: np.ndarray,
-                    vec_y: np.ndarray) -> float:
+    def _gower_dist(cls, vec_x: np.ndarray, vec_y: np.ndarray) -> float:
         """Calculate the Gower distance between ``vec_x`` and ``vec_y``."""
         return scipy.spatial.distance.euclidean(vec_x, vec_y)
 
@@ -129,7 +122,7 @@ class MFEClustering:
             group_inst_a: np.ndarray,
             group_inst_b: np.ndarray,
             dist_metric: str = "gower",
-            ) -> np.ndarray:
+    ) -> np.ndarray:
         """Calculate the distance between instances of different classes.
 
         The distance is normalized by the multiplication of the number of
@@ -139,8 +132,7 @@ class MFEClustering:
             group_inst_a,
             group_inst_b,
             metric=(dist_metric
-                    if dist_metric != "gower"
-                    else MFEClustering._gower_dist))
+                    if dist_metric != "gower" else MFEClustering._gower_dist))
 
         # Note: norm_interclass_dist.size =
         #   group_inst_a.size * group_inst_b.size
@@ -152,8 +144,7 @@ class MFEClustering:
             X: np.ndarray,
             y: np.ndarray,
             dist_metric: str = "gower",
-            classes: t.Optional[np.ndarray] = None
-            ) -> np.ndarray:
+            classes: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Calculate all pairwise normalized interclass distances."""
         if classes is None:
             classes = np.unique(y)
@@ -169,22 +160,20 @@ class MFEClustering:
         return interclass_dists
 
     @classmethod
-    def _intraclass_dist(
-            cls,
-            instances: np.ndarray,
-            dist_metric: str = "gower") -> float:
+    def _intraclass_dists(cls,
+                          instances: np.ndarray,
+                          dist_metric: str = "gower") -> float:
         """Calculate the intraclass distance of the given instances.
 
         The intraclass is the maximum distance between two distinct
         instances of the same class.
         """
-        intraclass_dist = scipy.spatial.distance.pdist(
+        intraclass_dists = scipy.spatial.distance.pdist(
             instances,
             metric=(dist_metric
-                    if dist_metric != "gower"
-                    else MFEClustering._gower_dist))
+                    if dist_metric != "gower" else MFEClustering._gower_dist))
 
-        return intraclass_dist.max()
+        return intraclass_dists.max()
 
     @classmethod
     def _all_intraclass_dists(
@@ -198,19 +187,24 @@ class MFEClustering:
             classes = np.unique(y)
 
         intraclass_dists = np.array([
-            MFEClustering._intraclass_dist(
-                X[y == cur_class, :],
-                dist_metric=dist_metric)
+            MFEClustering._intraclass_dists(
+                X[y == cur_class, :], dist_metric=dist_metric)
             for cur_class in classes
         ])
 
         return intraclass_dists
 
     @classmethod
-    def ft_vdu(cls,
-               X: np.ndarray,
-               y: np.ndarray,
-               classes: t.Optional[np.ndarray] = None) -> float:
+    def ft_vdu(
+            cls,
+            X: np.ndarray,
+            y: np.ndarray,
+            dist_metric: str = "gower",
+            classes: t.Optional[np.ndarray] = None,
+            intraclass_dists: t.Optional[np.ndarray] = None,
+            pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
+            epsilon: float = 1.0e-8,
+    ) -> float:
         """
         Parameters
         ----------
@@ -218,18 +212,19 @@ class MFEClustering:
         Returns
         -------
         """
-        if classes is None:
-            classes = np.unique(y)
+        if pairwise_norm_interclass_dist is None:
+            pairwise_norm_interclass_dist = (
+                MFEClustering._pairwise_norm_interclass_dist(
+                    X=X, y=y, dist_metric=dist_metric, classes=classes))
 
-        vdu = None
-        """
-        vdu = np.array([
-            np.array([]).max()
-            for
-        ]).sum()
-        """
+        if intraclass_dists is None:
+            intraclass_dists = MFEClustering._all_intraclass_dists(
+                X=X, y=y, dist_metric=dist_metric, classes=classes).max()
 
-        return vdu / classes.size
+        vdu = (pairwise_norm_interclass_dist.min() /
+               (intraclass_dists.max() + epsilon))
+
+        return vdu
 
     @classmethod
     def ft_vdb(cls) -> float:
@@ -242,13 +237,14 @@ class MFEClustering:
         """
 
     @classmethod
-    def ft_int(cls,
-               X: np.ndarray,
-               y: np.ndarray,
-               dist_metric: str = "gower",
-               classes: t.Optional[np.ndarray] = None,
-               pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
-               ) -> float:
+    def ft_int(
+            cls,
+            X: np.ndarray,
+            y: np.ndarray,
+            dist_metric: str = "gower",
+            classes: t.Optional[np.ndarray] = None,
+            pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
+    ) -> float:
         """
         Parameters
         ----------
@@ -267,9 +263,7 @@ class MFEClustering:
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
                 MFEClustering._pairwise_norm_interclass_dist(
-                    X=X,
-                    y=y,
-                    dist_metric=dist_metric))
+                    X=X, y=y, dist_metric=dist_metric, classes=classes))
 
         norm_factor = 2.0 / (class_num * (class_num - 1.0))
 
@@ -286,7 +280,12 @@ class MFEClustering:
         """
 
     @classmethod
-    def ft_sil(cls) -> float:
+    def ft_silhouette(cls,
+                      X: np.ndarray,
+                      y: np.ndarray,
+                      dist_metric: str = "gower",
+                      sample_size: t.Optional[int] = None,
+                      random_state: t.Optional[int] = None) -> float:
         """
         Parameters
         ----------
@@ -294,6 +293,15 @@ class MFEClustering:
         Returns
         -------
         """
+        silhouette = sklearn.metrics.silhouette_score(
+            X=X,
+            labels=y,
+            metric=(dist_metric
+                    if dist_metric != "gower" else MFEClustering._gower_dist),
+            sample_size=sample_size,
+            random_state=random_state)
+
+        return silhouette
 
     @classmethod
     def ft_gk(cls) -> float:
@@ -306,7 +314,7 @@ class MFEClustering:
         """
 
     @classmethod
-    def ft_pb(cls) -> float:
+    def ft_point_biserial(cls) -> float:
         """
         Parameters
         ----------
@@ -314,6 +322,7 @@ class MFEClustering:
         Returns
         -------
         """
+        # scipy.stats.pointbiserialr
 
     @classmethod
     def ft_hl(cls) -> float:
