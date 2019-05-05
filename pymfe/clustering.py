@@ -1,11 +1,12 @@
 """A module dedicated to the extraction of Clustering Metafeatures.
 """
 import typing as t
+import itertools
 
 import numpy as np
 import scipy.spatial.distance
-import itertools
 import sklearn.metrics
+import sklearn.neighbors
 
 
 class MFEClustering:
@@ -233,7 +234,7 @@ class MFEClustering:
         return vdu
 
     @classmethod
-    def ft_vdb(cls) -> float:
+    def ft_davies_bouldin_index(cls, X: np.ndarray, y: np.ndarray) -> float:
         """
         Parameters
         ----------
@@ -241,6 +242,7 @@ class MFEClustering:
         Returns
         -------
         """
+        return sklearn.metrics.davies_bouldin_score(X=X, labels=y)
 
     @classmethod
     def ft_int(
@@ -276,7 +278,12 @@ class MFEClustering:
         return pairwise_norm_interclass_dist.sum() * norm_factor
 
     @classmethod
-    def ft_con(cls) -> float:
+    def ft_con(cls,
+               X: np.ndarray,
+               y: np.ndarray,
+               dist_metric: str = "euclidean",
+               n_neighbors: t.Optional[int] = None,
+               class_freqs: t.Optional[np.ndarray] = None) -> float:
         """
         Parameters
         ----------
@@ -284,6 +291,29 @@ class MFEClustering:
         Returns
         -------
         """
+        if class_freqs is None:
+            _, class_freqs = np.unique(y, return_counts=True)
+
+        if n_neighbors is None:
+            n_neighbors = int(np.sqrt(class_freqs.min()))
+
+        model = sklearn.neighbors.KDTree(X, metric=dist_metric)
+
+        # Note: skip the first column because it's always the
+        # instance itself
+        nearest_neig = model.query(
+            X=X, k=n_neighbors + 1, return_distance=False)[:, 1:]
+
+        con_index = np.array([
+            sum([
+                1.0 / proximity_ind
+                for proximity_ind, neig_inst_ind in enumerate(
+                    nearest_neig[cur_inst_ind, :], 1)
+                if y[neig_inst_ind] == y[cur_inst_ind]
+            ]) for cur_inst_ind in np.arange(y.size)
+        ]).sum()
+
+        return con_index
 
     @classmethod
     def ft_silhouette(cls,
@@ -391,7 +421,7 @@ class MFEClustering:
         return correlation
 
     @classmethod
-    def ft_hl_c_index(
+    def ft_hubert_levin_index(
             cls,
             X: np.ndarray,
             y: np.ndarray,
@@ -440,7 +470,7 @@ class MFEClustering:
         return c_indexes
 
     @classmethod
-    def ft_ch(cls) -> float:
+    def ft_calinski_harabaz_index(cls, X: np.ndarray, y: np.ndarray) -> float:
         """
         Parameters
         ----------
@@ -448,12 +478,12 @@ class MFEClustering:
         Returns
         -------
         """
+        return sklearn.metrics.calinski_harabaz_score(X=X, labels=y)
 
 
 if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    ans = MFEClustering.ft_hl_c_index(iris.data, iris.target)
-
+    ans = MFEClustering.ft_con(iris.data, iris.target)
     print(ans)
