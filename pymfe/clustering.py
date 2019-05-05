@@ -165,34 +165,37 @@ class MFEClustering:
     @classmethod
     def _intraclass_dists(cls,
                           instances: np.ndarray,
-                          dist_metric: str = "gower") -> float:
+                          dist_metric: str = "gower",
+                          get_max_dist: bool = True) -> float:
         """Calculate the intraclass distance of the given instances.
 
         The intraclass is the maximum distance between two distinct
-        instances of the same class.
+        instances of the same class. If ``get_max`` is false, then
+        all distances are returned instead.
         """
         intraclass_dists = scipy.spatial.distance.pdist(
             instances,
             metric=(dist_metric
                     if dist_metric != "gower" else MFEClustering._gower_dist))
 
-        return intraclass_dists.max()
+        return intraclass_dists.max() if get_max_dist else intraclass_dists
 
     @classmethod
-    def _all_intraclass_dists(
-            cls,
-            X: np.ndarray,
-            y: np.ndarray,
-            dist_metric: str = "gower",
-            classes: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def _all_intraclass_dists(cls,
+                              X: np.ndarray,
+                              y: np.ndarray,
+                              dist_metric: str = "gower",
+                              classes: t.Optional[np.ndarray] = None,
+                              get_max_dist: bool = True) -> np.ndarray:
         """Calculate all intraclass (internal to a class) distances."""
         if classes is None:
             classes = np.unique(y)
 
         intraclass_dists = np.array([
             MFEClustering._intraclass_dists(
-                X[y == cur_class, :], dist_metric=dist_metric)
-            for cur_class in classes
+                X[y == cur_class, :],
+                dist_metric=dist_metric,
+                get_max_dist=get_max_dist) for cur_class in classes
         ])
 
         return intraclass_dists
@@ -315,6 +318,8 @@ class MFEClustering:
             classes: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Goodman and Kruskal's Gamma rank correlation.
 
+        https://en.wikipedia.org/wiki/Goodman_and_Kruskal%27s_gamma
+
         The range value is [-1, 1].
 
         TO BE FIXED.
@@ -386,7 +391,13 @@ class MFEClustering:
         return correlation
 
     @classmethod
-    def ft_hl(cls) -> float:
+    def ft_hl_c_index(
+            cls,
+            X: np.ndarray,
+            y: np.ndarray,
+            dist_metric: str = "gower",
+            classes: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """
         Parameters
         ----------
@@ -394,6 +405,39 @@ class MFEClustering:
         Returns
         -------
         """
+        if classes is None or class_freqs is None:
+            classes, class_freqs = np.unique(y, return_counts=True)
+
+        sorted_pairwise_dist = scipy.spatial.distance.pdist(
+            X=X,
+            metric=(dist_metric
+                    if dist_metric != "gower" else MFEClustering._gower_dist))
+
+        sorted_pairwise_dist.sort()
+
+        # Note: these are all the pairwise intraclass distances,
+        # and not the intraclass distance itself (maximum value
+        # of the pairwise distances), because get_max_dist is False.
+        # Hence, I didn't get the precomputed value.
+        sum_intracl_dists = MFEClustering._all_intraclass_dists(
+            X=X,
+            y=y,
+            dist_metric=dist_metric,
+            classes=classes,
+            get_max_dist=False).sum(axis=1)
+
+        c_indexes = np.zeros(classes.size)
+
+        for i in np.arange(classes.size):
+            cl_pair_num = class_freqs[i] * (class_freqs[i] - 1) // 2
+
+            sum_d_rank_least = sorted_pairwise_dist[:cl_pair_num].sum()
+            sum_d_rank_greater = sorted_pairwise_dist[-cl_pair_num:].sum()
+
+            c_indexes[i] = ((sum_intracl_dists[i] - sum_d_rank_least) /
+                            (sum_d_rank_greater - sum_d_rank_least))
+
+        return c_indexes
 
     @classmethod
     def ft_ch(cls) -> float:
@@ -409,42 +453,7 @@ class MFEClustering:
 if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
-    """
-    instances = iris.data[:5, :]
 
-    intraclass_dists = scipy.spatial.distance.pdist(
-        instances,
-        metric=MFEClustering._gower_dist)
+    ans = MFEClustering.ft_hl_c_index(iris.data, iris.target)
 
-    print(intraclass_dists)
-    """
-    data = np.array([
-        2,
-        8,
-        5,
-        4,
-        2,
-        6,
-        1,
-        4,
-        5,
-        7,
-        4,
-        3,
-        9,
-        4,
-        3,
-        1,
-        7,
-        2,
-        5,
-        6,
-        8,
-        3,
-    ]).reshape(-1, 1)
-
-    y = np.array([0] * 11 + [1] * 11)
-
-    gk_gamma = MFEClustering.ft_point_biserial(data, y)
-
-    print(gk_gamma)
+    print(ans)
