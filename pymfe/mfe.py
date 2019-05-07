@@ -685,7 +685,7 @@ class MFE:
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
             check_bool: bool = False,
             # missing_data: str = "ignore",
-            precomp_groups: str = "all",
+            precomp_groups: t.Optional[str] = "all",
             wildcard: str = "all",
             suppress_warnings: bool = False,
     ) -> "MFE":

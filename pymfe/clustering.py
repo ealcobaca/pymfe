@@ -92,62 +92,59 @@ class MFEClustering:
 
     @classmethod
     def precompute_group_distances(cls,
-                                   X: np.ndarray,
+                                   N: np.ndarray,
                                    y: np.ndarray,
-                                   dist_metric: str = "gower",
+                                   dist_metric: str = "euclidean",
                                    classes: t.Optional[np.ndarray] = None,
                                    **kwargs) -> t.Dict[str, t.Any]:
         """."""
         precomp_vals = {}
 
-        if not {"pairwise_norm_interclass_dist", "intraclass_dists"
-                }.issubset(kwargs):
+        if not {"pairwise_norm_interclass_dist",
+                "pairwise_intraclass_dists",
+                "intraclass_dists"}.issubset(kwargs):
             precomp_vals["pairwise_norm_interclass_dist"] = (
                 MFEClustering._pairwise_norm_interclass_dist(
-                    X=X, y=y, dist_metric=dist_metric, classes=classes))
+                    N=N, y=y, dist_metric=dist_metric, classes=classes))
+
+            precomp_vals["pairwise_intraclass_dists"] = (
+                MFEClustering._all_intraclass_dists(
+                    N=N,
+                    y=y,
+                    dist_metric=dist_metric,
+                    classes=classes,
+                    get_max_dist=False))
 
             precomp_vals["intraclass_dists"] = (
-                MFEClustering._all_intraclass_dists(
-                    X=X, y=y, dist_metric=dist_metric, classes=classes))
+                precomp_vals["pairwise_intraclass_dists"].max(axis=1))
 
         return precomp_vals
-
-    @classmethod
-    def _gower_dist(cls,
-                    vec_x: np.ndarray,
-                    vec_y: np.ndarray,
-                    epsilon: float = 1.0e-8) -> float:
-        """Calculate the Gower distance between ``vec_x`` and ``vec_y``."""
-        return np.linalg.norm(vec_x - vec_y, 2)
 
     @classmethod
     def _normalized_interclass_dist(
             cls,
             group_inst_a: np.ndarray,
             group_inst_b: np.ndarray,
-            dist_metric: str = "gower",
+            dist_metric: str = "euclidean",
     ) -> np.ndarray:
         """Calculate the distance between instances of different classes.
 
-        The distance is normalized by the multiplication of the number of
-        instances of each groups.
+        The distance is normalized by the number of distinct pairs
+        between ``group_inst_a`` and ``group_inst_b``.
         """
         norm_interclass_dist = scipy.spatial.distance.cdist(
             group_inst_a,
             group_inst_b,
-            metric=(dist_metric
-                    if dist_metric != "gower" else MFEClustering._gower_dist))
+            metric=dist_metric)
 
-        # Note: norm_interclass_dist.size =
-        #   group_inst_a.size * group_inst_b.size
         return norm_interclass_dist / norm_interclass_dist.size
 
     @classmethod
     def _pairwise_norm_interclass_dist(
             cls,
-            X: np.ndarray,
+            N: np.ndarray,
             y: np.ndarray,
-            dist_metric: str = "gower",
+            dist_metric: str = "euclidean",
             classes: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Calculate all pairwise normalized interclass distances."""
         if classes is None:
@@ -155,8 +152,8 @@ class MFEClustering:
 
         interclass_dists = np.array([
             MFEClustering._normalized_interclass_dist(
-                X[y == class_a, :],
-                X[y == class_b, :],
+                N[y == class_a, :],
+                N[y == class_b, :],
                 dist_metric=dist_metric)
             for class_a, class_b in itertools.combinations(classes, 2)
         ])
@@ -166,7 +163,7 @@ class MFEClustering:
     @classmethod
     def _intraclass_dists(cls,
                           instances: np.ndarray,
-                          dist_metric: str = "gower",
+                          dist_metric: str = "euclidean",
                           get_max_dist: bool = True) -> float:
         """Calculate the intraclass distance of the given instances.
 
@@ -175,17 +172,15 @@ class MFEClustering:
         all distances are returned instead.
         """
         intraclass_dists = scipy.spatial.distance.pdist(
-            instances,
-            metric=(dist_metric
-                    if dist_metric != "gower" else MFEClustering._gower_dist))
+            instances, metric=dist_metric)
 
         return intraclass_dists.max() if get_max_dist else intraclass_dists
 
     @classmethod
     def _all_intraclass_dists(cls,
-                              X: np.ndarray,
+                              N: np.ndarray,
                               y: np.ndarray,
-                              dist_metric: str = "gower",
+                              dist_metric: str = "euclidean",
                               classes: t.Optional[np.ndarray] = None,
                               get_max_dist: bool = True) -> np.ndarray:
         """Calculate all intraclass (internal to a class) distances."""
@@ -194,7 +189,7 @@ class MFEClustering:
 
         intraclass_dists = np.array([
             MFEClustering._intraclass_dists(
-                X[y == cur_class, :],
+                N[y == cur_class, :],
                 dist_metric=dist_metric,
                 get_max_dist=get_max_dist) for cur_class in classes
         ])
@@ -204,9 +199,9 @@ class MFEClustering:
     @classmethod
     def ft_vdu(
             cls,
-            X: np.ndarray,
+            N: np.ndarray,
             y: np.ndarray,
-            dist_metric: str = "gower",
+            dist_metric: str = "euclidean",
             classes: t.Optional[np.ndarray] = None,
             intraclass_dists: t.Optional[np.ndarray] = None,
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
@@ -222,11 +217,11 @@ class MFEClustering:
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
                 MFEClustering._pairwise_norm_interclass_dist(
-                    X=X, y=y, dist_metric=dist_metric, classes=classes))
+                    N=N, y=y, dist_metric=dist_metric, classes=classes))
 
         if intraclass_dists is None:
             intraclass_dists = MFEClustering._all_intraclass_dists(
-                X=X, y=y, dist_metric=dist_metric, classes=classes).max()
+                N=N, y=y, dist_metric=dist_metric, classes=classes).max()
 
         vdu = (pairwise_norm_interclass_dist.min() /
                (intraclass_dists.max() + epsilon))
@@ -234,7 +229,7 @@ class MFEClustering:
         return vdu
 
     @classmethod
-    def ft_davies_bouldin_index(cls, X: np.ndarray, y: np.ndarray) -> float:
+    def ft_davies_bouldin_index(cls, N: np.ndarray, y: np.ndarray) -> float:
         """
         Parameters
         ----------
@@ -242,14 +237,14 @@ class MFEClustering:
         Returns
         -------
         """
-        return sklearn.metrics.davies_bouldin_score(X=X, labels=y)
+        return sklearn.metrics.davies_bouldin_score(X=N, labels=y)
 
     @classmethod
     def ft_int(
             cls,
-            X: np.ndarray,
+            N: np.ndarray,
             y: np.ndarray,
-            dist_metric: str = "gower",
+            dist_metric: str = "euclidean",
             classes: t.Optional[np.ndarray] = None,
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
     ) -> float:
@@ -271,7 +266,7 @@ class MFEClustering:
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
                 MFEClustering._pairwise_norm_interclass_dist(
-                    X=X, y=y, dist_metric=dist_metric, classes=classes))
+                    N=N, y=y, dist_metric=dist_metric, classes=classes))
 
         norm_factor = 2.0 / (class_num * (class_num - 1.0))
 
@@ -279,7 +274,7 @@ class MFEClustering:
 
     @classmethod
     def ft_con(cls,
-               X: np.ndarray,
+               N: np.ndarray,
                y: np.ndarray,
                dist_metric: str = "euclidean",
                n_neighbors: t.Optional[int] = None,
@@ -297,12 +292,12 @@ class MFEClustering:
         if n_neighbors is None:
             n_neighbors = int(np.sqrt(class_freqs.min()))
 
-        model = sklearn.neighbors.KDTree(X, metric=dist_metric)
+        model = sklearn.neighbors.KDTree(N, metric=dist_metric)
 
         # Note: skip the first column because it's always the
         # instance itself
         nearest_neig = model.query(
-            X=X, k=n_neighbors + 1, return_distance=False)[:, 1:]
+            N, k=n_neighbors + 1, return_distance=False)[:, 1:]
 
         con_index = np.array([
             sum([
@@ -317,9 +312,9 @@ class MFEClustering:
 
     @classmethod
     def ft_silhouette(cls,
-                      X: np.ndarray,
+                      N: np.ndarray,
                       y: np.ndarray,
-                      dist_metric: str = "gower",
+                      dist_metric: str = "euclidean",
                       sample_size: t.Optional[int] = None,
                       random_state: t.Optional[int] = None) -> float:
         """
@@ -330,10 +325,9 @@ class MFEClustering:
         -------
         """
         silhouette = sklearn.metrics.silhouette_score(
-            X=X,
+            X=N,
             labels=y,
-            metric=(dist_metric
-                    if dist_metric != "gower" else MFEClustering._gower_dist),
+            metric=dist_metric,
             sample_size=sample_size,
             random_state=random_state)
 
@@ -342,17 +336,15 @@ class MFEClustering:
     @classmethod
     def ft_goodman_kruskal_gamma(
             cls,
-            X: np.ndarray,
+            N: np.ndarray,
             y: np.ndarray,
-            dist_metric: str = "gower",
-            classes: t.Optional[np.ndarray] = None) -> np.ndarray:
+            dist_metric: str = "euclidean",
+            classes: t.Optional[np.ndarray] = None,
+            pairwise_intraclass_dists: t.Optional[np.ndarray] = None
+            ) -> np.ndarray:
         """Goodman and Kruskal's Gamma rank correlation.
 
-        https://en.wikipedia.org/wiki/Goodman_and_Kruskal%27s_gamma
-
         The range value is [-1, 1].
-
-        TO BE FIXED.
 
         Parameters
         ----------
@@ -363,37 +355,45 @@ class MFEClustering:
         if classes is None:
             classes = np.unique(y)
 
-        pairwise_intraclass_dists = {
-            cur_class: scipy.spatial.distance.pdist(
-                X[y == cur_class, :],
-                metric=(dist_metric if dist_metric != "gower" else
-                        MFEClustering._gower_dist))
-            for cur_class in classes
-        }
+        if pairwise_intraclass_dists is None:
+            pairwise_intraclass_dists = MFEClustering._all_intraclass_dists(
+                N=N,
+                y=y,
+                dist_metric=dist_metric,
+                classes=classes,
+                get_max_dist=False)
 
         gk_gamma = []
 
-        for class_a, class_b in itertools.combinations(classes, 2):
-            pairwise_intraclass_dists_a = pairwise_intraclass_dists[class_a]
-            pairwise_intraclass_dists_b = pairwise_intraclass_dists[class_b]
+        for class_a, class_b in itertools.combinations(
+                np.arange(classes.size), 2):
+            pdists_a = pairwise_intraclass_dists[class_a]
+            pdists_b = pairwise_intraclass_dists[class_b]
 
             pairs_concordant = 0
-            for dist_a in pairwise_intraclass_dists_a:
-                for dist_b in pairwise_intraclass_dists_b:
-                    pairs_concordant += 1 if dist_a < dist_b else -1
+            pairs_reversed = 0
 
-            gk_gamma.append(
-                ((pairs_concordant) / (pairwise_intraclass_dists_a.size *
-                                       pairwise_intraclass_dists_b.size)))
+            size = min(pdists_a.size, pdists_b.size)
+
+            for i, j in itertools.combinations(np.arange(size), 2):
+                sign_a = np.sign(pdists_a[i] - pdists_a[j])
+                sign_b = np.sign(pdists_b[i] - pdists_b[j])
+
+                if sign_a * sign_b:
+                    pairs_concordant += sign_a == sign_b
+                    pairs_reversed += sign_a == -sign_b
+
+            gk_gamma.append((pairs_concordant - pairs_reversed) /
+                            (pairs_concordant + pairs_reversed))
 
         return np.array(gk_gamma)
 
     @classmethod
     def ft_point_biserial(
             cls,
-            X: np.ndarray,
+            N: np.ndarray,
             y: np.ndarray,
-            dist_metric: str = "gower",
+            dist_metric: str = "euclidean",
     ) -> float:
         """Pearson Correlation between class matching and instance distances.
 
@@ -406,9 +406,7 @@ class MFEClustering:
         -------
         """
         inst_dists = scipy.spatial.distance.pdist(
-            X=X,
-            metric=(dist_metric
-                    if dist_metric != "gower" else MFEClustering._gower_dist))
+            X=N, metric=dist_metric)
 
         inst_matching_classes = np.array([
             inst_class_a == inst_class_b
@@ -423,11 +421,13 @@ class MFEClustering:
     @classmethod
     def ft_hubert_levin_index(
             cls,
-            X: np.ndarray,
+            N: np.ndarray,
             y: np.ndarray,
-            dist_metric: str = "gower",
+            dist_metric: str = "euclidean",
             classes: t.Optional[np.ndarray] = None,
-            class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
+            class_freqs: t.Optional[np.ndarray] = None,
+            pairwise_intraclass_dists: t.Optional[np.ndarray] = None
+            ) -> np.ndarray:
         """
         Parameters
         ----------
@@ -439,22 +439,19 @@ class MFEClustering:
             classes, class_freqs = np.unique(y, return_counts=True)
 
         sorted_pairwise_dist = scipy.spatial.distance.pdist(
-            X=X,
-            metric=(dist_metric
-                    if dist_metric != "gower" else MFEClustering._gower_dist))
+            X=N, metric=dist_metric)
 
         sorted_pairwise_dist.sort()
 
-        # Note: these are all the pairwise intraclass distances,
-        # and not the intraclass distance itself (maximum value
-        # of the pairwise distances), because get_max_dist is False.
-        # Hence, I didn't get the precomputed value.
-        sum_intracl_dists = MFEClustering._all_intraclass_dists(
-            X=X,
-            y=y,
-            dist_metric=dist_metric,
-            classes=classes,
-            get_max_dist=False).sum(axis=1)
+        if pairwise_intraclass_dists is None:
+            pairwise_intraclass_dists = MFEClustering._all_intraclass_dists(
+                N=N,
+                y=y,
+                dist_metric=dist_metric,
+                classes=classes,
+                get_max_dist=False)
+
+        sum_intracl_dists = pairwise_intraclass_dists.sum(axis=1)
 
         c_indexes = np.zeros(classes.size)
 
@@ -470,7 +467,7 @@ class MFEClustering:
         return c_indexes
 
     @classmethod
-    def ft_calinski_harabaz_index(cls, X: np.ndarray, y: np.ndarray) -> float:
+    def ft_calinski_harabaz_index(cls, N: np.ndarray, y: np.ndarray) -> float:
         """
         Parameters
         ----------
@@ -478,12 +475,12 @@ class MFEClustering:
         Returns
         -------
         """
-        return sklearn.metrics.calinski_harabaz_score(X=X, labels=y)
+        return sklearn.metrics.calinski_harabaz_score(X=N, labels=y)
 
 
 if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    ans = MFEClustering.ft_con(iris.data, iris.target)
+    ans = MFEClustering.ft_goodman_kruskal_gamma(iris.data, iris.target)
     print(ans)
