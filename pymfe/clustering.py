@@ -93,14 +93,45 @@ class MFEClustering:
     @classmethod
     def precompute_group_distances(cls,
                                    N: np.ndarray,
-                                   y: np.ndarray,
+                                   y: t.Optional[np.ndarray] = None,
                                    dist_metric: str = "euclidean",
                                    classes: t.Optional[np.ndarray] = None,
                                    **kwargs) -> t.Dict[str, t.Any]:
-        """."""
+        """Precompute distance metrics between instances.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before
+            this method from other precomputed methods, so they can help
+            speed up this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+
+            The following precomputed items are returned:
+                * ``pairwise_norm_interclass_dist`` (:obj:`np.ndarray`):
+                  normalized distance between each distinct pair of
+                  instances of different classes.
+
+                * ``pairwise_intraclass_dists`` (:obj:`np.ndarray`):
+                  distance between each distinct pair of instances of
+                  the same class.
+
+                * ``intraclass_dists`` (:obj:`np.ndarray`): the distance
+                  between the fartest pair of instances of the same class.
+        """
         precomp_vals = {}
 
-        if not {"pairwise_norm_interclass_dist",
+        if y is not None and not {
+                "pairwise_norm_interclass_dist",
                 "pairwise_intraclass_dists",
                 "intraclass_dists"}.issubset(kwargs):
             precomp_vals["pairwise_norm_interclass_dist"] = (
@@ -197,7 +228,7 @@ class MFEClustering:
         return intraclass_dists
 
     @classmethod
-    def ft_vdu(
+    def ft_dunn_index(
             cls,
             N: np.ndarray,
             y: np.ndarray,
@@ -207,12 +238,38 @@ class MFEClustering:
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
             epsilon: float = 1.0e-8,
     ) -> float:
-        """
+        """Calculate the Dunn Index.
+
         Parameters
         ----------
+            dist_metric : :obj:`str`, optional
+                The distance metric used to calculate the distances between
+                instances. Check `scipydoc`_ for a full list of valid distance
+                metrics. If precomputation in clustering metafeatures is
+                enabled, then this parameter takes no effect.
+
+            classes : :obj:`np.ndarray`, optional
+                Distinct classes in ``y``. Used to exploit precomputations.
+
+            intraclass_dists : :obj:`np.ndarray`, optional
+                Distance between the fartest pair of instances in the same
+                class, for each class. Used to exploit precomputations.
+
+            pairwise_norm_interclass_dists : :obj:`np.ndarray`, optional
+                Normalized pairwise distances between instances of different
+                classes.
+
+            epsilon : :obj:`float`, optional
+                A tiny value used to prevent division by zero.
 
         Returns
         -------
+        :obj:`float`
+            Dunn index for given parameters.
+
+        Notes
+        -----
+            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
@@ -230,12 +287,14 @@ class MFEClustering:
 
     @classmethod
     def ft_davies_bouldin_index(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """
-        Parameters
-        ----------
+        """Calculate Davies and Bouldin Index.
 
-        Returns
-        -------
+        Check `dbindex`_ for more information.
+
+        Notes
+        -----
+            .. _dbindex: :obj:``sklearn.metrics.davies_bouldin_score``
+                documentation.
         """
         return sklearn.metrics.davies_bouldin_score(X=N, labels=y)
 
@@ -248,12 +307,31 @@ class MFEClustering:
             classes: t.Optional[np.ndarray] = None,
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
     ) -> float:
-        """
+        """Calculate INT index.
+
         Parameters
         ----------
+            dist_metric : :obj:`str`, optional
+                The distance metric used to calculate the distances between
+                instances. Check `scipydoc`_ for a full list of valid distance
+                metrics. If precomputation in clustering metafeatures is
+                enabled, then this parameter takes no effect.
+
+            classes : :obj:`np.ndarray`, optional
+                Distinct classes in ``y``. Used to exploit precomputations.
+
+            pairwise_norm_interclass_dists : :obj:`np.ndarray`, optional
+                Normalized pairwise distances between instances of different
+                classes. Used to exploit precomputations.
 
         Returns
         -------
+        :obj:`float`
+            INT index.
+
+        Notes
+        -----
+            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
         if classes is None:
             classes = np.unique(y)
@@ -279,12 +357,33 @@ class MFEClustering:
                dist_metric: str = "euclidean",
                n_neighbors: t.Optional[int] = None,
                class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """
+        """Calculate CON Index.
+
         Parameters
         ----------
+            dist_metric : :obj:`str`, optional
+                The distance metric used to calculate the distances between
+                instances. Check `distmetric`_ for a full list of valid
+                distance metrics.
+
+            n_neighbors : :obj:`int`, optional
+                Numbers of considered neighbors. If not given, the default
+                value will be the square root of the number of instances in
+                the minority class (i.e., the square root of the smallest
+                (absolute) frequency of classes in ``y``).
+
+            class_freqs : :obj:`np.ndarray`, optional
+                Class (absolute) frequencies. Used to exploit precomputations.
 
         Returns
         -------
+        :obj:`float`
+            CON Index.
+
+        Notes
+        -----
+            .. distmetric: :obj:`sklearn.neighbors.DistanceMetric`
+                documentation.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
@@ -317,12 +416,30 @@ class MFEClustering:
                       dist_metric: str = "euclidean",
                       sample_size: t.Optional[int] = None,
                       random_state: t.Optional[int] = None) -> float:
-        """
+        """Calculate the silhouette value.
+
+        Check `silhouette`_ for more information.
+
         Parameters
         ----------
+            dist_metric : :obj:`str`, optional
+                The distance metric used to calculate the distances between
+                instances. Check `distmetric`_ for a full list of valid
+                distance metrics.
+
+            ......
 
         Returns
         -------
+        :obj:`float`
+            Silhouette value.
+
+        Notes
+        -----
+            .. _silhouette: :obj:`sklearn.metrics.silhouette_score`
+                documentation.
+            .. distmetric: :obj:`sklearn.neighbors.DistanceMetric`
+                documentation.
         """
         silhouette = sklearn.metrics.silhouette_score(
             X=N,
