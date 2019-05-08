@@ -54,7 +54,7 @@ class MFERelative(landmarking.MFELandmarking):
     """
 
     @classmethod
-    def precompute_relative_class(cls, N: np.ndarray, y: np.ndarray,
+    def precompute_landmarking_class(cls, N: np.ndarray, y: np.ndarray,
                                   size: float, folds: int,
                                   random_state: t.Optional[int],
                                   **kwargs) -> t.Dict[str, t.Any]:
