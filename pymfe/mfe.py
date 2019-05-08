@@ -245,7 +245,7 @@ class MFE:
                              'Expecting an integer.'.format(random_state))
 
         if isinstance(size, float)\
-           and size >= 0.5 and size <= 1:
+           and 0.5 <= size <= 1.0:
             self.size = size
         else:
             raise ValueError('Invalid "size" argument ({0}). '
