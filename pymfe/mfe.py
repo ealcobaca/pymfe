@@ -44,7 +44,7 @@ class MFE:
                  wildcard: str = "all",
                  score="accuracy",
                  folds=10,
-                 size=0.9,
+                 size=1.0,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
         """This class provides easy access for metafeature extraction from
@@ -243,6 +243,9 @@ class MFE:
         else:
             raise ValueError('Invalid "folds" argument ({0}). '
                              'Expecting an integer.'.format(random_state))
+
+        if isinstance(size, int):
+            size = float(size)
 
         if isinstance(size, float)\
            and 0.5 <= size <= 1.0:
