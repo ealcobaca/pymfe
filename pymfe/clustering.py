@@ -669,6 +669,25 @@ class MFEClustering:
         return sklearn.metrics.calinski_harabaz_score(X=N, labels=y)
 
     @classmethod
+    def _hotellings_t_squared(cls,
+                              N: np.ndarray,
+                              y: np.ndarray,
+                              bias: bool = False,
+                              ddof: int = None) -> np.ndarray:
+        """Transform instances into the Hotelling's T Squared vector."""
+        mean_vec = N.mean(axis=0)
+        sample_var_cov = np.cov(N, rowvar=False, bias=bias, ddof=ddof)
+
+        if sample_var_cov.size == 1:
+            return N.size * mean_vec ** 2.0 * 1.0 / sample_var_cov
+
+        t_squared_vec = y.size * np.dot(np.dot(
+            mean_vec, np.linalg.inv(sample_var_cov)),
+            mean_vec)
+
+        return t_squared_vec.flatten()
+
+    @classmethod
     def ft_mn(cls, N: np.ndarray, y: np.ndarray) -> float:
         """Related to multivariate normality.
 
@@ -808,5 +827,8 @@ if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    ans = MFEClustering.ft_goodman_kruskal_gamma(iris.data, iris.target)
-    print(ans)
+    for i in range(iris.data.shape[0]):
+        ans = MFEClustering._hotellings_t_squared(
+            iris.data[i, :],
+            iris.target[0])
+        print(ans)
