@@ -64,14 +64,12 @@ import pymfe.general as general
 import pymfe.statistical as statistical
 import pymfe.info_theory as info_theory
 import pymfe.landmarking as landmarking
-import pymfe.relative as relative
 import pymfe.model_based as model_based
 import pymfe.scoring as scoring
 
 VALID_VALUE_PREFIX = "VALID_"
 
 VALID_GROUPS = (
-    "relative",
     "landmarking",
     "general",
     "statistical",
@@ -82,7 +80,6 @@ VALID_GROUPS = (
 VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
 
 VALID_MFECLASSES = (
-    relative.MFERelative,
     landmarking.MFELandmarking,
     general.MFEGeneral,
     statistical.MFEStatistical,
@@ -894,17 +891,13 @@ def _patch_precomp_groups(
         precomp_groups: t.Union[str, t.Iterable[str]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
         ) -> t.Union[str, t.Iterable[str]]:
-    """Enforce precomputation in relative, landmarking and model-based
-       metafeatures."""
+    """Enforce precomputation in landmarking and model-based metafeatures."""
     if not precomp_groups:
         precomp_groups = set()
 
-    # Enforce precomputation from relative, landmarking and model-based
-    # metafeature group due to strong dependencies of machine learning models.
+    # Enforce precomputation from landmarking and model-based metafeature group
+    # due to strong dependencies of machine learning models.
     if groups and not isinstance(precomp_groups, str):
-        if "relative" in groups and "relative" not in precomp_groups:
-            precomp_groups = set(precomp_groups).union({"relative"})
-
         if "landmarking" in groups and "landmarking" not in precomp_groups:
             precomp_groups = set(precomp_groups).union({"landmarking"})
 
