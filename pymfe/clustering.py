@@ -240,6 +240,8 @@ class MFEClustering:
     ) -> float:
         """Calculate the Dunn Index.
 
+        Metric range is 0 (inclusive) and infinity.
+
         Parameters
         ----------
             dist_metric : :obj:`str`, optional
@@ -287,7 +289,9 @@ class MFEClustering:
 
     @classmethod
     def ft_davies_bouldin_index(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Calculate Davies and Bouldin Index.
+        """Calculate the Davies and Bouldin Index.
+
+        Metric range is 0 (inclusive) and infinity.
 
         Check `dbindex`_ for more information.
 
@@ -307,7 +311,9 @@ class MFEClustering:
             classes: t.Optional[np.ndarray] = None,
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
     ) -> float:
-        """Calculate INT index.
+        """Calculate the INT index.
+
+        Metric range is 0 (inclusive) and infinity.
 
         Parameters
         ----------
@@ -351,13 +357,15 @@ class MFEClustering:
         return pairwise_norm_interclass_dist.sum() * norm_factor
 
     @classmethod
-    def ft_con(cls,
-               N: np.ndarray,
-               y: np.ndarray,
-               dist_metric: str = "euclidean",
-               n_neighbors: t.Optional[int] = None,
-               class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Calculate CON Index.
+    def ft_connectivity(cls,
+                        N: np.ndarray,
+                        y: np.ndarray,
+                        dist_metric: str = "euclidean",
+                        n_neighbors: t.Optional[int] = None,
+                        class_freqs: t.Optional[np.ndarray] = None) -> float:
+        """Calculate the connectivity Index.
+
+        Metric range is 0 (inclusive) to infinity.
 
         Parameters
         ----------
@@ -378,11 +386,11 @@ class MFEClustering:
         Returns
         -------
         :obj:`float`
-            CON Index.
+            Connectivity Index.
 
         Notes
         -----
-            .. distmetric: :obj:`sklearn.neighbors.DistanceMetric`
+            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
                 documentation.
         """
         if class_freqs is None:
@@ -418,6 +426,8 @@ class MFEClustering:
                       random_state: t.Optional[int] = None) -> float:
         """Calculate the silhouette value.
 
+        Metric range is -1 to +1 (both inclusive).
+
         Check `silhouette`_ for more information.
 
         Parameters
@@ -427,7 +437,13 @@ class MFEClustering:
                 instances. Check `distmetric`_ for a full list of valid
                 distance metrics.
 
-            ......
+            sample_size : :obj:`int`, optional
+                Sample size used to compute the silhouette coefficient. If
+                None is used, then all data is used.
+
+            random_state : :obj:`int`, optional
+                Used if ``sample_size`` is not None. Random seed to be
+                used while sampling the data.
 
         Returns
         -------
@@ -438,7 +454,7 @@ class MFEClustering:
         -----
             .. _silhouette: :obj:`sklearn.metrics.silhouette_score`
                 documentation.
-            .. distmetric: :obj:`sklearn.neighbors.DistanceMetric`
+            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
                 documentation.
         """
         silhouette = sklearn.metrics.silhouette_score(
@@ -461,13 +477,31 @@ class MFEClustering:
             ) -> np.ndarray:
         """Goodman and Kruskal's Gamma rank correlation.
 
-        The range value is [-1, 1].
+        The range value is -1 and +1 (both inclusive).
 
         Parameters
         ----------
+            dist_metric : :obj:`str`, optional
+                The distance metric used to calculate the distances between
+                instances. Check `scipydoc`_ for a full list of valid distance
+                metrics. If precomputation in clustering metafeatures is
+                enabled, then this parameter takes no effect.
+
+            classes : :obj:`np.ndarray`, optional
+                Distinct classes in ``y``. Used to exploit precomputations.
+
+            pairwise_intraclass_dists : :obj:`np.ndarray`, optional
+                Distance between each distinct pair of instances of
+                the same class. Used to exploit precomputations.
 
         Returns
         -------
+        :obj:`float`
+            Goodman and Kruskal Gamma
+
+        Notes
+        -----
+            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
         if classes is None:
             classes = np.unique(y)
@@ -514,13 +548,23 @@ class MFEClustering:
     ) -> float:
         """Pearson Correlation between class matching and instance distances.
 
-        The measure interval is [-1, 1].
+        The measure interval is -1 and +1 (inclusive).
 
         Parameters
         ----------
+            dist_metric : :obj:`str`, optional
+                The distance metric used to calculate the distances between
+                instances. Check `scipydoc`_ for a full list of valid distance
+                metrics.
 
         Returns
         -------
+        :obj:`float`
+            Point Bisseral coefficient.
+
+        Notes
+        -----
+            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
         inst_dists = scipy.spatial.distance.pdist(
             X=N, metric=dist_metric)
@@ -545,12 +589,35 @@ class MFEClustering:
             class_freqs: t.Optional[np.ndarray] = None,
             pairwise_intraclass_dists: t.Optional[np.ndarray] = None
             ) -> np.ndarray:
-        """
+        """Hubert and Levin index.
+
+        The metric range is 0 and 1 (both inclusive).
+
         Parameters
         ----------
+            dist_metric : :obj:`str`, optional
+                The distance metric used to calculate the distances between
+                instances. Check `scipydoc`_ for a full list of valid distance
+                metrics.
+
+            classes : :obj:`np.ndarray`, optional
+                Distinct classes in ``y``. Used to exploit precomputations.
+
+            class_freqs : :obj:`np.ndarray`, optional
+                Class (absolute) frequencies. Used to exploit precomputations.
+
+            pairwise_intraclass_dists : :obj:`np.ndarray`, optional
+                Distance between each distinct pair of instances of
+                the same class. Used to exploit precomputations.
 
         Returns
         -------
+        :obj:`np.ndarray`
+            Hubert and Levin index for each distinct class.
+
+        Notes
+        -----
+            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
         if classes is None or class_freqs is None:
             classes, class_freqs = np.unique(y, return_counts=True)
@@ -585,14 +652,156 @@ class MFEClustering:
 
     @classmethod
     def ft_calinski_harabaz_index(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Calinski and Harabaz index.
+
+        Check `cahascore`_ for more information.
+
+        Returns
+        -------
+        :obj:`float`
+            Calinski-Harabanz index.
+
+        Notes
+        -----
+            .. _cahascore: ``sklearn.metrics.calinski_harabaz_score``
+                documentation.
         """
+        return sklearn.metrics.calinski_harabaz_score(X=N, labels=y)
+
+    @classmethod
+    def ft_mn(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Related to multivariate normality.
+
+        For its estimation, the instances are initially transformed
+        into values of Hotelling’s T**2 statistics.
+
         Parameters
         ----------
 
         Returns
         -------
         """
-        return sklearn.metrics.calinski_harabaz_score(X=N, labels=y)
+
+    @classmethod
+    def ft_sk(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """It returns the skewness of the T**2 vector.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+    @classmethod
+    def ft_po(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Percentage of outliers using the T**2 vector.
+
+        Values of T**2 more distant than two standard deviations from
+        the mean are considered outliers.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+    @classmethod
+    def ft_nre(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Normalized relative entropy.
+
+        An indicator of uniformity distributed of instances among clusters.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+    @classmethod
+    def ft_sc(cls, N: np.ndarray, y: np.ndarray, size: int = 15) -> float:
+        """Number of clusters with size smaller than ``size``.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+    @classmethod
+    def ft_cm(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Sum of distances of items to corresponding cluster representatives.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+    @classmethod
+    def ft_si(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Global silhouette index.
+
+        It checks whether the current cluster of every instance is more
+        appropriate than the neighboring cluster.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+    @classmethod
+    def ft_aic(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Internal cluster evaluation measure.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+    @classmethod
+    def ft_bic(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Bayesian Information Criterion.
+
+        This measure is based on maximized value of the likelihood function
+        of the model.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+    @classmethod
+    def ft_xb(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Ratio of overall deviation to cluster separation.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
+
+    @classmethod
+    def ft_cn(cls, N: np.ndarray, y: np.ndarray) -> float:
+        """Measures whether neighboring items are in the same cluster.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        """
 
 
 if __name__ == "__main__":
