@@ -106,16 +106,13 @@ class MFELandmarking:
             if size != 1:
                 size = int(size*N.shape[0])
                 idx = np.random.choice(N.shape[0], size)
-                N_r = N[idx, :]
-                y_r = y[idx]
-            else:
-                N_r = N
-                y_r = y
+                N = N[idx, :]
+                y = y[idx]
 
             skf = StratifiedKFold(n_splits=folds, random_state=random_state)
             prepcomp_vals["skf"] = skf
-            prepcomp_vals["N_r"] = N_r
-            prepcomp_vals["y_r"] = y_r
+            prepcomp_vals["N_r"] = N
+            prepcomp_vals["y_r"] = y
 
         return prepcomp_vals
 
