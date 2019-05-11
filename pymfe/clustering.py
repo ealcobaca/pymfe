@@ -2,6 +2,7 @@
 """
 import typing as t
 import itertools
+import collections
 
 import numpy as np
 import scipy.spatial.distance
@@ -670,17 +671,29 @@ class MFEClustering:
         return sklearn.metrics.calinski_harabaz_score(X=N, labels=y)
 
     @classmethod
-    def ft_nre(cls, N: np.ndarray, y: np.ndarray) -> float:
+    def ft_nre(cls,
+               N: np.ndarray,
+               y: np.ndarray,
+               class_freqs: t.Optional[np.ndarray] = None,
+               ) -> float:
         """Normalized relative entropy.
 
         An indicator of uniformity distributed of instances among clusters.
 
         Parameters
         ----------
+        class_freqs : :obj:`np.ndarray`
+            Absolute class frequencies. Used to exploit precomputations.
 
         Returns
         -------
+        :obj:`float`
+            Entropy of relative class frequencies.
         """
+        if class_freqs is None:
+            _, class_freqs = np.unique(y, return_counts=True)
+
+        return scipy.stats.entropy(class_freqs / y.size)
 
     @classmethod
     def ft_sc(cls,
@@ -720,15 +733,103 @@ class MFEClustering:
         return quant
 
     @classmethod
-    def ft_cm(cls, N: np.ndarray, y: np.ndarray) -> float:
+    def ft_cm(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              dist_metric: str = "euclidean",
+              representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
+              classes: t.Optional[np.ndarray] = None) -> float:
         """Sum of distances of items to corresponding cluster representatives.
+
+        The clusters representatives can be given by user, otherwise
+        they are calculated with a given valid method. Check
+        ``representative`` parameter for more information.
 
         Parameters
         ----------
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances and theyr class representatives. Check `scipydoc`_
+            for a full list of valid distance metrics.
+
+        representative : :obj:`str` or :obj:`np.ndarray` or Sequence, optional
+            * If representative is string-type, then it must assume one
+                value between ``median`` or ``mean``, and the selected
+                method is used to estimate the representative instance of
+                each class (e.g., if ``mean`` is selected, then the mean of
+                attributes of all instances of the same class is used to
+                represent that class).
+
+            * If representative is a Sequence or have :obj:`np.ndarray` type,
+                then its length must be the number of different classes in
+                ``y`` and each of its element must be a representative
+                instance for each class. For example, the following 2-D
+                array is the representative of the ``Iris`` dataset,
+                calculated using the mean value of instances of the same
+                class (effectively holding the same result as if the argument
+                value was the character string ``mean``):
+
+                [[ 5.006  3.428  1.462  0.246]  # 'Setosa' mean values
+                 [ 5.936  2.77   4.26   1.326]  # 'Versicolor' mean values
+                 [ 6.588  2.974  5.552  2.026]] # 'Virginica' mean values
+
+                 The attribute order must be, of course, the same as the
+                 original instances in the dataset.
+
+        classes: :obj:`np.ndarray`, optional
+            Array with all distinct classes of ``y``. Argument is used
+            to exploit precomputations. Please note that if ``representative``
+            is a sequence or have :obj:`np.ndarray` type, then both these
+            arguments (``classes`` and ``representative``) must have
+            one-to-one correspondence by index (i.e., representative[i] is
+            the representative instance of class[i]).
 
         Returns
         -------
+        :obj:`float`
+            Sum of distances of instances from theyr correspondent
+            representatives.
+
+        Notes
+        -----
+            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
+        if isinstance(representative, str):
+            center_method = {
+                "mean": np.mean,
+                "median": np.median,
+            }.get(representative)
+
+            if center_method is None:
+                raise ValueError("'representative' must be 'mean' or "
+                                 "'median'. Got '{}'.".format(representative))
+
+        elif not isinstance(representative,
+                            (collections.Sequence, np.ndarray)):
+            raise TypeError("'representative' type must be string "
+                            "or a sequence or a numpy array. "
+                            "Got '{}'.".format(type(representative)))
+
+        if classes is None:
+            classes = np.unique(y)
+
+        sum_dists = 0.0
+
+        for class_index, cur_class in enumerate(classes):
+            insts_by_class = N[y == cur_class, :]
+
+            if not isinstance(representative, str):
+                class_center = representative[class_index]
+
+            else:
+                class_center = center_method(insts_by_class, axis=0)
+
+            sum_dists += scipy.spatial.distance.cdist(
+                XA=insts_by_class,
+                XB=[class_center],
+                metric=dist_metric).sum()
+
+        return sum_dists
 
     @classmethod
     def ft_si(cls, N: np.ndarray, y: np.ndarray) -> float:
@@ -779,10 +880,15 @@ class MFEClustering:
         -----
             .. _aicc: `statsmodels.tools.eval_measures.aicc`
             documentation.
+
+        TO BE FIXED.
         """
+        mode_class, _ = scipy.stats.mode(y)
+        mode_class = mode_class[0]
+
         num_inst, num_attr = N.shape
 
-        sum_sqr_error = (y - y_hat).sum()
+        sum_sqr_error = (y != mode_class).sum()
 
         if sample_correction and num_inst <= sample_size:
             method = statsmodels.tools.eval_measures.aicc
@@ -803,10 +909,15 @@ class MFEClustering:
 
         This measure is based on maximized value of the likelihood function
         of the model.
+
+        TO BE FIXED.
         """
+        mode_class, _ = scipy.stats.mode(y)
+        mode_class = mode_class[0]
+
         num_inst, num_attr = N.shape
 
-        sum_sqr_error = (y - y_hat).sum()
+        sum_sqr_error = (y != mode_class).sum()
 
         bic = statsmodels.tools.eval_measures.bic(
             llf=sum_sqr_error,
@@ -842,8 +953,9 @@ if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    for i in range(iris.data.shape[0]):
-        ans = MFEClustering._hotellings_t_squared(
-            iris.data[i, :],
-            iris.target[0])
-        print(ans)
+    ans = MFEClustering.ft_cm(
+        iris.data,
+        iris.target,
+        representative="median")
+
+    print(ans)
