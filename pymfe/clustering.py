@@ -701,7 +701,7 @@ class MFEClustering:
               y: np.ndarray,
               size: int = 15,
               class_freqs: t.Optional[np.ndarray] = None,
-              normalize: bool = False) -> int:
+              normalize: bool = False) -> t.Union[int]:
         """Number of clusters with size smaller than ``size``.
 
         Parameters
@@ -713,14 +713,16 @@ class MFEClustering:
             Class (absolute) frequencies. Used to exploit precomputations.
 
         normalize : :obj:`bool`, optional
-            If True, then the result will be the proportion of clusters
-            with less than ``size`` instances from the total of clusters.
-            (i.e., result is divided by the number of clusters.)
+            If True, then the result will be the proportion of classes
+            with less than ``size`` instances from the total of classes.
+            (i.e., result is divided by the number of classes.)
 
         Returns
         -------
-        :obj:`int`
-            Number of classes with less than ``size`` instances
+        :obj:`int` or :obj:`float`
+            Number of classes with less than ``size`` instances if
+            ``normalize`` is False, proportion of classes with less
+            than ``size`` instances otherwise.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
@@ -738,18 +740,19 @@ class MFEClustering:
               y: np.ndarray,
               dist_metric: str = "euclidean",
               representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
+              by_class: bool = False,
               classes: t.Optional[np.ndarray] = None) -> float:
         """Sum of distances of items to corresponding cluster representatives.
 
-        The clusters representatives can be given by user, otherwise
-        they are calculated with a given valid method. Check
-        ``representative`` parameter for more information.
+        The clusters representatives may be given by user, otherwise they
+        are calculated with a given valid method. Check ``representative``
+        parameter for more information.
 
         Parameters
         ----------
         dist_metric : :obj:`str`, optional
             The distance metric used to calculate the distances between
-            instances and theyr class representatives. Check `scipydoc`_
+            instances and their class representatives. Check `scipydoc`_
             for a full list of valid distance metrics.
 
         representative : :obj:`str` or :obj:`np.ndarray` or Sequence, optional
@@ -776,7 +779,11 @@ class MFEClustering:
                  The attribute order must be, of course, the same as the
                  original instances in the dataset.
 
-        classes: :obj:`np.ndarray`, optional
+        by_class : :obj:`bool`, optional
+            If True, then the metric value is separated by class, instead
+            of being summed up for all classes.
+
+        classes : :obj:`np.ndarray`, optional
             Array with all distinct classes of ``y``. Argument is used
             to exploit precomputations. Please note that if ``representative``
             is a sequence or have :obj:`np.ndarray` type, then both these
@@ -786,9 +793,11 @@ class MFEClustering:
 
         Returns
         -------
-        :obj:`float`
-            Sum of distances of instances from theyr correspondent
-            representatives.
+        :obj:`float` or :obj:`np.ndarray`
+            Sum of distances of instances from their correspondent
+            representatives. If ``by_class`` is True, then a numpy
+            array will be returned with each value of this metric
+            separated by class.
 
         Notes
         -----
@@ -813,7 +822,7 @@ class MFEClustering:
         if classes is None:
             classes = np.unique(y)
 
-        sum_dists = 0.0
+        sum_dists = np.zeros(classes.size)
 
         for class_index, cur_class in enumerate(classes):
             insts_by_class = N[y == cur_class, :]
@@ -824,12 +833,15 @@ class MFEClustering:
             else:
                 class_center = center_method(insts_by_class, axis=0)
 
-            sum_dists += scipy.spatial.distance.cdist(
+            sum_dists[class_index] = scipy.spatial.distance.cdist(
                 XA=insts_by_class,
                 XB=[class_center],
                 metric=dist_metric).sum()
 
-        return sum_dists
+        if by_class:
+            return sum_dists
+
+        return sum_dists.sum()
 
     @classmethod
     def ft_si(cls, N: np.ndarray, y: np.ndarray) -> float:
@@ -956,6 +968,7 @@ if __name__ == "__main__":
     ans = MFEClustering.ft_cm(
         iris.data,
         iris.target,
+        by_class=True,
         representative="median")
 
     print(ans)
