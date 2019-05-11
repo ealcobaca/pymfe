@@ -216,6 +216,56 @@ class MFEStatistical:
         return precomp_vals
 
     @classmethod
+    def precompute_hotellings_t_sqr(
+            cls,
+            N: t.Optional[np.ndarray] = None,
+            bias: t.Optional[bool] = False,
+            ddof: t.Optional[int] = None,
+            **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute instances transformation to Hotelling's T Squared.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`, optional
+            Numeric attributes of instances.
+
+        bias : :obj:`bool`, optional
+            If True, the covariance will be normalized by ``n`` (in the
+            case of Hotelling's T Squared transformation for each instance,
+            ``n`` is the number of attributes in the dataset.) If False,
+            then the normalization is by ``n-1``. Note that this parameter
+            is only taken into account if ``ddof`` is None.
+
+        ddof : :obj:`bool`, optional
+            Degrees of Freedom to calculate the covariance while computing
+            Hotelling's T Squared. If None, then ``bias`` is taken into
+            account.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before
+            this method from other precomputed methods, so they can help
+            speed up this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+
+            The following precomputed items are returned:
+            * ``hotellings_r_sqr`` (:obj:`np.ndarray`): each instance
+                transformed into the Hotelling's T squared metric.
+        """
+        precomp_vals = {}
+
+        if N is not None and not {"hotellings_t_sqr"}.issubset(kwargs):
+            precomp_vals["hotellings_t_sqr"] = (
+                MFEStatistical._instances_to_t_sqr(
+                    N=N,
+                    bias=bias,
+                    ddof=ddof))
+
+        return precomp_vals
+
+    @classmethod
     def _linear_disc_mat_eig(
             cls,
             N: np.ndarray,
@@ -392,6 +442,48 @@ class MFEStatistical:
             return eig_vals, eig_vecs
 
         return eig_vals
+
+    @classmethod
+    def _hotellings_t_squared(cls,
+                              N: np.ndarray,
+                              bias: bool = False,
+                              ddof: int = None) -> np.ndarray:
+        """Transform instances into the Hotelling's T Squared vector."""
+        mean_vec = N.mean(axis=0)
+        sample_var_cov = np.cov(N, rowvar=False, bias=bias, ddof=ddof)
+
+        if sample_var_cov.size == 1:
+            return N.size * mean_vec ** 2.0 * 1.0 / sample_var_cov
+
+        num_row, _ = N.shape
+
+        t_squared_vec = num_row * np.dot(np.dot(
+            mean_vec, np.linalg.inv(sample_var_cov)),
+            mean_vec)
+
+        return t_squared_vec.ravel()
+
+    @classmethod
+    def _instances_to_t_sqr(cls,
+                            N: np.ndarray,
+                            bias: bool = False,
+                            ddof: int = None) -> np.ndarray:
+        """Transform all instances to the Hotelling's T Squared metric.
+
+        The transformation is in the form N_Attr * Mean**2.0 / Inst_Cov,
+        where ``N_Attr`` is the number of attributes in the dataset,
+        ``Mean`` is the mean value of all instance attributes and
+        ``Inst_Cov`` is the instance attributes covariance.
+        """
+        hotellings_t_sqr = np.array([
+            MFEStatistical._hotellings_t_squared(
+                N=inst,
+                bias=bias,
+                ddof=ddof)
+            for inst in N
+        ])
+
+        return hotellings_t_sqr
 
     @classmethod
     def ft_can_cor(cls,
@@ -1249,3 +1341,146 @@ class MFEStatistical:
             return np.nan
 
         return np.prod(1.0 / (1.0 + eig_vals))
+
+    @classmethod
+    def ft_mn(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            hotellings_t_sqr: t.Optional[np.ndarray] = None,
+            bias: bool = False,
+            ddof: t.Optional[int] = None,
+            ) -> float:
+        """Related to multivariate normality.
+
+        For its estimation, the instances are initially transformed
+        into values of Hotelling’s T**2 statistics.
+
+        Check `hotellings`_ for more information about the following
+        parameters:
+            * hotellings_t_sqr
+            * bias
+            * ddof
+
+        Returns
+        -------
+
+        Notes
+        -----
+            .. _hotellings: ``precompute_hotellings_t_sqr`` method
+            documentation.
+        """
+        if hotellings_t_sqr is None:
+            hotellings_t_sqr = MFEStatistical._instances_to_t_sqr(
+                N=N, bias=bias, ddof=ddof)
+
+    @classmethod
+    def ft_t_squared_skew(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            skewness_method: int = 3,
+            hotellings_t_sqr: t.Optional[np.ndarray] = None,
+            bias: bool = False,
+            ddof: t.Optional[int] = None,
+            ) -> float:
+        """Returns the skewness of the instances Hotelling's T Squared vector.
+
+        Parameters
+        ----------
+        skewness_method : :obj:`int`, optional
+            defines the strategy used for estimate data skewness. This
+            argument is used fo compatibility with R package ``e1071``.
+            The options must be one of the following:
+
+            +--------+-----------------------------------------------+
+            |Option  | Formula                                       |
+            +--------+-----------------------------------------------+
+            |1       | Skew_1 = m_3 / m_2**(3/2)                     |
+            |        | (default of ``scipy.stats``)                  |
+            +--------+-----------------------------------------------+
+            |2       | Skew_2 = Skew_1 * sqrt(n(n-1)) / (n-2)        |
+            +--------+-----------------------------------------------+
+            |3       | Skew_3 = m_3 / s**3 = Skew_1 ((n-1)/n)**(3/2) |
+            +--------+-----------------------------------------------+
+
+        Check `hotellings`_ for more information about the following
+        parameters:
+            * hotellings_t_sqr
+            * bias
+            * ddof
+
+        Returns
+        -------
+        :obj:`float`
+            Skewness of Hotelling's T Squared for every instance.
+
+        Notes
+        -----
+            .. _hotellings: ``precompute_hotellings_t_sqr`` method
+                documentation.
+        """
+        if hotellings_t_sqr is None:
+            hotellings_t_sqr = MFEStatistical._instances_to_t_sqr(
+                N=N, bias=bias, ddof=ddof)
+
+        t_sqr_skew = _summary.sum_skewness(
+            hotellings_t_sqr,
+            method=skewness_method,
+            bias=bias)
+
+        return t_sqr_skew
+
+    @classmethod
+    def ft_t_squared_outliers(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            deviations_num: int = 2,
+            hotellings_t_sqr: t.Optional[np.ndarray] = None,
+            bias: bool = False,
+            ddof: t.Optional[int] = None,
+            ) -> float:
+        """Percentage of outliers using the Hotelling's T Squared vector.
+
+        Values of T Squared vector more distant ``deviations_num`` two
+        standard deviations from the mean are considered outliers.
+
+        Parameters
+        ----------
+        deviations : :obj:`int`, optional
+            Number of deviations from the mean value of the Hotelling's
+            T squared vector for each instance be considered an outlier.
+
+        Check `hotellings`_ for more information about the following
+        parameters:
+            * hotellings_t_sqr
+            * bias
+            * ddof (also used while estimating the standard deviation,
+            with default value of 1 for that matter)
+
+        Returns
+        -------
+        :obj:`float`
+            Percentage of outliers in Hotelling's T Squared vector.
+
+        Notes
+        -----
+            .. _hotellings: ``precompute_hotellings_t_sqr`` method
+                documentation.
+        """
+        if hotellings_t_sqr is None:
+            hotellings_t_sqr = MFEStatistical._instances_to_t_sqr(
+                N=N, bias=bias, ddof=ddof)
+
+        t_sqr_mean = hotellings_t_sqr.mean()
+
+        if ddof is None:
+            ddof = 1.0
+
+        t_sqr_std = hotellings_t_sqr.std(ddof=ddof)
+
+        outliers_ind = (np.abs(hotellings_t_sqr - t_sqr_mean)
+                        > (deviations_num * t_sqr_std))
+
+        return outliers_ind.sum() / hotellings_t_sqr.size
