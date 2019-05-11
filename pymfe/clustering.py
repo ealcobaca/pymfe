@@ -7,6 +7,7 @@ import numpy as np
 import scipy.spatial.distance
 import sklearn.metrics
 import sklearn.neighbors
+import statsmodels.tools.eval_measures
 
 
 class MFEClustering:
@@ -682,15 +683,41 @@ class MFEClustering:
         """
 
     @classmethod
-    def ft_sc(cls, N: np.ndarray, y: np.ndarray, size: int = 15) -> float:
+    def ft_sc(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              size: int = 15,
+              class_freqs: t.Optional[np.ndarray] = None,
+              normalize: bool = False) -> int:
         """Number of clusters with size smaller than ``size``.
 
         Parameters
         ----------
+        size : :obj:`int`, optional
+            Maximum (exclusive) size of classes to be considered.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            Class (absolute) frequencies. Used to exploit precomputations.
+
+        normalize : :obj:`bool`, optional
+            If True, then the result will be the proportion of clusters
+            with less than ``size`` instances from the total of clusters.
+            (i.e., result is divided by the number of clusters.)
 
         Returns
         -------
+        :obj:`int`
+            Number of classes with less than ``size`` instances
         """
+        if class_freqs is None:
+            _, class_freqs = np.unique(y, return_counts=True)
+
+        quant = (class_freqs < size).sum()
+
+        if normalize:
+            quant /= class_freqs.size
+
+        return quant
 
     @classmethod
     def ft_cm(cls, N: np.ndarray, y: np.ndarray) -> float:
@@ -705,7 +732,7 @@ class MFEClustering:
 
     @classmethod
     def ft_si(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Global silhouette index.
+        """Compute the Global silhouette index.
 
         It checks whether the current cluster of every instance is more
         appropriate than the neighboring cluster.
@@ -715,18 +742,60 @@ class MFEClustering:
 
         Returns
         -------
+
+        sklearn.metrics.silhouette_samples
         """
 
     @classmethod
-    def ft_aic(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Internal cluster evaluation measure.
+    def ft_aic(cls,
+               N: np.ndarray,
+               y: np.ndarray,
+               sample_correction: bool = False,
+               sample_size: int = 40) -> float:
+        """Compute the Akaike information criterion.
 
         Parameters
         ----------
+        sample_correction : :obj:`bool`, optional
+            If True, then the number of instances will be verified
+            if is less of equal than ``sample_size``. If this is
+            the case, then use the AIC with sample size correction.
+            Check the `aicc`_ for more information.
+
+        sample_size : :obj:`int`, optional
+            If ``sample_correction`` is true, this parameter is the
+            threshold to decide wheter to use the AIC formula with
+            or without the sample size correction. If the number
+            of instances in ``N`` is less or equal than ``sample_
+            size``, then the AIC formula with sample size correction
+            is used. Check `aicc`_ for more information.
 
         Returns
         -------
+        :obj:`float`
+            AIC metric.
+
+        Notes
+        -----
+            .. _aicc: `statsmodels.tools.eval_measures.aicc`
+            documentation.
         """
+        num_inst, num_attr = N.shape
+
+        sum_sqr_error = (y - y_hat).sum()
+
+        if sample_correction and num_inst <= sample_size:
+            method = statsmodels.tools.eval_measures.aicc
+
+        else:
+            method = statsmodels.tools.eval_measures.aic
+
+        aic = method(
+            llf=sum_sqr_error,
+            nobs=num_inst,
+            df_modelwc=num_attr + 1)
+
+        return aic
 
     @classmethod
     def ft_bic(cls, N: np.ndarray, y: np.ndarray) -> float:
@@ -734,13 +803,17 @@ class MFEClustering:
 
         This measure is based on maximized value of the likelihood function
         of the model.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
         """
+        num_inst, num_attr = N.shape
+
+        sum_sqr_error = (y - y_hat).sum()
+
+        bic = statsmodels.tools.eval_measures.bic(
+            llf=sum_sqr_error,
+            nobs=num_inst,
+            df_modelwc=num_attr + 1)
+
+        return bic
 
     @classmethod
     def ft_xb(cls, N: np.ndarray, y: np.ndarray) -> float:
