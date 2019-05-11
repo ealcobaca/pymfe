@@ -8,6 +8,8 @@ import scipy.spatial.distance
 import sklearn.metrics
 import sklearn.neighbors
 
+import pymfe._summary as summary
+
 
 class MFEClustering:
     """Keep methods for metafeatures of ``Clustering`` group.
@@ -152,6 +154,55 @@ class MFEClustering:
         return precomp_vals
 
     @classmethod
+    def precompute_hotellings_t_sqr(cls,
+                                    N: t.Optional[np.ndarray] = None,
+                                    bias: t.Optional[bool] = False,
+                                    ddof: t.Optional[int] = None,
+                                    **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute instances transformation to Hotelling's T Squared.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`, optional
+            Numeric attributes of instances.
+
+        bias : :obj:`bool`, optional
+            If True, the covariance will be normalized by ``n`` (in the
+            case of Hotelling's T Squared transformation for each instance,
+            ``n`` is the number of attributes in the dataset.) If False,
+            then the normalization is by ``n-1``. Note that this parameter
+            is only taken into account if ``ddof`` is None.
+
+        ddof : :obj:`bool`, optional
+            Degrees of Freedom to calculate the covariance while computing
+            Hotelling's T Squared. If None, then ``bias`` is taken into
+            account.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before
+            this method from other precomputed methods, so they can help
+            speed up this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+
+            The following precomputed items are returned:
+                * ``hotellings_r_sqr`` (:obj:`np.ndarray`): each instance
+                transformed into the Hotelling's T squared metric.
+        """
+        precomp_vals = {}
+
+        if N is not None and not {"hotellings_t_sqr"}.issubset(kwargs):
+            precomp_vals["hotellings_t_sqr"] = (
+                MFEClustering._instances_to_t_sqr(
+                    N=N,
+                    bias=bias,
+                    ddof=ddof))
+
+        return precomp_vals
+
+    @classmethod
     def _normalized_interclass_dist(
             cls,
             group_inst_a: np.ndarray,
@@ -244,25 +295,25 @@ class MFEClustering:
 
         Parameters
         ----------
-            dist_metric : :obj:`str`, optional
-                The distance metric used to calculate the distances between
-                instances. Check `scipydoc`_ for a full list of valid distance
-                metrics. If precomputation in clustering metafeatures is
-                enabled, then this parameter takes no effect.
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `scipydoc`_ for a full list of valid distance
+            metrics. If precomputation in clustering metafeatures is
+            enabled, then this parameter takes no effect.
 
-            classes : :obj:`np.ndarray`, optional
-                Distinct classes in ``y``. Used to exploit precomputations.
+        classes : :obj:`np.ndarray`, optional
+            Distinct classes in ``y``. Used to exploit precomputations.
 
-            intraclass_dists : :obj:`np.ndarray`, optional
-                Distance between the fartest pair of instances in the same
-                class, for each class. Used to exploit precomputations.
+        intraclass_dists : :obj:`np.ndarray`, optional
+            Distance between the fartest pair of instances in the same
+            class, for each class. Used to exploit precomputations.
 
-            pairwise_norm_interclass_dists : :obj:`np.ndarray`, optional
-                Normalized pairwise distances between instances of different
-                classes.
+        pairwise_norm_interclass_dists : :obj:`np.ndarray`, optional
+            Normalized pairwise distances between instances of different
+            classes.
 
-            epsilon : :obj:`float`, optional
-                A tiny value used to prevent division by zero.
+        epsilon : :obj:`float`, optional
+            A tiny value used to prevent division by zero.
 
         Returns
         -------
@@ -317,18 +368,18 @@ class MFEClustering:
 
         Parameters
         ----------
-            dist_metric : :obj:`str`, optional
-                The distance metric used to calculate the distances between
-                instances. Check `scipydoc`_ for a full list of valid distance
-                metrics. If precomputation in clustering metafeatures is
-                enabled, then this parameter takes no effect.
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `scipydoc`_ for a full list of valid distance
+            metrics. If precomputation in clustering metafeatures is
+            enabled, then this parameter takes no effect.
 
-            classes : :obj:`np.ndarray`, optional
-                Distinct classes in ``y``. Used to exploit precomputations.
+        classes : :obj:`np.ndarray`, optional
+            Distinct classes in ``y``. Used to exploit precomputations.
 
-            pairwise_norm_interclass_dists : :obj:`np.ndarray`, optional
-                Normalized pairwise distances between instances of different
-                classes. Used to exploit precomputations.
+        pairwise_norm_interclass_dists : :obj:`np.ndarray`, optional
+            Normalized pairwise distances between instances of different
+            classes. Used to exploit precomputations.
 
         Returns
         -------
@@ -369,19 +420,19 @@ class MFEClustering:
 
         Parameters
         ----------
-            dist_metric : :obj:`str`, optional
-                The distance metric used to calculate the distances between
-                instances. Check `distmetric`_ for a full list of valid
-                distance metrics.
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `distmetric`_ for a full list of valid
+            distance metrics.
 
-            n_neighbors : :obj:`int`, optional
-                Numbers of considered neighbors. If not given, the default
-                value will be the square root of the number of instances in
-                the minority class (i.e., the square root of the smallest
-                (absolute) frequency of classes in ``y``).
+        n_neighbors : :obj:`int`, optional
+            Numbers of considered neighbors. If not given, the default
+            value will be the square root of the number of instances in
+            the minority class (i.e., the square root of the smallest
+            (absolute) frequency of classes in ``y``).
 
-            class_freqs : :obj:`np.ndarray`, optional
-                Class (absolute) frequencies. Used to exploit precomputations.
+        class_freqs : :obj:`np.ndarray`, optional
+            Class (absolute) frequencies. Used to exploit precomputations.
 
         Returns
         -------
@@ -432,18 +483,18 @@ class MFEClustering:
 
         Parameters
         ----------
-            dist_metric : :obj:`str`, optional
-                The distance metric used to calculate the distances between
-                instances. Check `distmetric`_ for a full list of valid
-                distance metrics.
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `distmetric`_ for a full list of valid
+            distance metrics.
 
-            sample_size : :obj:`int`, optional
-                Sample size used to compute the silhouette coefficient. If
-                None is used, then all data is used.
+        sample_size : :obj:`int`, optional
+            Sample size used to compute the silhouette coefficient. If
+            None is used, then all data is used.
 
-            random_state : :obj:`int`, optional
-                Used if ``sample_size`` is not None. Random seed to be
-                used while sampling the data.
+        random_state : :obj:`int`, optional
+            Used if ``sample_size`` is not None. Random seed to be
+            used while sampling the data.
 
         Returns
         -------
@@ -481,18 +532,18 @@ class MFEClustering:
 
         Parameters
         ----------
-            dist_metric : :obj:`str`, optional
-                The distance metric used to calculate the distances between
-                instances. Check `scipydoc`_ for a full list of valid distance
-                metrics. If precomputation in clustering metafeatures is
-                enabled, then this parameter takes no effect.
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `scipydoc`_ for a full list of valid distance
+            metrics. If precomputation in clustering metafeatures is
+            enabled, then this parameter takes no effect.
 
-            classes : :obj:`np.ndarray`, optional
-                Distinct classes in ``y``. Used to exploit precomputations.
+        classes : :obj:`np.ndarray`, optional
+            Distinct classes in ``y``. Used to exploit precomputations.
 
-            pairwise_intraclass_dists : :obj:`np.ndarray`, optional
-                Distance between each distinct pair of instances of
-                the same class. Used to exploit precomputations.
+        pairwise_intraclass_dists : :obj:`np.ndarray`, optional
+            Distance between each distinct pair of instances of
+            the same class. Used to exploit precomputations.
 
         Returns
         -------
@@ -552,10 +603,10 @@ class MFEClustering:
 
         Parameters
         ----------
-            dist_metric : :obj:`str`, optional
-                The distance metric used to calculate the distances between
-                instances. Check `scipydoc`_ for a full list of valid distance
-                metrics.
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `scipydoc`_ for a full list of valid distance
+            metrics.
 
         Returns
         -------
@@ -595,20 +646,20 @@ class MFEClustering:
 
         Parameters
         ----------
-            dist_metric : :obj:`str`, optional
-                The distance metric used to calculate the distances between
-                instances. Check `scipydoc`_ for a full list of valid distance
-                metrics.
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `scipydoc`_ for a full list of valid distance
+            metrics.
 
-            classes : :obj:`np.ndarray`, optional
-                Distinct classes in ``y``. Used to exploit precomputations.
+        classes : :obj:`np.ndarray`, optional
+            Distinct classes in ``y``. Used to exploit precomputations.
 
-            class_freqs : :obj:`np.ndarray`, optional
-                Class (absolute) frequencies. Used to exploit precomputations.
+        class_freqs : :obj:`np.ndarray`, optional
+            Class (absolute) frequencies. Used to exploit precomputations.
 
-            pairwise_intraclass_dists : :obj:`np.ndarray`, optional
-                Distance between each distinct pair of instances of
-                the same class. Used to exploit precomputations.
+        pairwise_intraclass_dists : :obj:`np.ndarray`, optional
+            Distance between each distinct pair of instances of
+            the same class. Used to exploit precomputations.
 
         Returns
         -------
@@ -671,7 +722,6 @@ class MFEClustering:
     @classmethod
     def _hotellings_t_squared(cls,
                               N: np.ndarray,
-                              y: np.ndarray,
                               bias: bool = False,
                               ddof: int = None) -> np.ndarray:
         """Transform instances into the Hotelling's T Squared vector."""
@@ -681,50 +731,178 @@ class MFEClustering:
         if sample_var_cov.size == 1:
             return N.size * mean_vec ** 2.0 * 1.0 / sample_var_cov
 
-        t_squared_vec = y.size * np.dot(np.dot(
+        num_row, _ = N.shape
+
+        t_squared_vec = num_row * np.dot(np.dot(
             mean_vec, np.linalg.inv(sample_var_cov)),
             mean_vec)
 
         return t_squared_vec.flatten()
 
     @classmethod
-    def ft_mn(cls, N: np.ndarray, y: np.ndarray) -> float:
+    def _instances_to_t_sqr(cls,
+                            N: np.ndarray,
+                            bias: bool = False,
+                            ddof: int = None) -> np.ndarray:
+        """Transform all instances to the Hotelling's T Squared metric.
+
+        The transformation is in the form N_Attr * Mean**2.0 / Inst_Cov,
+        where ``N_Attr`` is the number of attributes in the dataset,
+        ``Mean`` is the mean value of all instance attributes and
+        ``Inst_Cov`` is the instance attributes covariance.
+        """
+        hotellings_t_sqr = np.array([
+            MFEClustering._hotellings_t_squared(
+                N=inst,
+                bias=bias,
+                ddof=ddof)
+            for inst in N
+        ])
+
+        return hotellings_t_sqr
+
+    @classmethod
+    def ft_mn(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            hotellings_t_sqr: t.Optional[np.ndarray] = None,
+            bias: bool = False,
+            ddof: t.Optional[int] = None,
+            ) -> float:
         """Related to multivariate normality.
 
         For its estimation, the instances are initially transformed
         into values of Hotelling’s T**2 statistics.
 
-        Parameters
-        ----------
+        Check `hotellings`_ for more information about the following
+        parameters:
+            * hotellings_t_sqr
+            * bias
+            * ddof
 
         Returns
         -------
+
+        Notes
+        -----
+            .. _hotellings: ``precompute_hotellings_t_sqr`` method
+                documentation.
         """
+        if hotellings_t_sqr is None:
+            hotellings_t_sqr = MFEClustering._instances_to_t_sqr(
+                N=N, bias=bias, ddof=ddof)
 
     @classmethod
-    def ft_sk(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """It returns the skewness of the T**2 vector.
+    def ft_t_squared_skew(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            skewness_method: int = 3,
+            hotellings_t_sqr: t.Optional[np.ndarray] = None,
+            bias: bool = False,
+            ddof: t.Optional[int] = None,
+            ) -> float:
+        """Returns the skewness of the instances Hotelling's T Squared vector.
 
         Parameters
         ----------
+        skewness_method : :obj:`int`, optional
+            defines the strategy used for estimate data skewness. This
+            argument is used fo compatibility with R package ``e1071``.
+            The options must be one of the following:
+
+            +--------+-----------------------------------------------+
+            |Option  | Formula                                       |
+            +--------+-----------------------------------------------+
+            |1       | Skew_1 = m_3 / m_2**(3/2)                     |
+            |        | (default of ``scipy.stats``)                  |
+            +--------+-----------------------------------------------+
+            |2       | Skew_2 = Skew_1 * sqrt(n(n-1)) / (n-2)        |
+            +--------+-----------------------------------------------+
+            |3       | Skew_3 = m_3 / s**3 = Skew_1 ((n-1)/n)**(3/2) |
+            +--------+-----------------------------------------------+
+
+        Check `hotellings`_ for more information about the following
+        parameters:
+            * hotellings_t_sqr
+            * bias
+            * ddof
 
         Returns
         -------
+        :obj:`float`
+            Skewness of Hotelling's T Squared for every instance.
+
+        Notes
+        -----
+            .. _hotellings: ``precompute_hotellings_t_sqr`` method
+                documentation.
         """
+        if hotellings_t_sqr is None:
+            hotellings_t_sqr = MFEClustering._instances_to_t_sqr(
+                N=N, bias=bias, ddof=ddof)
+
+        t_sqr_skew = summary.sum_skewness(
+            hotellings_t_sqr,
+            method=skewness_method,
+            bias=bias)
+
+        return t_sqr_skew
 
     @classmethod
-    def ft_po(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Percentage of outliers using the T**2 vector.
+    def ft_t_squared_outliers(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            deviations_num: int = 2,
+            hotellings_t_sqr: t.Optional[np.ndarray] = None,
+            bias: bool = False,
+            ddof: t.Optional[int] = None,
+            ) -> float:
+        """Percentage of outliers using the Hotelling's T Squared vector.
 
-        Values of T**2 more distant than two standard deviations from
-        the mean are considered outliers.
+        Values of T Squared vector more distant ``deviations_num`` two
+        standard deviations from the mean are considered outliers.
 
         Parameters
         ----------
+        deviations : :obj:`int`, optional
+            Number of deviations from the mean value of the Hotelling's
+            T squared vector for each instance be considered an outlier.
+
+        Check `hotellings`_ for more information about the following
+        parameters:
+            * hotellings_t_sqr
+            * bias
+            * ddof (also used while estimating the standard deviation,
+                with default value of 1 for that matter)
 
         Returns
         -------
+        :obj:`float`
+            Percentage of outliers in Hotelling's T Squared vector.
+
+        Notes
+        -----
+            .. _hotellings: ``precompute_hotellings_t_sqr`` method
+                documentation.
         """
+        if hotellings_t_sqr is None:
+            hotellings_t_sqr = MFEClustering._instances_to_t_sqr(
+                N=N, bias=bias, ddof=ddof)
+
+        t_sqr_mean = hotellings_t_sqr.mean()
+
+        if ddof is None:
+            ddof = 1
+
+        t_sqr_std = hotellings_t_sqr.std(ddof=ddof)
+
+        outliers_ind = (np.abs(hotellings_t_sqr - t_sqr_mean)
+                        > (deviations_num * t_sqr_std))
+
+        return outliers_ind.sum() / hotellings_t_sqr.size
 
     @classmethod
     def ft_nre(cls, N: np.ndarray, y: np.ndarray) -> float:
