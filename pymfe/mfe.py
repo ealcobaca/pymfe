@@ -44,7 +44,7 @@ class MFE:
                  wildcard: str = "all",
                  score="accuracy",
                  folds=10,
-                 size=1.0,
+                 sample_size=1.0,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
         """This class provides easy access for metafeature extraction from
@@ -154,6 +154,17 @@ class MFE:
             Value used as ``select all`` for ``groups``, ``features`` and
             ``summary`` arguments.
 
+         score : :obj:`str`, optional
+            Score metric used to extract ``landmarking`` metafeatures.
+
+         folds : :obj:`int`, optional
+            Number of folds to create a Stratified K-Fold cross validation
+            to produce the ``landmarking`` metafeatures.
+
+         sample_size : :obj:`float`, optional
+            Sample proportion used to produce the ``landmarking`` metafeatures.
+            This argument must be in 0.5 and 1.0 (both inclusive) interval.
+
         suppress_warnings : :obj:`bool`, optional
             If True, then ignore all warnings invoked at the instantiation
             time.
@@ -244,15 +255,16 @@ class MFE:
             raise ValueError('Invalid "folds" argument ({0}). '
                              'Expecting an integer.'.format(random_state))
 
-        if isinstance(size, int):
-            size = float(size)
+        if isinstance(sample_size, int):
+            sample_size = float(sample_size)
 
-        if isinstance(size, float)\
-           and 0.5 <= size <= 1.0:
-            self.size = size
+        if isinstance(sample_size, float)\
+           and 0.5 <= sample_size <= 1.0:
+            self.sample_size = sample_size
+
         else:
-            raise ValueError('Invalid "size" argument ({0}). '
-                             'Expecting an float [0.5,1].'
+            raise ValueError('Invalid "sample_size" argument ({0}). '
+                             'Expecting an float [0.5, 1].'
                              .format(random_state))
 
         self.score = _internal.check_score(score, self.groups)
@@ -821,7 +833,7 @@ class MFE:
             "C": data_cat,
             "y": self.y,
             "folds": self.folds,
-            "size": self.size,
+            "sample_size": self.sample_size,
             "score": self.score,
             "random_state": self.random_state,
             "cat_cols": self._attr_indexes_cat,
