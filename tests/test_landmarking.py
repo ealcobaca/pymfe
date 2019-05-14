@@ -12,7 +12,7 @@ class TestLandmarking():
     """TestClass dedicated to test Landmarking metafeatures."""
 
     @pytest.mark.parametrize(
-        "dt_id, ft_name, exp_value, precompute, size",
+        "dt_id, ft_name, exp_value, precompute, sample_size",
         [
             ###################
             # Mixed data
@@ -69,22 +69,31 @@ class TestLandmarking():
             # Numerical data - Relative Landmarking
             #######################################
             (2, 'best_node', [0.6666666, 6.282881e-08], True, 0.5),
-            (2, 'elite_nn', [0.9722222, 0.06000686], True, 0.5),
+            (2, 'elite_nn', [0.93333328, 0.089962654], True, 0.5),
             (2, 'linear_discr', [0.9722222, 0.06000686], True, 0.5),
-            (2, 'naive_bayes', [0.96111107, 0.06441677], True, 0.5),
-            (2, 'one_nn', [0.95, 0.08466022], True, 0.5),
-            (2, 'worst_node', [0.65, 0.052704636], True, 0.5),
+            (2, 'naive_bayes', [0.94444448, 0.10798059], True, 0.5),
+            (2, 'one_nn', [1.0, 0.0], True, 0.5),
+            (2, 'worst_node', [0.65555555, 0.035136417], True, 0.5),
             (2, 'random_node', [0.6666666, 6.282881e-08], True, 0.5),
+            (2, 'best_node', [0.6666666, 6.282881e-08], False, 0.5),
+            (2, 'elite_nn', [0.93333328, 0.089962654], False, 0.5),
+            (2, 'linear_discr', [0.9722222, 0.06000686], False, 0.5),
+            (2, 'naive_bayes', [0.94444448, 0.10798059], False, 0.5),
+            (2, 'one_nn', [1.0, 0.0], False, 0.5),
+            (2, 'worst_node', [0.65555555, 0.035136417], False, 0.5),
+            (2, 'random_node', [0.6666666, 6.282881e-08], False, 0.5),
         ])
     def test_ft_methods_landmarking(self, dt_id, ft_name, exp_value,
-                                    precompute, size):
+                                    precompute, sample_size):
         """Function to test each meta-feature belongs to landmarking group.
         """
         precomp_group = "landmarking" if precompute else None
 
         X, y = load_xy(dt_id)
         mfe = MFE(
-            groups=["landmarking"], features=[ft_name], size=size,
+            groups=["landmarking"],
+            features=[ft_name],
+            sample_size=sample_size,
             random_state=1234)
 
         mfe.fit(X.values, y.values, precomp_groups=precomp_group)
