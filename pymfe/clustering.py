@@ -6,9 +6,9 @@ import collections
 
 import numpy as np
 import scipy.spatial.distance
+import statsmodels.tools.eval_measures
 import sklearn.metrics
 import sklearn.neighbors
-import statsmodels.tools.eval_measures
 
 
 class MFEClustering:
@@ -133,9 +133,9 @@ class MFEClustering:
         precomp_vals = {}
 
         if y is not None and not {
-                "pairwise_norm_interclass_dist",
-                "pairwise_intraclass_dists",
-                "intraclass_dists"}.issubset(kwargs):
+                "pairwise_norm_interclass_dist", "pairwise_intraclass_dists",
+                "intraclass_dists"
+        }.issubset(kwargs):
             precomp_vals["pairwise_norm_interclass_dist"] = (
                 MFEClustering._pairwise_norm_interclass_dist(
                     N=N, y=y, dist_metric=dist_metric, classes=classes))
@@ -154,6 +154,67 @@ class MFEClustering:
         return precomp_vals
 
     @classmethod
+    def precompute_nearest_neighbors(cls,
+                                     N: np.ndarray,
+                                     y: np.ndarray,
+                                     n_neighbors: t.Optional[int] = None,
+                                     dist_metric: str = "euclidean",
+                                     **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute the ``n_neighbors`` Nearest Neighbors of every instance.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        n_neighbors : :obj:`int`, optional
+            Number of nearest neighbors returned for each instance.
+
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `distmetric`_ for a full list of valid
+            distance metrics.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before
+            this method from other precomputed methods, so they can help
+            speed up this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+
+            The following precomputed items are returned:
+
+                * ``pairwise_intraclass_dists`` (:obj:`np.ndarray`):
+                  distance between each distinct pair of instances of
+                  the same class.
+
+        Notes
+        -----
+            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
+                documentation.
+        """
+        precomp_vals = {}
+
+        if not {"nearest_neighbors"}.issubset(kwargs):
+            class_freqs = kwargs.get("class_freqs")
+            if class_freqs is None:
+                _, class_freqs = np.unique(y, return_counts=True)
+
+            if n_neighbors is None:
+                n_neighbors = int(np.sqrt(class_freqs.min()))
+
+            precomp_vals["nearest_neighbors"] = (
+                MFEClustering._get_nearest_neighbors(
+                    N=N, n_neighbors=n_neighbors, dist_metric=dist_metric))
+
+        return precomp_vals
+
+    @classmethod
     def _normalized_interclass_dist(
             cls,
             group_inst_a: np.ndarray,
@@ -166,9 +227,7 @@ class MFEClustering:
         between ``group_inst_a`` and ``group_inst_b``.
         """
         norm_interclass_dist = scipy.spatial.distance.cdist(
-            group_inst_a,
-            group_inst_b,
-            metric=dist_metric)
+            group_inst_a, group_inst_b, metric=dist_metric)
 
         return norm_interclass_dist / norm_interclass_dist.size
 
@@ -228,6 +287,23 @@ class MFEClustering:
         ])
 
         return intraclass_dists
+
+    @classmethod
+    def _get_nearest_neighbors(
+            cls,
+            N: np.ndarray,
+            n_neighbors: int,
+            dist_metric: str = "euclidean",
+    ) -> np.ndarray:
+        """Indexes of ``n_neighbors`` nearest neighbors for each instance."""
+        model = sklearn.neighbors.KDTree(N, metric=dist_metric)
+
+        # Note: skip the first column because it's always the
+        # instance itself
+        nearest_neighbors = model.query(
+            N, k=n_neighbors + 1, return_distance=False)[:, 1:]
+
+        return nearest_neighbors
 
     @classmethod
     def ft_dunn_index(
@@ -363,6 +439,7 @@ class MFEClustering:
                         N: np.ndarray,
                         y: np.ndarray,
                         dist_metric: str = "euclidean",
+                        nearest_neighbors: t.Optional[np.ndarray] = None,
                         n_neighbors: t.Optional[int] = None,
                         class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Calculate the connectivity Index.
@@ -375,6 +452,12 @@ class MFEClustering:
             The distance metric used to calculate the distances between
             instances. Check `distmetric`_ for a full list of valid
             distance metrics.
+
+        nearest_neighbors : obj:`np.ndarray`, optional
+            2-D array of the nearest neighbors for every instance. This
+            argument is used to exploit precomputations. If given, then
+            the ``n_neighbors`` and ``class_freqs`` arguments takes no
+            effect.
 
         n_neighbors : :obj:`int`, optional
             Numbers of considered neighbors. If not given, the default
@@ -395,24 +478,21 @@ class MFEClustering:
             .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
                 documentation.
         """
-        if class_freqs is None:
-            _, class_freqs = np.unique(y, return_counts=True)
+        if nearest_neighbors is None:
+            if class_freqs is None:
+                _, class_freqs = np.unique(y, return_counts=True)
 
-        if n_neighbors is None:
-            n_neighbors = int(np.sqrt(class_freqs.min()))
+            if n_neighbors is None:
+                n_neighbors = int(np.sqrt(class_freqs.min()))
 
-        model = sklearn.neighbors.KDTree(N, metric=dist_metric)
-
-        # Note: skip the first column because it's always the
-        # instance itself
-        nearest_neig = model.query(
-            N, k=n_neighbors + 1, return_distance=False)[:, 1:]
+            nearest_neighbors = MFEClustering._get_nearest_neighbors(
+                N=N, n_neighbors=n_neighbors, dist_metric=dist_metric)
 
         con_index = np.array([
             sum([
                 1.0 / proximity_ind
                 for proximity_ind, neig_inst_ind in enumerate(
-                    nearest_neig[cur_inst_ind, :], 1)
+                    nearest_neighbors[cur_inst_ind, :], 1)
                 if y[neig_inst_ind] == y[cur_inst_ind]
             ]) for cur_inst_ind in np.arange(y.size)
         ]).sum()
@@ -426,7 +506,7 @@ class MFEClustering:
                       dist_metric: str = "euclidean",
                       sample_size: t.Optional[int] = None,
                       random_state: t.Optional[int] = None) -> float:
-        """Calculate the silhouette value.
+        """Calculate the mean silhouette value from ``N``.
 
         Metric range is -1 to +1 (both inclusive).
 
@@ -444,13 +524,13 @@ class MFEClustering:
             None is used, then all data is used.
 
         random_state : :obj:`int`, optional
-            Used if ``sample_size`` is not None. Random seed to be
-            used while sampling the data.
+            Used if ``sample_size`` is not None. Random seed used while
+            sampling the data.
 
         Returns
         -------
         :obj:`float`
-            Silhouette value.
+            Mean Silhouette value.
 
         Notes
         -----
@@ -475,8 +555,8 @@ class MFEClustering:
             y: np.ndarray,
             dist_metric: str = "euclidean",
             classes: t.Optional[np.ndarray] = None,
-            pairwise_intraclass_dists: t.Optional[np.ndarray] = None
-            ) -> np.ndarray:
+            pairwise_intraclass_dists: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Goodman and Kruskal's Gamma rank correlation.
 
         The range value is -1 and +1 (both inclusive).
@@ -568,8 +648,7 @@ class MFEClustering:
         -----
             .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
-        inst_dists = scipy.spatial.distance.pdist(
-            X=N, metric=dist_metric)
+        inst_dists = scipy.spatial.distance.pdist(X=N, metric=dist_metric)
 
         inst_matching_classes = np.array([
             inst_class_a == inst_class_b
@@ -590,7 +669,7 @@ class MFEClustering:
             classes: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
             pairwise_intraclass_dists: t.Optional[np.ndarray] = None
-            ) -> np.ndarray:
+    ) -> np.ndarray:
         """Hubert and Levin index.
 
         The metric range is 0 and 1 (both inclusive).
@@ -671,11 +750,12 @@ class MFEClustering:
         return sklearn.metrics.calinski_harabaz_score(X=N, labels=y)
 
     @classmethod
-    def ft_nre(cls,
-               N: np.ndarray,
-               y: np.ndarray,
-               class_freqs: t.Optional[np.ndarray] = None,
-               ) -> float:
+    def ft_nre(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            class_freqs: t.Optional[np.ndarray] = None,
+    ) -> float:
         """Normalized relative entropy.
 
         An indicator of uniformity distributed of instances among clusters.
@@ -807,7 +887,7 @@ class MFEClustering:
             center_method = {
                 "mean": np.mean,
                 "median": np.median,
-            }.get(representative)
+            }.get(representative, np.mean)
 
             if center_method is None:
                 raise ValueError("'representative' must be 'mean' or "
@@ -834,30 +914,13 @@ class MFEClustering:
                 class_center = center_method(insts_by_class, axis=0)
 
             sum_dists[class_index] = scipy.spatial.distance.cdist(
-                XA=insts_by_class,
-                XB=[class_center],
+                XA=insts_by_class, XB=[class_center],
                 metric=dist_metric).sum()
 
         if by_class:
             return sum_dists
 
         return sum_dists.sum()
-
-    @classmethod
-    def ft_si(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Compute the Global silhouette index.
-
-        It checks whether the current cluster of every instance is more
-        appropriate than the neighboring cluster.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-
-        sklearn.metrics.silhouette_samples
-        """
 
     @classmethod
     def ft_aic(cls,
@@ -908,10 +971,7 @@ class MFEClustering:
         else:
             method = statsmodels.tools.eval_measures.aic
 
-        aic = method(
-            llf=sum_sqr_error,
-            nobs=num_inst,
-            df_modelwc=num_attr + 1)
+        aic = method(llf=sum_sqr_error, nobs=num_inst, df_modelwc=num_attr + 1)
 
         return aic
 
@@ -932,9 +992,7 @@ class MFEClustering:
         sum_sqr_error = (y != mode_class).sum()
 
         bic = statsmodels.tools.eval_measures.bic(
-            llf=sum_sqr_error,
-            nobs=num_inst,
-            df_modelwc=num_attr + 1)
+            llf=sum_sqr_error, nobs=num_inst, df_modelwc=num_attr + 1)
 
         return bic
 
@@ -950,25 +1008,72 @@ class MFEClustering:
         """
 
     @classmethod
-    def ft_cn(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Measures whether neighboring items are in the same cluster.
+    def ft_cn(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              dist_metric: str = "euclidean",
+              nearest_neighbors: t.Optional[np.ndarray] = None,
+              n_neighbors: t.Optional[int] = None,
+              class_freqs: t.Optional[np.ndarray] = None) -> float:
+        """Proportion of instances with the same class of its nearest neighbors.
 
         Parameters
         ----------
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `distmetric`_ for a full list of valid
+            distance metrics.
+
+        nearest_neighbors : obj:`np.ndarray`, optional
+            2-D array of the nearest neighbors for every instance. This
+            argument is used to exploit precomputations. If given, then
+            the ``n_neighbors`` and ``class_freqs`` arguments takes no
+            effect.
+
+        n_neighbors : :obj:`int`, optional
+            Numbers of considered neighbors. If not given, the default
+            value will be the square root of the number of instances in
+            the minority class (i.e., the square root of the smallest
+            (absolute) frequency of classes in ``y``.)
+
+        class_freqs : :obj:`np.ndarray`, optional
+            Class (absolute) frequencies. Used to exploit precomputations.
 
         Returns
         -------
+        :obj:`float`
+            Proportion of instances with the same class as the nearest
+            neighbors.
+
+        Notes
+        -----
+            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
+                documentation.
         """
+        if nearest_neighbors is None:
+            if class_freqs is None:
+                _, class_freqs = np.unique(y, return_counts=True)
+
+            if n_neighbors is None:
+                n_neighbors = int(np.sqrt(class_freqs.min()))
+
+            nearest_neighbors = MFEClustering._get_nearest_neighbors(
+                N=N, n_neighbors=n_neighbors, dist_metric=dist_metric)
+
+        same_cluster_props = np.apply_along_axis(
+            func1d=sklearn.metrics.accuracy_score,
+            axis=0,
+            arr=y[nearest_neighbors],
+            y_pred=y,
+            normalize=True)
+
+        return same_cluster_props.mean()
 
 
 if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    ans = MFEClustering.ft_cm(
-        iris.data,
-        iris.target,
-        by_class=True,
-        representative="median")
+    ans = MFEClustering.ft_cn(iris.data, iris.target)
 
     print(ans)
