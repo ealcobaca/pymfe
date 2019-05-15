@@ -109,6 +109,14 @@ class MFEClustering:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `distmetric`_ for a full list of valid
+            distance metrics.
+
+        classes : :obj:`np.ndarray`, optional
+            Distinct classes in ``y``. Used to exploit precomputations.
+
         **kwargs
             Additional arguments. May have previously precomputed before
             this method from other precomputed methods, so they can help
@@ -129,6 +137,11 @@ class MFEClustering:
 
                 * ``intraclass_dists`` (:obj:`np.ndarray`): the distance
                   between the fartest pair of instances of the same class.
+
+        Notes
+        -----
+            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
+                documentation.
         """
         precomp_vals = {}
 
@@ -211,6 +224,90 @@ class MFEClustering:
             precomp_vals["nearest_neighbors"] = (
                 MFEClustering._get_nearest_neighbors(
                     N=N, n_neighbors=n_neighbors, dist_metric=dist_metric))
+
+        return precomp_vals
+
+    @classmethod
+    def precompute_class_representatives(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            dist_metric: str = "euclidean",
+            representative: str = "mean",
+            classes: t.Optional[np.ndarray] = None,
+            **kwargs) -> t.Dict[str, t.Any]:
+        """
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances. Check `distmetric`_ for a full list of valid
+            distance metrics.
+
+        representative : :obj:`str` or :obj:`np.ndarray` or Sequence, optional
+            * If representative is string-type, then it must assume one
+                value between ``median`` or ``mean``, and the selected
+                method is used to estimate the representative instance of
+                each class (e.g., if ``mean`` is selected, then the mean of
+                attributes of all instances of the same class is used to
+                represent that class).
+
+            * If representative is a Sequence or have :obj:`np.ndarray` type,
+                then its length must be the number of different classes in
+                ``y`` and each of its element must be a representative
+                instance for each class. For example, the following 2-D
+                array is the representative of the ``Iris`` dataset,
+                calculated using the mean value of instances of the same
+                class (effectively holding the same result as if the argument
+                value was the character string ``mean``):
+
+                [[ 5.006  3.428  1.462  0.246]  # 'Setosa' mean values
+                 [ 5.936  2.77   4.26   1.326]  # 'Versicolor' mean values
+                 [ 6.588  2.974  5.552  2.026]] # 'Virginica' mean values
+
+                 The attribute order must be, of course, the same as the
+                 original instances in the dataset.
+
+        classes : :obj:`np.ndarray`, optional
+            Distinct classes in ``y``. Used to exploit precomputations.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before
+            this method from other precomputed methods, so they can help
+            speed up this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+
+            The following precomputed items are returned:
+
+                * ``pairwise_intraclass_dists`` (:obj:`np.ndarray`):
+                  distance between each distinct pair of instances of
+                  the same class.
+
+        Notes
+        -----
+            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
+                documentation.
+        """
+        precomp_vals = {}
+
+        if not {"representative"}.issubset(kwargs):
+            precomp_vals["representative"] = (
+                MFEClustering._get_class_representatives(
+                    N=N,
+                    y=y,
+                    dist_metric=dist_metric,
+                    representative=representative,
+                    classes=classes))
 
         return precomp_vals
 
