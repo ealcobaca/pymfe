@@ -58,8 +58,9 @@ class MFELandmarking:
     def postprocess_landmarking_relative(
             cls,
             groups: t.Tuple["str", ...],
-            **kwargs
+            **kwargs  # ignore: W0613
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
+        # pylint: disable=W0613
         """Structure to implement relative landmarking metafeatures."""
 
         if "relative" not in groups:
