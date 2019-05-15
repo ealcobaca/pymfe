@@ -75,6 +75,7 @@ VALID_GROUPS = (
     "statistical",
     "model-based",
     "info-theory",
+    "relative",
 )  # type: t.Tuple[str, ...]
 
 VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
@@ -85,6 +86,7 @@ VALID_MFECLASSES = (
     statistical.MFEStatistical,
     model_based.MFEModelBased,
     info_theory.MFEInfoTheory,
+    None,
 )  # type: t.Tuple
 
 VALID_TIMEOPT = (
@@ -109,6 +111,8 @@ TIMEOPT_SUMMARY_SUFFIX = "summ"
 MTF_PREFIX = "ft_"
 
 PRECOMPUTE_PREFIX = "precompute_"
+
+POSTPROCESS_PREFIX = "postprocess_"
 
 TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
@@ -252,6 +256,7 @@ def _get_all_prefixed_mtds(
         groups: t.Tuple[str, ...],
         update_groups_by: t.Optional[t.Union[t.FrozenSet[str],
                                              t.Set[str]]] = None,
+        custom_class_: t.Any = None,
         ) -> t.Dict[str, t.Tuple]:
     """Get all methods prefixed with ``prefix`` in predefined feature ``groups``.
 
@@ -277,6 +282,10 @@ def _get_all_prefixed_mtds(
             precomputation methods from feature groups not related with user
             selected features.
 
+        custom_class_ (Class, optional): used for inner testing purposes. If
+            not None, the given class will be used as reference to extract
+            the prefixed methods.
+
     Returns:
         If ``filter_groups_by`` argument is :obj:`NoneType` or empty:
             tuple: with all filtered methods by ``group``.
@@ -289,16 +298,23 @@ def _get_all_prefixed_mtds(
     """
     groups = tuple(set(VALID_GROUPS).intersection(groups))
 
-    if not groups:
+    if not groups and custom_class_ is None:
         return {"methods": tuple(), "groups": tuple()}
+
+    if custom_class_ is None:
+        verify_groups = VALID_GROUPS
+        verify_classes = VALID_MFECLASSES
+
+    else:
+        verify_groups = ("test_methods", )
+        verify_classes = (custom_class_, )
 
     methods_by_group = {
         ft_type_id: _get_prefixed_mtds_from_class(
             class_obj=mfe_class,
             prefix=prefix)
-
-        for ft_type_id, mfe_class in zip(VALID_GROUPS, VALID_MFECLASSES)
-        if ft_type_id in groups
+        for ft_type_id, mfe_class in zip(verify_groups, verify_classes)
+        if ft_type_id in groups or custom_class_ is not None
     }
 
     gathered_methods = []  # type: t.List[TypeMtdTuple]
@@ -789,6 +805,7 @@ def process_features(
         groups: t.Tuple[str, ...],
         wildcard: str = "all",
         suppress_warnings: bool = False,
+        custom_class_: t.Any = None,
         ) -> t.Tuple[t.Tuple[str, ...],
                      t.Tuple[TypeExtMtdTuple, ...],
                      t.Tuple[str, ...]]:
@@ -814,6 +831,10 @@ def process_features(
         suppress_warnings (:obj:`bool`, optional): if True, hide all warnings
             raised during this method processing.
 
+        custom_class_ (Class, optional): used for inner testing purposes. If
+            not None, the given class will be used as reference to extract
+            the metafeature extraction methods.
+
     Returns:
         tuple(tuple, tuple): A pair of tuples. The first Tuple is all feature
             names extracted from this method, to give the user easy access to
@@ -831,8 +852,12 @@ def process_features(
     if not features:
         raise ValueError('"features" can not be None nor empty.')
 
-    if groups is None:
-        groups = tuple()
+    if not groups:
+        if custom_class_ is None:
+            groups = tuple()
+
+        else:
+            groups = ("custom", )
 
     processed_ft = _preprocess_iterable_arg(features)  # type: t.List[str]
 
@@ -844,6 +869,7 @@ def process_features(
         prefix=MTF_PREFIX,
         update_groups_by=reference_values,
         groups=groups,
+        custom_class_=custom_class_,
     )  # type: t.Dict[str, t.Tuple]
 
     ft_mtds_filtered = mtds_metadata.get(
@@ -888,7 +914,7 @@ def process_features(
 
 
 def _patch_precomp_groups(
-        precomp_groups: t.Union[str, t.Iterable[str]],
+        precomp_groups: t.Optional[t.Union[str, t.Iterable[str]]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
         ) -> t.Union[str, t.Iterable[str]]:
     """Enforce precomputation in landmarking and model-based metafeatures."""
@@ -908,12 +934,12 @@ def _patch_precomp_groups(
 
 
 def process_precomp_groups(
-        precomp_groups: t.Union[str, t.Iterable[str]],
+        precomp_groups: t.Optional[t.Union[str, t.Iterable[str]]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
         wildcard: str = "all",
         suppress_warnings: bool = False,
-        **kwargs
-        ) -> t.Dict[str, t.Any]:
+        custom_class_: t.Any = None,
+        **kwargs) -> t.Dict[str, t.Any]:
     """Process ``precomp_groups`` argument while fitting into a MFE model.
 
     This function is expected to be used after ``process_groups`` function,
@@ -936,6 +962,10 @@ def process_precomp_groups(
         suppress_warnings (:obj:`bool`, optional): if True, suppress warnings
             invoked while processing precomputation option.
 
+        custom_class_ (Class, optional): used for inner testing purposes. If
+            not None, the given class will be used as reference to extract
+            the preprocomputing methods.
+
         **kwargs: used to pass extra custom arguments to precomputation metho-
             ds.
 
@@ -948,7 +978,7 @@ def process_precomp_groups(
 
     precomp_groups = _patch_precomp_groups(precomp_groups, groups)
 
-    if not precomp_groups:
+    if not precomp_groups and custom_class_ is None:
         return {}
 
     processed_precomp_groups = _preprocess_iterable_arg(
@@ -957,7 +987,7 @@ def process_precomp_groups(
     if wildcard in processed_precomp_groups:
         processed_precomp_groups = groups
 
-    else:
+    elif custom_class_ is None:
         if not suppress_warnings:
             unknown_groups = set(processed_precomp_groups).difference(groups)
 
@@ -971,7 +1001,8 @@ def process_precomp_groups(
 
     mtds_metadata = _get_all_prefixed_mtds(
         prefix=PRECOMPUTE_PREFIX,
-        groups=processed_precomp_groups,
+        groups=tuple(processed_precomp_groups),
+        custom_class_=custom_class_,
     )  # type: t.Dict[str, t.Tuple]
 
     precomp_mtds_filtered = mtds_metadata.get(
@@ -1168,11 +1199,7 @@ def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
     perc_interval = 100.0 / num_bins
     perc_range = np.arange(perc_interval, 100, perc_interval)
     hist_divs = np.percentile(data, perc_range)
-
-    if hist_divs.size == 0:
-        hist_divs = [np.median(data)]
-
-    return np.digitize(data, hist_divs, right=True)
+    return np.digitize(x=data, bins=hist_divs, right=True)
 
 
 def transform_num(data_numeric: np.ndarray,
@@ -1308,3 +1335,80 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
         return valid_scoring[score]
 
     return None
+
+
+def post_processing(results: np.ndarray,
+                    groups: t.Tuple[str, ...],
+                    suppress_warnings: bool = False,
+                    custom_class_: t.Any = None,
+                    **kwargs) -> None:
+    """Detect and apply post-processing methods in metafeatures.
+
+    This function should be used after the metafeature extraction.
+
+    Args:
+        results (:obj:`Tuple`):
+
+        groups (:obj:`Tuple` of :obj:`str`): collection containing one or more
+            group identifiers. Check out ``MFE`` class documentation for more
+            information.
+
+        suppress_warnings (:obj:`bool`, optional): if True, suppress warnings
+            invoked while processing precomputation option.
+
+        custom_class_ (Class, optional): used for inner testing purposes. If
+            not None, the given class will be used as reference to extract
+            the postprocessing methods.
+
+        **kwargs: used to pass extra custom arguments to precomputation metho-
+            ds.
+    """
+    mtds_metadata = _get_all_prefixed_mtds(
+        prefix=POSTPROCESS_PREFIX,
+        groups=groups,
+        custom_class_=custom_class_,
+    )  # type: t.Dict[str, t.Tuple]
+
+    postprocess_mtds = mtds_metadata.get(
+        "methods", tuple())  # type: t.Tuple[TypeMtdTuple, ...]
+
+    del mtds_metadata
+
+    remove_groups = False
+
+    if "groups" not in kwargs:
+        remove_groups = True
+        kwargs["groups"] = groups
+
+    for postprocess_mtd_name, postprocess_mtd_callable in postprocess_mtds:
+        try:
+            new_results = postprocess_mtd_callable(**kwargs)  # type: ignore
+
+            if new_results:
+                if len(new_results) != len(results):
+                    raise ValueError("Postprocessing result has length '{}'. "
+                                     "Expecting '{}'.".format(len(new_results),
+                                                              len(results)))
+
+                for res_list_old, res_list_new in zip(results, new_results):
+                    if isinstance(res_list_old, np.ndarray):
+                        res_list_old = np.hstack((res_list_old, res_list_new))
+
+                    elif isinstance(res_list_old, list):
+                        res_list_old += res_list_new
+
+                    else:
+                        raise TypeError("'results' elements must be a numpy "
+                                        "array or a python list. Got type '{}'"
+                                        ".".format(type(res_list_old)))
+
+        except (AttributeError, TypeError, ValueError) as type_err:
+            if not suppress_warnings:
+                warnings.warn("Something went wrong while "
+                              'postprocessing "{0}". Will ignore '
+                              "this method. Error message:\n"
+                              "{1}.".format(postprocess_mtd_name,
+                                            repr(type_err)))
+
+    if remove_groups:
+        kwargs.pop("groups")
