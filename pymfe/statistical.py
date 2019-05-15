@@ -1347,6 +1347,7 @@ class MFEStatistical:
             cls,
             N: np.ndarray,
             y: np.ndarray,
+            signif_level: float = 0.05,
             hotellings_t_sqr: t.Optional[np.ndarray] = None,
             bias: bool = False,
             ddof: t.Optional[int] = None,
@@ -1355,6 +1356,9 @@ class MFEStatistical:
 
         For its estimation, the instances are initially transformed
         into values of Hotelling’s T**2 statistics.
+
+        The chi-square test tests the null hypothesis that the
+        categorical data has the given frequencies.
 
         Check `hotellings`_ for more information about the following
         parameters:
@@ -1373,6 +1377,13 @@ class MFEStatistical:
         if hotellings_t_sqr is None:
             hotellings_t_sqr = MFEStatistical._instances_to_t_sqr(
                 N=N, bias=bias, ddof=ddof)
+
+        counter = 0
+        for t_sqr in hotellings_t_sqr:
+            _, p_value = scipy.stats.chisquare(t_sqr)[1]
+            counter += p_value > signif_level
+
+        return counter / hotellings_t_sqr.size
 
     @classmethod
     def ft_t_squared_skew(
