@@ -821,7 +821,7 @@ class MFE:
             **self._custom_args_ft)
 
         # Custom arguments for postprocessing methods
-        self._postprocessing_args_ft = {}
+        self._postprocessing_args_ft = {}  # type: t.Dict[str, t.Any]
 
         # Custom arguments for summarization methods
         self._custom_args_sum = {
