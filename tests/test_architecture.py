@@ -1,0 +1,162 @@
+"""Module dedicated to framework testing."""
+import pytest
+import typing as t
+
+import numpy as np
+
+from pymfe import _internal
+
+GNAME = "framework-testing"
+
+
+class MFETestClass:
+    """Some generic methods for testing the MFE Framework."""
+
+    @classmethod
+    def postprocess_return_none(cls, **kwargs) -> None:
+        """Postprocess: return None."""
+        return None
+
+    @classmethod
+    def postprocess_return_new_feature(
+            cls,
+            number_of_lists: int = 3,
+            **kwargs
+            ) -> t.Tuple[t.List, t.List, t.List]:
+        """Postprocess: return Tuple of lists."""
+        return tuple(["test_value"] for _ in range(number_of_lists))
+
+    @classmethod
+    def postprocess_raise_exception(
+            cls,
+            raise_exception: bool = False,
+            **kwargs) -> None:
+        """Posprocess: raise exception."""
+        if raise_exception:
+            raise ValueError("Expected exception (postprocess).")
+
+        return None
+
+    @classmethod
+    def precompute_return_empty(cls, **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute: return empty dictionary."""
+        precomp_vals = {}
+
+        return precomp_vals
+
+    @classmethod
+    def precompute_return_something(cls, **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute: return empty dictionary."""
+        precomp_vals = {
+            "test_param_1": 0,
+            "test_param_2": "euclidean",
+            "test_param_3": list,
+            "test_param_4": abs,
+        }
+
+        return precomp_vals
+
+    @classmethod
+    def precompute_raise_exception(
+            cls,
+            raise_exception: bool = False,
+            **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute: raise exception."""
+        precomp_vals = {}
+
+        if raise_exception:
+            raise ValueError("Expected exception (precompute).")
+
+        return precomp_vals
+
+    @classmethod
+    def ft_valid_number(
+            cls,
+            X: np.ndarray,
+            y: np.ndarray) -> float:
+        """Metafeature: float type."""
+        return 0.0
+
+    @classmethod
+    def ft_valid_array(
+            cls,
+            X: np.ndarray,
+            y: np.ndarray) -> np.ndarray:
+        """Metafeature: float type."""
+        return np.zeros(5)
+
+    @classmethod
+    def ft_raise_expection(
+            cls,
+            X: np.ndarray,
+            y: np.ndarray,
+            raise_exception: False) -> float:
+        """Metafeature: float type."""
+        if raise_exception:
+            raise ValueError("Expected exception (feature).")
+
+        return -1.0
+
+
+class TestArchitecture:
+    """Tests for the framework architecture."""
+    def test_postprocessing_valid(self):
+        """Test valid postprocessing and its automatic detection."""
+        results = [], [], []
+
+        _internal.post_processing(
+            results=results,
+            groups=tuple(),
+            custom_class_=MFETestClass)
+
+        assert all(map(lambda l: len(l) > 0, results))
+
+    def test_postprocessing_invalid_1(self):
+        """Test exception handling in invalid postprocessing."""
+        results = [], [], []
+
+        with pytest.warns(UserWarning):
+            _internal.post_processing(
+                results=results,
+                groups=tuple(),
+                custom_class_=MFETestClass,
+                raise_exception=True)
+
+    def test_postprocessing_invalid_2(self):
+        """Test incorrect return value in postprocessing methods."""
+        results = [], [], []
+
+        with pytest.warns(UserWarning):
+            _internal.post_processing(
+                results=results,
+                groups=tuple(),
+                custom_class_=MFETestClass,
+                number_of_lists=2)
+
+    def test_preprocessing_valid(self):
+        """Test valid precomputation and its automatic detection."""
+        precomp_args = _internal.process_precomp_groups(
+            precomp_groups=tuple(),
+            groups=tuple(),
+            custom_class_=MFETestClass)
+
+        assert len(precomp_args) > 0
+
+    def test_preprocessing_invalid(self):
+        """Test exception handling of precomputation."""
+        with pytest.warns(UserWarning):
+            _internal.process_precomp_groups(
+                precomp_groups=tuple(),
+                groups=tuple(),
+                custom_class_=MFETestClass,
+                raise_exception=True)
+
+    def test_feature_detection(self):
+        """Test automatic dectection of metafeature extraction method."""
+        name, mtd, groups = _internal.process_features(
+            features="all",
+            groups=tuple(),
+            suppress_warnings=True,
+            custom_class_=MFETestClass)
+
+        assert len(name) == 3 and len(mtd) == 3 and len(groups) == 1
