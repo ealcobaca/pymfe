@@ -240,6 +240,9 @@ class MFE:
         self._precomp_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
         """Precomputed common feature-extraction method arguments."""
 
+        self._postprocess_args_ft = {}  # type: t.Dict[str, t.Any]
+        """User-independent arguments for post-processing methods."""
+
         if random_state is None or isinstance(random_state, int):
             self.random_state = random_state
             np.random.seed(random_state)
@@ -698,8 +701,7 @@ class MFE:
 
         return data_num
 
-    def fit(
-            self,
+    def fit(self,
             X: t.Sequence,
             y: t.Sequence,
             transform_num: bool = True,
@@ -708,11 +710,10 @@ class MFE:
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
             check_bool: bool = False,
-            # missing_data: str = "ignore",
-            precomp_groups: str = "all",
+            precomp_groups: t.Optional[str] = "all",
             wildcard: str = "all",
             suppress_warnings: bool = False,
-    ) -> "MFE":
+            ) -> "MFE":
         """Fits dataset into an MFE model.
 
         Parameters
@@ -839,12 +840,16 @@ class MFE:
             "cat_cols": self._attr_indexes_cat,
         }
 
+        # Custom arguments from preprocessing methods
         self._precomp_args_ft = _internal.process_precomp_groups(
             precomp_groups=precomp_groups,
             groups=self.groups,
             wildcard=wildcard,
             suppress_warnings=suppress_warnings,
             **self._custom_args_ft)
+
+        # Custom arguments for postprocessing methods
+        self._postprocess_args_ft = {}
 
         # Custom arguments for summarization methods
         self._custom_args_sum = {
@@ -858,7 +863,6 @@ class MFE:
             remove_nan: bool = True,
             verbose: bool = False,
             enable_parallel: bool = False,
-            # by_class: bool = False,
             suppress_warnings: bool = False,
             **kwargs) -> t.Tuple[t.List, ...]:
         """Extracts metafeatures from the previously fitted dataset.
@@ -970,6 +974,13 @@ class MFE:
             verbose=verbose,
             enable_parallel=enable_parallel,
             suppress_warnings=suppress_warnings,
+            **kwargs)
+
+        _internal.post_processing(
+            results=results,
+            groups=self.groups,
+            suppress_warnings=suppress_warnings,
+            **self._postprocess_args_ft,
             **kwargs)
 
         if results and results[0]:

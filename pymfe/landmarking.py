@@ -54,6 +54,25 @@ class MFELandmarking:
     computed in module ``statistical`` can freely be used for any
     precomputation or feature extraction method of module ``landmarking``).
     """
+    @classmethod
+    def postprocess_landmarking_relative(
+            cls,
+            groups: t.Tuple["str", ...],
+            **kwargs  # ignore: W0613
+    ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
+        # pylint: disable=W0613
+        """Structure to implement relative landmarking metafeatures."""
+
+        if "relative" not in groups:
+            return None
+
+        mtf_rel_names = []  # type: t.List[str]
+        mtf_rel_vals = []  # type: t.List[float]
+        mtf_rel_time = []  # type: t.List[float]
+
+        # To be implemented soon.
+
+        return mtf_rel_names, mtf_rel_vals, mtf_rel_time
 
     @classmethod
     def precompute_landmarking_class(cls,
