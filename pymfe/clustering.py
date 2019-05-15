@@ -306,6 +306,67 @@ class MFEClustering:
         return nearest_neighbors
 
     @classmethod
+    def _get_class_representatives(
+             cls,
+             N: np.ndarray,
+             y: np.ndarray,
+             dist_metric: str = "euclidean",
+             representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
+             classes: t.Optional[np.ndarray] = None) -> float:
+        """Get a representative instance for each distinct class.
+
+        If ``representative`` argument is a string, then it must be
+        some statistical method to be aplied in the attributes of
+        instances of the same class in ``N`` to construct the class
+        representative instance (currently supported only ``mean`` and
+        ``median``). If ``representative`` is a sequence, then its
+        shape must be (number_of_classes, number_of_attributes) (i.e.,
+        there must have one class representative for each distinct class,
+        and every class representative must have the same dimension of
+        the instances in ``N``.)
+        """
+        if classes is None:
+            classes = np.unique(y)
+
+        if isinstance(representative, str):
+            center_method = {
+                "mean": np.mean,
+                "median": np.median,
+            }.get(representative)
+
+            if center_method is None:
+                raise ValueError("'representative' must be 'mean' or "
+                                 "'median'. Got '{}'.".format(representative))
+
+            representative = [
+                center_method(N[y == cur_class, :], axis=0)
+                for cur_class in classes
+            ]
+
+        elif not isinstance(representative,
+                            (collections.Sequence, np.ndarray)):
+            raise TypeError("'representative' type must be string "
+                            "or a sequence or a numpy array. "
+                            "Got '{}'.".format(type(representative)))
+
+        representative = np.array(representative)
+
+        num_repr, repr_dim = representative.shape
+        _, num_attr = N.shape
+
+        if num_repr != classes.size:
+            raise ValueError("There must exist one class representative "
+                             "for every distinct class. (Expected '{}', "
+                             "got '{}'".format(classes.size, num_repr))
+
+        if repr_dim != num_attr:
+            raise ValueError("The dimension of each class representative "
+                             "must match the instances dimension. (Expected "
+                             "'{}', got '{}'".format(classes.size, num_repr))
+
+        return representative
+
+    @classmethod
     def ft_dunn_index(
             cls,
             N: np.ndarray,
@@ -820,6 +881,7 @@ class MFEClustering:
               y: np.ndarray,
               dist_metric: str = "euclidean",
               representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
+              exp_factor: float = 1.0,
               by_class: bool = False,
               classes: t.Optional[np.ndarray] = None) -> float:
         """Sum of distances of items to corresponding cluster representatives.
@@ -859,6 +921,13 @@ class MFEClustering:
                  The attribute order must be, of course, the same as the
                  original instances in the dataset.
 
+        exp_factor : :obj:`float`, optional
+            Constant factor to exponentiate every distance between instance
+            and its class representative, before summing up. (e.g., if
+            this argument's value is ``2``, then this function will return
+            the sum of squared distances between instances and their class
+            representative.)
+
         by_class : :obj:`bool`, optional
             If True, then the metric value is separated by class, instead
             of being summed up for all classes.
@@ -883,39 +952,31 @@ class MFEClustering:
         -----
             .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
-        if isinstance(representative, str):
-            center_method = {
-                "mean": np.mean,
-                "median": np.median,
-            }.get(representative, np.mean)
-
-            if center_method is None:
-                raise ValueError("'representative' must be 'mean' or "
-                                 "'median'. Got '{}'.".format(representative))
-
-        elif not isinstance(representative,
-                            (collections.Sequence, np.ndarray)):
-            raise TypeError("'representative' type must be string "
-                            "or a sequence or a numpy array. "
-                            "Got '{}'.".format(type(representative)))
-
         if classes is None:
             classes = np.unique(y)
+
+        representative = MFEClustering._get_class_representatives(
+             N=N,
+             y=y,
+             dist_metric=dist_metric,
+             representative=representative,
+             classes=classes)
 
         sum_dists = np.zeros(classes.size)
 
         for class_index, cur_class in enumerate(classes):
             insts_by_class = N[y == cur_class, :]
 
-            if not isinstance(representative, str):
-                class_center = representative[class_index]
+            class_center = representative[class_index]
 
-            else:
-                class_center = center_method(insts_by_class, axis=0)
-
-            sum_dists[class_index] = scipy.spatial.distance.cdist(
+            cur_class_dists = scipy.spatial.distance.cdist(
                 XA=insts_by_class, XB=[class_center],
-                metric=dist_metric).sum()
+                metric=dist_metric)
+
+            if exp_factor != 1.0:
+                cur_class_dists **= exp_factor
+
+            sum_dists[class_index] = cur_class_dists.sum()
 
         if by_class:
             return sum_dists
@@ -997,15 +1058,89 @@ class MFEClustering:
         return bic
 
     @classmethod
-    def ft_xb(cls, N: np.ndarray, y: np.ndarray) -> float:
+    def ft_xb(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              dist_metric: str = "euclidean",
+              representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
+              classes: t.Optional[np.ndarray] = None) -> float:
         """Ratio of overall deviation to cluster separation.
+
+        The overall deviation is the sum of squared distances of
+        all instances to their class representative, and the cluster
+        separation is defined as the largest distance between two
+        distinct class representatives.
 
         Parameters
         ----------
+        dist_metric : :obj:`str`, optional
+            The distance metric used to calculate the distances between
+            instances and their class representatives. Check `scipydoc`_
+            for a full list of valid distance metrics.
+
+        representative : :obj:`str` or :obj:`np.ndarray` or Sequence, optional
+            * If representative is string-type, then it must assume one
+                value between ``median`` or ``mean``, and the selected
+                method is used to estimate the representative instance of
+                each class (e.g., if ``mean`` is selected, then the mean of
+                attributes of all instances of the same class is used to
+                represent that class).
+
+            * If representative is a Sequence or have :obj:`np.ndarray` type,
+                then its length must be the number of different classes in
+                ``y`` and each of its element must be a representative
+                instance for each class. For example, the following 2-D
+                array is the representative of the ``Iris`` dataset,
+                calculated using the mean value of instances of the same
+                class (effectively holding the same result as if the argument
+                value was the character string ``mean``):
+
+                [[ 5.006  3.428  1.462  0.246]  # 'Setosa' mean values
+                 [ 5.936  2.77   4.26   1.326]  # 'Versicolor' mean values
+                 [ 6.588  2.974  5.552  2.026]] # 'Virginica' mean values
+
+                 The attribute order must be, of course, the same as the
+                 original instances in the dataset.
+
+        classes : :obj:`np.ndarray`, optional
+            Array with all distinct classes of ``y``. Argument is used
+            to exploit precomputations. Please note that if ``representative``
+            is a sequence or have :obj:`np.ndarray` type, then both these
+            arguments (``classes`` and ``representative``) must have
+            one-to-one correspondence by index (i.e., representative[i] is
+            the representative instance of class[i]).
 
         Returns
         -------
+        :obj:`float` or :obj:`np.ndarray`
+            Ratio of the sum of squares between each instance and its
+            class representative and the maximum distance between two
+            distinct class representatives.
+
+        Notes
+        -----
+            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
+        representative = MFEClustering._get_class_representatives(
+             N=N,
+             y=y,
+             dist_metric=dist_metric,
+             representative=representative,
+             classes=classes)
+
+        sum_sqr_dist = MFEClustering.ft_cm(
+             N=N,
+             y=y,
+             dist_metric=dist_metric,
+             representative=representative,
+             exp_factor=2.0,
+             by_class=False,
+             classes=classes)
+
+        max_class_sep = (
+            scipy.spatial.distance.pdist(representative).max())
+
+        return sum_sqr_dist / max_class_sep
 
     @classmethod
     def ft_cn(cls,
@@ -1074,6 +1209,11 @@ if __name__ == "__main__":
     from sklearn import datasets
     iris = datasets.load_iris()
 
-    ans = MFEClustering.ft_cn(iris.data, iris.target)
+    rp = np.array([
+        np.mean(iris.data[cur_class == iris.target], axis=0)
+        for cur_class in np.unique(iris.target)
+    ])
+
+    ans = MFEClustering.ft_xb(iris.data, iris.target, representative=rp)
 
     print(ans)
