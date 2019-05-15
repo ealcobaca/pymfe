@@ -110,6 +110,8 @@ MTF_PREFIX = "ft_"
 
 PRECOMPUTE_PREFIX = "precompute_"
 
+POSTPROCESS_PREFIX = "postprocess_"
+
 TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
 
@@ -1168,11 +1170,7 @@ def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
     perc_interval = 100.0 / num_bins
     perc_range = np.arange(perc_interval, 100, perc_interval)
     hist_divs = np.percentile(data, perc_range)
-
-    if hist_divs.size == 0:
-        hist_divs = [np.median(data)]
-
-    return np.digitize(data, hist_divs, right=True)
+    return np.digitize(x=data, bins=hist_divs, right=True)
 
 
 def transform_num(data_numeric: np.ndarray,
@@ -1308,3 +1306,79 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
         return valid_scoring[score]
 
     return None
+
+
+def post_processing(results: np.ndarray,
+                    groups: t.Tuple[str, ...],
+                    suppress_warnings: bool = False,
+                    **kwargs) -> None:
+    """Detect and apply post-processing methods in metafeatures.
+
+    This function should be used after the metafeature extraction.
+
+    Args:
+        results (:obj:`Tuple`):
+
+        groups (:obj:`Tuple` of :obj:`str`): collection containing one or more
+            group identifiers. Check out ``MFE`` class documentation for more
+            information.
+
+        suppress_warnings (:obj:`bool`, optional): if True, suppress warnings
+            invoked while processing precomputation option.
+
+        **kwargs: used to pass extra custom arguments to precomputation metho-
+            ds.
+    """
+    if groups is None:
+        return
+
+    mtds_metadata = _get_all_prefixed_mtds(
+        prefix=POSTPROCESS_PREFIX,
+        groups=groups,
+    )  # type: t.Dict[str, t.Tuple]
+
+    postprocess_mtds = mtds_metadata.get(
+        "methods", tuple())  # type: t.Tuple[TypeMtdTuple, ...]
+
+    del mtds_metadata
+
+    remove_groups = False
+
+    if "groups" not in kwargs:
+        remove_groups = True
+        kwargs["groups"] = groups
+
+    for postprocess_mtd_name, postprocess_mtd_callable in postprocess_mtds:
+        try:
+            new_results = postprocess_mtd_callable(**kwargs)  # type: ignore
+
+            if new_results:
+                if len(new_results) != len(results):
+                    raise ValueError("Postprocessing result has length '{}'. "
+                                     "Expecting '{}'.".format(len(new_results),
+                                                              len(results)))
+
+                for res_list_old, res_list_new in zip(results, new_results):
+                    if isinstance(res_list_old, np.ndarray):
+                        res_list_old = np.hstack((res_list_old, res_list_new))
+
+                    elif isinstance(res_list_old, list):
+                        res_list_old += res_list_new
+
+                    else:
+                        raise TypeError("'results' elements must be a numpy "
+                                        "array or a python list. Got type '{}'"
+                                        ".".format(type(res_list_old)))
+
+        except (AttributeError, TypeError, ValueError) as type_err:
+            if not suppress_warnings:
+                warnings.warn("Something went wrong while "
+                              'postprocessing "{0}". Will ignore '
+                              "this method. Error message:\n"
+                              "{1}.".format(postprocess_mtd_name,
+                                            repr(type_err)))
+
+    if remove_groups:
+        kwargs.pop("groups")
+
+    return
