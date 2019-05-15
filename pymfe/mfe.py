@@ -228,6 +228,9 @@ class MFE:
         self._precomp_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
         """Precomputed common feature-extraction method arguments."""
 
+        self._postprocess_args_ft = {}  # type: t.Dict[str, t.Any]
+        """User-independent arguments for post-processing methods."""
+
         if random_state is None or isinstance(random_state, int):
             self.random_state = random_state
             np.random.seed(random_state)
@@ -821,7 +824,7 @@ class MFE:
             **self._custom_args_ft)
 
         # Custom arguments for postprocessing methods
-        self._postprocessing_args_ft = {}  # type: t.Dict[str, t.Any]
+        self._postprocess_args_ft = {}
 
         # Custom arguments for summarization methods
         self._custom_args_sum = {
@@ -952,7 +955,7 @@ class MFE:
             results=results,
             groups=self.groups,
             suppress_warnings=suppress_warnings,
-            **self._postprocessing_args_ft,
+            **self._postprocess_args_ft,
             **kwargs)
 
         if results and results[0]:
