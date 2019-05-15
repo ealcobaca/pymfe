@@ -65,9 +65,9 @@ class MFELandmarking:
         if "relative" not in groups:
             return None
 
-        mtf_rel_names = []
-        mtf_rel_vals = []
-        mtf_rel_time = []
+        mtf_rel_names = []  # type: t.List[str]
+        mtf_rel_vals = []  # type: t.List[float]
+        mtf_rel_time = []  # type: t.List[float]
 
         # To be implemented soon.
 

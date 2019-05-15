@@ -892,7 +892,7 @@ def process_features(
 
 
 def _patch_precomp_groups(
-        precomp_groups: t.Union[str, t.Iterable[str]],
+        precomp_groups: t.Optional[t.Union[str, t.Iterable[str]]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
         ) -> t.Union[str, t.Iterable[str]]:
     """Enforce precomputation in landmarking and model-based metafeatures."""
@@ -912,7 +912,7 @@ def _patch_precomp_groups(
 
 
 def process_precomp_groups(
-        precomp_groups: t.Union[str, t.Iterable[str]],
+        precomp_groups: t.Optional[t.Union[str, t.Iterable[str]]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
         wildcard: str = "all",
         suppress_warnings: bool = False,
