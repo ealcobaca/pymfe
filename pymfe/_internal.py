@@ -75,6 +75,7 @@ VALID_GROUPS = (
     "statistical",
     "model-based",
     "info-theory",
+    "relative",
 )  # type: t.Tuple[str, ...]
 
 VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
@@ -85,6 +86,7 @@ VALID_MFECLASSES = (
     statistical.MFEStatistical,
     model_based.MFEModelBased,
     info_theory.MFEInfoTheory,
+    None,
 )  # type: t.Tuple
 
 VALID_TIMEOPT = (
