@@ -43,3 +43,20 @@ class TestDataScaling:
                 and np.allclose(numeric_data.var(axis=0), exp_var)
                 and np.allclose(numeric_data.min(axis=0), exp_min)
                 and np.allclose(numeric_data.max(axis=0), exp_max))
+
+    def test_scaling_error_1(self):
+        with pytest.raises(ValueError):
+            X, y = load_xy(0)
+            MFE().fit(X=X.values,
+                      y=y.values,
+                      rescale="invalid",
+                      transform_cat=False)
+
+    def test_scaling_error_2(self):
+        with pytest.raises(TypeError):
+            X, y = load_xy(0)
+            MFE().fit(
+                X=X.values,
+                y=y.values,
+                rescale=["invalid"],
+                transform_cat=False)
