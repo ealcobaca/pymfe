@@ -65,6 +65,7 @@ import pymfe.general as general
 import pymfe.statistical as statistical
 import pymfe.info_theory as info_theory
 import pymfe.landmarking as landmarking
+import pymfe.relative as relative
 import pymfe.model_based as model_based
 import pymfe.scoring as scoring
 
@@ -88,16 +89,16 @@ GROUP_PREREQUISITES = (
     "landmarking",
 )
 
-VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
-
 VALID_MFECLASSES = (
     landmarking.MFELandmarking,
     general.MFEGeneral,
     statistical.MFEStatistical,
     model_based.MFEModelBased,
     info_theory.MFEInfoTheory,
-    None,
+    relative.MFERelativeLandmarking,
 )  # type: t.Tuple
+
+VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
 
 VALID_TIMEOPT = (
     "avg",
