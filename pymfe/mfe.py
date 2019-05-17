@@ -864,7 +864,7 @@ class MFE:
             verbose: bool = False,
             enable_parallel: bool = False,
             suppress_warnings: bool = False,
-            **kwargs) -> t.Tuple[t.List, ...]:
+            **kwargs) -> t.Tuple[t.Sequence, ...]:
         """Extracts metafeatures from the previously fitted dataset.
 
         Parameters
