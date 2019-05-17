@@ -205,6 +205,10 @@ class MFE:
         self.groups = _internal.process_generic_set(
             values=groups, group_name="groups")  # type: t.Tuple[str, ...]
 
+        self.groups, self.inserted_group_dep = (
+            _internal.solve_group_dependencies(
+                groups=self.groups))
+
         proc_feat = _internal.process_features(
             features=features,
             groups=self.groups,
@@ -849,7 +853,9 @@ class MFE:
             **self._custom_args_ft)
 
         # Custom arguments for postprocessing methods
-        self._postprocess_args_ft = {}
+        self._postprocess_args_ft = {
+            "inserted_group_dep": self.inserted_group_dep,
+        }
 
         # Custom arguments for summarization methods
         self._custom_args_sum = {

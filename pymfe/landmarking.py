@@ -60,11 +60,13 @@ class MFELandmarking:
     @classmethod
     def postprocess_landmarking_relative(
             cls,
-            mtf_names: t.Tuple[str],
-            mtf_vals: t.Tuple[float],
-            mtf_time: t.Tuple[float],
+            mtf_names: t.List[str],
+            mtf_vals: t.List[float],
+            mtf_time: t.List[float],
             class_indexes: t.Sequence[int],
-            groups: t.Tuple["str", ...],
+            groups: t.Tuple[str, ...],
+            inserted_group_dep: t.FrozenSet[str],
+            increasing_ranking: bool = True,
             **kwargs
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
         """Structure to implement relative landmarking metafeatures."""
@@ -105,8 +107,8 @@ class MFELandmarking:
                                  mtf_orig_indexes: t.Dict[str, t.List[int]],
                                  ) -> t.Tuple[t.List[float], t.List[int]]:
             """."""
-            ranked_values = []
-            orig_indexes = []
+            ranked_values = []  # type: t.List[float]
+            orig_indexes = []  # type: t.List[int]
 
             while mtf_by_summ:
                 summary, cur_ranks = mtf_by_summ.popitem()
@@ -140,7 +142,8 @@ class MFELandmarking:
                                  .format(mtf_names[cur_orig_index]))
             mtf_rel_time.append(mtf_time[cur_orig_index] + 99)
 
-        change_in_place = "landmarking" not in groups
+        change_in_place = ("landmarking" not in groups
+                           or "landmarking" in inserted_group_dep)
 
         if change_in_place:
             for cur_index, cur_orig_index in enumerate(original_indexes):
