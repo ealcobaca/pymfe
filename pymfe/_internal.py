@@ -222,8 +222,11 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
     return tuple(in_group), tuple(not_in_group)
 
 
-def _get_prefixed_mtds_from_class(class_obj: t.Any,
-                                  prefix: str) -> t.List[TypeMtdTuple]:
+def get_prefixed_mtds_from_class(class_obj: t.Any,
+                                 prefix: str,
+                                 only_name: bool = False,
+                                 prefix_removal: bool = False,
+                                 ) -> t.List[t.Union[str, TypeMtdTuple]]:
     """Get all class methods from ``class_obj`` prefixed with ``prefix``.
 
     Args:
@@ -233,20 +236,41 @@ def _get_prefixed_mtds_from_class(class_obj: t.Any,
         prefix (:obj:`str`): prefix which method names must have in order
             to it be gathered.
 
+        only_name (:obj:`bool`, optional): if True, return just the name
+            of the methods.
+
+        prefix_removal (:obj:`str`, optional): If True, then the returned
+            method names will have the ``prefix`` removed.
+
     Returns:
-        list(tuple): a list of tuples in the form (`mtd_name`, `mtd_address`)
-            of all class methods from ``class_obj`` prefixed with ``prefix``.
+        list(tuple): if ``only_name`` is False, then this function return
+            a list of tuples in the form (`mtd_name`, `mtd_address`) of
+            all class methods from ``class_obj`` prefixed with ``prefix``.
+            If ``only_name`` is True, this list will contain just the
+            method names.
     """
-    feat_mtd_list = inspect.getmembers(
+    class_methods = inspect.getmembers(
         class_obj, predicate=inspect.ismethod)  # type: t.List[TypeMtdTuple]
 
     # It is assumed that all feature-extraction related methods
     # name are all prefixed with "MTF_PREFIX" and all precomputa-
     # tion methos, prefixed with "PRECOMPUTE_PREFIX".
-    feat_mtd_list = [
-        ft_method for ft_method in feat_mtd_list
-        if ft_method[0].startswith(prefix)
-    ]
+    feat_mtd_list = []  # type: t.List[t.Union[str, TypeMtdTuple]]
+
+    for ft_method in class_methods:
+        mtd_name, remaining_data = ft_method[0], ft_method[1:]
+        if mtd_name.startswith(prefix):
+            if prefix_removal:
+                mtd_name = remove_prefix(value=mtd_name, prefix=prefix)
+
+            if only_name:
+                feat_mtd_list.append(mtd_name)
+
+            elif prefix_removal:
+                feat_mtd_list.append((mtd_name, *remaining_data))
+
+            else:
+                feat_mtd_list.append(ft_method)
 
     return feat_mtd_list
 
@@ -256,6 +280,7 @@ def _get_all_prefixed_mtds(
         groups: t.Tuple[str, ...],
         update_groups_by: t.Optional[t.Union[t.FrozenSet[str],
                                              t.Set[str]]] = None,
+        prefix_removal: bool = False,
         custom_class_: t.Any = None,
         ) -> t.Dict[str, t.Tuple]:
     """Get all methods prefixed with ``prefix`` in predefined feature ``groups``.
@@ -282,6 +307,9 @@ def _get_all_prefixed_mtds(
             precomputation methods from feature groups not related with user
             selected features.
 
+        prefix_removal (:obj:`bool`, optional): if True, then the returned
+            method names will not have the ``prefix``.
+
         custom_class_ (Class, optional): used for inner testing purposes. If
             not None, the given class will be used as reference to extract
             the prefixed methods.
@@ -302,22 +330,23 @@ def _get_all_prefixed_mtds(
         return {"methods": tuple(), "groups": tuple()}
 
     if custom_class_ is None:
-        verify_groups = VALID_GROUPS
-        verify_classes = VALID_MFECLASSES
+        verify_groups = tuple(VALID_GROUPS)
+        verify_classes = tuple(VALID_MFECLASSES)
 
     else:
         verify_groups = ("test_methods", )
         verify_classes = (custom_class_, )
 
     methods_by_group = {
-        ft_type_id: _get_prefixed_mtds_from_class(
+        ft_type_id: get_prefixed_mtds_from_class(
             class_obj=mfe_class,
-            prefix=prefix)
+            prefix=prefix,
+            prefix_removal=prefix_removal)
         for ft_type_id, mfe_class in zip(verify_groups, verify_classes)
         if ft_type_id in groups or custom_class_ is not None
     }
 
-    gathered_methods = []  # type: t.List[TypeMtdTuple]
+    gathered_methods = []  # type: t.List[t.Union[str, TypeMtdTuple]]
     new_groups = []  # type: t.List[str]
 
     for group_name in methods_by_group:
@@ -327,6 +356,8 @@ def _get_all_prefixed_mtds(
         if update_groups_by:
             group_mtds_names = {
                 remove_prefix(mtd_name, prefix=MTF_PREFIX)
+                if not prefix_removal
+                else mtd_name
                 for mtd_name, _ in group_mtds
             }
 
@@ -870,6 +901,7 @@ def process_features(
         update_groups_by=reference_values,
         groups=groups,
         custom_class_=custom_class_,
+        prefix_removal=True,
     )  # type: t.Dict[str, t.Tuple]
 
     ft_mtds_filtered = mtds_metadata.get(
@@ -880,10 +912,7 @@ def process_features(
     del mtds_metadata
 
     if wildcard in processed_ft:
-        processed_ft = [
-            remove_prefix(value=mtd_name, prefix=MTF_PREFIX)
-            for mtd_name, _ in ft_mtds_filtered
-        ]
+        processed_ft = [mtd_name for mtd_name, _ in ft_mtds_filtered]
 
     available_feat_names = []  # type: t.List[str]
     ft_mtd_processed = []  # type: t.List[TypeExtMtdTuple]
@@ -891,19 +920,15 @@ def process_features(
     for ft_mtd_tuple in ft_mtds_filtered:
         ft_mtd_name, ft_mtd_callable = ft_mtd_tuple
 
-        mtd_name_without_prefix = remove_prefix(
-            value=ft_mtd_name,
-            prefix=MTF_PREFIX)
-
-        if mtd_name_without_prefix in processed_ft:
+        if ft_mtd_name in processed_ft:
             mtd_callable_args = _extract_mtd_args(ft_mtd_callable)
 
             extended_item = (*ft_mtd_tuple,
                              mtd_callable_args)  # type: TypeExtMtdTuple
 
             ft_mtd_processed.append(extended_item)
-            available_feat_names.append(mtd_name_without_prefix)
-            processed_ft.remove(mtd_name_without_prefix)
+            available_feat_names.append(ft_mtd_name)
+            processed_ft.remove(ft_mtd_name)
 
     if not suppress_warnings:
         for unknown_ft in processed_ft:
@@ -917,16 +942,13 @@ def _patch_precomp_groups(
         precomp_groups: t.Optional[t.Union[str, t.Iterable[str]]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
         ) -> t.Union[str, t.Iterable[str]]:
-    """Enforce precomputation in landmarking and model-based metafeatures."""
+    """Enforce precomputation in model-based metafeatures."""
     if not precomp_groups:
         precomp_groups = set()
 
-    # Enforce precomputation from landmarking and model-based metafeature group
+    # Enforce precomputation from model-based metafeature group
     # due to strong dependencies of machine learning models.
     if groups and not isinstance(precomp_groups, str):
-        if "landmarking" in groups and "landmarking" not in precomp_groups:
-            precomp_groups = set(precomp_groups).union({"landmarking"})
-
         if "model-based" in groups and "model-based" not in precomp_groups:
             precomp_groups = set(precomp_groups).union({"model-based"})
 
