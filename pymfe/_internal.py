@@ -54,6 +54,7 @@ import collections
 import warnings
 import time
 import sys
+import re
 
 import numpy as np
 import sklearn.preprocessing
@@ -222,11 +223,11 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
     return tuple(in_group), tuple(not_in_group)
 
 
-def get_prefixed_mtds_from_class(class_obj: t.Any,
-                                 prefix: str,
-                                 only_name: bool = False,
-                                 prefix_removal: bool = False,
-                                 ) -> t.List[t.Union[str, TypeMtdTuple]]:
+def _get_prefixed_mtds_from_class(class_obj: t.Any,
+                                  prefix: str,
+                                  only_name: bool = False,
+                                  prefix_removal: bool = False,
+                                  ) -> t.List[t.Union[str, TypeMtdTuple]]:
     """Get all class methods from ``class_obj`` prefixed with ``prefix``.
 
     Args:
@@ -338,7 +339,7 @@ def _get_all_prefixed_mtds(
         verify_classes = (custom_class_, )
 
     methods_by_group = {
-        ft_type_id: get_prefixed_mtds_from_class(
+        ft_type_id: _get_prefixed_mtds_from_class(
             class_obj=mfe_class,
             prefix=prefix,
             prefix_removal=prefix_removal)
@@ -1359,6 +1360,36 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
     return None
 
 
+def _select_results_by_classes(
+        mtf_names: t.List[str],
+        class_names: t.Union[str, t.Sequence[str]]) -> t.Sequence[int]:
+    """Get indexes of metafeatures related to given ``class_names``."""
+    if isinstance(class_names, str):
+        class_names = [class_names]
+
+    classes_mtd_names = set()
+
+    for class_name in class_names:
+        if class_name in VALID_GROUPS:
+            classes_mtd_names.update(_get_prefixed_mtds_from_class(
+                class_obj=VALID_MFECLASSES[VALID_GROUPS.index(class_name)],
+                prefix=MTF_PREFIX,
+                only_name=True,
+                prefix_removal=True))
+
+    re_parse_mtf_name = re.compile(r"([^\.]+)\.")
+
+    selected_indexes = []
+
+    for mtf_cur_index, mtf_cur_name in enumerate(mtf_names):
+        re_match = re_parse_mtf_name.match(mtf_cur_name)
+
+        if re_match and re_match.group(1) in classes_mtd_names:
+            selected_indexes.append(mtf_cur_index)
+
+    return selected_indexes
+
+
 def post_processing(results: np.ndarray,
                     groups: t.Tuple[str, ...],
                     suppress_warnings: bool = False,
@@ -1403,8 +1434,15 @@ def post_processing(results: np.ndarray,
         kwargs["groups"] = groups
 
     for postprocess_mtd_name, postprocess_mtd_callable in postprocess_mtds:
+        parsed_results = _select_results_by_classes(
+            mtf_names=results[0],
+            class_names=remove_prefix(value=postprocess_mtd_name,
+                                      prefix=POSTPROCESS_PREFIX).split("_"))
+
         try:
-            new_results = postprocess_mtd_callable(**kwargs)  # type: ignore
+            new_results = postprocess_mtd_callable(
+                results=parsed_results,
+                **kwargs)  # type: ignore
 
             if new_results:
                 if len(new_results) != len(results):
