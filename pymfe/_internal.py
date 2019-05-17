@@ -87,7 +87,7 @@ GROUP_PREREQUISITES = (
     None,
     None,
     "landmarking",
-)
+)  # type: t.Tuple[t.Optional[str], ...]
 
 VALID_MFECLASSES = (
     landmarking.MFELandmarking,
@@ -723,6 +723,7 @@ def solve_group_dependencies(
     Those dependencies must be registered in ``GROUP_PREFEQUISITES`` tuple.
     """
     inserted_dependencies = set()
+    cur_dependencies = None  # type: t.Optional[t.Union[t.Set[str], str]]
 
     for group in groups:
         if group in VALID_GROUPS:
@@ -1397,7 +1398,7 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
 
 def _select_results_by_classes(
         mtf_names: t.Sequence[str],
-        class_names: t.Union[str, t.Sequence[str]]) -> t.Sequence[int]:
+        class_names: t.Union[str, t.Sequence[str]]) -> t.List[int]:
     """Get indexes of metafeatures related to given ``class_names``."""
     if isinstance(class_names, str):
         class_names = [class_names]
@@ -1475,19 +1476,23 @@ def post_processing(
 
     mtf_names, mtf_vals, mtf_time = results
 
+    extra_inner_args = {
+        "mtf_names": mtf_names,
+        "mtf_vals": mtf_vals,
+        "mtf_time": mtf_time,
+        "class_indexes": [],
+    }
+
     for postprocess_mtd_name, postprocess_mtd_callable in postprocess_mtds:
-        class_indexes = _select_results_by_classes(
+        extra_inner_args["class_indexes"] = _select_results_by_classes(
             mtf_names=mtf_names,
             class_names=remove_prefix(value=postprocess_mtd_name,
                                       prefix=POSTPROCESS_PREFIX).split("_"))
 
         try:
-            new_results = postprocess_mtd_callable(
-                mtf_names=mtf_names,
-                mtf_vals=mtf_vals,
-                mtf_time=mtf_time,
-                class_indexes=class_indexes,
-                **kwargs)  # type: ignore
+            new_results = postprocess_mtd_callable(  # type: ignore
+                **extra_inner_args,
+                **kwargs)
 
             if new_results:
                 if len(new_results) != len(results):

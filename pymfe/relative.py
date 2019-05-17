@@ -73,7 +73,7 @@ class MFERelativeLandmarking:
         mtf_rel_time = []  # type: t.List[float]
 
         mtf_by_summ, mtf_orig_indexes = (
-            MFERelativeLandmarking._group_mtf_by_summary(
+            MFERelativeLandmarking.group_mtf_by_summary(
                 mtf_names=mtf_names,
                 mtf_vals=mtf_vals))
 
@@ -108,12 +108,12 @@ class MFERelativeLandmarking:
         return mtf_rel_names, mtf_rel_vals, mtf_rel_time
 
     @classmethod
-    def _group_mtf_by_summary(
+    def group_mtf_by_summary(
             cls,
             mtf_names: t.List[str],
             mtf_vals: t.List[float],
-            ) -> t.Tuple[t.Dict[str, t.List[float]],
-                         t.Dict[str, t.List[int]]]:
+    ) -> t.Tuple[t.Dict[str, t.List[float]],
+                 t.Dict[str, t.List[int]]]:
         """Group metafeatures by its correspondent summary method."""
         re_get_summ = re.compile(
             r"""[^\.]+\.  # Feature name with the first separator
@@ -123,8 +123,8 @@ class MFERelativeLandmarking:
         mtf_by_summ = {}  # type: t.Dict[str, t.List[float]]
         mtf_orig_indexes = {}  # type: t.Dict[str, t.List[int]]
 
-        for mtf_index in range(len(mtf_names)):
-            re_match = re_get_summ.match(mtf_names[mtf_index])
+        for mtf_index, cur_mtf_name in enumerate(mtf_names):
+            re_match = re_get_summ.match(cur_mtf_name)
             if re_match:
                 summary_suffixes = re_match.group(1)
 
@@ -142,7 +142,7 @@ class MFERelativeLandmarking:
             cls,
             mtf_by_summ: t.Dict[str, t.List[float]],
             mtf_orig_indexes: t.Dict[str, t.List[int]],
-            ) -> t.Tuple[t.List[float], t.List[int]]:
+    ) -> t.Tuple[t.List[float], t.List[int]]:
         """."""
         ranked_values = []  # type: t.List[float]
         orig_indexes = []  # type: t.List[int]
