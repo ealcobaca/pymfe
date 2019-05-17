@@ -1361,7 +1361,7 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
 
 
 def _select_results_by_classes(
-        mtf_names: t.List[str],
+        mtf_names: t.Sequence[str],
         class_names: t.Union[str, t.Sequence[str]]) -> t.Sequence[int]:
     """Get indexes of metafeatures related to given ``class_names``."""
     if isinstance(class_names, str):
@@ -1390,17 +1390,22 @@ def _select_results_by_classes(
     return selected_indexes
 
 
-def post_processing(results: np.ndarray,
-                    groups: t.Tuple[str, ...],
-                    suppress_warnings: bool = False,
-                    custom_class_: t.Any = None,
-                    **kwargs) -> None:
+def post_processing(
+        results: t.Tuple[t.List, ...],
+        groups: t.Tuple[str, ...],
+        suppress_warnings: bool = False,
+        custom_class_: t.Any = None,
+        **kwargs) -> None:
     """Detect and apply post-processing methods in metafeatures.
 
     This function should be used after the metafeature extraction.
 
     Args:
-        results (:obj:`Tuple`):
+        results (:obj:`Tuple` or :obj:`np.ndarray`): summarized metafeatures.
+            This argument has three entries (all must be collections):
+                - Name of metafeatures
+                - Value of metafeatures
+                - Time of extraction for each metafeature
 
         groups (:obj:`Tuple` of :obj:`str`): collection containing one or more
             group identifiers. Check out ``MFE`` class documentation for more
@@ -1433,15 +1438,20 @@ def post_processing(results: np.ndarray,
         remove_groups = True
         kwargs["groups"] = groups
 
+    mtf_names, mtf_vals, mtf_time = results
+
     for postprocess_mtd_name, postprocess_mtd_callable in postprocess_mtds:
-        parsed_results = _select_results_by_classes(
-            mtf_names=results[0],
+        class_indexes = _select_results_by_classes(
+            mtf_names=mtf_names,
             class_names=remove_prefix(value=postprocess_mtd_name,
                                       prefix=POSTPROCESS_PREFIX).split("_"))
 
         try:
             new_results = postprocess_mtd_callable(
-                results=parsed_results,
+                mtf_names=mtf_names,
+                mtf_vals=mtf_vals,
+                mtf_time=mtf_time,
+                class_indexes=class_indexes,
                 **kwargs)  # type: ignore
 
             if new_results:
@@ -1451,16 +1461,7 @@ def post_processing(results: np.ndarray,
                                                               len(results)))
 
                 for res_list_old, res_list_new in zip(results, new_results):
-                    if isinstance(res_list_old, np.ndarray):
-                        res_list_old = np.hstack((res_list_old, res_list_new))
-
-                    elif isinstance(res_list_old, list):
-                        res_list_old += res_list_new
-
-                    else:
-                        raise TypeError("'results' elements must be a numpy "
-                                        "array or a python list. Got type '{}'"
-                                        ".".format(type(res_list_old)))
+                    res_list_old += res_list_new
 
         except (AttributeError, TypeError, ValueError) as type_err:
             if not suppress_warnings:

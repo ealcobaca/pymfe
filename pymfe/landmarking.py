@@ -58,7 +58,10 @@ class MFELandmarking:
     @classmethod
     def postprocess_landmarking_relative(
             cls,
-            results: t.Tuple[t.List[str], t.List[float], t.List[float]],
+            mtf_names: t.Tuple[str],
+            mtf_vals: t.Tuple[float],
+            mtf_time: t.Tuple[float],
+            class_indexes: t.Sequence[int],
             groups: t.Tuple["str", ...],
             **kwargs  # ignore: W0613
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
