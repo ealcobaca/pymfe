@@ -79,6 +79,15 @@ VALID_GROUPS = (
     "relative",
 )  # type: t.Tuple[str, ...]
 
+GROUP_PREREQUISITES = (
+    None,
+    None,
+    None,
+    None,
+    None,
+    "landmarking",
+)
+
 VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
 
 VALID_MFECLASSES = (
@@ -703,6 +712,31 @@ def process_generic_set(
                              not_in_valid_set, valid_values))
 
     return in_valid_set
+
+
+def solve_group_dependencies(
+        groups: t.Tuple[str, ...],
+        ) -> t.Tuple[t.Tuple[str, ...], t.FrozenSet[str]]:
+    """Solve dependencies between groups.
+
+    Those dependencies must be registered in ``GROUP_PREFEQUISITES`` tuple.
+    """
+    inserted_dependencies = set()
+
+    for group in groups:
+        if group in VALID_GROUPS:
+            cur_dependencies = GROUP_PREREQUISITES[VALID_GROUPS.index(group)]
+
+            if cur_dependencies:
+                if isinstance(cur_dependencies, str):
+                    cur_dependencies = {cur_dependencies}
+
+                inserted_dependencies.update(
+                    set(cur_dependencies).difference(groups))
+
+    groups = tuple(set(groups).union(inserted_dependencies))
+
+    return groups, frozenset(inserted_dependencies)
 
 
 def process_generic_option(
