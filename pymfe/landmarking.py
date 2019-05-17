@@ -2,6 +2,7 @@
 Metafeatures."""
 
 import typing as t
+import re
 
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
@@ -71,9 +72,39 @@ class MFELandmarking:
         if "relative" not in groups:
             return None
 
+        def group_mtf_by_summary(
+                mtf_names: t.List[str],
+                mtf_vals: t.List[float],
+                ) -> t.Dict[str, t.List[t.Tuple[float, int]]]:
+            """."""
+            re_get_summ = re.compile(
+                r"""[^\.]+\.  # Feature name with the first separator
+                    (.*)      # Summary name (can have more than one suffix)
+                """, re.VERBOSE)
+
+            mtf_by_summ = {}  # type: t.Dict[str, t.List[t.Tuple[float, int]]]
+
+            for mtf_index in range(len(mtf_names)):
+                re_match = re_get_summ.match(mtf_names[mtf_index])
+                if re_match:
+                    summary_suffixes = re_match.group(1)
+                    item_pack = (mtf_vals[mtf_index], mtf_index)
+
+                    if summary_suffixes not in mtf_by_summ:
+                        mtf_by_summ[summary_suffixes] = []
+
+                    mtf_by_summ[summary_suffixes].append(item_pack)
+
+            return mtf_by_summ
+
         mtf_rel_names = []  # type: t.List[str]
         mtf_rel_vals = []  # type: t.List[float]
         mtf_rel_time = []  # type: t.List[float]
+
+        mtf_grouped_by_summ = group_mtf_by_summary(
+            mtf_names=mtf_names,
+            mtf_vals=mtf_vals)
+        print(mtf_grouped_by_summ)
 
         if "landmarking" not in groups:
             # If ``landmarking`` not in groups, then just change
