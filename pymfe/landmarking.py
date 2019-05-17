@@ -2,12 +2,13 @@
 Metafeatures."""
 
 import typing as t
+
+import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-import numpy as np
 
 
 class MFELandmarking:
@@ -57,6 +58,7 @@ class MFELandmarking:
     @classmethod
     def postprocess_landmarking_relative(
             cls,
+            results: t.Tuple[t.List[str], t.List[float], t.List[float]],
             groups: t.Tuple["str", ...],
             **kwargs  # ignore: W0613
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
@@ -70,14 +72,16 @@ class MFELandmarking:
         mtf_rel_vals = []  # type: t.List[float]
         mtf_rel_time = []  # type: t.List[float]
 
-        # To be implemented soon.
+        if "landmarking" not in groups:
+            # If ``landmarking`` not in groups, then just change
+            # the metafeatures in-place and return None
+            return None
 
         return mtf_rel_names, mtf_rel_vals, mtf_rel_time
 
     @classmethod
     def precompute_landmarking_class(cls,
                                      N: np.ndarray,
-                                     y: np.ndarray,
                                      sample_size: float,
                                      folds: int,
                                      random_state: t.Optional[int] = None,
@@ -88,9 +92,6 @@ class MFELandmarking:
         ----------
         N : :obj:`np.ndarray`, optional
             Attributes from fitted data.
-
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
 
         sample_size : :obj: `float`
             The percentage of examples subsampled. Value different from default
@@ -122,9 +123,7 @@ class MFELandmarking:
 
         prepcomp_vals = {}
 
-        if N is not None and y is not None\
-           and not {"skf", "sample_indexes"}.issubset(kwargs):
-
+        if N is not None and "sample_indexes" not in kwargs:
             if sample_size != 1:
                 num_inst, _ = N.shape
 
@@ -134,9 +133,10 @@ class MFELandmarking:
                         sample_size=sample_size,
                         random_state=random_state))
 
-            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
-
-            prepcomp_vals["skf"] = skf
+        if "skf" not in kwargs:
+            prepcomp_vals["skf"] = StratifiedKFold(
+                n_splits=folds,
+                random_state=random_state)
 
         return prepcomp_vals
 
@@ -230,8 +230,9 @@ class MFELandmarking:
     def ft_best_node(cls,
                      N: np.ndarray,
                      y: np.ndarray,
-                     skf: StratifiedKFold,
                      score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+                     skf: t.Optional[StratifiedKFold] = None,
+                     folds: int = 10,
                      sample_size: float = 1.0,
                      sample_indexes: t.Optional[np.ndarray] = None,
                      random_state: t.Optional[int] = None) -> np.ndarray:
@@ -242,19 +243,23 @@ class MFELandmarking:
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`, optional
+        N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
-
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
 
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
+
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
 
         sample_size : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
@@ -281,6 +286,9 @@ class MFELandmarking:
             sample_size=sample_size,
             random_state=random_state,
             sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -300,8 +308,9 @@ class MFELandmarking:
     def ft_random_node(cls,
                        N: np.ndarray,
                        y: np.ndarray,
-                       skf: StratifiedKFold,
                        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+                       skf: t.Optional[StratifiedKFold] = None,
+                       folds: int = 10,
                        sample_size: float = 1.0,
                        sample_indexes: t.Optional[np.ndarray] = None,
                        random_state: t.Optional[int] = None) -> np.ndarray:
@@ -315,13 +324,17 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
+
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
 
         sample_size : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
@@ -348,6 +361,9 @@ class MFELandmarking:
             sample_size=sample_size,
             random_state=random_state,
             sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -372,8 +388,9 @@ class MFELandmarking:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            skf: StratifiedKFold,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
             sample_size: float = 1.0,
             sample_indexes: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
@@ -388,13 +405,17 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
+
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
 
         sample_size : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
@@ -421,6 +442,9 @@ class MFELandmarking:
             sample_size=sample_size,
             random_state=random_state,
             sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -444,8 +468,9 @@ class MFELandmarking:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            skf: StratifiedKFold,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
             sample_size: float = 1.0,
             sample_indexes: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
@@ -463,13 +488,17 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
+
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
 
         sample_size : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
@@ -496,6 +525,9 @@ class MFELandmarking:
             sample_size=sample_size,
             random_state=random_state,
             sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -515,8 +547,9 @@ class MFELandmarking:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            skf: StratifiedKFold,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
             sample_size: float = 1.0,
             sample_indexes: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
@@ -534,13 +567,17 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
+
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
 
         sample_size : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
@@ -567,6 +604,9 @@ class MFELandmarking:
             sample_size=sample_size,
             random_state=random_state,
             sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -586,8 +626,9 @@ class MFELandmarking:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            skf: StratifiedKFold,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
             sample_size: float = 1.0,
             sample_indexes: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
@@ -605,13 +646,17 @@ class MFELandmarking:
         y :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
+
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
 
         sample_size : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
@@ -638,6 +683,9 @@ class MFELandmarking:
             sample_size=sample_size,
             random_state=random_state,
             sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -657,8 +705,9 @@ class MFELandmarking:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            skf: StratifiedKFold,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
             sample_size: float = 1.0,
             sample_indexes: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
@@ -677,13 +726,17 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
+
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
 
         sample_size : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
@@ -710,6 +763,9 @@ class MFELandmarking:
             sample_size=sample_size,
             random_state=random_state,
             sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
