@@ -5,6 +5,7 @@ import typing as t
 import re
 
 import numpy as np
+import scipy.stats
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.naive_bayes import GaussianNB
@@ -64,10 +65,10 @@ class MFELandmarking:
             mtf_time: t.Tuple[float],
             class_indexes: t.Sequence[int],
             groups: t.Tuple["str", ...],
-            **kwargs  # ignore: W0613
+            **kwargs
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
-        # pylint: disable=W0613
         """Structure to implement relative landmarking metafeatures."""
+        # pylint: disable=W0613
 
         if "relative" not in groups:
             return None
@@ -75,40 +76,78 @@ class MFELandmarking:
         def group_mtf_by_summary(
                 mtf_names: t.List[str],
                 mtf_vals: t.List[float],
-                ) -> t.Dict[str, t.List[t.Tuple[float, int]]]:
-            """."""
+                ) -> t.Tuple[t.Dict[str, t.List[float]],
+                             t.Dict[str, t.List[int]]]:
+            """Group metafeatures by its correspondent summary method."""
             re_get_summ = re.compile(
                 r"""[^\.]+\.  # Feature name with the first separator
                     (.*)      # Summary name (can have more than one suffix)
                 """, re.VERBOSE)
 
-            mtf_by_summ = {}  # type: t.Dict[str, t.List[t.Tuple[float, int]]]
+            mtf_by_summ = {}  # type: t.Dict[str, t.List[float]]
+            mtf_orig_indexes = {}  # type: t.Dict[str, t.List[int]]
 
             for mtf_index in range(len(mtf_names)):
                 re_match = re_get_summ.match(mtf_names[mtf_index])
                 if re_match:
                     summary_suffixes = re_match.group(1)
-                    item_pack = (mtf_vals[mtf_index], mtf_index)
 
                     if summary_suffixes not in mtf_by_summ:
                         mtf_by_summ[summary_suffixes] = []
+                        mtf_orig_indexes[summary_suffixes] = []
 
-                    mtf_by_summ[summary_suffixes].append(item_pack)
+                    mtf_by_summ[summary_suffixes].append(mtf_vals[mtf_index])
+                    mtf_orig_indexes[summary_suffixes].append(mtf_index)
 
-            return mtf_by_summ
+            return mtf_by_summ, mtf_orig_indexes
+
+        def flatten_dictionaries(mtf_by_summ: t.Dict[str, t.List[float]],
+                                 mtf_orig_indexes: t.Dict[str, t.List[int]],
+                                 ) -> t.Tuple[t.List[float], t.List[int]]:
+            """."""
+            ranked_values = []
+            orig_indexes = []
+
+            while mtf_by_summ:
+                summary, cur_ranks = mtf_by_summ.popitem()
+                cur_orig_indexes = mtf_orig_indexes.pop(summary)
+                ranked_values += list(cur_ranks)
+                orig_indexes += cur_orig_indexes
+
+            return ranked_values, orig_indexes
 
         mtf_rel_names = []  # type: t.List[str]
         mtf_rel_vals = []  # type: t.List[float]
         mtf_rel_time = []  # type: t.List[float]
 
-        mtf_grouped_by_summ = group_mtf_by_summary(
+        mtf_by_summ, mtf_orig_indexes = group_mtf_by_summary(
             mtf_names=mtf_names,
             mtf_vals=mtf_vals)
-        print(mtf_grouped_by_summ)
 
-        if "landmarking" not in groups:
-            # If ``landmarking`` not in groups, then just change
-            # the metafeatures in-place and return None
+        mtf_by_summ = {
+            summary: scipy.stats.rankdata(
+                a=mtf_by_summ[summary],
+                method="average")
+            for summary in mtf_by_summ
+        }
+
+        mtf_rel_vals, original_indexes = flatten_dictionaries(
+            mtf_by_summ,
+            mtf_orig_indexes)
+
+        for cur_orig_index in original_indexes:
+            mtf_rel_names.append("{}.relative"
+                                 .format(mtf_names[cur_orig_index]))
+            mtf_rel_time.append(mtf_time[cur_orig_index] + 99)
+
+        change_in_place = "landmarking" not in groups
+
+        if change_in_place:
+            for cur_index, cur_orig_index in enumerate(original_indexes):
+                mtf_names[cur_orig_index] = mtf_rel_names[cur_index]
+                mtf_vals[cur_orig_index] = mtf_rel_vals[cur_index]
+                mtf_time[cur_orig_index] = mtf_rel_time[cur_index]
+
             return None
 
         return mtf_rel_names, mtf_rel_vals, mtf_rel_time
