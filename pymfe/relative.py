@@ -127,7 +127,8 @@ class MFERelativeLandmarking:
             for summary in mtf_by_summ
         }
 
-        avg_time = (time.time() - avg_time) / len(mtf_by_summ)
+        avg_time = ((time.time() - avg_time)
+                    / (len(mtf_by_summ) if mtf_by_summ else 1.0))
 
         mtf_rel_vals, original_indexes = (
             MFERelativeLandmarking._flatten_dictionaries(
