@@ -1,6 +1,7 @@
 """Module dedicated to extraction of Relative Landmarking Metafeatures."""
 
 import typing as t
+import time
 import re
 
 import scipy.stats
@@ -59,10 +60,50 @@ class MFERelativeLandmarking:
             class_indexes: t.Sequence[int],
             groups: t.Tuple[str, ...],
             inserted_group_dep: t.FrozenSet[str],
-            increasing_ranking: bool = True,
             **kwargs
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
-        """Structure to implement relative landmarking metafeatures."""
+        """Generate Relative Landmarking from Landmarking metafeatures.
+
+        Arguments
+        ---------
+        mtf_names : :obj:`str`
+            Name of each generated metafeature (after extraction and
+            summarization).
+
+        mtf_vals : :obj:`str`
+            Value of each generated metafeature (after extraction and
+            summarization).
+
+        mtf_time : :obj:`str`
+            Time elapsed to generate each metafeature (after extraction
+            and summarization).
+
+        class_indexes : :obj:`List` of :obj:`int`
+            List of indexes corresponding to metafeatures associated to
+            metafeature groups present in this postprocessing method name
+            (``Landmarking`` and ``Relative``.)
+
+        groups : :obj:`Tuple` of :obj:`str`
+            User-selected and automatic inserted (due to group dependencies)
+            groups of metafeatures.
+
+        inserted_group_dep : :obj:`Tuple` of :obj:`str`
+            Tuple with all automatic inserted metafeature groups due to
+            dependency between groups.
+
+        **kwargs: to keep consistency with the framework postprocessing
+            signature. Not used in this method.
+
+        Returns
+        -------
+        If either ``landmarking`` or ``relative`` is not selected by the user
+        as a metafeature group:
+            Returns None.
+
+        Else:
+            Returns three lists for generated relative landmarking metafeature
+            names, values and time elapsed (in this order.)
+        """
         # pylint: disable=W0613
 
         if "relative" not in groups:
@@ -77,12 +118,16 @@ class MFERelativeLandmarking:
                 mtf_names=mtf_names,
                 mtf_vals=mtf_vals))
 
+        avg_time = time.time()
+
         mtf_by_summ = {
             summary: scipy.stats.rankdata(
                 a=mtf_by_summ[summary],
                 method="average")
             for summary in mtf_by_summ
         }
+
+        avg_time = (time.time() - avg_time) / len(mtf_by_summ)
 
         mtf_rel_vals, original_indexes = (
             MFERelativeLandmarking._flatten_dictionaries(
@@ -92,7 +137,7 @@ class MFERelativeLandmarking:
         for cur_orig_index in original_indexes:
             mtf_rel_names.append("{}.relative"
                                  .format(mtf_names[cur_orig_index]))
-            mtf_rel_time.append(mtf_time[cur_orig_index] + 99)
+            mtf_rel_time.append(mtf_time[cur_orig_index] + avg_time)
 
         change_in_place = ("landmarking" not in groups
                            or "landmarking" in inserted_group_dep)
@@ -114,7 +159,13 @@ class MFERelativeLandmarking:
             mtf_vals: t.List[float],
     ) -> t.Tuple[t.Dict[str, t.List[float]],
                  t.Dict[str, t.List[int]]]:
-        """Group metafeatures by its correspondent summary method."""
+        """Group metafeatures by its correspondent summary method.
+
+        It is assumed that every distinct suffix after the first
+        separator ``.`` in the metafeature name corresponds to a
+        different summary method, even if it is, for example, due
+        to different bins of a histogram summarization.
+        """
         re_get_summ = re.compile(
             r"""[^\.]+\.  # Feature name with the first separator
                 (.*)      # Summary name (can have more than one suffix)
@@ -143,7 +194,7 @@ class MFERelativeLandmarking:
             mtf_by_summ: t.Dict[str, t.List[float]],
             mtf_orig_indexes: t.Dict[str, t.List[int]],
     ) -> t.Tuple[t.List[float], t.List[int]]:
-        """."""
+        """Flatten dictionary values to two lists with correspondence."""
         ranked_values = []  # type: t.List[float]
         orig_indexes = []  # type: t.List[int]
 

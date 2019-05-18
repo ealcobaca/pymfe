@@ -1,47 +1,60 @@
 """This module provides useful functions for the MFE package.
 
 Attributes:
-    VALID_VALUE_PREFIX (:obj:``str``): Prefix which all tuples that
+    VALID_VALUE_PREFIX (:obj:`str`): Prefix which all tuples that
         keep valid values for custom user options must use in its name.
         This prefix is used to enable the automatic detection of these
         groups.
 
-    VALID_GROUPS (:obj:``tuple`` of :obj:``str``): Supported groups of
+    VALID_GROUPS (:obj:`tuple` of :obj:`str`): Supported groups of
         metafeatures of pymfe.
 
-    VALID_SUMMARY (:obj:``tuple`` of :obj:``str``): Supported summary
-        functions to combine metafeature values.
+    GROUP_PREREQUISITES (:obj:`tuple` of :obj:`List` or :obj:`str`):
+        Tuple for requisites of each group entry in ``VALID_GORUPS``.
+        This tuple must have one-to-one correspondence with ``VALID_GROUPS``.
+        Insert None is the correspondent metafeature group has no other
+        metafeature group as dependency. Each entry of this tuple can be
+        either a string (single dependency) or a collection of strings
+        (multiple dependencies), and every string must correspond to some
+        value in ``VALID_GROUPS``. In any case, if the used select some
+        metafeature group with some dependency, then this dependencies
+        will be automatically inserted as metafeature groups in the MFE
+        model. The output filtering (to remove possibly unwanted collection
+        of metafeatures) should be left to post-processing steps.
 
-    VALID_MFECLASSES (:obj:``tuple`` of Classes): Metafeature extractors
+    VALID_MFECLASSES (:obj:`tuple` of Classes): Metafeature extractors
         predefined classes, where to perform the search of metafeature-ex-
         traction methods.
 
-    VALID_TIMEOPT (:obj:``tuple`` of :obj:``str``): valid options for time
+    VALID_SUMMARY (:obj:`tuple` of :obj:`str`): Supported summary
+        functions to combine metafeature values.
+
+    VALID_TIMEOPT (:obj:`tuple` of :obj:`str`): valid options for time
         measurements while extracting metafeatures.
 
-    VALID_RESCALE (:obj:``tuple`` of :obj:``str``): valid options for res-
+    VALID_RESCALE (:obj:`tuple` of :obj:`str`): valid options for res-
         caling numeric data while fitting dataset.
 
-    MTF_PREFIX (:obj:``str``): prefix of metafeature-extraction method
+    MTF_PREFIX (:obj:`str`): prefix of metafeature-extraction method
         names for classes in ``VALID_MFECLASSES``. For example, the metafeature
         called ``inst_nr`` is implemented in the method named ``[MTF_PREFIX]_-
         inst_nr.`` Prefixation is used to enable the automatic detection of
         these methods.
 
-    PRECOMPUTE_PREFIX (:obj:``str``): prefix for precomputation method names.
+    PRECOMPUTE_PREFIX (:obj:`str`): prefix for precomputation method names.
         If a method of a class in ``VALID_MFECLASSES`` starts with this prefix,
         it is automatically executed to gather values that this class frequen-
         tly uses. These values are shared between all feature-extraction rela-
         ted methods of all ``VALID_MFECLASSES`` classes to avoid redundant com-
         putation.
 
-    TIMEOPT_AVG_PREFIX (:obj:``str``): prefix for time options based on the
+    TIMEOPT_AVG_PREFIX (:obj:`str`): prefix for time options based on the
         average of gathered metrics. It means necessarily that; if this cons-
         tant value prefixes an option, then this option is supposed to divide
         the gathered time elapsed metrics by the cardinality of the features
         extracted (``cardinality`` means ``number of``).
 
-    TIMEOPT_SUMMARY_SUFFIX (:obj:``str``): suffix for time options which in-
+    TIMEOPT_SUMMARY_SUFFIX (:obj:`str`): suffix for time options which in-
         clude summarization time alongside the time necessary for the extracti-
         on of the feature. It means that, if this constant value suffixes a ti-
         me option, then the time metrics must include the time necessary for
