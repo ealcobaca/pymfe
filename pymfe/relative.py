@@ -115,8 +115,9 @@ class MFERelativeLandmarking:
 
         mtf_by_summ, mtf_orig_indexes = (
             MFERelativeLandmarking.group_mtf_by_summary(
-                mtf_names=[mtf_names[i] for i in class_indexes],
-                mtf_vals=[mtf_vals[i] for i in class_indexes]))
+                mtf_names=mtf_names,
+                mtf_vals=mtf_vals,
+                class_indexes=class_indexes))
 
         avg_time = time.time()
 
@@ -158,6 +159,7 @@ class MFERelativeLandmarking:
             cls,
             mtf_names: t.List[str],
             mtf_vals: t.List[float],
+            class_indexes: t.List[int],
     ) -> t.Tuple[t.Dict[str, t.List[float]],
                  t.Dict[str, t.List[int]]]:
         """Group metafeatures by its correspondent summary method.
@@ -176,16 +178,17 @@ class MFERelativeLandmarking:
         mtf_orig_indexes = {}  # type: t.Dict[str, t.List[int]]
 
         for mtf_index, cur_mtf_name in enumerate(mtf_names):
-            re_match = re_get_summ.match(cur_mtf_name)
-            if re_match:
-                summary_suffixes = re_match.group(1)
+            if mtf_index in class_indexes:
+                re_match = re_get_summ.match(cur_mtf_name)
+                if re_match:
+                    summary_suffixes = re_match.group(1)
 
-                if summary_suffixes not in mtf_by_summ:
-                    mtf_by_summ[summary_suffixes] = []
-                    mtf_orig_indexes[summary_suffixes] = []
+                    if summary_suffixes not in mtf_by_summ:
+                        mtf_by_summ[summary_suffixes] = []
+                        mtf_orig_indexes[summary_suffixes] = []
 
-                mtf_by_summ[summary_suffixes].append(mtf_vals[mtf_index])
-                mtf_orig_indexes[summary_suffixes].append(mtf_index)
+                    mtf_by_summ[summary_suffixes].append(mtf_vals[mtf_index])
+                    mtf_orig_indexes[summary_suffixes].append(mtf_index)
 
         return mtf_by_summ, mtf_orig_indexes
 
