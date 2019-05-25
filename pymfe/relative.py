@@ -159,7 +159,7 @@ class MFERelativeLandmarking:
             cls,
             mtf_names: t.List[str],
             mtf_vals: t.List[float],
-            class_indexes: t.List[int],
+            class_indexes: t.Sequence[int],
     ) -> t.Tuple[t.Dict[str, t.List[float]],
                  t.Dict[str, t.List[int]]]:
         """Group metafeatures by its correspondent summary method.

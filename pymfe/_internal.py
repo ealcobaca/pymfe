@@ -1409,9 +1409,9 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
     return None
 
 
-def check_group_dependencies(groups: t.Sequence[str]) -> t.Set[str]:
+def check_group_dependencies(groups: t.Iterable[str]) -> t.Set[str]:
     """Get ``groups`` metafeature groups dependencies."""
-    deps = set()
+    deps = set()  # type: t.Set[str]
 
     for group in groups:
         if group in VALID_GROUPS:
@@ -1419,17 +1419,14 @@ def check_group_dependencies(groups: t.Sequence[str]) -> t.Set[str]:
             cur_dep = GROUP_PREREQUISITES[cur_group_index]
 
             if cur_dep:
-                if isinstance(cur_dep, str):
-                    cur_dep = {cur_dep}
-
-                deps.update(cur_dep)
+                deps.update({cur_dep} if isinstance(cur_dep, str) else cur_dep)
 
     return deps
 
 
 def select_results_by_classes(
         mtf_names: t.Sequence[str],
-        class_names: t.Union[str, t.Sequence[str]],
+        class_names: t.Union[str, t.Iterable[str]],
         include_dependencies: bool = False) -> t.List[int]:
     """Get indexes of metafeatures related to given ``class_names``."""
     if isinstance(class_names, str):
