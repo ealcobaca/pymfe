@@ -170,28 +170,6 @@ class TestArchitecture:
                 and not set(res).symmetric_difference(_internal.VALID_GROUPS))
 
     @pytest.mark.parametrize(
-        "groups, exp_length",
-        [
-            ("statistical", 26),
-            ("general", 11),
-            ("landmarking", 7),
-            ("relative", 7),
-            ("model-based", 14),
-            ("info-theory", 8),
-            (("statistical", "landmarking"), 33),
-            (("landmarking", "relative"), 7),
-            (("general", "model-based", "statistical"), 51),
-            (("statistical", "statistical"), 26),
-            (None, 66),
-            ("custom", 0),
-        ])
-    def test_get_valid_metafeatures(self, groups, exp_length):
-        """Check the length of valid metafeatures per group."""
-        model = MFE()
-        mtf_list = model.valid_metafeatures(groups=groups)
-        assert len(mtf_list) == exp_length
-
-    @pytest.mark.parametrize(
         "groups",
         [
             "statistical",
