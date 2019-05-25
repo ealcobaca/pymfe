@@ -1015,14 +1015,24 @@ class MFE:
 
         return res_names, res_vals
 
-    def valid_groups(self) -> t.Tuple[str, ...]:
-        """Return a tuple of valid metafeature groups."""
+    @classmethod
+    def valid_groups(cls) -> t.Tuple[str, ...]:
+        """Return a tuple of valid metafeature groups.
+
+        Notes
+        -----
+        The returned ``groups`` are not related to the groups fitted in
+        the model in the model instantation. The returned groups are all
+        available metafeature groups in the ``Pymfe`` package. Check the
+        ``MFE`` documentation for deeper information.
+        """
         return _internal.VALID_GROUPS
 
+    @classmethod
     def valid_metafeatures(
-            self,
-            groups: t.Optional[t.Union[str, t.Sequence]] = None,
-            ) -> t.Tuple[str, ...]:
+            cls,
+            groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
+    ) -> t.Tuple[str, ...]:
         """Return a tuple with all metafeatures related to given ``groups``.
 
         Parameters
@@ -1037,16 +1047,23 @@ class MFE:
         ------
         :obj:`Tuple` of `str`
             Tuple with all available metafeature names of the given ``groups``.
+
+        Notes
+        -----
+        The returned ``metafeatures`` are not related to the groups or to the
+        metafeatures fitted in the model in the model instantation. All the
+        returned metafeatures are available in the ``Pymfe`` package. Check
+        the ``MFE`` documentation for deeper information.
         """
         def check_groups_type(
-                groups: t.Optional[t.Union[str, t.Sequence[str]]]
+                groups: t.Optional[t.Union[str, t.Iterable[str]]]
                 ) -> t.Set[str]:
             """Cast ``groups`` to a tuple of valid metafeature group names."""
             if groups is None:
-                groups = _internal.VALID_GROUPS
+                return _internal.VALID_GROUPS
 
-            elif isinstance(groups, str):
-                groups = {groups}
+            if isinstance(groups, str):
+                return {groups}
 
             return set(groups)
 
@@ -1063,7 +1080,7 @@ class MFE:
 
         deps = _internal.check_group_dependencies(groups)
 
-        mtf_names = []
+        mtf_names = []  # type: t.Sequence[str]
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
@@ -1075,11 +1092,12 @@ class MFE:
 
         return tuple(mtf_names)
 
+    @classmethod
     def parse_by_group(
-            self,
+            cls,
             groups: t.Union[t.Sequence[str], str],
             extracted_results: t.Tuple[t.Sequence, ...],
-            ) -> t.Tuple[t.List, ...]:
+    ) -> t.Tuple[t.List, ...]:
         """Parse the result of ``extract`` for given metafeature ``groups``.
 
         Can be used to easily separate the results of each metafeature
@@ -1102,6 +1120,14 @@ class MFE:
         :obj:`Tuple` of :obj:`str`
             Slices of lists of ``extracted_results``, selected based on
             given ``groups``.
+
+        Notes
+        -----
+        The given ``groups`` are not related to the groups fitted in the
+        model in the model instantation. Check ``valid_groups`` method to
+        get a list of all available groups from the ``Pymfe`` package.
+        Check the ``MFE`` documentation for deeper information about all
+        these groups.
         """
         selected_indexes = _internal.select_results_by_classes(
             mtf_names=extracted_results[0],
