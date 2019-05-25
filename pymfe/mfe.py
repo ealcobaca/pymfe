@@ -1097,11 +1097,12 @@ class MFE:
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
-            mtf_names += _internal.get_prefixed_mtds_from_class(
-                class_obj=_internal.VALID_MFECLASSES[class_ind],
-                prefix=_internal.MTF_PREFIX,
-                only_name=True,
-                prefix_removal=True)
+            mtf_names += (  # type: ignore
+                _internal.get_prefixed_mtds_from_class(
+                    class_obj=_internal.VALID_MFECLASSES[class_ind],
+                    prefix=_internal.MTF_PREFIX,
+                    only_name=True,
+                    prefix_removal=True))
 
         return tuple(mtf_names)
 
