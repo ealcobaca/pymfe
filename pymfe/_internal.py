@@ -246,11 +246,11 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
     return tuple(in_group), tuple(not_in_group)
 
 
-def _get_prefixed_mtds_from_class(class_obj: t.Any,
-                                  prefix: str,
-                                  only_name: bool = False,
-                                  prefix_removal: bool = False,
-                                  ) -> t.List[t.Union[str, TypeMtdTuple]]:
+def get_prefixed_mtds_from_class(class_obj: t.Any,
+                                 prefix: str,
+                                 only_name: bool = False,
+                                 prefix_removal: bool = False,
+                                 ) -> t.List[t.Union[str, TypeMtdTuple]]:
     """Get all class methods from ``class_obj`` prefixed with ``prefix``.
 
     Args:
@@ -362,7 +362,7 @@ def _get_all_prefixed_mtds(
         verify_classes = (custom_class_, )
 
     methods_by_group = {
-        ft_type_id: _get_prefixed_mtds_from_class(
+        ft_type_id: get_prefixed_mtds_from_class(
             class_obj=mfe_class,
             prefix=prefix,
             prefix_removal=prefix_removal)
@@ -1409,24 +1409,49 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
     return None
 
 
-def _select_results_by_classes(
+def check_group_dependencies(groups: t.Sequence[str]) -> t.Set[str]:
+    """Get ``groups`` metafeature groups dependencies."""
+    deps = set()
+
+    for group in groups:
+        if group in VALID_GROUPS:
+            cur_group_index = VALID_GROUPS.index(group)
+            cur_dep = GROUP_PREREQUISITES[cur_group_index]
+
+            if cur_dep:
+                if isinstance(cur_dep, str):
+                    cur_dep = {cur_dep}
+
+                deps.update(cur_dep)
+
+    return deps
+
+
+def select_results_by_classes(
         mtf_names: t.Sequence[str],
-        class_names: t.Union[str, t.Sequence[str]]) -> t.List[int]:
+        class_names: t.Union[str, t.Sequence[str]],
+        include_dependencies: bool = False) -> t.List[int]:
     """Get indexes of metafeatures related to given ``class_names``."""
     if isinstance(class_names, str):
-        class_names = [class_names]
+        class_names = {class_names}
+
+    else:
+        class_names = set(class_names)
+
+    if include_dependencies:
+        class_names.update(check_group_dependencies(groups=class_names))
 
     classes_mtd_names = set()
 
     for class_name in class_names:
         if class_name in VALID_GROUPS:
-            classes_mtd_names.update(_get_prefixed_mtds_from_class(
+            classes_mtd_names.update(get_prefixed_mtds_from_class(
                 class_obj=VALID_MFECLASSES[VALID_GROUPS.index(class_name)],
                 prefix=MTF_PREFIX,
                 only_name=True,
                 prefix_removal=True))
 
-    re_parse_mtf_name = re.compile(r"([^\.]+)\.")
+    re_parse_mtf_name = re.compile(r"([^\.]+)\.?")
 
     selected_indexes = []
 
@@ -1497,7 +1522,7 @@ def post_processing(
     }
 
     for postprocess_mtd_name, postprocess_mtd_callable in postprocess_mtds:
-        extra_inner_args["class_indexes"] = _select_results_by_classes(
+        extra_inner_args["class_indexes"] = select_results_by_classes(
             mtf_names=mtf_names,
             class_names=remove_prefix(value=postprocess_mtd_name,
                                       prefix=POSTPROCESS_PREFIX).split("_"))
