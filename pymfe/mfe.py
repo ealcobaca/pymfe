@@ -1029,6 +1029,19 @@ class MFE:
         return _internal.VALID_GROUPS
 
     @classmethod
+    def valid_summary(cls) -> t.Tuple[str, ...]:
+        """Return a tuple of valid summary functions.
+
+        Notes
+        -----
+        The returned ``summaries`` are not related to the summaries fitted
+        in the model in the model instantation. The returned summaries are
+        all available in the ``Pymfe`` package. Check the documentation of
+        ``MFE`` for deeper information.
+        """
+        return _internal.VALID_SUMMARY
+
+    @classmethod
     def valid_metafeatures(
             cls,
             groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
