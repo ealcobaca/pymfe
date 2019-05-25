@@ -1014,3 +1014,103 @@ class MFE:
             return res_names, res_vals, res_times
 
         return res_names, res_vals
+
+    def valid_groups(self) -> t.Tuple[str, ...]:
+        """Return a tuple of valid metafeature groups."""
+        return _internal.VALID_GROUPS
+
+    def valid_metafeatures(
+            self,
+            groups: t.Optional[t.Union[str, t.Sequence]] = None,
+            ) -> t.Tuple[str, ...]:
+        """Return a tuple with all metafeatures related to given ``groups``.
+
+        Parameters
+        ----------
+        groups : :obj:`Sequence` of :obj:`str` or obj:`str`, optional:
+            Can be a string such value is a name of a specific metafeature
+            group (see ``valid_groups`` method for more information) or a
+            sequence of metafeature group names. It can be also None, which
+            in that case all available metafeature names will be returned.
+
+        Return
+        ------
+        :obj:`Tuple` of `str`
+            Tuple with all available metafeature names of the given ``groups``.
+        """
+        def check_groups_type(
+                groups: t.Optional[t.Union[str, t.Sequence[str]]]
+                ) -> t.Set[str]:
+            """Cast ``groups`` to a tuple of valid metafeature group names."""
+            if groups is None:
+                groups = _internal.VALID_GROUPS
+
+            elif isinstance(groups, str):
+                groups = {groups}
+
+            return set(groups)
+
+        def filter_groups(groups: t.Set[str]) -> t.Set[str]:
+            """Filter given groups by the available metafeature group names."""
+            filtered_group_set = {
+                group for group in groups
+                if group in _internal.VALID_GROUPS
+            }
+            return filtered_group_set
+
+        groups = check_groups_type(groups)
+        groups = filter_groups(groups)
+
+        deps = _internal.check_group_dependencies(groups)
+
+        mtf_names = []
+        for group in groups.union(deps):
+            class_ind = _internal.VALID_GROUPS.index(group)
+
+            mtf_names += _internal.get_prefixed_mtds_from_class(
+                class_obj=_internal.VALID_MFECLASSES[class_ind],
+                prefix=_internal.MTF_PREFIX,
+                only_name=True,
+                prefix_removal=True)
+
+        return tuple(mtf_names)
+
+    def parse_by_group(
+            self,
+            groups: t.Union[t.Sequence[str], str],
+            extracted_results: t.Tuple[t.Sequence, ...],
+            ) -> t.Tuple[t.List, ...]:
+        """Parse the result of ``extract`` for given metafeature ``groups``.
+
+        Can be used to easily separate the results of each metafeature
+        group.
+
+        Parameters
+        ----------
+        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`
+            Metafeature group names which the results should be parsed
+            relative to. Use ``valid_groups`` method to check the available
+            metafeature groups.
+
+        extracted_results : :obj:`Tuple` of :obj:`Sequences`
+            Output of ``extract`` method. Should contain all outputed lists
+            (metafeature names, values and elapsed time for extraction, if
+            present.)
+
+        Returns
+        -------
+        :obj:`Tuple` of :obj:`str`
+            Slices of lists of ``extracted_results``, selected based on
+            given ``groups``.
+        """
+        selected_indexes = _internal.select_results_by_classes(
+            mtf_names=extracted_results[0],
+            class_names=groups,
+            include_dependencies=True)
+
+        filtered_res = (
+            [seq[ind] for ind in selected_indexes]
+            for seq in extracted_results
+        )
+
+        return tuple(filtered_res)
