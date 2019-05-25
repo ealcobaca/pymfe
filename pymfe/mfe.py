@@ -1073,7 +1073,7 @@ class MFE:
                 ) -> t.Set[str]:
             """Cast ``groups`` to a tuple of valid metafeature group names."""
             if groups is None:
-                return _internal.VALID_GROUPS
+                return set(_internal.VALID_GROUPS)
 
             if isinstance(groups, str):
                 return {groups}
@@ -1093,7 +1093,7 @@ class MFE:
 
         deps = _internal.check_group_dependencies(groups)
 
-        mtf_names = []  # type: t.Sequence[str]
+        mtf_names = []  # type: t.List[str]
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
