@@ -115,8 +115,8 @@ class MFERelativeLandmarking:
 
         mtf_by_summ, mtf_orig_indexes = (
             MFERelativeLandmarking.group_mtf_by_summary(
-                mtf_names=mtf_names,
-                mtf_vals=mtf_vals))
+                mtf_names=[mtf_names[i] for i in class_indexes],
+                mtf_vals=[mtf_vals[i] for i in class_indexes]))
 
         avg_time = time.time()
 
