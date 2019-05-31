@@ -1,47 +1,60 @@
 """This module provides useful functions for the MFE package.
 
 Attributes:
-    VALID_VALUE_PREFIX (:obj:``str``): Prefix which all tuples that
+    VALID_VALUE_PREFIX (:obj:`str`): Prefix which all tuples that
         keep valid values for custom user options must use in its name.
         This prefix is used to enable the automatic detection of these
         groups.
 
-    VALID_GROUPS (:obj:``tuple`` of :obj:``str``): Supported groups of
+    VALID_GROUPS (:obj:`tuple` of :obj:`str`): Supported groups of
         metafeatures of pymfe.
 
-    VALID_SUMMARY (:obj:``tuple`` of :obj:``str``): Supported summary
-        functions to combine metafeature values.
+    GROUP_PREREQUISITES (:obj:`tuple` of :obj:`List` or :obj:`str`):
+        Tuple for requisites of each group entry in ``VALID_GORUPS``.
+        This tuple must have one-to-one correspondence with ``VALID_GROUPS``.
+        Insert None is the correspondent metafeature group has no other
+        metafeature group as dependency. Each entry of this tuple can be
+        either a string (single dependency) or a collection of strings
+        (multiple dependencies), and every string must correspond to some
+        value in ``VALID_GROUPS``. In any case, if the used select some
+        metafeature group with some dependency, then this dependencies
+        will be automatically inserted as metafeature groups in the MFE
+        model. The output filtering (to remove possibly unwanted collection
+        of metafeatures) should be left to post-processing steps.
 
-    VALID_MFECLASSES (:obj:``tuple`` of Classes): Metafeature extractors
+    VALID_MFECLASSES (:obj:`tuple` of Classes): Metafeature extractors
         predefined classes, where to perform the search of metafeature-ex-
         traction methods.
 
-    VALID_TIMEOPT (:obj:``tuple`` of :obj:``str``): valid options for time
+    VALID_SUMMARY (:obj:`tuple` of :obj:`str`): Supported summary
+        functions to combine metafeature values.
+
+    VALID_TIMEOPT (:obj:`tuple` of :obj:`str`): valid options for time
         measurements while extracting metafeatures.
 
-    VALID_RESCALE (:obj:``tuple`` of :obj:``str``): valid options for res-
+    VALID_RESCALE (:obj:`tuple` of :obj:`str`): valid options for res-
         caling numeric data while fitting dataset.
 
-    MTF_PREFIX (:obj:``str``): prefix of metafeature-extraction method
+    MTF_PREFIX (:obj:`str`): prefix of metafeature-extraction method
         names for classes in ``VALID_MFECLASSES``. For example, the metafeature
         called ``inst_nr`` is implemented in the method named ``[MTF_PREFIX]_-
         inst_nr.`` Prefixation is used to enable the automatic detection of
         these methods.
 
-    PRECOMPUTE_PREFIX (:obj:``str``): prefix for precomputation method names.
+    PRECOMPUTE_PREFIX (:obj:`str`): prefix for precomputation method names.
         If a method of a class in ``VALID_MFECLASSES`` starts with this prefix,
         it is automatically executed to gather values that this class frequen-
         tly uses. These values are shared between all feature-extraction rela-
         ted methods of all ``VALID_MFECLASSES`` classes to avoid redundant com-
         putation.
 
-    TIMEOPT_AVG_PREFIX (:obj:``str``): prefix for time options based on the
+    TIMEOPT_AVG_PREFIX (:obj:`str`): prefix for time options based on the
         average of gathered metrics. It means necessarily that; if this cons-
         tant value prefixes an option, then this option is supposed to divide
         the gathered time elapsed metrics by the cardinality of the features
         extracted (``cardinality`` means ``number of``).
 
-    TIMEOPT_SUMMARY_SUFFIX (:obj:``str``): suffix for time options which in-
+    TIMEOPT_SUMMARY_SUFFIX (:obj:`str`): suffix for time options which in-
         clude summarization time alongside the time necessary for the extracti-
         on of the feature. It means that, if this constant value suffixes a ti-
         me option, then the time metrics must include the time necessary for
@@ -54,6 +67,7 @@ import collections
 import warnings
 import time
 import sys
+import re
 
 import numpy as np
 import sklearn.preprocessing
@@ -64,6 +78,7 @@ import pymfe.general as general
 import pymfe.statistical as statistical
 import pymfe.info_theory as info_theory
 import pymfe.landmarking as landmarking
+import pymfe.relative as relative
 import pymfe.model_based as model_based
 import pymfe.scoring as scoring
 
@@ -78,7 +93,14 @@ VALID_GROUPS = (
     "relative",
 )  # type: t.Tuple[str, ...]
 
-VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
+GROUP_PREREQUISITES = (
+    None,
+    None,
+    None,
+    None,
+    None,
+    "landmarking",
+)  # type: t.Tuple[t.Optional[str], ...]
 
 VALID_MFECLASSES = (
     landmarking.MFELandmarking,
@@ -86,8 +108,10 @@ VALID_MFECLASSES = (
     statistical.MFEStatistical,
     model_based.MFEModelBased,
     info_theory.MFEInfoTheory,
-    None,
+    relative.MFERelativeLandmarking,
 )  # type: t.Tuple
+
+VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
 
 VALID_TIMEOPT = (
     "avg",
@@ -222,8 +246,11 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
     return tuple(in_group), tuple(not_in_group)
 
 
-def _get_prefixed_mtds_from_class(class_obj: t.Any,
-                                  prefix: str) -> t.List[TypeMtdTuple]:
+def get_prefixed_mtds_from_class(class_obj: t.Any,
+                                 prefix: str,
+                                 only_name: bool = False,
+                                 prefix_removal: bool = False,
+                                 ) -> t.List[t.Union[str, TypeMtdTuple]]:
     """Get all class methods from ``class_obj`` prefixed with ``prefix``.
 
     Args:
@@ -233,20 +260,41 @@ def _get_prefixed_mtds_from_class(class_obj: t.Any,
         prefix (:obj:`str`): prefix which method names must have in order
             to it be gathered.
 
+        only_name (:obj:`bool`, optional): if True, return just the name
+            of the methods.
+
+        prefix_removal (:obj:`str`, optional): If True, then the returned
+            method names will have the ``prefix`` removed.
+
     Returns:
-        list(tuple): a list of tuples in the form (`mtd_name`, `mtd_address`)
-            of all class methods from ``class_obj`` prefixed with ``prefix``.
+        list(tuple): if ``only_name`` is False, then this function return
+            a list of tuples in the form (`mtd_name`, `mtd_address`) of
+            all class methods from ``class_obj`` prefixed with ``prefix``.
+            If ``only_name`` is True, this list will contain just the
+            method names.
     """
-    feat_mtd_list = inspect.getmembers(
+    class_methods = inspect.getmembers(
         class_obj, predicate=inspect.ismethod)  # type: t.List[TypeMtdTuple]
 
     # It is assumed that all feature-extraction related methods
     # name are all prefixed with "MTF_PREFIX" and all precomputa-
     # tion methos, prefixed with "PRECOMPUTE_PREFIX".
-    feat_mtd_list = [
-        ft_method for ft_method in feat_mtd_list
-        if ft_method[0].startswith(prefix)
-    ]
+    feat_mtd_list = []  # type: t.List[t.Union[str, TypeMtdTuple]]
+
+    for ft_method in class_methods:
+        mtd_name, remaining_data = ft_method[0], ft_method[1:]
+        if mtd_name.startswith(prefix):
+            if prefix_removal:
+                mtd_name = remove_prefix(value=mtd_name, prefix=prefix)
+
+            if only_name:
+                feat_mtd_list.append(mtd_name)
+
+            elif prefix_removal:
+                feat_mtd_list.append((mtd_name, *remaining_data))
+
+            else:
+                feat_mtd_list.append(ft_method)
 
     return feat_mtd_list
 
@@ -256,6 +304,7 @@ def _get_all_prefixed_mtds(
         groups: t.Tuple[str, ...],
         update_groups_by: t.Optional[t.Union[t.FrozenSet[str],
                                              t.Set[str]]] = None,
+        prefix_removal: bool = False,
         custom_class_: t.Any = None,
         ) -> t.Dict[str, t.Tuple]:
     """Get all methods prefixed with ``prefix`` in predefined feature ``groups``.
@@ -282,6 +331,9 @@ def _get_all_prefixed_mtds(
             precomputation methods from feature groups not related with user
             selected features.
 
+        prefix_removal (:obj:`bool`, optional): if True, then the returned
+            method names will not have the ``prefix``.
+
         custom_class_ (Class, optional): used for inner testing purposes. If
             not None, the given class will be used as reference to extract
             the prefixed methods.
@@ -302,22 +354,23 @@ def _get_all_prefixed_mtds(
         return {"methods": tuple(), "groups": tuple()}
 
     if custom_class_ is None:
-        verify_groups = VALID_GROUPS
-        verify_classes = VALID_MFECLASSES
+        verify_groups = tuple(VALID_GROUPS)
+        verify_classes = tuple(VALID_MFECLASSES)
 
     else:
         verify_groups = ("test_methods", )
         verify_classes = (custom_class_, )
 
     methods_by_group = {
-        ft_type_id: _get_prefixed_mtds_from_class(
+        ft_type_id: get_prefixed_mtds_from_class(
             class_obj=mfe_class,
-            prefix=prefix)
+            prefix=prefix,
+            prefix_removal=prefix_removal)
         for ft_type_id, mfe_class in zip(verify_groups, verify_classes)
         if ft_type_id in groups or custom_class_ is not None
     }
 
-    gathered_methods = []  # type: t.List[TypeMtdTuple]
+    gathered_methods = []  # type: t.List[t.Union[str, TypeMtdTuple]]
     new_groups = []  # type: t.List[str]
 
     for group_name in methods_by_group:
@@ -327,6 +380,8 @@ def _get_all_prefixed_mtds(
         if update_groups_by:
             group_mtds_names = {
                 remove_prefix(mtd_name, prefix=MTF_PREFIX)
+                if not prefix_removal
+                else mtd_name
                 for mtd_name, _ in group_mtds
             }
 
@@ -673,6 +728,32 @@ def process_generic_set(
     return in_valid_set
 
 
+def solve_group_dependencies(
+        groups: t.Tuple[str, ...],
+        ) -> t.Tuple[t.Tuple[str, ...], t.FrozenSet[str]]:
+    """Solve dependencies between groups.
+
+    Those dependencies must be registered in ``GROUP_PREFEQUISITES`` tuple.
+    """
+    inserted_dependencies = set()
+    cur_dependencies = None  # type: t.Optional[t.Union[t.Set[str], str]]
+
+    for group in groups:
+        if group in VALID_GROUPS:
+            cur_dependencies = GROUP_PREREQUISITES[VALID_GROUPS.index(group)]
+
+            if cur_dependencies:
+                if isinstance(cur_dependencies, str):
+                    cur_dependencies = {cur_dependencies}
+
+                inserted_dependencies.update(
+                    set(cur_dependencies).difference(groups))
+
+    groups = tuple(set(groups).union(inserted_dependencies))
+
+    return groups, frozenset(inserted_dependencies)
+
+
 def process_generic_option(
         value: t.Optional[str],
         group_name: str,
@@ -870,6 +951,7 @@ def process_features(
         update_groups_by=reference_values,
         groups=groups,
         custom_class_=custom_class_,
+        prefix_removal=True,
     )  # type: t.Dict[str, t.Tuple]
 
     ft_mtds_filtered = mtds_metadata.get(
@@ -880,10 +962,7 @@ def process_features(
     del mtds_metadata
 
     if wildcard in processed_ft:
-        processed_ft = [
-            remove_prefix(value=mtd_name, prefix=MTF_PREFIX)
-            for mtd_name, _ in ft_mtds_filtered
-        ]
+        processed_ft = [mtd_name for mtd_name, _ in ft_mtds_filtered]
 
     available_feat_names = []  # type: t.List[str]
     ft_mtd_processed = []  # type: t.List[TypeExtMtdTuple]
@@ -891,19 +970,15 @@ def process_features(
     for ft_mtd_tuple in ft_mtds_filtered:
         ft_mtd_name, ft_mtd_callable = ft_mtd_tuple
 
-        mtd_name_without_prefix = remove_prefix(
-            value=ft_mtd_name,
-            prefix=MTF_PREFIX)
-
-        if mtd_name_without_prefix in processed_ft:
+        if ft_mtd_name in processed_ft:
             mtd_callable_args = _extract_mtd_args(ft_mtd_callable)
 
             extended_item = (*ft_mtd_tuple,
                              mtd_callable_args)  # type: TypeExtMtdTuple
 
             ft_mtd_processed.append(extended_item)
-            available_feat_names.append(mtd_name_without_prefix)
-            processed_ft.remove(mtd_name_without_prefix)
+            available_feat_names.append(ft_mtd_name)
+            processed_ft.remove(ft_mtd_name)
 
     if not suppress_warnings:
         for unknown_ft in processed_ft:
@@ -917,16 +992,13 @@ def _patch_precomp_groups(
         precomp_groups: t.Optional[t.Union[str, t.Iterable[str]]],
         groups: t.Optional[t.Tuple[str, ...]] = None,
         ) -> t.Union[str, t.Iterable[str]]:
-    """Enforce precomputation in landmarking and model-based metafeatures."""
+    """Enforce precomputation in model-based metafeatures."""
     if not precomp_groups:
         precomp_groups = set()
 
-    # Enforce precomputation from landmarking and model-based metafeature
-    # group due to strong dependencies of machine learning models.
+    # Enforce precomputation from model-based metafeature group
+    # due to strong dependencies of machine learning models.
     if groups and not isinstance(precomp_groups, str):
-        if "landmarking" in groups and "landmarking" not in precomp_groups:
-            precomp_groups = set(precomp_groups).union({"landmarking"})
-
         if "model-based" in groups and "model-based" not in precomp_groups:
             precomp_groups = set(precomp_groups).union({"model-based"})
 
@@ -1337,17 +1409,74 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
     return None
 
 
-def post_processing(results: np.ndarray,
-                    groups: t.Tuple[str, ...],
-                    suppress_warnings: bool = False,
-                    custom_class_: t.Any = None,
-                    **kwargs) -> None:
+def check_group_dependencies(groups: t.Iterable[str]) -> t.Set[str]:
+    """Get ``groups`` metafeature groups dependencies."""
+    deps = set()  # type: t.Set[str]
+
+    for group in groups:
+        if group in VALID_GROUPS:
+            cur_group_index = VALID_GROUPS.index(group)
+            cur_dep = GROUP_PREREQUISITES[cur_group_index]
+
+            if cur_dep:
+                deps.update({cur_dep} if isinstance(cur_dep, str) else cur_dep)
+
+    return deps
+
+
+def select_results_by_classes(
+        mtf_names: t.Sequence[str],
+        class_names: t.Union[str, t.Iterable[str]],
+        include_dependencies: bool = False) -> t.List[int]:
+    """Get indexes of metafeatures related to given ``class_names``."""
+    if isinstance(class_names, str):
+        class_names = {class_names}
+
+    else:
+        class_names = set(class_names)
+
+    if include_dependencies:
+        class_names.update(check_group_dependencies(groups=class_names))
+
+    classes_mtd_names = set()
+
+    for class_name in class_names:
+        if class_name in VALID_GROUPS:
+            classes_mtd_names.update(get_prefixed_mtds_from_class(
+                class_obj=VALID_MFECLASSES[VALID_GROUPS.index(class_name)],
+                prefix=MTF_PREFIX,
+                only_name=True,
+                prefix_removal=True))
+
+    re_parse_mtf_name = re.compile(r"([^\.]+)\.?")
+
+    selected_indexes = []
+
+    for mtf_cur_index, mtf_cur_name in enumerate(mtf_names):
+        re_match = re_parse_mtf_name.match(mtf_cur_name)
+
+        if re_match and re_match.group(1) in classes_mtd_names:
+            selected_indexes.append(mtf_cur_index)
+
+    return selected_indexes
+
+
+def post_processing(
+        results: t.Tuple[t.List, ...],
+        groups: t.Tuple[str, ...],
+        suppress_warnings: bool = False,
+        custom_class_: t.Any = None,
+        **kwargs) -> None:
     """Detect and apply post-processing methods in metafeatures.
 
     This function should be used after the metafeature extraction.
 
     Args:
-        results (:obj:`Tuple`):
+        results (:obj:`Tuple` or :obj:`np.ndarray`): summarized metafeatures.
+            This argument has three entries (all must be collections):
+                - Name of metafeatures
+                - Value of metafeatures
+                - Time of extraction for each metafeature
 
         groups (:obj:`Tuple` of :obj:`str`): collection containing one or more
             group identifiers. Check out ``MFE`` class documentation for more
@@ -1380,9 +1509,25 @@ def post_processing(results: np.ndarray,
         remove_groups = True
         kwargs["groups"] = groups
 
+    mtf_names, mtf_vals, mtf_time = results
+
+    extra_inner_args = {
+        "mtf_names": mtf_names,
+        "mtf_vals": mtf_vals,
+        "mtf_time": mtf_time,
+        "class_indexes": [],
+    }
+
     for postprocess_mtd_name, postprocess_mtd_callable in postprocess_mtds:
+        extra_inner_args["class_indexes"] = select_results_by_classes(
+            mtf_names=mtf_names,
+            class_names=remove_prefix(value=postprocess_mtd_name,
+                                      prefix=POSTPROCESS_PREFIX).split("_"))
+
         try:
-            new_results = postprocess_mtd_callable(**kwargs)  # type: ignore
+            new_results = postprocess_mtd_callable(  # type: ignore
+                **extra_inner_args,
+                **kwargs)
 
             if new_results:
                 if len(new_results) != len(results):
@@ -1391,16 +1536,7 @@ def post_processing(results: np.ndarray,
                                                               len(results)))
 
                 for res_list_old, res_list_new in zip(results, new_results):
-                    if isinstance(res_list_old, np.ndarray):
-                        res_list_old = np.hstack((res_list_old, res_list_new))
-
-                    elif isinstance(res_list_old, list):
-                        res_list_old += res_list_new
-
-                    else:
-                        raise TypeError("'results' elements must be a numpy "
-                                        "array or a python list. Got type '{}'"
-                                        ".".format(type(res_list_old)))
+                    res_list_old += res_list_new
 
         except (AttributeError, TypeError, ValueError) as type_err:
             if not suppress_warnings:

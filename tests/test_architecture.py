@@ -5,6 +5,8 @@ import typing as t
 import numpy as np
 
 from pymfe import _internal
+from pymfe.mfe import MFE
+from tests.utils import load_xy
 
 GNAME = "framework-testing"
 
@@ -160,3 +162,42 @@ class TestArchitecture:
             custom_class_=MFETestClass)
 
         assert len(name) == 3 and len(mtd) == 3 and len(groups) == 1
+
+    def test_get_groups(self):
+        model = MFE()
+        res = model.valid_groups()
+        assert (len(res) == len(_internal.VALID_GROUPS)
+                and not set(res).symmetric_difference(_internal.VALID_GROUPS))
+
+    @pytest.mark.parametrize(
+        "groups",
+        [
+            "statistical",
+            "general",
+            "landmarking",
+            "relative",
+            "model-based",
+            "info-theory",
+            ("statistical", "landmarking"),
+            ("landmarking", "relative"),
+            ("general", "model-based", "statistical"),
+            ("statistical", "statistical"),
+        ])
+    def test_parse_valid_metafeatures(self, groups):
+        """Check the length of valid metafeatures per group."""
+        X, y = load_xy(0)
+
+        mfe = MFE(
+            groups="all",
+            summary=None,
+            sample_size=0.5,
+            random_state=1234)
+
+        mfe.fit(X.values, y.values)
+
+        res = mfe.extract()
+
+        target_mtf = mfe.valid_metafeatures(groups=groups)
+        names, _ = mfe.parse_by_group(groups, res)
+
+        assert not set(names).symmetric_difference(target_mtf)
