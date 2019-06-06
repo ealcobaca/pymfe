@@ -404,12 +404,12 @@ class MFEClustering:
 
     @classmethod
     def _get_class_representatives(
-             cls,
-             N: np.ndarray,
-             y: np.ndarray,
-             dist_metric: str = "euclidean",
-             representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
-             classes: t.Optional[np.ndarray] = None) -> float:
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            dist_metric: str = "euclidean",
+            representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
+            classes: t.Optional[np.ndarray] = None) -> float:
         """Get a representative instance for each distinct class.
 
         If ``representative`` argument is a string, then it must be
@@ -902,10 +902,10 @@ class MFEClustering:
 
         Notes
         -----
-            .. _cahascore: ``sklearn.metrics.calinski_harabaz_score``
+            .. _cahascore: ``sklearn.metrics.calinski_harabasz_score``
                 documentation.
         """
-        return sklearn.metrics.calinski_harabaz_score(X=N, labels=y)
+        return sklearn.metrics.calinski_harabasz_score(X=N, labels=y)
 
     @classmethod
     def ft_nre(
@@ -1053,11 +1053,11 @@ class MFEClustering:
             classes = np.unique(y)
 
         representative = MFEClustering._get_class_representatives(
-             N=N,
-             y=y,
-             dist_metric=dist_metric,
-             representative=representative,
-             classes=classes)
+            N=N,
+            y=y,
+            dist_metric=dist_metric,
+            representative=representative,
+            classes=classes)
 
         sum_dists = np.zeros(classes.size)
 
@@ -1219,20 +1219,20 @@ class MFEClustering:
             .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
         representative = MFEClustering._get_class_representatives(
-             N=N,
-             y=y,
-             dist_metric=dist_metric,
-             representative=representative,
-             classes=classes)
+            N=N,
+            y=y,
+            dist_metric=dist_metric,
+            representative=representative,
+            classes=classes)
 
         sum_sqr_dist = MFEClustering.ft_cm(
-             N=N,
-             y=y,
-             dist_metric=dist_metric,
-             representative=representative,
-             exp_factor=2.0,
-             by_class=False,
-             classes=classes)
+            N=N,
+            y=y,
+            dist_metric=dist_metric,
+            representative=representative,
+            exp_factor=2.0,
+            by_class=False,
+            classes=classes)
 
         max_class_sep = (
             scipy.spatial.distance.pdist(representative).max())

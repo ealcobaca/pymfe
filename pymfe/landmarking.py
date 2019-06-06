@@ -1,13 +1,13 @@
-"""Module dedicated to extraction of Landmarking Metafeatures.
-"""
+"""Module dedicated to extraction of Landmarking Metafeatures."""
 
 import typing as t
+
+import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-import numpy as np
 
 
 class MFELandmarking:
@@ -54,10 +54,12 @@ class MFELandmarking:
     computed in module ``statistical`` can freely be used for any
     precomputation or feature extraction method of module ``landmarking``).
     """
-
     @classmethod
-    def precompute_landmarking_class(cls, N: np.ndarray, y: np.ndarray,
-                                     folds: int, random_state: t.Optional[int],
+    def precompute_landmarking_class(cls,
+                                     N: np.ndarray,
+                                     sample_size: float,
+                                     folds: int,
+                                     random_state: t.Optional[int] = None,
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute k-fold cross validation strategy.
 
@@ -66,8 +68,10 @@ class MFELandmarking:
         N : :obj:`np.ndarray`, optional
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        sample_size : :obj: `float`
+            The percentage of examples subsampled. Value different from default
+            will generate the subsampling-based relative landmarking
+            metafeatures.
 
         folds : :obj: `int`
             Number of folds to k-fold cross validation.
@@ -94,19 +98,71 @@ class MFELandmarking:
 
         prepcomp_vals = {}
 
-        if N is not None and y is not None\
-           and not {"skf"}.issubset(kwargs):
-            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
-            prepcomp_vals["skf"] = skf
+        if N is not None and "sample_indexes" not in kwargs:
+            if sample_size != 1:
+                num_inst, _ = N.shape
+
+                prepcomp_vals["sample_indexes"] = (
+                    MFELandmarking._get_sample_indexes(
+                        num_inst=num_inst,
+                        sample_size=sample_size,
+                        random_state=random_state))
+
+        if "skf" not in kwargs:
+            prepcomp_vals["skf"] = StratifiedKFold(
+                n_splits=folds,
+                random_state=random_state)
 
         return prepcomp_vals
 
     @classmethod
-    def importance(cls, N: np.ndarray, y: np.ndarray,
-                   random_state: t.Optional[int]) -> np.ndarray:
-        """Compute de gini index importance of a decision tree building using
-        ``X`` and ``y``. We use sklearn ``DecisionTreeClassifier`` implementa-
-        tion.
+    def _get_sample_indexes(cls, num_inst: int, sample_size: float,
+                            random_state: t.Optional[int]) -> np.ndarray:
+        """Sample indexes to calculate subsampling landmarking metafeatures."""
+        if random_state is not None:
+            np.random.seed(random_state)
+
+        sample_indexes = np.random.choice(
+            a=num_inst, size=int(sample_size * num_inst), replace=False)
+
+        return sample_indexes
+
+    @classmethod
+    def _sample_data(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            sample_size: float,
+            random_state: t.Optional[int] = None,
+            sample_indexes: t.Optional[np.ndarray] = None,
+    ) -> t.Tuple[np.ndarray, np.ndarray]:
+        """Select ``sample_size`` percent of data points in ``N`` and ``y``."""
+        if sample_size >= 1.0 and sample_indexes is None:
+            return N, y
+
+        if sample_indexes is None:
+            num_inst = y.size
+
+            sample_indexes = MFELandmarking._get_sample_indexes(
+                num_inst=num_inst,
+                sample_size=sample_size,
+                random_state=random_state)
+
+        return N[sample_indexes, :], y[sample_indexes]
+
+    @classmethod
+    def _importance(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            sample_size: float = 1.0,
+            sample_indexes: t.Optional[np.ndarray] = None,
+            random_state: t.Optional[int] = None,
+    ) -> np.ndarray:
+        """Compute the Gini index of a decision tree.
+
+        It is used the ``DecisionTreeClassifier`` implementation
+        from ``sklearn`` package.
 
         Parameters
         ----------
@@ -116,10 +172,18 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        random_state : :obj:`int`, optional
+        sample_size : :obj:`float`, optional
+            Proportion of instances to be sampled before extracting the
+            metafeature. Used only if ``sample_indexes`` is None.
+
+        sample_indexes : :obj:`np.ndarray`, optional
+            Array of indexes of instances to be effectively used while
+            extracting this metafeature. If None, then ``sample_size``
+            is taken into account. Argument used to exploit precomputations.
+
+        random_state : :obj`int`, optional
             If int, random_state is the seed used by the random number
-            generator; If RandomState instance, random_state is the random
-            number generator; If None, the random number generator is the
+            generator; If None, the random number generator is the
             RandomState instance used by np.random.
 
         Returns
@@ -127,49 +191,80 @@ class MFELandmarking:
         :obj:`np.ndarray`
             Return the decision tree features importance.
         """
+        N, y = MFELandmarking._sample_data(
+            N=N,
+            y=y,
+            sample_size=sample_size,
+            random_state=random_state,
+            sample_indexes=sample_indexes)
 
         clf = DecisionTreeClassifier(random_state=random_state).fit(N, y)
         return np.argsort(clf.feature_importances_)
 
     @classmethod
-    def ft_best_node(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+    def ft_best_node(cls,
+                     N: np.ndarray,
+                     y: np.ndarray,
                      score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                     random_state: t.Optional[int]) -> np.ndarray:
-        """Construct a single decision tree node model induced by the most
+                     skf: t.Optional[StratifiedKFold] = None,
+                     folds: int = 10,
+                     sample_size: float = 1.0,
+                     sample_indexes: t.Optional[np.ndarray] = None,
+                     random_state: t.Optional[int] = None) -> np.ndarray:
+        """Performance of a the best single decision tree node.
+
+        Construct a single decision tree node model induced by the most
         informative attribute to establish the linear separability.
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`, optional
+        N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
-
-        skf :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
 
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        random_state : :obj:`int`, optional
-            If int, random_state is the seed used by the random number
-            generator; If RandomState instance, random_state is the random
-            number generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
 
-        kwargs:
-            Additional arguments. May have previously precomputed before this
-            method from other precomputed methods, so they can help speed up
-            this precomputation.
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
+
+        sample_size : :obj:`float`, optional
+            Proportion of instances to be sampled before extracting the
+            metafeature. Used only if ``sample_indexes`` is None.
+
+        sample_indexes : :obj:`np.ndarray`, optional
+            Array of indexes of instances to be effectively used while
+            extracting this metafeature. If None, then ``sample_size``
+            is taken into account. Argument used to exploit precomputations.
+
+        random_state : :obj`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
         Returns
         -------
         :obj:`np.ndarray`
             The performance of each fold.
         """
+        N, y = MFELandmarking._sample_data(
+            N=N,
+            y=y,
+            sample_size=sample_size,
+            random_state=random_state,
+            sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+
         result = []
         for train_index, test_index in skf.split(N, y):
             model = DecisionTreeClassifier(
@@ -185,11 +280,16 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_random_node(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
+    def ft_random_node(cls,
+                       N: np.ndarray,
+                       y: np.ndarray,
                        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                       random_state: t.Optional[int]) -> np.ndarray:
-        """Construct a single decision tree node model induced by a random
-        attribute.
+                       skf: t.Optional[StratifiedKFold] = None,
+                       folds: int = 10,
+                       sample_size: float = 1.0,
+                       sample_indexes: t.Optional[np.ndarray] = None,
+                       random_state: t.Optional[int] = None) -> np.ndarray:
+        """Single decision tree node model induced by a random attribute.
 
         Parameters
         ----------
@@ -199,30 +299,47 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
+
+        sample_size : :obj:`float`, optional
+            Proportion of instances to be sampled before extracting the
+            metafeature. Used only if ``sample_indexes`` is None.
+
+        sample_indexes : :obj:`np.ndarray`, optional
+            Array of indexes of instances to be effectively used while
+            extracting this metafeature. If None, then ``sample_size``
+            is taken into account. Argument used to exploit precomputations.
+
         random_state : :obj`int`, optional
             If int, random_state is the seed used by the random number
-            generator; If RandomState instance, random_state is the random
-            number generator; If None, the random number generator is the
+            generator; If None, the random number generator is the
             RandomState instance used by np.random.
-
-        kwargs:
-            Additional arguments. May have previously precomputed before this
-            method from other precomputed methods, so they can help speed up
-            this precomputation.
 
         Returns
         -------
         :obj:`np.ndarray`
             The performance of each fold.
         """
+        N, y = MFELandmarking._sample_data(
+            N=N,
+            y=y,
+            sample_size=sample_size,
+            random_state=random_state,
+            sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+
         result = []
         for train_index, test_index in skf.split(N, y):
             if isinstance(random_state, int):
@@ -242,11 +359,18 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_worst_node(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
-                      score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                      random_state: t.Optional[int]) -> np.ndarray:
-        """Construct a single decision tree node model induced by the worst
-        informative attribute.
+    def ft_worst_node(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
+            sample_size: float = 1.0,
+            sample_indexes: t.Optional[np.ndarray] = None,
+            random_state: t.Optional[int] = None,
+    ) -> np.ndarray:
+        """Single decision tree node model induced by the worst informative attribute.
 
         Parameters
         ----------
@@ -256,34 +380,52 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
+
+        sample_size : :obj:`float`, optional
+            Proportion of instances to be sampled before extracting the
+            metafeature. Used only if ``sample_indexes`` is None.
+
+        sample_indexes : :obj:`np.ndarray`, optional
+            Array of indexes of instances to be effectively used while
+            extracting this metafeature. If None, then ``sample_size``
+            is taken into account. Argument used to exploit precomputations.
+
         random_state : :obj`int`, optional
             If int, random_state is the seed used by the random number
-            generator; If RandomState instance, random_state is the random
-            number generator; If None, the random number generator is the
+            generator; If None, the random number generator is the
             RandomState instance used by np.random.
-
-        kwargs:
-            Additional arguments. May have previously precomputed before this
-            method from other precomputed methods, so they can help speed up
-            this precomputation.
 
         Returns
         -------
         :obj:`np.ndarray`
             The performance of each fold.
         """
+        N, y = MFELandmarking._sample_data(
+            N=N,
+            y=y,
+            sample_size=sample_size,
+            random_state=random_state,
+            sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+
         result = []
         for train_index, test_index in skf.split(N, y):
-            importance = MFELandmarking.importance(
-                N[train_index], y[train_index], random_state)
+            importance = MFELandmarking._importance(
+                N=N[train_index], y=y[train_index], random_state=random_state)
+
             model = DecisionTreeClassifier(
                 max_depth=1, random_state=random_state)
             X_train = N[train_index, :][:, [importance[0]]]
@@ -297,11 +439,20 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_linear_discr(cls, N: np.ndarray, y: np.ndarray,
-                        skf: StratifiedKFold,
-                        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray]
-                        ) -> np.ndarray:
-        """Apply the Linear Discriminant classifier to construct a linear split
+    def ft_linear_discr(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
+            sample_size: float = 1.0,
+            sample_indexes: t.Optional[np.ndarray] = None,
+            random_state: t.Optional[int] = None,
+    ) -> np.ndarray:
+        """Apply the Linear Discriminant classifier.
+
+        The Linear Discriminant Classifier is used to construct a linear split
         (non parallel axis) in the data to establish the linear separability.
 
         Parameters
@@ -312,24 +463,46 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        kwargs:
-            Additional arguments. May have previously precomputed before this
-            method from other precomputed methods, so they can help speed up
-            this precomputation.
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
+
+        sample_size : :obj:`float`, optional
+            Proportion of instances to be sampled before extracting the
+            metafeature. Used only if ``sample_indexes`` is None.
+
+        sample_indexes : :obj:`np.ndarray`, optional
+            Array of indexes of instances to be effectively used while
+            extracting this metafeature. If None, then ``sample_size``
+            is taken into account. Argument used to exploit precomputations.
+
+        random_state : :obj`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
         Returns
         -------
         :obj:`np.ndarray`
             The performance of each fold.
         """
+        N, y = MFELandmarking._sample_data(
+            N=N,
+            y=y,
+            sample_size=sample_size,
+            random_state=random_state,
+            sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -349,12 +522,17 @@ class MFELandmarking:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            skf: StratifiedKFold,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
+            sample_size: float = 1.0,
+            sample_indexes: t.Optional[np.ndarray] = None,
+            random_state: t.Optional[int] = None,
     ) -> np.ndarray:
-        """Evaluate the performance of the Naive Bayes classifier. It assumes
-        that the attributes are independent and each example belongs to a cer-
-        tain class based on the Bayes probability.
+        """Evaluate the performance of the Naive Bayes classifier.
+
+        It assumes that the attributes are independent and each example
+        belongs to a certain class based on the Bayes probability.
 
         Parameters
         ----------
@@ -364,24 +542,46 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        kwargs:
-            Additional arguments. May have previously precomputed before this
-            method from other precomputed methods, so they can help speed up
-            this precomputation.
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
+
+        sample_size : :obj:`float`, optional
+            Proportion of instances to be sampled before extracting the
+            metafeature. Used only if ``sample_indexes`` is None.
+
+        sample_indexes : :obj:`np.ndarray`, optional
+            Array of indexes of instances to be effectively used while
+            extracting this metafeature. If None, then ``sample_size``
+            is taken into account. Argument used to exploit precomputations.
+
+        random_state : :obj`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
         Returns
         -------
         :obj:`np.ndarray`
             The performance of each fold.
         """
+        N, y = MFELandmarking._sample_data(
+            N=N,
+            y=y,
+            sample_size=sample_size,
+            random_state=random_state,
+            sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -401,12 +601,17 @@ class MFELandmarking:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            skf: StratifiedKFold,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
+            sample_size: float = 1.0,
+            sample_indexes: t.Optional[np.ndarray] = None,
+            random_state: t.Optional[int] = None,
     ) -> np.ndarray:
-        """Evaluate the performance of the 1-nearest neighbor classifier. It
-        uses the euclidean distance of the nearest neighbor to determine how
-        noisy is the data.
+        """Evaluate the performance of the 1-nearest neighbor classifier.
+
+        It uses the euclidean distance of the nearest neighbor to determine
+        how noisy is the data.
 
         Parameters
         ----------
@@ -416,24 +621,46 @@ class MFELandmarking:
         y :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        kwargs:
-            Additional arguments. May have previously precomputed before this
-            method from other precomputed methods, so they can help speed up
-            this precomputation.
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
+
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
+
+        sample_size : :obj:`float`, optional
+            Proportion of instances to be sampled before extracting the
+            metafeature. Used only if ``sample_indexes`` is None.
+
+        sample_indexes : :obj:`np.ndarray`, optional
+            Array of indexes of instances to be effectively used while
+            extracting this metafeature. If None, then ``sample_size``
+            is taken into account. Argument used to exploit precomputations.
+
+        random_state : :obj`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
         Returns
         -------
         :obj:`np.ndarray`
             The performance of each fold.
         """
+        N, y = MFELandmarking._sample_data(
+            N=N,
+            y=y,
+            sample_size=sample_size,
+            random_state=random_state,
+            sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -449,10 +676,20 @@ class MFELandmarking:
         return np.array(result)
 
     @classmethod
-    def ft_elite_nn(cls, N: np.ndarray, y: np.ndarray, skf: StratifiedKFold,
-                    score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                    random_state: t.Optional[int]) -> np.ndarray:
-        """Elite nearest neighbor uses the most informative attribute in the
+    def ft_elite_nn(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[StratifiedKFold] = None,
+            folds: int = 10,
+            sample_size: float = 1.0,
+            sample_indexes: t.Optional[np.ndarray] = None,
+            random_state: t.Optional[int] = None,
+    ) -> np.ndarray:
+        """Compute the Elite Nearest Neighbor score of dataset.
+
+        Elite nearest neighbor uses the most informative attribute in the
         dataset to induce the 1-nearest neighbor. With the subset of informati-
         ve attributes is expected that the models should be noise tolerant.
 
@@ -464,34 +701,52 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        skf : :obj:`StratifiedKFold`
-            Stratified K-Folds cross-validator. Provides train/test indices to
-            split data in train/test sets.
-
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        random_state : :obj:`int`, optional
-            If int, random_state is the seed used by the random number
-            generator; If RandomState instance, random_state is the random
-            number generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+        skf : :obj:`StratifiedKFold`, optional
+            Stratified K-Folds cross-validator. Provides train/test indices to
+            split data in train/test sets.
 
-            kwargs:
-                Additional arguments. May have previously precomputed before
-                this method from other precomputed methods, so they can help
-                speed up this precomputation.
+        folds : :obj: `int`, optional
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
+
+        sample_size : :obj:`float`, optional
+            Proportion of instances to be sampled before extracting the
+            metafeature. Used only if ``sample_indexes`` is None.
+
+        sample_indexes : :obj:`np.ndarray`, optional
+            Array of indexes of instances to be effectively used while
+            extracting this metafeature. If None, then ``sample_size``
+            is taken into account. Argument used to exploit precomputations.
+
+        random_state : :obj`int`, optional
+            If int, random_state is the seed used by the random number
+            generator; If None, the random number generator is the
+            RandomState instance used by np.random.
 
         Returns
         -------
         :obj:`np.ndarray`
             The performance of each fold.
         """
+        N, y = MFELandmarking._sample_data(
+            N=N,
+            y=y,
+            sample_size=sample_size,
+            random_state=random_state,
+            sample_indexes=sample_indexes)
+
+        if skf is None:
+            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+
         result = []
         for train_index, test_index in skf.split(N, y):
-            importance = MFELandmarking.importance(
-                N[train_index], y[train_index], random_state)
+            importance = MFELandmarking._importance(
+                N=N[train_index], y=y[train_index], random_state=random_state)
+
             model = KNeighborsClassifier(n_neighbors=1)
             X_train = N[train_index, :][:, [importance[-1]]]
             X_test = N[test_index, :][:, [importance[-1]]]
