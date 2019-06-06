@@ -44,6 +44,7 @@ class MFE:
                  wildcard: str = "all",
                  score="accuracy",
                  folds=10,
+                 sample_size=1.0,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
         """This class provides easy access for metafeature extraction from
@@ -153,6 +154,17 @@ class MFE:
             Value used as ``select all`` for ``groups``, ``features`` and
             ``summary`` arguments.
 
+         score : :obj:`str`, optional
+            Score metric used to extract ``landmarking`` metafeatures.
+
+         folds : :obj:`int`, optional
+            Number of folds to create a Stratified K-Fold cross validation
+            to produce the ``landmarking`` metafeatures.
+
+         sample_size : :obj:`float`, optional
+            Sample proportion used to produce the ``landmarking`` metafeatures.
+            This argument must be in 0.5 and 1.0 (both inclusive) interval.
+
         suppress_warnings : :obj:`bool`, optional
             If True, then ignore all warnings invoked at the instantiation
             time.
@@ -193,6 +205,10 @@ class MFE:
         self.groups = _internal.process_generic_set(
             values=groups, group_name="groups")  # type: t.Tuple[str, ...]
 
+        self.groups, self.inserted_group_dep = (
+            _internal.solve_group_dependencies(
+                groups=self.groups))
+
         proc_feat = _internal.process_features(
             features=features,
             groups=self.groups,
@@ -228,6 +244,9 @@ class MFE:
         self._precomp_args_ft = None  # type: t.Optional[t.Dict[str, t.Any]]
         """Precomputed common feature-extraction method arguments."""
 
+        self._postprocess_args_ft = {}  # type: t.Dict[str, t.Any]
+        """User-independent arguments for post-processing methods."""
+
         if random_state is None or isinstance(random_state, int):
             self.random_state = random_state
             np.random.seed(random_state)
@@ -242,6 +261,18 @@ class MFE:
         else:
             raise ValueError('Invalid "folds" argument ({0}). '
                              'Expecting an integer.'.format(random_state))
+
+        if isinstance(sample_size, int):
+            sample_size = float(sample_size)
+
+        if isinstance(sample_size, float)\
+           and 0.5 <= sample_size <= 1.0:
+            self.sample_size = sample_size
+
+        else:
+            raise ValueError('Invalid "sample_size" argument ({0}). '
+                             'Expecting an float [0.5, 1].'
+                             .format(random_state))
 
         self.score = _internal.check_score(score, self.groups)
 
@@ -674,8 +705,7 @@ class MFE:
 
         return data_num
 
-    def fit(
-            self,
+    def fit(self,
             X: t.Sequence,
             y: t.Sequence,
             transform_num: bool = True,
@@ -684,11 +714,10 @@ class MFE:
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
             check_bool: bool = False,
-            # missing_data: str = "ignore",
             precomp_groups: t.Optional[str] = "all",
             wildcard: str = "all",
             suppress_warnings: bool = False,
-    ) -> "MFE":
+            ) -> "MFE":
         """Fits dataset into an MFE model.
 
         Parameters
@@ -809,17 +838,24 @@ class MFE:
             "C": data_cat,
             "y": self.y,
             "folds": self.folds,
+            "sample_size": self.sample_size,
             "score": self.score,
             "random_state": self.random_state,
             "cat_cols": self._attr_indexes_cat,
         }
 
+        # Custom arguments from preprocessing methods
         self._precomp_args_ft = _internal.process_precomp_groups(
             precomp_groups=precomp_groups,
             groups=self.groups,
             wildcard=wildcard,
             suppress_warnings=suppress_warnings,
             **self._custom_args_ft)
+
+        # Custom arguments for postprocessing methods
+        self._postprocess_args_ft = {
+            "inserted_group_dep": self.inserted_group_dep,
+        }
 
         # Custom arguments for summarization methods
         self._custom_args_sum = {
@@ -833,9 +869,8 @@ class MFE:
             remove_nan: bool = True,
             verbose: bool = False,
             enable_parallel: bool = False,
-            # by_class: bool = False,
             suppress_warnings: bool = False,
-            **kwargs) -> t.Tuple[t.List, ...]:
+            **kwargs) -> t.Tuple[t.Sequence, ...]:
         """Extracts metafeatures from the previously fitted dataset.
 
         Parameters
@@ -947,6 +982,13 @@ class MFE:
             suppress_warnings=suppress_warnings,
             **kwargs)
 
+        _internal.post_processing(
+            results=results,
+            groups=self.groups,
+            suppress_warnings=suppress_warnings,
+            **self._postprocess_args_ft,
+            **kwargs)
+
         if results and results[0]:
             # Sort results by metafeature name
             results = tuple(
@@ -972,3 +1014,143 @@ class MFE:
             return res_names, res_vals, res_times
 
         return res_names, res_vals
+
+    @classmethod
+    def valid_groups(cls) -> t.Tuple[str, ...]:
+        """Return a tuple of valid metafeature groups.
+
+        Notes
+        -----
+        The returned ``groups`` are not related to the groups fitted in
+        the model in the model instantation. The returned groups are all
+        available metafeature groups in the ``Pymfe`` package. Check the
+        ``MFE`` documentation for deeper information.
+        """
+        return _internal.VALID_GROUPS
+
+    @classmethod
+    def valid_summary(cls) -> t.Tuple[str, ...]:
+        """Return a tuple of valid summary functions.
+
+        Notes
+        -----
+        The returned ``summaries`` are not related to the summaries fitted
+        in the model in the model instantation. The returned summaries are
+        all available in the ``Pymfe`` package. Check the documentation of
+        ``MFE`` for deeper information.
+        """
+        return _internal.VALID_SUMMARY
+
+    @classmethod
+    def valid_metafeatures(
+            cls,
+            groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
+    ) -> t.Tuple[str, ...]:
+        """Return a tuple with all metafeatures related to given ``groups``.
+
+        Parameters
+        ----------
+        groups : :obj:`Sequence` of :obj:`str` or obj:`str`, optional:
+            Can be a string such value is a name of a specific metafeature
+            group (see ``valid_groups`` method for more information) or a
+            sequence of metafeature group names. It can be also None, which
+            in that case all available metafeature names will be returned.
+
+        Return
+        ------
+        :obj:`Tuple` of `str`
+            Tuple with all available metafeature names of the given ``groups``.
+
+        Notes
+        -----
+        The returned ``metafeatures`` are not related to the groups or to the
+        metafeatures fitted in the model in the model instantation. All the
+        returned metafeatures are available in the ``Pymfe`` package. Check
+        the ``MFE`` documentation for deeper information.
+        """
+        def check_groups_type(
+                groups: t.Optional[t.Union[str, t.Iterable[str]]]
+                ) -> t.Set[str]:
+            """Cast ``groups`` to a tuple of valid metafeature group names."""
+            if groups is None:
+                return set(_internal.VALID_GROUPS)
+
+            if isinstance(groups, str):
+                return {groups}
+
+            return set(groups)
+
+        def filter_groups(groups: t.Set[str]) -> t.Set[str]:
+            """Filter given groups by the available metafeature group names."""
+            filtered_group_set = {
+                group for group in groups
+                if group in _internal.VALID_GROUPS
+            }
+            return filtered_group_set
+
+        groups = check_groups_type(groups)
+        groups = filter_groups(groups)
+
+        deps = _internal.check_group_dependencies(groups)
+
+        mtf_names = []  # type: t.List[str]
+        for group in groups.union(deps):
+            class_ind = _internal.VALID_GROUPS.index(group)
+
+            mtf_names += (  # type: ignore
+                _internal.get_prefixed_mtds_from_class(
+                    class_obj=_internal.VALID_MFECLASSES[class_ind],
+                    prefix=_internal.MTF_PREFIX,
+                    only_name=True,
+                    prefix_removal=True))
+
+        return tuple(mtf_names)
+
+    @classmethod
+    def parse_by_group(
+            cls,
+            groups: t.Union[t.Sequence[str], str],
+            extracted_results: t.Tuple[t.Sequence, ...],
+    ) -> t.Tuple[t.List, ...]:
+        """Parse the result of ``extract`` for given metafeature ``groups``.
+
+        Can be used to easily separate the results of each metafeature
+        group.
+
+        Parameters
+        ----------
+        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`
+            Metafeature group names which the results should be parsed
+            relative to. Use ``valid_groups`` method to check the available
+            metafeature groups.
+
+        extracted_results : :obj:`Tuple` of :obj:`Sequences`
+            Output of ``extract`` method. Should contain all outputed lists
+            (metafeature names, values and elapsed time for extraction, if
+            present.)
+
+        Returns
+        -------
+        :obj:`Tuple` of :obj:`str`
+            Slices of lists of ``extracted_results``, selected based on
+            given ``groups``.
+
+        Notes
+        -----
+        The given ``groups`` are not related to the groups fitted in the
+        model in the model instantation. Check ``valid_groups`` method to
+        get a list of all available groups from the ``Pymfe`` package.
+        Check the ``MFE`` documentation for deeper information about all
+        these groups.
+        """
+        selected_indexes = _internal.select_results_by_classes(
+            mtf_names=extracted_results[0],
+            class_names=groups,
+            include_dependencies=True)
+
+        filtered_res = (
+            [seq[ind] for ind in selected_indexes]
+            for seq in extracted_results
+        )
+
+        return tuple(filtered_res)
