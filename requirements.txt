@@ -3,3 +3,4 @@ scipy
 sklearn
 patsy
 pandas
+statsmodels
