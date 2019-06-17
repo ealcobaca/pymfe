@@ -1,5 +1,6 @@
 """This module provides useful functions for the MFE package.
 
+
 Attributes:
     VALID_VALUE_PREFIX (:obj:`str`): Prefix which all tuples that
         keep valid values for custom user options must use in its name.
@@ -1266,12 +1267,29 @@ def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     return np.asarray(patsy.dmatrix(formula, named_data))
 
 
-def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
+def _equal_freq_discretization(data: np.ndarray,
+                               num_bins: int,
+                               tol: float = 1e-8) -> np.ndarray:
     """Discretize a 1-D numeric array into an equal-frequency histogram."""
     perc_interval = 100.0 / num_bins
     perc_range = np.arange(perc_interval, 100, perc_interval)
     hist_divs = np.percentile(data, perc_range)
-    return np.digitize(x=data, bins=hist_divs, right=True)
+
+    # Sometimes the 'hist_divs' is not appropriated.
+    # For example when all values are constants. It implies in 'hist_divs'
+    # repetitive values.
+    # To avoid partitions with the same value, we check if all partitions are
+    # different. Unfortunately, it leads to a non-equal frequency
+    # discretization.
+    aux = len(hist_divs)
+    diffs = np.append(True, np.diff(hist_divs))
+    hist_divs = hist_divs[diffs > tol]
+    if aux != len(hist_divs):
+        warnings.warn("It is not possible make equal discretization")
+
+    hist_divs = np.unique(hist_divs)
+    aux = np.digitize(x=data, bins=hist_divs, right=True)
+    return aux
 
 
 def transform_num(data_numeric: np.ndarray,
