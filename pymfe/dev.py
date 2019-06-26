@@ -199,6 +199,10 @@ class MFEBoilerplate:
         Try to keep every precomputation method precompute related
         values to avoid confusion. Prefer to calculated non-associated
         values in different precomputation methods.
+
+        And, again, don't rely on the execution order of precomputation
+        methods. Always assume that the precomputation methods (even
+        within the same class) can be executed in any order.
         """
         precomp_vals = {}
 
@@ -206,17 +210,127 @@ class MFEBoilerplate:
 
     # All feature extraction methods must be classmethods
     @classmethod
-    def ft_feat_extraction(cls, X: np.ndarray, y: np.ndarray) -> int:
-        """Ratio between the number of attributes.
+    def ft_foo(cls,
+               X: np.ndarray,
+               y: np.ndarray,
+               opt_arg_foo: bool = True,
+               opt_arg_bar: float = 1.0,
+               opt_arg_baz: np.ndarray = None,
+               random_state: t.Optional[int] = None) -> int:
+        """Single-line description of this feature extraction method.
+
+        Similarly to the precomputation methods, the feature extraction
+        method names are also prefixed.
+
+        All your feature extraction method names must be prefixed with
+        ``ft_``.
+
+        At this point, you can safely assume that all precomputation
+        methods (even the ones of other MFE classes) were all executed,
+        and theyr values are ready to be used.
+
+        All parameters must be ready-only. It is forbidden to modify
+        any value inside any feature extraction method.
+
+        The only parameters allowed to be mandatory (i.e., without
+        default values) are the ones registered inside the MFE attribute
+        ``_custom_args_ft`` (check this out in the ``mfe.py`` module.)
+        All other values must have a default value.
+        
+        All arguments can be customized directly by the user by default
+        while calling the ``extract`` MFE method.
 
         Arguments
         ---------
+        X : :obj:`np.ndarray`
+            All attributes fitted in the model (numerical and categorical
+            ones).) You don't need to write about very common attributs
+            such as ``X``, ``y``, ``N`` and ``C``.
+
+        y : :obj:`np.ndarray`
+            Target attributes. Again, no need to write about these in
+            the documentation, as it can get too much repetitive. Prefer
+            always to simply omit these.
+
+        opt_arg_foo : :obj:`bool`
+            All optional arguments must be properly documented.
+
+        opt_arg_bar : :obj:`float`
+            Argument used to detect carbon footprints of hungry dinosaurs.
+
+        opt_arg_baz : :obj:`np.ndarray`
+            Is None, this argument is foo. Otherwise, this argument is bar.
 
         Returns
         -------
-        float
-            The ration between the number of attributes and instances.
-
+        :obj:`int`
+            Give a clear description about the returned value.
         """
-        return X.shape[1] / X.shape[0]
+        # Inside this method you can do whenever you want.
 
+        # You can even raise exceptions.
+        if opt_arg_bar < 0.0:
+            raise ValueError("'opt_arg_bar' must be positive!")
+
+        # when using pseudo-random functions, ALWAYS use random_state
+        # to enforce experiment replication
+        if opt_arg_baz is None:
+            np.random.seed(random_state)
+            opt_arg_baz = np.random.choose(10, size=5, replace=False)
+
+        aux_1, aux_2 = X.shape
+
+        np.random.seed(random_state)
+        random_ind = np.random.randint(10, size=1)
+
+        return aux_1 * opt_arg_bar / (aux_2 + opt_arg_baz[random_ind])
+
+    @classmethod
+    def ft_about_data_arguments(cls,
+                                X: np.ndarray,
+                                N: np.ndarray,
+                                C: np.ndarray) -> float:
+        """Information about some fitted data related arguments.
+
+        Not all feature extraction methods handles all types of data. Some
+        methods only work for numerical values, while others works only for
+        categorical values. In the middle, a few ones work for both data
+        types.
+
+        The Pymfe framework provides easy access to fitted data attributes
+        separated by data type (numerical and categorical).
+
+        You can use the attribute ``X`` to get all the original
+        fitted data (without data transformations), attribute ``N``
+        to get only the numerical attributes and, similarly, ``C``
+        to get only the categorical attributes.
+
+        Arguments
+        ---------
+        X : :obj:`np.ndarray`
+            All fitted original data, without any data transformation
+            such as discretization or one-hot encoding.
+
+        N : :obj:`np.ndarray`
+            Just numerical attributes of the fitted data, with possibly
+            the categorical data one-hot encoded (if the user uses this
+            transformation.)
+
+        C : :obj:`np.ndarray`
+            Just the categorical attributes of the fitted data, with
+            possibly the numerical data discretized (if the user uses
+            this transformation.)
+       
+        Returns
+        -------
+        :obj:`float`
+            Useless return value.
+        """
+        return -1.0
+
+
+    @classmethod
+    def ft_about_return_values(cls, y: np.ndarray) -> np.ndarray:
+        """Information about return values of feature extraction methods.
+        
+        """
