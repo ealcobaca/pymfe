@@ -6,29 +6,63 @@ entire guide with attention before programming your own class.
 
 In the end of this reading, you will know:
     * What are the special method name prefixes
+    * Game rules involving precomputation, metafeature extraction and
+      postcomputation methods
     * What are the coding practices usually adopted in this library
 
 Also, feel free to copy this file to use as boilerplate for your
 own class.
-"""
 
-import typing as t
-"""Use type annotations as much as possible.
++---------------------------------------------------------------------+
+| Use type annotations as much as possible.                           |
++---------------------------------------------------------------------+
 
 Also run ``mypy`` to check if the variable types was specified correctly.
 Use the following command before pushing your modifications to the remote
 repository:
 
-    $ python -m mypy yourModuleName.py --ignore-missing-imports
+$ pip install -U mypy
+$ mypy pymfe --ignore-missing-imports
 
 Note that all warnings must be fixed to your modifications be accepted,
 so take your time to fix your variables type.
+
++---------------------------------------------------------------------+
+| Use pylint to check you code style and auto-formatters such as yapf.|
++---------------------------------------------------------------------+
+
+Pylint can be used to check if your code follow some practices adopted
+by the python community. It sometimes can be very rigorous, so we have
+decided to disable some of the verifications.
+
+Yapf is a code auto-formatter which usually solves a large amount of
+coding style related issues. If you use the flag ``-i`` it changes your
+file in-place.
+
+$ pip install -U pylint
+pylint pymfe -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
+
+$ pip install -U yapf
+yapf -i yourModulename.py
+
++---------------------------------------------------------------------+
+| Make all verifications with the provided Makefile.                  |
++---------------------------------------------------------------------+
+
+You can use the Makefile provided in the root directory to run mypy,
+pylint and also pytest. Obviously, all tests must pass in order to your
+modifications be accepted.
 """
+
+import typing as t
+
+import numpy as np
 
 
 class MFEBoilerplate:
     """The class name must start with ``MFE`` (just to keep consistency)
-    concatenated with the group name (e.g., ``MFEStatistical``, ``MFEGeneral``.)
+    concatenated with the group name (e.g., ``MFEStatistical``,
+    ``MFEGeneral``.)
 
     Also, the class must be registered in the ``_internal.py`` module to be
     an official MFE class.
@@ -57,8 +91,8 @@ class MFEBoilerplate:
 
         3. VALID_MFECLASSES : Classes
             In this tuple you should just insert your class. Note that this
-            imply that this module must be imported at the top of ``_internal.py``
-            module.
+            imply that this module must be imported at the top of the module
+            ``_internal.py``.
 
 
     For example, for this specify class, these three tuples must be updated
@@ -82,14 +116,12 @@ class MFEBoilerplate:
 
     # All precomputation methods must be classmethods
     @classmethod
-    def precompute_foa_method(
-            cls,
-            X: np.ndarray,
-            argument_foo: t.Optional[np.ndarray] = None,
-            argument_bar: t.Optional[int] = None,
-            **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_foo_method(cls,
+                              argument_foo: t.Optional[np.ndarray] = None,
+                              argument_bar: t.Optional[int] = None,
+                              **kwargs) -> t.Dict[str, t.Any]:
         """A precomputation method sample.
-        
+
         All methods whose name is prefixed with ``precompute_`` are
         executed automatically before the metafeature extraction. Those
         methods are extremely important to improve the performance of
@@ -136,10 +168,16 @@ class MFEBoilerplate:
         receive value ``1``, and every method with argument named ``bar``
         will receive a list with 'a' and 'b' elements.
 
-        As this framework rely on a dictionary to distribute the parameters 
+        As this framework rely on a dictionary to distribute the parameters
         between feature extraction methods, your precomputed keys should never
-        replace existing keys with different values, and you should not give the
-        same name to parameters with different semantics.
+        replace existing keys with different values, and you should not give
+        the same name to parameters with different semantics.
+
+        Keep in mind that the user can disable the precomputation methods.
+        Never rely on these methods to produce any mandatory arguments. All
+        the precomputed values here should go to optional parameters and, in
+        the receiver metafeature extraction method, it must be verified if
+        it was effectively precomputed.
 
         Parameters
         ----------
@@ -189,13 +227,14 @@ class MFEBoilerplate:
         # Always return a dictionary, even if it is empty
         return precomp_vals
 
+    @classmethod
     def precompute_baz_qux(cls, **kwargs) -> t.Dict[str, t.Any]:
         """Another precomputation method.
-        
+
         Every MFE metafeature extraction class may have as many of
         precomputation methods as needed. Don't be ashamed to create
         new precomputation methods whenever you need to.
-        
+
         Try to keep every precomputation method precompute related
         values to avoid confusion. Prefer to calculated non-associated
         values in different precomputation methods.
@@ -204,16 +243,24 @@ class MFEBoilerplate:
         methods. Always assume that the precomputation methods (even
         within the same class) can be executed in any order.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
+
+        if not {"qux", "quux", "quuz"}.issubset(kwargs):
+            aux = kwargs.get("foobar", None)
+
+            if aux is not None:
+                precomp_vals["qux"] = aux + 1.0
+                precomp_vals["quux"] = 5.0 + 1.0j * (aux + 2.0)
+                precomp_vals["quuz"] = np.array(
+                    [aux + i for i in np.arange(5)])
 
         return precomp_vals
 
-    # All feature extraction methods must be classmethods
+    # All feature extraction methods must be classmethods also
     @classmethod
     def ft_foo(cls,
                X: np.ndarray,
                y: np.ndarray,
-               opt_arg_foo: bool = True,
                opt_arg_bar: float = 1.0,
                opt_arg_baz: np.ndarray = None,
                random_state: t.Optional[int] = None) -> int:
@@ -236,7 +283,7 @@ class MFEBoilerplate:
         default values) are the ones registered inside the MFE attribute
         ``_custom_args_ft`` (check this out in the ``mfe.py`` module.)
         All other values must have a default value.
-        
+
         All arguments can be customized directly by the user by default
         while calling the ``extract`` MFE method.
 
@@ -252,9 +299,6 @@ class MFEBoilerplate:
             the documentation, as it can get too much repetitive. Prefer
             always to simply omit these.
 
-        opt_arg_foo : :obj:`bool`
-            All optional arguments must be properly documented.
-
         opt_arg_bar : :obj:`float`
             Argument used to detect carbon footprints of hungry dinosaurs.
 
@@ -265,6 +309,11 @@ class MFEBoilerplate:
         -------
         :obj:`int`
             Give a clear description about the returned value.
+
+        Notes
+        -----
+        You can use the notes section of the documentation to provide
+        references, and also ``very specific`` details of the method.
         """
         # Inside this method you can do whenever you want.
 
@@ -276,9 +325,9 @@ class MFEBoilerplate:
         # to enforce experiment replication
         if opt_arg_baz is None:
             np.random.seed(random_state)
-            opt_arg_baz = np.random.choose(10, size=5, replace=False)
+            opt_arg_baz = np.random.choise(10, size=5, replace=False)
 
-        aux_1, aux_2 = X.shape
+        aux_1, aux_2 = np.array(X.shape) * y.size
 
         np.random.seed(random_state)
         random_ind = np.random.randint(10, size=1)
@@ -286,9 +335,7 @@ class MFEBoilerplate:
         return aux_1 * opt_arg_bar / (aux_2 + opt_arg_baz[random_ind])
 
     @classmethod
-    def ft_about_data_arguments(cls,
-                                X: np.ndarray,
-                                N: np.ndarray,
+    def ft_about_data_arguments(cls, X: np.ndarray, N: np.ndarray,
                                 C: np.ndarray) -> float:
         """Information about some fitted data related arguments.
 
@@ -319,18 +366,53 @@ class MFEBoilerplate:
         C : :obj:`np.ndarray`
             Just the categorical attributes of the fitted data, with
             possibly the numerical data discretized (if the user uses
-            this transformation.)
-       
+            this type of transformation.)
+
         Returns
         -------
         :obj:`float`
             Useless return value.
         """
-        return -1.0
-
+        ret = np.array(X.shape) + np.array(N.shape) + np.array(C.shape)
+        return np.prod(ret)
 
     @classmethod
-    def ft_about_return_values(cls, y: np.ndarray) -> np.ndarray:
+    def ft_about_return_values(cls,
+                               y: np.ndarray,
+                               foo_unique: t.Optional[np.ndarray] = None
+                               ) -> np.ndarray:
         """Information about return values of feature extraction methods.
-        
+
+        The return value of any feature extraction method should be
+        a single number (int, float, numpy number), or a :obj:`np.nan`,
+        or a numpy array. This array must containg only numbers or
+        :obj:`np.nan`.
+
+        If it is a single number, the output value of this method will
+        be transformed directly into a MFE class extract output. If
+        it is a numpy array, this output will be summarized using every
+        user selected summary functions automatically.
+
+        Arguments
+        ---------
+        foo_unique : :obj:`np.ndarray`, optional
+            Argument precomputed ``precompute_foo_method`` precomputation
+            method. Note that it must be an optional argument (because
+            it is forbidden to rely on precomputation methods to fill
+            mandatory arguments, as the user can disable precomputation
+            methods whenever he or she wants.)
+
+        Returns
+        :obj:`np.ndarray`
+            This method returns a numpy array, so its output value will
+            be summarized automatically by the MFE framework before
+            outputting to the user.
         """
+        # Generally you need to verify if some (possibly precomputed)
+        # optional argument is None. If it is, you need to manually
+        # precompute it inside the method that needs it to produce
+        # its return value.
+        if foo_unique is None:
+            foo_unique = np.unique(y)
+
+        return foo_unique
