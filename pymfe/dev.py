@@ -291,13 +291,14 @@ class MFEBoilerplate:
 
     # All feature extraction methods must be classmethods also
     @classmethod
-    def ft_foo(cls,
-               X: np.ndarray,
-               y: np.ndarray,
-               random_state: t.Optional[int] = None,
-               opt_arg_bar: float = 1.0,
-               opt_arg_baz: np.ndarray = None,
-               ) -> int:
+    def ft_foo(
+            cls,
+            X: np.ndarray,
+            y: np.ndarray,
+            random_state: t.Optional[int] = None,
+            opt_arg_bar: float = 1.0,
+            opt_arg_baz: np.ndarray = None,
+    ) -> int:
         """Single-line description of this feature extraction method.
 
         Similarly to the precomputation methods, the feature extraction
@@ -490,6 +491,7 @@ class MFEBoilerplate:
         Private methods (methods prefixed with two underscores) are not
         really necessary, and their use must be justified somehow.
         """
+
         def inner_functions(x, lamb: float = 1.0):
             """Usage of inner functions.
 
@@ -518,13 +520,9 @@ class MFEBoilerplate:
     # All postprocessing methods must be classmethods also
     @classmethod
     def postprocess_groupName1_groupName2(
-            cls,
-            mtf_names: t.List[str],
-            mtf_vals: t.List[float],
-            mtf_time: t.List[float],
-            class_indexes: t.Sequence[int],
-            groups: t.Tuple[str, ...],
-            inserted_group_dep: t.FrozenSet[str],
+            cls, mtf_names: t.List[str], mtf_vals: t.List[float],
+            mtf_time: t.List[float], class_indexes: t.Sequence[int],
+            groups: t.Tuple[str, ...], inserted_group_dep: t.FrozenSet[str],
             **kwargs
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
         """Postprocessing methods.
