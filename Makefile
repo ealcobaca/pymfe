@@ -17,7 +17,7 @@ test-cov:
 	pytest --cov=pymfe/ tests/
 
 code_check:
-	flake8 pymfe | grep -v __init__
+	flake8 pymfe
 	pylint pymfe -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
 	mypy pymfe --ignore-missing-imports
 
