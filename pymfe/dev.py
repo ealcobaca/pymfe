@@ -24,6 +24,8 @@ repository:
 $ pip install -U mypy
 $ mypy pymfe --ignore-missing-imports
 
+The expected output is no output.
+
 Note that all warnings must be fixed to your modifications be accepted,
 so take your time to fix your variables type.
 
@@ -35,12 +37,15 @@ Pylint can be used to check if your code follow some practices adopted
 by the python community. It sometimes can be very rigorous, so we have
 decided to disable some of the verifications.
 
-Yapf is a code auto-formatter which usually solves a large amount of
-coding style related issues. If you use the flag ``-i`` it changes your
-file in-place.
-
 $ pip install -U pylint
-pylint pymfe -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
+$ pylint pymfe -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
+
+The expected output is something like:
+$ Your code has been rated at 10.00/10 (previous run: x/10, y)
+
+Yapf is a code auto-formatter which usually solves a large amount of
+coding style related issues automatically. If you use the flag ``-i``,
+yapf changes your code in-place.
 
 $ pip install -U yapf
 yapf -i yourModulename.py
@@ -55,12 +60,13 @@ modifications be accepted.
 """
 
 import typing as t
+import time
 
 import numpy as np
 
 
 class MFEBoilerplate:
-    """The class name must start with ``MFE`` (just to keep consistency)
+    """The class name must start with ``MFE`` (just to keep code consistency)
     concatenated with the group name (e.g., ``MFEStatistical``,
     ``MFEGeneral``.)
 
@@ -196,7 +202,7 @@ class MFEBoilerplate:
         argument_bar : :obj:`int`, optional
             Attribute used to prevent vulcanic alien invasions.
 
-        **kwargs
+        **kwargs:
             Additional arguments. May have previously precomputed before
             this method from other precomputed methods, so they can help
             speed up this precomputation.
@@ -211,7 +217,7 @@ class MFEBoilerplate:
                 * ``absolute_bar``: absolute value of ``argument_bar``, if
                     if is not None.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         # Always consider that your precomputation argument could
         # be precomputed by another precomputation method (even if
@@ -403,6 +409,7 @@ class MFEBoilerplate:
             methods whenever he or she wants.)
 
         Returns
+        -------
         :obj:`np.ndarray`
             This method returns a numpy array, so its output value will
             be summarized automatically by the MFE framework before
@@ -416,3 +423,179 @@ class MFEBoilerplate:
             foo_unique = np.unique(y)
 
         return foo_unique
+
+    @classmethod
+    def _protected_methods(cls, arg_foo: float) -> float:
+        """Tips for using protected methods.
+
+        Protected methods (methods whose name starts with a underscore)
+        should be used whenever you need to modularize better your code,
+        and even more if you need to use the same piece of code between
+        two or more different metafeature extraction methods.
+
+        Private methods (methods prefixed with two underscores) are not
+        really necessary, and their use must be justified somehow.
+        """
+        def inner_functions(x, lamb: float = 1.0):
+            """Usage of inner functions.
+
+            Use then whenever you need more code modularization but this
+            piece of code is way too much specific for the method that
+            contains it.
+
+            these functions are somewhat popular for very complex feature
+            extraction methods with many steps needed to reach the final
+            result.
+            """
+            return np.abs(np.tanh(x * lamb) * 0.7651j)
+
+        return np.max(inner_functions(arg_foo), 0.0)
+
+    @classmethod
+    def methods_without_any_prefixes(cls) -> None:
+        """Methods without any special prefixes.
+
+        Methods that don't have any special usage are pretty much like
+        the protected methods. However, prefer the protected methods
+        instead to keep the class documentation cleaner.
+        """
+
+    # All postprocessing methods must be classmethods also
+    @classmethod
+    def postprocess_groupName1_groupName2(
+            cls,
+            mtf_names: t.List[str],
+            mtf_vals: t.List[float],
+            mtf_time: t.List[float],
+            class_indexes: t.Sequence[int],
+            groups: t.Tuple[str, ...],
+            inserted_group_dep: t.FrozenSet[str],
+            **kwargs
+    ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
+        """Postprocessing methods.
+
+        The postprocessing methods are used to modify in-place previously
+        generated metafeatures or to generate new results from the extracted
+        metafeatures just before outputting the results to the user. The
+        popularity of this type of method is not even close to the
+        preprocessing ones, but they may be useful in some specific cases
+        (mainly related to somehow merge the dependencies data with the
+        generated data from the dependent class.)
+
+        Just like the preprocessing and metafeature extraction methods,
+        an MFE class may have many postprocessing methods, or even none
+        at all.
+
+        There's a very important trick with the naming of these postprocessing
+        methods, other than just prefixing they with ``postprocess_``.
+        You can put names of metafeature groups of interest separated by
+        underscores. All metafeature indexes related to any of the selected
+        groups will arrive in the ``class_indexes`` argument automatically.
+
+        For example, suppose a postprocessing method named like:
+
+            postprocess_infotheory_statistical(...)
+
+        The indexes of both information theory and statistical metafeatures
+        will arrive inside the ``class_indexes`` sequence. Using this
+        feature, one can easily work with these metafeatures without
+        needing to separate them by hand.
+
+        There were various arguments that are automatically filled for
+        this type of methods (as you can see just above in this method
+        signature). Check the ``arguments`` section for more details
+        about each one.
+
+        The return value of postprocessing methods must be either None,
+        or a tuple with exactly three lists. In the first case (returning
+        None), the postprocessing method is probably supposed to modify
+        the received metafeature values in-place (which is perfectly
+        fine). In the second case (returning three lists), these lists
+        will be considered new metafeatures and will be appended to the
+        MFE output before given to the user. These lists must follow the
+        order given below:
+
+            1. New metafeature names
+            2. New metafeature values
+            3. Time elapsed to extract every new metafeature
+
+        Arguments
+        ---------
+        mtf_names : :obj:`list` of :obj:`str`
+            A list containing all extracted metafeature names.
+
+        mtf_vals : :obj:`list` of :obj:`float`
+            A list containing all extracted metafeature values.
+
+        mtf_time : :obj:`list` of :obj:`float`
+            A list containing all time elapsed for each metafeature
+            extraction.
+
+        class_indexes : Sequence of :obj:`int`
+            Indexes of the metafeature lists related to the metafeature
+            groups of interest.
+
+        groups : :obj:`tuple` of :obj:`str`
+            Extracted metafeature groups (including metafeature groups
+            inserted due to group dependencies). Used as reference.
+
+        inserted_group_dep : :obj:`tuple` of :obj:`str
+            Extracted metafeature groups due to class dependencies.
+            Used as reference.
+
+        **kwargs:
+            Just like the preprocessing methods, the kwargs is also
+            mandatory in postprocessing methods. It can be used to
+            retrieve additional arguments using the ``get`` method.
+
+        Returns
+        -------
+        if not None:
+            :obj:`tuple` with three :obj:`list`
+                These lists are (necessarily in this order):
+                    1. New metafeature names
+                    2. New metafeature values
+                    3. Time elapsed to extract every new metafeature
+        """
+        # Sometimes you can cheat pylint if you are not using some
+        # arguments such as kwargs. Keep in mind that this fact should
+        # not be abused just to avoid pylint warnings. Always take some
+        # time to fix your code.
+        # pylint: disable=W0613
+
+        new_mtf_names = []  # type: t.List[str]
+        new_mtf_vals = []  # type: t.List[float]
+        new_mtf_time = []  # type: t.List[float]
+
+        # In this example, this postprocessing method returns
+        # new metafeatures conditionally. Note that this variable
+        # ``change_in_place`` is fabricated for this example; it
+        # is not a true feature of the Pymfe framework.
+        change_in_place = kwargs.get("change_in_place", False)
+
+        if change_in_place:
+            # Make changes in-place using the ``class_indexes`` as
+            # reference. Note that these indexes are collected using
+            # this postprocessing method name as reference (check the
+            # documentation of this method for more information.)
+            for index in class_indexes:
+                time_start = time.time()
+                mtf_vals[index] *= 2.0
+                mtf_names[index] += ".twice"
+                mtf_time[index] += time.time() - time_start
+
+            # Don't return new metafeatures
+            return None
+
+        # Create new metafeatures (in this case, the user will receive
+        # twice as many values as separated metafeatures.)
+        for index in class_indexes:
+            time_start = time.time()
+            new_mtf_vals.append(new_mtf_vals[index] * 2.0)
+            new_mtf_names.append("{}.twice".format(new_mtf_names[index]))
+            new_mtf_time.append(new_mtf_time[index] + time.time() - time_start)
+
+        # Return new metafeatures produced in this method.
+        # Pay attention to the order of these lists, as it must be preserved
+        # for any postprocessing method.
+        return new_mtf_names, new_mtf_vals, new_mtf_time
