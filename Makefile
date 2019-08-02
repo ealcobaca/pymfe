@@ -16,7 +16,7 @@ test-cov:
 	rm -rf coverage .coverage
 	pytest --cov=pymfe/ tests/
 
-code_check:
+code-check:
 	flake8 pymfe
 	pylint pymfe -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
 	mypy pymfe --ignore-missing-imports
