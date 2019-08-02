@@ -232,7 +232,6 @@ class MFEClustering:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            dist_metric: str = "euclidean",
             representative: str = "mean",
             classes: t.Optional[np.ndarray] = None,
             **kwargs) -> t.Dict[str, t.Any]:
@@ -305,7 +304,6 @@ class MFEClustering:
                 MFEClustering._get_class_representatives(
                     N=N,
                     y=y,
-                    dist_metric=dist_metric,
                     representative=representative,
                     classes=classes))
 
@@ -407,9 +405,8 @@ class MFEClustering:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            dist_metric: str = "euclidean",
             representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
-            classes: t.Optional[np.ndarray] = None) -> float:
+            classes: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Get a representative instance for each distinct class.
 
         If ``representative`` argument is a string, then it must be
@@ -698,7 +695,7 @@ class MFEClustering:
                 documentation.
         """
 
-        if sample_size != None:
+        if sample_size is not None:
             sample_size = int(sample_size*len(N))
 
         silhouette = sklearn.metrics.silhouette_score(
@@ -770,7 +767,6 @@ class MFEClustering:
     @classmethod
     def ft_nre(
             cls,
-            N: np.ndarray,
             y: np.ndarray,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> float:
@@ -795,7 +791,6 @@ class MFEClustering:
 
     @classmethod
     def ft_sc(cls,
-              N: np.ndarray,
               y: np.ndarray,
               size: int = 15,
               class_freqs: t.Optional[np.ndarray] = None,
@@ -915,7 +910,6 @@ class MFEClustering:
         representative = MFEClustering._get_class_representatives(
             N=N,
             y=y,
-            dist_metric=dist_metric,
             representative=representative,
             classes=classes)
 
@@ -1081,7 +1075,6 @@ class MFEClustering:
         representative = MFEClustering._get_class_representatives(
             N=N,
             y=y,
-            dist_metric=dist_metric,
             representative=representative,
             classes=classes)
 
