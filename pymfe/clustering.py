@@ -6,7 +6,7 @@ import collections
 
 import numpy as np
 import scipy.spatial.distance
-import statsmodels.tools.eval_measures
+# import statsmodels.tools.eval_measures
 import sklearn.metrics
 import sklearn.neighbors
 
@@ -934,79 +934,83 @@ class MFEClustering:
 
         return sum_dists.sum()
 
-    @classmethod
-    def ft_aic(cls,
-               N: np.ndarray,
-               y: np.ndarray,
-               sample_correction: bool = False,
-               sample_size: int = 40) -> float:
-        """Compute the Akaike information criterion.
+    # @classmethod
+    # def ft_aic(cls,
+    #            N: np.ndarray,
+    #            y: np.ndarray,
+    #            sample_correction: bool = False,
+    #            sample_size: int = 40) -> float:
+    #     """Compute the Akaike information criterion.
+    #
+    #     Parameters
+    #     ----------
+    #     sample_correction : :obj:`bool`, optional
+    #         If True, then the number of instances will be verified
+    #         if is less of equal than ``sample_size``. If this is
+    #         the case, then use the AIC with sample size correction.
+    #         Check the `aicc`_ for more information.
+    #
+    #     sample_size : :obj:`int`, optional
+    #         If ``sample_correction`` is true, this parameter is the
+    #         threshold to decide wheter to use the AIC formula with
+    #         or without the sample size correction. If the number
+    #         of instances in ``N`` is less or equal than ``sample_
+    #         size``, then the AIC formula with sample size correction
+    #         is used. Check `aicc`_ for more information.
+    #
+    #     Returns
+    #     -------
+    #     :obj:`float`
+    #         AIC metric.
+    #
+    #     Notes
+    #     -----
+    #         .. _aicc: `statsmodels.tools.eval_measures.aicc`
+    #         documentation.
+    #
+    #     TO BE FIXED.
+    #     """
+    #     mode_class, _ = scipy.stats.mode(y)
+    #     mode_class = mode_class[0]
+    #
+    #     num_inst, num_attr = N.shape
+    #
+    #     sum_sqr_error = (y != mode_class).sum()
+    #
+    #     if sample_correction and num_inst <= sample_size:
+    #         method = statsmodels.tools.eval_measures.aicc
+    #
+    #     else:
+    #         method = statsmodels.tools.eval_measures.aic
+    #
+    #     aic = method(
+    #         llf=sum_sqr_error,
+    #         nobs=num_inst,
+    #         df_modelwc=num_attr + 1
+    #     )
+    #
+    #     return aic
 
-        Parameters
-        ----------
-        sample_correction : :obj:`bool`, optional
-            If True, then the number of instances will be verified
-            if is less of equal than ``sample_size``. If this is
-            the case, then use the AIC with sample size correction.
-            Check the `aicc`_ for more information.
-
-        sample_size : :obj:`int`, optional
-            If ``sample_correction`` is true, this parameter is the
-            threshold to decide wheter to use the AIC formula with
-            or without the sample size correction. If the number
-            of instances in ``N`` is less or equal than ``sample_
-            size``, then the AIC formula with sample size correction
-            is used. Check `aicc`_ for more information.
-
-        Returns
-        -------
-        :obj:`float`
-            AIC metric.
-
-        Notes
-        -----
-            .. _aicc: `statsmodels.tools.eval_measures.aicc`
-            documentation.
-
-        TO BE FIXED.
-        """
-        mode_class, _ = scipy.stats.mode(y)
-        mode_class = mode_class[0]
-
-        num_inst, num_attr = N.shape
-
-        sum_sqr_error = (y != mode_class).sum()
-
-        if sample_correction and num_inst <= sample_size:
-            method = statsmodels.tools.eval_measures.aicc
-
-        else:
-            method = statsmodels.tools.eval_measures.aic
-
-        aic = method(llf=sum_sqr_error, nobs=num_inst, df_modelwc=num_attr + 1)
-
-        return aic
-
-    @classmethod
-    def ft_bic(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Bayesian Information Criterion.
-
-        This measure is based on maximized value of the likelihood function
-        of the model.
-
-        TO BE FIXED.
-        """
-        mode_class, _ = scipy.stats.mode(y)
-        mode_class = mode_class[0]
-
-        num_inst, num_attr = N.shape
-
-        sum_sqr_error = (y != mode_class).sum()
-
-        bic = statsmodels.tools.eval_measures.bic(
-            llf=sum_sqr_error, nobs=num_inst, df_modelwc=num_attr + 1)
-
-        return bic
+    # @classmethod
+    # def ft_bic(cls, N: np.ndarray, y: np.ndarray) -> float:
+    #     """Bayesian Information Criterion.
+    #
+    #     This measure is based on maximized value of the likelihood function
+    #     of the model.
+    #
+    #     TO BE FIXED.
+    #     """
+    #     mode_class, _ = scipy.stats.mode(y)
+    #     mode_class = mode_class[0]
+    #
+    #     num_inst, num_attr = N.shape
+    #
+    #     sum_sqr_error = (y != mode_class).sum()
+    #
+    #     bic = statsmodels.tools.eval_measures.bic(
+    #         llf=sum_sqr_error, nobs=num_inst, df_modelwc=num_attr + 1)
+    #
+    #     return bic
 
     @classmethod
     def ft_xb(cls,
