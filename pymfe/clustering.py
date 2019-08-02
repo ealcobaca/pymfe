@@ -746,23 +746,24 @@ class MFEClustering:
 
         return correlation
 
-    @classmethod
-    def ft_calinski_harabaz_index(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Calinski and Harabaz index.
-
-        Check `cahascore`_ for more information.
-
-        Returns
-        -------
-        :obj:`float`
-            Calinski-Harabanz index.
-
-        Notes
-        -----
-            .. _cahascore: ``sklearn.metrics.calinski_harabasz_score``
-                documentation.
-        """
-        return sklearn.metrics.calinski_harabasz_score(X=N, labels=y)
+    # @classmethod
+    # def ft_calinski_harabaz_index(cls,
+    #                               N: np.ndarray, y: np.ndarray) -> float:
+    #     """Calinski and Harabaz index.
+    #
+    #     Check `cahascore`_ for more information.
+    #
+    #     Returns
+    #     -------
+    #     :obj:`float`
+    #         Calinski-Harabanz index.
+    #
+    #     Notes
+    #     -----
+    #         .. _cahascore: ``sklearn.metrics.calinski_harabasz_score``
+    #             documentation.
+    #     """
+    #     return sklearn.metrics.calinski_harabasz_score(X=N, labels=y)
 
     @classmethod
     def ft_nre(
