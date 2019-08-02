@@ -1155,7 +1155,8 @@ class MFEClustering:
             axis=0,
             arr=y[nearest_neighbors],
             y_pred=y,
-            normalize=True)
+            normalize=True
+        )
 
         return same_cluster_props.mean()
 
