@@ -1159,16 +1159,133 @@ class MFEClustering:
 
         return same_cluster_props.mean()
 
+    # @classmethod
+    # def ft_goodman_kruskal_gamma(
+    #         cls,
+    #         N: np.ndarray,
+    #         y: np.ndarray,
+    #         dist_metric: str = "euclidean",
+    #         classes: t.Optional[np.ndarray] = None,
+    #         pairwise_intraclass_dists: t.Optional[np.ndarray] = None,
+    # ) -> np.ndarray:
+    #     """Goodman and Kruskal's Gamma rank correlation.
+    #     The range value is -1 and +1 (both inclusive).
+    #     Parameters
+    #     ----------
+    #     dist_metric : :obj:`str`, optional
+    #         The distance metric used to calculate the distances between
+    #         instances. Check `scipydoc`_ for a full list of valid distance
+    #         metrics. If precomputation in clustering metafeatures is
+    #         enabled, then this parameter takes no effect.
+    #     classes : :obj:`np.ndarray`, optional
+    #         Distinct classes in ``y``. Used to exploit precomputations.
+    #     pairwise_intraclass_dists : :obj:`np.ndarray`, optional
+    #         Distance between each distinct pair of instances of
+    #         the same class. Used to exploit precomputations.
+    #     Returns
+    #     -------
+    #     :obj:`float`
+    #         Goodman and Kruskal Gamma
+    #     Notes
+    #     -----
+    #         .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
+    #     """
+    #     if classes is None:
+    #         classes = np.unique(y)
+    #
+    #     if pairwise_intraclass_dists is None:
+    #         pairwise_intraclass_dists = MFEClustering._all_intraclass_dists(
+    #             N=N,
+    #             y=y,
+    #             dist_metric=dist_metric,
+    #             classes=classes,
+    #             get_max_dist=False)
+    #
+    #     gk_gamma = []
+    #
+    #     for class_a, class_b in itertools.combinations(
+    #             np.arange(classes.size), 2):
+    #         pdists_a = pairwise_intraclass_dists[class_a]
+    #         pdists_b = pairwise_intraclass_dists[class_b]
+    #
+    #         pairs_concordant = 0
+    #         pairs_reversed = 0
+    #
+    #         size = min(pdists_a.size, pdists_b.size)
+    #
+    #         for i, j in itertools.combinations(np.arange(size), 2):
+    #             sign_a = np.sign(pdists_a[i] - pdists_a[j])
+    #             sign_b = np.sign(pdists_b[i] - pdists_b[j])
+    #
+    #             if sign_a * sign_b:
+    #                 pairs_concordant += sign_a == sign_b
+    #                 pairs_reversed += sign_a == -sign_b
+    #
+    #         gk_gamma.append((pairs_concordant - pairs_reversed) /
+    #                         (pairs_concordant + pairs_reversed))
+    #
+    #     return np.array(gk_gamma)
 
-if __name__ == "__main__":
-    from sklearn import datasets
-    iris = datasets.load_iris()
-
-    rp = np.array([
-        np.mean(iris.data[cur_class == iris.target], axis=0)
-        for cur_class in np.unique(iris.target)
-    ])
-
-    ans = MFEClustering.ft_xb(iris.data, iris.target, representative=rp)
-
-    print(ans)
+    # @classmethod
+    # def ft_hubert_levin_index(
+    #         cls,
+    #         N: np.ndarray,
+    #         y: np.ndarray,
+    #         dist_metric: str = "euclidean",
+    #         classes: t.Optional[np.ndarray] = None,
+    #         class_freqs: t.Optional[np.ndarray] = None,
+    #         pairwise_intraclass_dists: t.Optional[np.ndarray] = None
+    # ) -> np.ndarray:
+    #     """Hubert and Levin index.
+    #     The metric range is 0 and 1 (both inclusive).
+    #     Parameters
+    #     ----------
+    #     dist_metric : :obj:`str`, optional
+    #         The distance metric used to calculate the distances between
+    #         instances. Check `scipydoc`_ for a full list of valid distance
+    #         metrics.
+    #     classes : :obj:`np.ndarray`, optional
+    #         Distinct classes in ``y``. Used to exploit precomputations.
+    #     class_freqs : :obj:`np.ndarray`, optional
+    #         Class (absolute) frequencies. Used to exploit precomputations.
+    #     pairwise_intraclass_dists : :obj:`np.ndarray`, optional
+    #         Distance between each distinct pair of instances of
+    #         the same class. Used to exploit precomputations.
+    #     Returns
+    #     -------
+    #     :obj:`np.ndarray`
+    #         Hubert and Levin index for each distinct class.
+    #     Notes
+    #     -----
+    #         .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
+    #     """
+    #     if classes is None or class_freqs is None:
+    #         classes, class_freqs = np.unique(y, return_counts=True)
+    #
+    #     sorted_pairwise_dist = scipy.spatial.distance.pdist(
+    #         X=N, metric=dist_metric)
+    #
+    #     sorted_pairwise_dist.sort()
+    #
+    #     if pairwise_intraclass_dists is None:
+    #         pairwise_intraclass_dists = MFEClustering._all_intraclass_dists(
+    #             N=N,
+    #             y=y,
+    #             dist_metric=dist_metric,
+    #             classes=classes,
+    #             get_max_dist=False)
+    #
+    #     sum_intracl_dists = pairwise_intraclass_dists.sum(axis=1)
+    #
+    #     c_indexes = np.zeros(classes.size)
+    #
+    #     for i in np.arange(classes.size):
+    #         cl_pair_num = class_freqs[i] * (class_freqs[i] - 1) // 2
+    #
+    #         sum_d_rank_least = sorted_pairwise_dist[:cl_pair_num].sum()
+    #         sum_d_rank_greater = sorted_pairwise_dist[-cl_pair_num:].sum()
+    #
+    #         c_indexes[i] = ((sum_intracl_dists[i] - sum_d_rank_least) /
+    #                         (sum_d_rank_greater - sum_d_rank_least))
+    #
+    #     return c_indexes
