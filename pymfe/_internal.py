@@ -80,6 +80,7 @@ import pymfe.statistical as statistical
 import pymfe.info_theory as info_theory
 import pymfe.landmarking as landmarking
 import pymfe.relative as relative
+import pymfe.clustering as clustering
 import pymfe.model_based as model_based
 import pymfe.scoring as scoring
 
@@ -92,6 +93,7 @@ VALID_GROUPS = (
     "model-based",
     "info-theory",
     "relative",
+    "clustering",
 )  # type: t.Tuple[str, ...]
 
 GROUP_PREREQUISITES = (
@@ -101,6 +103,7 @@ GROUP_PREREQUISITES = (
     None,
     None,
     "landmarking",
+    None,
 )  # type: t.Tuple[t.Optional[str], ...]
 
 VALID_MFECLASSES = (
@@ -110,6 +113,7 @@ VALID_MFECLASSES = (
     model_based.MFEModelBased,
     info_theory.MFEInfoTheory,
     relative.MFERelativeLandmarking,
+    clustering.MFEClustering,
 )  # type: t.Tuple
 
 VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
@@ -1288,8 +1292,7 @@ def _equal_freq_discretization(data: np.ndarray,
         warnings.warn("It is not possible make equal discretization")
 
     hist_divs = np.unique(hist_divs)
-    aux = np.digitize(x=data, bins=hist_divs, right=True)
-    return aux
+    return np.digitize(x=data, bins=hist_divs, right=True)
 
 
 def transform_num(data_numeric: np.ndarray,
