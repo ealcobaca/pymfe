@@ -44,18 +44,22 @@ CLASSIFIERS = ['Intended Audience :: Science/Research',
                'Programming Language :: Python :: 3.7']
 
 
-INSTALL_REQUIRES = ['numpy', 'scipy', 'sklearn', 'patsy', 'pandas', 
-  'statsmodels']
+INSTALL_REQUIRES = ['numpy','scipy', 'sklearn', 'patsy', 'pandas',
+                    'statsmodels']
 
 
 EXTRAS_REQUIRE = {
     'code-check': [
         'pytest',
-        'mypy'
+        'mypy',
+        'liac-arff',
+        'flake8',
+        'pylint'
     ],
     'tests': [
         'pytest',
         'pytest-cov',
+        'liac-arff'
     ],
     'docs': [
         'sphinx',
