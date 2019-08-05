@@ -84,6 +84,10 @@ $ make test
 You can use the tag 'code-check' for chack the mypy, pylint and pep8:
 
 $ make code-check
+
+Note:
+    You should not forget to create tests for all new functionalities that you
+    implemented. The test can be found in './tests/' fold.
 """
 
 import typing as t
