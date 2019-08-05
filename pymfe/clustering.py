@@ -685,12 +685,10 @@ class MFEClustering:
 
     @classmethod
     def ft_ch(
-        cls,
-        N: np.ndarray,
-        y: np.ndarray
-    ) -> float:
+            cls,
+            N: np.ndarray,
+            y: np.ndarray) -> float:
         """Calinski and Harabaz index.
-
         Check `cahascore`_ for more information.
 
         Returns
