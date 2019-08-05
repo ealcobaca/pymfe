@@ -36,7 +36,7 @@ Note that all warnings must be fixed to your modifications be accepted in
 the master branch, so take your time to fix your variable types carefully.
 
 
-2. Use Pylint to check you code style and auto-formatters such as Yapf
+2. Use Pylint to check your code style and auto-formatters such as Yapf
 
 Pylint can be used to check if your code follow some coding practices
 adopted by the python community. You can install with with pip using the
@@ -72,6 +72,18 @@ You can use the Makefile provided in the root directory to run mypy,
 pylint, and also pytest. Obviously, all tests (both for coding style
 and programming logic) must pass in order to your modifications be
 accepted.
+
+You can use the tag 'test-cov' for make test and get the coverage:
+
+$ make test-cov
+
+You can use the tag 'test' for make only tests:
+
+$ make test
+
+You can use the tag 'code-check' for chack the mypy, pylint and pep8:
+
+$ make code-check
 """
 
 import typing as t
