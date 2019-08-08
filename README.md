@@ -104,7 +104,7 @@ print(ft)
 ## Documentation
 We write a great Documentation to guide you on how to use the pymfe library. You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
 You can find in the documentation interesting pages like:
-* [Installation guide](https://pymfe.readthedocs.io/en/latest/install.html)
+* [Getting started](https://pymfe.readthedocs.io/en/latest/install.html)
 * [API documentation](https://pymfe.readthedocs.io/en/latest/api.html)
 * [Examples](https://pymfe.readthedocs.io/en/latest/auto_examples/index.html)
 * [News about pymfe](https://pymfe.readthedocs.io/en/latest/new.html)
