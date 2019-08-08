@@ -26,7 +26,7 @@ pypi: clean
 	twine upload dist/*
 
 install-dev: install
-	pip install -U -r requirements-extra.txt
+	pip install -U -r requirements-dev.txt
 
 install:
 	pip install -U -r requirements.txt
