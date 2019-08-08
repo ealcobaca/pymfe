@@ -101,6 +101,9 @@ ft = mfe.extract(
 print(ft)
 ```
 
+## Documentation
+We write a great Documentation to guide you on how to use the pymfe library. You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
+
 ## Developer notes
 
 * We are glad to accept any contributions, please check [CONTRIBUTING](CONTRIVUTING.md) and the [DOCUMENTATION](https://pymfe.readthedocs.io/en/latest/?badge=latest).
