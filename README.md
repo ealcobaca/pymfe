@@ -111,13 +111,13 @@ You can find in the documentation interesting pages like:
 
 ## Developer notes
 
-* We are glad to accept any contributions, please check [CONTRIBUTING](CONTRIVUTING.md) and the [DOCUMENTATION](https://pymfe.readthedocs.io/en/latest/?badge=latest).
+* We are glad to accept any contributions, please check [Contributing](CONTRIVUTING.md) and the [Documentation](https://pymfe.readthedocs.io/en/latest/?badge=latest).
 * To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
 * In the current version, the meta-feature extractor supports only classification problems. The authors plan to extend the package to add clustering and regression measures and to support MtL evaluation measures. For more specific information on how to extract each group of measures, please refer to the functions documentation page and the examples contained therein. For a general overview of the `pymfe` package, please have a look at the associated documentation.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [License](LICENSE) file for details.
 
 ## About
 
