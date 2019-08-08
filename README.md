@@ -99,15 +99,18 @@ In the current version, the meta-feature extractor supports only classification 
 
 To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
 
-## About
 
-If you use pymfe in a scientific publication, we would appreciate citations to the following paper:
+
+## About:
+
+If you use the pymfe in scientific publication, we would appreciate citations to the following paper:
 ```
 @article{}
 ```
 
 ## References:
-
-1. Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406
+ 
+1. Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406.
 2. Pinto, F., Soares, C., & Mendes-Moreira, J. (2016, April). Towards automatic generation of metafeatures. In Pacific-Asia Conference on Knowledge Discovery and Data Mining (pp. 215-226). Springer, Cham.
+3. Brazdil, P., Carrier, C. G., Soares, C., & Vilalta, R. (2008). Metalearning: Applications to data mining. Springer Science & Business Media.
 
