@@ -103,6 +103,11 @@ print(ft)
 
 ## Documentation
 We write a great Documentation to guide you on how to use the pymfe library. You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
+You can find in the documentation interesting pages like:
+* [Installation guide]()
+* [API documentation]()
+* [Examples]()
+* [News about pymfe]
 
 ## Developer notes
 
@@ -129,4 +134,3 @@ We would like to thank every [Contributor](https://github.com/ealcobaca/pymfe/gr
 1. Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406.
 2. Pinto, F., Soares, C., & Mendes-Moreira, J. (2016, April). Towards automatic generation of metafeatures. In Pacific-Asia Conference on Knowledge Discovery and Data Mining (pp. 215-226). Springer, Cham.
 3. Brazdil, P., Carrier, C. G., Soares, C., & Vilalta, R. (2008). Metalearning: Applications to data mining. Springer Science & Business Media.
-
