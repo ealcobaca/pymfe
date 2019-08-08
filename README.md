@@ -111,14 +111,17 @@ To submit bugs and feature requests, report at [project issues](https://github.c
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## About:
+## About
 
 If you use the pymfe in scientific publication, we would appreciate citations to the following paper:
 ```
 @article{}
 ```
 
-## References:
+## Acknowledgments
+We would like to thank every [Contributor](https://github.com/ealcobaca/pymfe/graphs/contributors) directly or indirectly has helped this project to happen. Thank you all.
+
+## References
  
 1. Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406.
 2. Pinto, F., Soares, C., & Mendes-Moreira, J. (2016, April). Towards automatic generation of metafeatures. In Pacific-Asia Conference on Knowledge Discovery and Data Mining (pp. 215-226). Springer, Cham.
