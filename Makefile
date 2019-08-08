@@ -25,6 +25,8 @@ pypi: clean
 	python3 setup.py sdist bdist_wheel
 	twine upload dist/*
 
-install-dev:
-	pip install -U -r requirements.txt
+install-dev: install
 	pip install -U -r requirements-extra.txt
+
+install:
+	pip install -U -r requirements.txt
