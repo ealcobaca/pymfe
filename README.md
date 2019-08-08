@@ -37,6 +37,14 @@ It is possible to install the development version using:
 pip install -U git+https://github.com/ealcobaca/pymfe
 ```
 
+or
+
+```
+git clone https://github.com/ealcobaca/pymfe.git
+cd pymfe
+python3 setup.py install
+```
+
 ## Example of use
 
 The simplest way to extract meta-features is instantiating the `MFE` class. The parameters are the measures, the group of measures and the summarization functions to be extracted. The default parameter is extract all the measures. The `fit` function can be called by passing the `X` and `y`. The `extract` function is used to extract the related measures. A simple example is given next:
