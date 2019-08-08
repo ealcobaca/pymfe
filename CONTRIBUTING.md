@@ -85,7 +85,7 @@ tools:
         $ pip install pytest pytest-cov
         $ pytest tests/ --showlocals -v --cov=pymfe/
 
--  For Avoid source-code bug and keep quality, check with:
+-  For avoiding source-code bug and keep quality, check with:
 
         $ pip install pylint
         $ pylint path/to/module.py -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
@@ -94,7 +94,24 @@ tools:
 
         $ pip install mypy
         $ mypy path/to/module.py --ignore-missing-imports
+        
+We added a Makefile to execute all this command in a simple way:
 
+- For installing all necessary libraries:
+
+        $ make install-dev
+
+- For checking typing, source code style and code quality:
+
+        $ make code-check
+
+- For executing all the tests:
+
+        $ make test-cov
+
+- For executing all the tests:
+
+        $ make all
 
 Report bugs
 -----------
