@@ -107,7 +107,9 @@ In the current version, the meta-feature extractor supports only classification 
 
 To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
 
+## License
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## About:
 
