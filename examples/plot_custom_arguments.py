@@ -36,4 +36,4 @@ ft = mfe.extract(
     nr_norm={"method": "all", "failure": "hard", "threshold": 0.025},
     nr_cor_attr={"threshold": 0.6},
 )
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
