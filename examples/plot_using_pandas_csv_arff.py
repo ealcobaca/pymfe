@@ -36,7 +36,7 @@ y = pd.Series(np.repeat(['C1', 'C2'], sample_size/2))
 print("X shape --> ", X.shape)
 print("y shape --> ", y.shape)
 print("classes --> ", np.unique(y.values))
-print("X dtypes --> ", X.dtypes)
+print("X dtypes --> \n", X.dtypes)
 print("y dtypes --> ", y.dtypes)
 
 ###############################################################################
@@ -64,13 +64,13 @@ X, y = df.drop('class', axis=1), df['class']
 print("X shape --> ", X.shape)
 print("y shape --> ", y.shape)
 print("classes --> ", np.unique(y))
-print("X dtypes --> ", X.dtypes)
+print("X dtypes --> \n", X.dtypes)
 print("y dtypes --> ", y.dtypes)
 
 ###############################################################################
 # For extracting meta-features, you should send ``X`` and ``y`` as a sequence,
 # like numpy array or Python list.
-# It is easy to make this using ``pandas``:
+# It is easy to make this using pandas:
 mfe = MFE(
     groups=["general", "statistical", "info-theory"],
     random_state=42
