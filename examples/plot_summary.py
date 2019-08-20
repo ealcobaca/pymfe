@@ -31,25 +31,29 @@ X = data.data
 # deviation, among others. Any R method, can be used, as illustrated in the
 # following examples:
 
+###############################################################################
 # Apply several statistical measures as post processing
 mfe = MFE(summary=["max", "min", "median", "mean", "var", "sd", "kurtosis",
                    "skewness"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+###############################################################################
 # Apply quantile as post processing method
 mfe = MFE(features=["cor"], summary=["quantiles"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+###############################################################################
 # Apply histogram as post processing method
 mfe = MFE(features=["cor"], summary=["histogram"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+###############################################################################
 # Get the default values without summarize them
 mfe = MFE(features=["cor"], summary=None)
 mfe.fit(X, y)
