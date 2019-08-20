@@ -1144,11 +1144,24 @@ def check_data(X: t.Union[np.ndarray, list],
     if not isinstance(y, (np.ndarray, list)):
         raise TypeError('"y" is neither "list" nor "np.array".')
 
+    # We force numpy array to assume ``dtype=np.object`` because sometimes
+    # ``X`` can be a mixed matrix containing ``float``, ``int``,  and ``str``
+    # values. If we do not this, ``X`` will be converted to string matrix. This
+    # erroneous conversion could make numeric attributes are cast to string.
+    # Then, when pymfe makes the automatic conversion, they will be processed
+    # with one-hot-encoding, and we do not want that to happen.
+    # See this example:
+    #
+    # String
+    # >>>np.array(['test', 1])
+    #
+    # Object
+    # >>>np.array(['test', 1], dtype=np.object)
     if not isinstance(X, np.ndarray):
-        X = np.array(X)
+        X = np.array(X, dtype=np.object)
 
     if not isinstance(y, np.ndarray):
-        y = np.array(y)
+        y = np.array(y, dtype=np.object)
 
     y = y.flatten()
 
