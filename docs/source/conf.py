@@ -134,10 +134,18 @@ htmlhelp_basename = 'pymfe-docs'
 # ------ sphinx gallery ----------------------------------------------------
 
 sphinx_gallery_conf = {
-     # path to your example scripts
-     'examples_dirs': 'examples',
-     # path where to save gallery generated examples
-     'gallery_dirs': 'auto_examples',
+    # path to your example scripts
+    'examples_dirs': '../../examples',
+    # path where to save gallery generated examples
+    'gallery_dirs': 'auto_examples',
+    # Adding line numbers
+    # 'line_numbers': True
+    # 'plot_gallery': True,
+    # 'junit': '../test-results/sphinx-gallery/junit.xml',
+    # 'log_level': {'backreference_missing': 'warning'},
+    # 'subsection_order': ExplicitOrder(['../examples/sin_func',
+    #                                    '../examples/no_output',
+    #                                    '../tutorials/seaborn'])
 }
 
 
