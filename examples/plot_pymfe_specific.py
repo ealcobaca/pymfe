@@ -29,7 +29,7 @@ mfe = MFE(features=["attr_ent", "joint_ent"],
           summary=["median", "min", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 
 ###############################################################################
@@ -42,7 +42,7 @@ mfe = MFE(features=["can_cor", "cor", "iq_range"],
           summary=["median", "min", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 
 ###############################################################################
@@ -55,4 +55,4 @@ mfe = MFE(features=["attr_ent", "joint_ent", "can_cor", "cor", "iq_range"],
           summary=["median", "min", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
