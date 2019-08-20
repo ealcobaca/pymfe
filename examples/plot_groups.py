@@ -27,14 +27,14 @@ X = data.data
 mfe = MFE(groups=["general"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Extract only two general measures
 mfe = MFE(features=["nr_attr", "nr_class"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Statistical
@@ -52,14 +52,14 @@ print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 mfe = MFE(groups=["statistical"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Extract only two statistical measures
 mfe = MFE(features=["can_cor", "cor", "iq_range"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Information theory
@@ -78,14 +78,14 @@ print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 mfe = MFE(groups=["info-theory"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Extract only two info-theo measures
 mfe = MFE(features=["class_ent", "mut_inf"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Model based
@@ -102,14 +102,14 @@ print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 mfe = MFE(groups=["model-based"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Extract only two model-based measures
 mfe = MFE(features=["leaves", "nodel"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 
 ###############################################################################
@@ -127,11 +127,11 @@ print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 mfe = MFE(groups=["landmarking"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Extract only two landmarking measures
 mfe = MFE(features=["one_nn", "naive_bayes"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
