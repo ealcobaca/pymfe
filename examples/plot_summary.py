@@ -37,21 +37,21 @@ mfe = MFE(summary=["max", "min", "median", "mean", "var", "sd", "kurtosis",
                    "skewness"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Apply quantile as post processing method
 mfe = MFE(features=["cor"], summary=["quantiles"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Apply histogram as post processing method
 mfe = MFE(features=["cor"], summary=["histogram"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Get the default values without summarize them
