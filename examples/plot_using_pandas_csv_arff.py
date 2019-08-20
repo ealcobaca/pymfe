@@ -49,7 +49,7 @@ mfe = MFE(
 )
 mfe.fit(X.values, y.values)
 ft = mfe.extract(cat_cols='auto', suppress_warnings=True)
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 
 ###############################################################################
@@ -58,7 +58,6 @@ print(ft)
 # Getting data from CSV format
 df = pd.read_csv('data/data.csv')
 X, y = df.drop('class', axis=1), df['class']
-Xcsv = X
 
 ###############################################################################
 # Exploring data characteristics
@@ -78,7 +77,7 @@ mfe = MFE(
 )
 mfe.fit(X.values, y.values)
 ft = mfe.extract(cat_cols='auto', suppress_warnings=True)
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 
 ###############################################################################
@@ -107,7 +106,7 @@ mfe = MFE(
 )
 mfe.fit(X, y)
 ft = mfe.extract(cat_cols='auto', suppress_warnings=True)
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 # Or
 # We do not use the automatic detection of feature type here.
