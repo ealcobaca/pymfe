@@ -27,14 +27,14 @@ X = data.data
 mfe = MFE()
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Extracting general, statistical and information-theoretic measures
 mfe = MFE(groups=["general", "statistical", "info-theory"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 
 ###############################################################################
@@ -52,11 +52,11 @@ print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
 mfe = MFE(summary=["min", "median", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Compute all measures using quantile
 mfe = MFE(summary=["quantiles"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print("\n".join("{:50} {:50}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
