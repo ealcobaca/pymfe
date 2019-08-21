@@ -1275,7 +1275,10 @@ def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     ]
 
     named_data = {
-        attr_name: data_categoric[:, attr_index]
+        # attr_name: data_categoric[:, attr_index]
+        # We need to cast to 'str' because sometimes categorical can be set as
+        # 'string'.
+        attr_name: data_categoric[:, attr_index].astype('str')
         for attr_index, attr_name in enumerate(dummy_attr_names)
     }
 
