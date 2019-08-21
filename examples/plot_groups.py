@@ -1,6 +1,6 @@
 """
-03 - Extracting meta-features by group
-======================================
+Extracting meta-features by group
+=================================
 
 In this example, we will show you how to select different meta-features groups.
 """
@@ -132,6 +132,38 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 ###############################################################################
 # Extract only two landmarking measures
 mfe = MFE(features=["one_nn", "naive_bayes"])
+mfe.fit(X, y)
+ft = mfe.extract()
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+
+###############################################################################
+# Relative Landmarking
+# --------------------
+#
+# Relative Landmarking measures are simple and fast algorithms, from which
+# performance characteristics can be extracted. But different from landmarking,
+# a rank is returned where the best performance is the first ranked and the
+# worst the last one ranked.
+
+###############################################################################
+# Extract all relative landmarking measures
+mfe = MFE(groups=["relative"])
+mfe.fit(X, y)
+ft = mfe.extract()
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+
+###############################################################################
+# Clustering
+# ----------
+#
+# Clustering measures are based in clusteing algorithm, and clustering
+# correlation and dissimilarity measures.
+
+###############################################################################
+# Extract all clustering based measures
+mfe = MFE(groups=["clustering"])
 mfe.fit(X, y)
 ft = mfe.extract()
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
