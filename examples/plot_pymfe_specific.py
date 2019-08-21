@@ -1,5 +1,5 @@
 """
-02 - Select specific measures and summaries
+Select specific measures and summaries
 ===========================================
 
 To customize the measure extraction, is necessary to use the feature
