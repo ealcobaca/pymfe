@@ -26,17 +26,20 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 ###############################################################################
 # From the extract output, parse only the 'general' metafeatures
 ft_general = model.parse_by_group("general", ft)
-print(ft_general)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft_general[0],
+                                                           ft_general[1])))
 
 ###############################################################################
 # Actually, you can parse by various groups at once. In this case, the selected
 # metafeatures must be from one of the given groups.
 ft_subset = model.parse_by_group(["general", "model-based"], ft)
-print(ft_subset)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft_subset[0],
+                                                           ft_subset[1])))
 
 ###############################################################################
 # Maybe an uncommon scenario, given that the user already have instantiated
 # some MFE model to extract the metafeatures, but actually there's no need to
 # instantiate a MFE model to parse the results.
 ft_subset = MFE.parse_by_group(["general", "model-based"], ft)
-print(ft_subset)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft_subset[0],
+                                                           ft_subset[1])))
