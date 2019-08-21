@@ -1,5 +1,5 @@
 """
-06 - Using Pandas, CSV and ARFF files
+Using Pandas, CSV and ARFF files
 =====================================
 
 In this example we will show you how to use Pandas, CSV and ARFF in pymfe.
