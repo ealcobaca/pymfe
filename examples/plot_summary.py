@@ -1,5 +1,5 @@
 """
-04 - Using Summaries
+Using Summaries
 ====================
 
 In this example we will explain the different ways to select summary functions.
