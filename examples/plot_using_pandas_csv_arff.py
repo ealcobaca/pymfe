@@ -32,7 +32,7 @@ X = numeric.join(categoric)
 y = pd.Series(np.repeat(['C1', 'C2'], sample_size/2))
 
 ###############################################################################
-# Exploring data characteristics
+# Exploring characteristics of the data
 print("X shape --> ", X.shape)
 print("y shape --> ", y.shape)
 print("classes --> ", np.unique(y.values))
@@ -60,7 +60,7 @@ df = pd.read_csv('data/data.csv')
 X, y = df.drop('class', axis=1), df['class']
 
 ###############################################################################
-# Exploring data characteristics
+# Exploring characteristics of the data
 print("X shape --> ", X.shape)
 print("y shape --> ", y.shape)
 print("classes --> ", np.unique(y))
@@ -89,7 +89,7 @@ X = [i[:4] for i in data]
 y = [i[-1] for i in data]
 
 ###############################################################################
-# Exploring data characteristics
+# Exploring characteristics of the data
 print("X shape --> ", len(X))
 print("y shape --> ", len(y))
 print("classes --> ", np.unique(y))
@@ -99,7 +99,7 @@ print("y dtypes --> ", type(y))
 ###############################################################################
 # For extracting meta-features, you should send ``X`` and ``y`` as a sequence,
 # like numpy array or Python list.
-# It is directly:
+# You can do this directly:
 mfe = MFE(
     groups=["general", "statistical", "info-theory"],
     random_state=42
@@ -109,7 +109,7 @@ ft = mfe.extract(cat_cols='auto', suppress_warnings=True)
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
-# As an final example, we do not use the automatic detection of feature type
+# As a final example, we do not use the automatic detection of feature type
 # here. We use the ids provided by the liac-arff package.
 classid = 4
 data = arff.load(open('data/data.arff', 'r'), encode_nominal=True)
@@ -120,7 +120,7 @@ X = data[:, :classid]
 y = data[:, classid]
 
 ###############################################################################
-# Exploring data characteristic
+# Exploring characteristics of the data
 print("X shape --> ", len(X))
 print("y shape --> ", len(y))
 print("classes --> ", np.unique(y))
@@ -129,9 +129,7 @@ print("y dtypes --> ", type(y))
 
 ###############################################################################
 # For extracting meta-features, you should send ``X`` and ``y`` as a sequence,
-# like ``numpy`` array or python ``list``.
-# It is directly:
-
+# like numpy array or python list.
 mfe = MFE(
     groups=["general", "statistical", "info-theory"],
     random_state=42
@@ -139,6 +137,3 @@ mfe = MFE(
 mfe.fit(X, y, cat_cols=cat_cols)
 ft = mfe.extract(suppress_warnings=True)
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
-
-
-###############################################################################
