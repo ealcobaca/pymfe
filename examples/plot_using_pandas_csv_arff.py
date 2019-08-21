@@ -136,7 +136,7 @@ mfe = MFE(
     groups=["general", "statistical", "info-theory"],
     random_state=42
 )
-mfe.fit(X, y, cat_cols=[2, 3])
+mfe.fit(X, y, cat_cols=cat_cols)
 ft = mfe.extract(suppress_warnings=True)
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
