@@ -108,17 +108,18 @@ mfe.fit(X, y)
 ft = mfe.extract(cat_cols='auto', suppress_warnings=True)
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
-# Or
-# We do not use the automatic detection of feature type here.
-
+###############################################################################
+# As an final example, we do not use the automatic detection of feature type
+# here. We use the ids provided by the liac-arff package.
 classid = 4
 data = arff.load(open('data/data.arff', 'r'), encode_nominal=True)
-cat_idx = [n for n, i in enumerate(data['attributes'][:classid])
-           if isinstance(i[1], list)]
+cat_cols = [n for n, i in enumerate(data['attributes'][:classid])
+            if isinstance(i[1], list)]
 data = np.array(data['data'])
 X = data[:, :classid]
 y = data[:, classid]
 
+###############################################################################
 # Exploring data characteristic
 print("X shape --> ", len(X))
 print("y shape --> ", len(y))
@@ -126,14 +127,18 @@ print("classes --> ", np.unique(y))
 print("X dtypes --> ", type(X))
 print("y dtypes --> ", type(y))
 
-# For extracting meta-features, you should send X and y as a sequence, like
-# ``numpy`` array or python ``list``.
+###############################################################################
+# For extracting meta-features, you should send ``X`` and ``y`` as a sequence,
+# like ``numpy`` array or python ``list``.
 # It is directly:
 
 mfe = MFE(
     groups=["general", "statistical", "info-theory"],
     random_state=42
 )
-mfe.fit(X, y, cat_cols=cat_idx)
+mfe.fit(X, y, cat_cols=[2, 3])
 ft = mfe.extract(suppress_warnings=True)
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+
+###############################################################################
