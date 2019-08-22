@@ -1050,15 +1050,15 @@ class MFE:
 
         Parameters
         ----------
-        groups : :obj:`Sequence` of :obj:`str` or obj:`str`, optional:
+        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`, optional:
             Can be a string such value is a name of a specific metafeature
             group (see ``valid_groups`` method for more information) or a
             sequence of metafeature group names. It can be also None, which
             in that case all available metafeature names will be returned.
 
-        Return
-        ------
-        :obj:`Tuple` of `str`
+        Returns
+        -------
+        :obj: `Tuple` of `str`
             Tuple with all available metafeature names of the given ``groups``.
 
         Notes
