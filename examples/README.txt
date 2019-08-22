@@ -17,4 +17,4 @@ In MtL, meta-features are designed to extract general properties able to charact
 - **Model-based**: Measures designed to extract characteristics like the depth, the shape and size of a Decision Tree (DT) model induced from a dataset.
 - **Landmarking**: Represents the performance of simple and efficient learning algorithms.
 
-Below is a gallery of examples
+Below is a gallery of examples:
