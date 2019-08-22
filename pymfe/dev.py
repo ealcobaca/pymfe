@@ -1,10 +1,11 @@
 """A developer sample class for Metafeature groups.
+===================================================
 
 This class was built to give a model of how you should write a
 metafeature group class as a Pymfe developer. Please read this
 entire guide with attention before programming your own class.
 
-In the end of this reading, you will know:
+In the end of this reading, you will know
     * How to register your class as a valid MFE metafeature class
     * What are the special method name prefixes and how to use them
       properly
@@ -19,16 +20,17 @@ First, some tips and tricks which may help you follow the code
 standards stabilished in this library.
 
 1. Use type annotations as much as possible.
+--------------------------------------------
 
-Always run ``mypy`` to check if the variable types was specified correctly.
+Always run `mypy` to check if the variable types was specified correctly.
 You can install it with pip using the following code:
 
-$ pip install -U mypy
+>>> pip install -U mypy
 
 Use the following command before pushing your modifications to the remote
 repository:
 
-$ mypy pymfe --ignore-missing-imports
+>>> mypy pymfe --ignore-missing-imports
 
 The expected output for this command is no output.
 
@@ -36,22 +38,24 @@ Note that all warnings must be fixed to your modifications be accepted in
 the master branch, so take your time to fix your variable types carefully.
 
 
-2. Use Pylint to check your code style and auto-formatters such as Yapf
+2. Use `pylint` to check your code style and auto-formatters such as `yapf`
+---------------------------------------------------------------------------
 
 Pylint can be used to check if your code follow some coding practices
 adopted by the python community. You can install with with pip using the
 following command:
 
-$ pip install -U pylint
+>>> pip install -U pylint
 
 It can be harsh sometimes, so we have decided to disable some of the
 verifications. You can use the following command to check if your code
 met the standards stabilished in this library,
 
-$ pylint pymfe -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
+>>> pylint pymfe -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
 
-The expected output is something like:
-$ Your code has been rated at 10.00/10 (previous run: x/10, y)
+The expected output is something like
+
+>>> Your code has been rated at 10.00/10 (previous run: x/10, y)
 
 Your code will not be accepted in the master branch unless it gets the
 maximum pylint score.
@@ -59,35 +63,43 @@ maximum pylint score.
 Yapf is a code auto-formatter which usually solves a large amount of
 coding style related issues automatically.
 
-$ pip install -U yapf
+>>> pip install -U yapf
 
 If you use the flag ``-i``, Yapf changes your code in-place.
 
-$ yapf -i yourModulename.py
+>>> yapf -i yourModulename.py
 
 
 3. Make all verifications with the provided Makefile.
+-----------------------------------------------------
 
 You can use the Makefile provided in the root directory to run mypy,
 pylint, and also pytest. Obviously, all tests (both for coding style
 and programming logic) must pass in order to your modifications be
 accepted.
 
-You can use the tag 'test-cov' for make test and get the coverage:
+You can use the tag ``test-cov`` for make test and get the coverage:
 
-$ make test-cov
+>>> make test-cov
 
-You can use the tag 'test' for make only tests:
+You can use the tag ``test`` for make only tests:
 
-$ make test
+>>> make test
 
-You can use the tag 'code-check' for chack the mypy, pylint and pep8:
+You can use the tag ``code-check`` for chack the `mypy`, `pylint` and
+`pep8`:
 
-$ make code-check
+>>> make code-check
 
-Note:
-    You should not forget to create tests for all new functionalities that you
-    implemented. The test can be found in './tests/' fold.
+.. note::
+    You should not forget to create tests for all new functionalities that
+    you implemented. The test can be found in `./tests/` fold.
+
+.. note::
+    This class is being actualized in GitHub, check this
+    `link <https://github.com/ealcobaca/pymfe/blob/master/pymfe/dev.py>`_
+    to see the current version.
+
 """
 
 import typing as t
