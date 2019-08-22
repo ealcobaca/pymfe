@@ -1,5 +1,5 @@
 """
-Listing metafeatures, groups, and summaries available
+Listing available metafeatures, groups, and summaries
 =====================================================
 
 In this example, we will show you how to list the types of metafeatures,

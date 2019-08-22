@@ -56,7 +56,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 # Pandas CSV
 # ----------
 # Getting data from CSV format
-df = pd.read_csv('data/data.csv')
+df = pd.read_csv('../data/data.csv')
 X, y = df.drop('class', axis=1), df['class']
 
 ###############################################################################
@@ -84,7 +84,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 # ARFF
 # ----
 # Getting data from ARFF format:
-data = arff.load(open('data/data.arff', 'r'))['data']
+data = arff.load(open('../data/data.arff', 'r'))['data']
 X = [i[:4] for i in data]
 y = [i[-1] for i in data]
 
@@ -112,7 +112,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 # As a final example, we do not use the automatic detection of feature type
 # here. We use the ids provided by the liac-arff package.
 classid = 4
-data = arff.load(open('data/data.arff', 'r'), encode_nominal=True)
+data = arff.load(open('../data/data.arff', 'r'), encode_nominal=True)
 cat_cols = [n for n, i in enumerate(data['attributes'][:classid])
             if isinstance(i[1], list)]
 data = np.array(data['data'])
