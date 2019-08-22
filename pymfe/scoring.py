@@ -20,7 +20,7 @@ def balanced_accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 def f1(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """ Calculates the F1-score of a classification model.
     """
-    return sklearn.metrics.f1_score(y_true, y_pred, average='micro')
+    return sklearn.metrics.f1_score(y_true, y_pred, average='weighted')
 
 
 def kappa(y_true: np.ndarray, y_pred: np.ndarray) -> float:
