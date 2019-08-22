@@ -268,3 +268,26 @@ class TestErrorsWarnings:
         expected_msg_num = 21
 
         assert captured.count("\n") == expected_msg_num
+
+
+def test_error_rescale_data():
+    X, y = load_xy(0)
+    with pytest.raises(ValueError):
+        _internal.rescale_data(X, option="42")
+
+
+def test_error_transform_num():
+    X, y = load_xy(0)
+    with pytest.raises(TypeError):
+            _internal.transform_num(X, num_bins='')
+
+    with pytest.raises(ValueError):
+        _internal.transform_num(X, num_bins=-1)
+
+def test_isnumeric_check():
+    assert _internal.isnumeric([]) == False
+
+def test_error_check_data():
+    X, y = load_xy(0)
+    with pytest.raises(TypeError):
+        _internal.check_data(X, y='')
