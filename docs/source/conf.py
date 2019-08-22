@@ -42,6 +42,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.linkcode',
+    'sphinx.ext.intersphinx',
     'sphinx_gallery.gen_gallery',
     'numpydoc',
 ]
@@ -131,15 +132,31 @@ htmlhelp_basename = 'pymfe-docs'
 # ]
 
 
+# intersphinx configuration
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/{.major}'.format(
+        sys.version_info), None),
+    'numpy': ('https://docs.scipy.org/doc/numpy/', None),
+    'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
+    'matplotlib': ('https://matplotlib.org/', None),
+    'sklearn': ('http://scikit-learn.org/stable', None),
+    'pandas': ('https://pandas.pydata.org/pandas-docs/stable/', None),
+    'arff': ('https://pythonhosted.org/liac-arff/', None)
+}
+
 # ------ sphinx gallery ----------------------------------------------------
 
 sphinx_gallery_conf = {
+    'doc_module': 'pymfe',
+    'backreferences_dir': os.path.join('generated'),
     # path to your example scripts
     'examples_dirs': '../../examples',
     # path where to save gallery generated examples
     'gallery_dirs': 'auto_examples',
-    # Adding line numbers
-    # 'line_numbers': True
+    'reference_url': {
+        # The module you locally document uses None
+        'pymfe': None,
+    }
     # 'plot_gallery': True,
     # 'junit': '../test-results/sphinx-gallery/junit.xml',
     # 'log_level': {'backreference_missing': 'warning'},
