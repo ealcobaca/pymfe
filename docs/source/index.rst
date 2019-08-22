@@ -12,6 +12,7 @@ Welcome to pymfe's documentation!
    :caption: Getting Started
 
    install
+   using
 
 .. toctree::
    :maxdepth: 2
