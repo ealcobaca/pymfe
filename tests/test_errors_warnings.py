@@ -1,5 +1,6 @@
 """Test module for MFE class errors and warnings."""
 import pytest
+import numpy as np
 
 from pymfe.mfe import MFE
 from pymfe import _internal
@@ -301,7 +302,6 @@ class TestErrorsWarnings:
             mfe = MFE()
             mfe._fill_col_ind_by_type()
 
-        import numpy as np
         X = [[1, 2, 'a', 'b']]*10 + [[3, 4, 'c', 'd']]*10
         y = [0]*10 + [1]*10
 
@@ -319,3 +319,23 @@ class TestErrorsWarnings:
         mfe.X, mfe.y = np.array(X), np.array(y)
         mfe._fill_col_ind_by_type(cat_cols=[2, 3])
         assert mfe._attr_indexes_cat == (2, 3)
+
+    def test_error__set_data_categoric():
+        with pytest.raises(TypeError):
+            mfe = MFE()
+            mfe._set_data_categoric(True)
+
+        with pytest.raises(TypeError):
+            mfe = MFE()
+            mfe.X = np.array([])
+            mfe._set_data_categoric(True)
+
+    def test_error__set_data_numeric():
+        with pytest.raises(TypeError):
+            mfe = MFE()
+            mfe._set_data_numeric(True)
+
+        with pytest.raises(TypeError):
+            mfe = MFE()
+            mfe.X = np.array([])
+            mfe._set_data_numeric(True)
