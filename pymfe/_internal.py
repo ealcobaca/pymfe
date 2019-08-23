@@ -1,5 +1,6 @@
 """This module provides useful functions for the MFE package.
 
+
 Attributes:
     VALID_VALUE_PREFIX (:obj:`str`): Prefix which all tuples that
         keep valid values for custom user options must use in its name.
@@ -79,6 +80,7 @@ import pymfe.statistical as statistical
 import pymfe.info_theory as info_theory
 import pymfe.landmarking as landmarking
 import pymfe.relative as relative
+import pymfe.clustering as clustering
 import pymfe.model_based as model_based
 import pymfe.scoring as scoring
 
@@ -91,6 +93,7 @@ VALID_GROUPS = (
     "model-based",
     "info-theory",
     "relative",
+    "clustering",
 )  # type: t.Tuple[str, ...]
 
 GROUP_PREREQUISITES = (
@@ -100,6 +103,7 @@ GROUP_PREREQUISITES = (
     None,
     None,
     "landmarking",
+    None,
 )  # type: t.Tuple[t.Optional[str], ...]
 
 VALID_MFECLASSES = (
@@ -109,6 +113,7 @@ VALID_MFECLASSES = (
     model_based.MFEModelBased,
     info_theory.MFEInfoTheory,
     relative.MFERelativeLandmarking,
+    clustering.MFEClustering,
 )  # type: t.Tuple
 
 VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
@@ -1139,11 +1144,24 @@ def check_data(X: t.Union[np.ndarray, list],
     if not isinstance(y, (np.ndarray, list)):
         raise TypeError('"y" is neither "list" nor "np.array".')
 
+    # We force numpy array to assume ``dtype=np.object`` because sometimes
+    # ``X`` can be a mixed matrix containing ``float``, ``int``,  and ``str``
+    # values. If we do not this, ``X`` will be converted to string matrix. This
+    # erroneous conversion could make numeric attributes are cast to string.
+    # Then, when pymfe makes the automatic conversion, they will be processed
+    # with one-hot-encoding, and we do not want that to happen.
+    # See this example:
+    #
+    # String
+    # >>>np.array(['test', 1])
+    #
+    # Object
+    # >>>np.array(['test', 1], dtype=np.object)
     if not isinstance(X, np.ndarray):
-        X = np.array(X)
+        X = np.array(X, dtype=np.object)
 
     if not isinstance(y, np.ndarray):
-        y = np.array(y)
+        y = np.array(y, dtype=np.object)
 
     y = y.flatten()
 
@@ -1257,7 +1275,10 @@ def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     ]
 
     named_data = {
-        attr_name: data_categoric[:, attr_index]
+        # attr_name: data_categoric[:, attr_index]
+        # We need to cast to 'str' because sometimes categorical can be set as
+        # 'string'.
+        attr_name: data_categoric[:, attr_index].astype('str')
         for attr_index, attr_name in enumerate(dummy_attr_names)
     }
 
@@ -1266,11 +1287,27 @@ def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     return np.asarray(patsy.dmatrix(formula, named_data))
 
 
-def _equal_freq_discretization(data: np.ndarray, num_bins: int) -> np.ndarray:
+def _equal_freq_discretization(data: np.ndarray,
+                               num_bins: int,
+                               tol: float = 1e-8) -> np.ndarray:
     """Discretize a 1-D numeric array into an equal-frequency histogram."""
     perc_interval = 100.0 / num_bins
     perc_range = np.arange(perc_interval, 100, perc_interval)
     hist_divs = np.percentile(data, perc_range)
+
+    # Sometimes the 'hist_divs' is not appropriated.
+    # For example when all values are constants. It implies in 'hist_divs'
+    # repetitive values.
+    # To avoid partitions with the same value, we check if all partitions are
+    # different. Unfortunately, it leads to a non-equal frequency
+    # discretization.
+    aux = len(hist_divs)
+    diffs = np.append(True, np.diff(hist_divs))
+    hist_divs = hist_divs[diffs > tol]
+    if aux != len(hist_divs):
+        warnings.warn("It is not possible make equal discretization")
+
+    hist_divs = np.unique(hist_divs)
     return np.digitize(x=data, bins=hist_divs, right=True)
 
 

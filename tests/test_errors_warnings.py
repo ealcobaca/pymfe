@@ -1,5 +1,6 @@
 """Test module for MFE class errors and warnings."""
 import pytest
+import numpy as np
 
 from pymfe.mfe import MFE
 from pymfe import _internal
@@ -13,6 +14,10 @@ class TestErrorsWarnings:
     def test_error_empty_data_1(self):
         with pytest.raises(TypeError):
             MFE().fit(X=None, y=None)
+
+    def test_error_sample_size(self):
+        with pytest.raises(ValueError):
+            MFE(sample_size=-1)
 
     def test_error_empty_data_2(self):
         with pytest.raises(TypeError):
@@ -268,3 +273,69 @@ class TestErrorsWarnings:
         expected_msg_num = 21
 
         assert captured.count("\n") == expected_msg_num
+
+    def test_error_rescale_data(self):
+        X, y = load_xy(0)
+        with pytest.raises(ValueError):
+            _internal.rescale_data(X, option="42")
+
+
+    def test_error_transform_num(self):
+        X, y = load_xy(0)
+        with pytest.raises(TypeError):
+            _internal.transform_num(X, num_bins='')
+
+        with pytest.raises(ValueError):
+            _internal.transform_num(X, num_bins=-1)
+
+    def test_isnumeric_check(self):
+        assert _internal.isnumeric([]) is False
+
+    def test_error_check_data(self):
+        X, y = load_xy(0)
+        with pytest.raises(TypeError):
+            _internal.check_data(X, y='')
+
+    def test_errors__fill_col_ind_by_type(self):
+        X, y = load_xy(0)
+        with pytest.raises(TypeError):
+            mfe = MFE()
+            mfe._fill_col_ind_by_type()
+
+        X = [[1, 2, 'a', 'b']]*10 + [[3, 4, 'c', 'd']]*10
+        y = [0]*10 + [1]*10
+
+        mfe = MFE()
+        mfe.X, mfe.y = np.array(X), np.array(y)
+        mfe._fill_col_ind_by_type(cat_cols=None)
+        assert mfe._attr_indexes_cat == ()
+
+        mfe = MFE()
+        mfe.X, mfe.y = np.array(X), np.array(y)
+        mfe._fill_col_ind_by_type(cat_cols="auto", check_bool=True)
+        assert len(mfe._attr_indexes_cat) == 4
+
+        mfe = MFE()
+        mfe.X, mfe.y = np.array(X), np.array(y)
+        mfe._fill_col_ind_by_type(cat_cols=[2, 3])
+        assert mfe._attr_indexes_cat == (2, 3)
+
+    def test_error__set_data_categoric(self):
+        with pytest.raises(TypeError):
+            mfe = MFE()
+            mfe._set_data_categoric(True)
+
+        with pytest.raises(TypeError):
+            mfe = MFE()
+            mfe.X = np.array([])
+            mfe._set_data_categoric(True)
+
+    def test_error__set_data_numeric(self):
+        with pytest.raises(TypeError):
+            mfe = MFE()
+            mfe._set_data_numeric(True)
+
+        with pytest.raises(TypeError):
+            mfe = MFE()
+            mfe.X = np.array([])
+            mfe._set_data_numeric(True)

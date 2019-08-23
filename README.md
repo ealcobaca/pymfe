@@ -37,6 +37,14 @@ It is possible to install the development version using:
 pip install -U git+https://github.com/ealcobaca/pymfe
 ```
 
+or
+
+```
+git clone https://github.com/ealcobaca/pymfe.git
+cd pymfe
+python3 setup.py install
+```
+
 ## Example of use
 
 The simplest way to extract meta-features is instantiating the `MFE` class. The parameters are the measures, the group of measures and the summarization functions to be extracted. The default parameter is extract all the measures. The `fit` function can be called by passing the `X` and `y`. The `extract` function is used to extract the related measures. A simple example is given next:
@@ -93,12 +101,36 @@ ft = mfe.extract(
 print(ft)
 ```
 
+## Documentation
+We write a great Documentation to guide you on how to use the pymfe library. You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
+You can find in the documentation interesting pages like:
+* [Getting started](https://pymfe.readthedocs.io/en/latest/install.html)
+* [API documentation](https://pymfe.readthedocs.io/en/latest/api.html)
+* [Examples](https://pymfe.readthedocs.io/en/latest/auto_examples/index.html)
+* [News about pymfe](https://pymfe.readthedocs.io/en/latest/new.html)
+
 ## Developer notes
 
-In the current version, the meta-feature extractor supports only classification problems. The authors plan to extend the package to add clustering and regression measures and to support MtL evaluation measures. For more specific information on how to extract each group of measures, please refer to the functions documentation page and the examples contained therein. For a general overview of the `pymfe` package, please have a look at the associated documentation.
+* We are glad to accept any contributions, please check [Contributing](CONTRIVUTING.md) and the [Documentation](https://pymfe.readthedocs.io/en/latest/?badge=latest).
+* To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
+* In the current version, the meta-feature extractor supports only classification problems. The authors plan to extend the package to add clustering and regression measures and to support MtL evaluation measures. For more specific information on how to extract each group of measures, please refer to the functions documentation page and the examples contained therein. For a general overview of the `pymfe` package, please have a look at the associated documentation.
 
-To cite `pymfe` in publications use: 
+## License
 
-* Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406
+This project is licensed under the MIT License - see the [License](LICENSE) file for details.
 
-To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
+## About
+
+If you use the pymfe in scientific publication, we would appreciate citations to the following paper:
+```
+@article{}
+```
+
+## Acknowledgments
+We would like to thank every [Contributor](https://github.com/ealcobaca/pymfe/graphs/contributors) directly or indirectly has helped this project to happen. Thank you all.
+
+## References
+ 
+1. Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406.
+2. Pinto, F., Soares, C., & Mendes-Moreira, J. (2016, April). Towards automatic generation of metafeatures. In Pacific-Asia Conference on Knowledge Discovery and Data Mining (pp. 215-226). Springer, Cham.
+3. Brazdil, P., Carrier, C. G., Soares, C., & Vilalta, R. (2008). Metalearning: Applications to data mining. Springer Science & Business Media.

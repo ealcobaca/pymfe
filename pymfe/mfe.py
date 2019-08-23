@@ -523,8 +523,8 @@ class MFE:
                 )
 
         elif (isinstance(cat_cols, (np.ndarray, collections.Iterable))
-              and not isinstance(cat_cols, str)
-              and all(isinstance(x, int) for x in cat_cols)):
+              and not isinstance(cat_cols, str)):
+            # and all(isinstance(x, int) for x in cat_cols)):
             categorical_cols = [i in cat_cols for i in range(self.X.shape[1])]
 
         else:
@@ -1050,15 +1050,15 @@ class MFE:
 
         Parameters
         ----------
-        groups : :obj:`Sequence` of :obj:`str` or obj:`str`, optional:
+        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`, optional:
             Can be a string such value is a name of a specific metafeature
             group (see ``valid_groups`` method for more information) or a
             sequence of metafeature group names. It can be also None, which
             in that case all available metafeature names will be returned.
 
-        Return
-        ------
-        :obj:`Tuple` of `str`
+        Returns
+        -------
+        :obj: `Tuple` of `str`
             Tuple with all available metafeature names of the given ``groups``.
 
         Notes

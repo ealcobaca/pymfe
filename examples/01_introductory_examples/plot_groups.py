@@ -1,6 +1,6 @@
 """
-03 - Extracting meta-features by group
-======================================
+Extracting meta-features by group
+=================================
 
 In this example, we will show you how to select different meta-features groups.
 """
@@ -22,17 +22,19 @@ X = data.data
 # attributes in the dataset and the number of output values (classes) in the
 # dataset, respectively. The following examples illustrate these measures:
 
+###############################################################################
 # Extract all general measures
 mfe = MFE(groups=["general"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+###############################################################################
 # Extract only two general measures
 mfe = MFE(features=["nr_attr", "nr_class"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Statistical
@@ -45,17 +47,19 @@ print(ft)
 # of each pair of attributes and the skewness of the numeric attributes in the
 # dataset, respectively. The following examples illustrate these measures:
 
+###############################################################################
 # Extract all statistical measures
 mfe = MFE(groups=["statistical"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+###############################################################################
 # Extract only two statistical measures
 mfe = MFE(features=["can_cor", "cor", "iq_range"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Information theory
@@ -69,17 +73,19 @@ print(ft)
 # class in the dataset, respectively. The following examples illustrate these
 # measures:
 
+###############################################################################
 # Extract all info-theo measures
 mfe = MFE(groups=["info-theory"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+###############################################################################
 # Extract only two info-theo measures
 mfe = MFE(features=["class_ent", "mut_inf"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Model based
@@ -91,17 +97,19 @@ print(ft)
 # of nodes (``nodes``) of the tree. The following examples illustrate these
 # measures:
 
+###############################################################################
 # Extract all model-based measures
 mfe = MFE(groups=["model-based"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+###############################################################################
 # Extract only two model-based measures
 mfe = MFE(features=["leaves", "nodel"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 
 ###############################################################################
@@ -114,14 +122,48 @@ print(ft)
 # and 1-Nearest Neighbor (``one_nn``). The following examples illustrate these
 # measures:
 
+###############################################################################
 # Extract all landmarking measures
 mfe = MFE(groups=["landmarking"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+###############################################################################
 # Extract only two landmarking measures
 mfe = MFE(features=["one_nn", "naive_bayes"])
 mfe.fit(X, y)
 ft = mfe.extract()
-print(ft)
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+
+###############################################################################
+# Relative Landmarking
+# --------------------
+#
+# Relative Landmarking measures are simple and fast algorithms, from which
+# performance characteristics can be extracted. But different from landmarking,
+# a rank is returned where the best performance is the first ranked and the
+# worst the last one ranked.
+
+###############################################################################
+# Extract all relative landmarking measures
+mfe = MFE(groups=["relative"])
+mfe.fit(X, y)
+ft = mfe.extract()
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+
+###############################################################################
+# Clustering
+# ----------
+#
+# Clustering measures are based in clusteing algorithm, and clustering
+# correlation and dissimilarity measures.
+
+###############################################################################
+# Extract all clustering based measures
+mfe = MFE(groups=["clustering"])
+mfe.fit(X, y)
+ft = mfe.extract()
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
