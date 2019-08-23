@@ -4,4 +4,4 @@ Todo:
     More information here.
 """
 
-from ._version import __version__
+from ._version import __version__  # noqa: ignore

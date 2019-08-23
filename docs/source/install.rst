@@ -39,8 +39,8 @@ Test and coverage
 
 You want to test/test-coverage the code before to install::
 
-  $ make test
+  $ make test-cov
 
-You can also use `pytest`::
+Or::
 
-  $ pytest pymfe -v
+  $ pytest --cov=pymfe/ tests/

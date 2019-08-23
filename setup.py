@@ -1,17 +1,13 @@
 """Setup for pymfe package."""
 import setuptools
 import os
-
-# get __version__ from _version.py
-ver_file = os.path.join('pymfe', '_version.py')
-with open(ver_file) as f:
-    exec(f.read())
+import pymfe
 
 
 NAME = 'pymfe'
 
 
-VERSION = __version__
+VERSION = pymfe.__version__
 
 
 AUTHOR = 'Edesio Alcobaça, Felipe Alves Siqueira, Luis Paulo Faina Garcia'
@@ -48,13 +44,22 @@ CLASSIFIERS = ['Intended Audience :: Science/Research',
                'Programming Language :: Python :: 3.7']
 
 
-INSTALL_REQUIRES = ['numpy', 'scipy', 'sklearn', 'patsy', 'pandas']
+INSTALL_REQUIRES = ['numpy','scipy', 'sklearn', 'patsy', 'pandas',
+                    'statsmodels']
 
 
 EXTRAS_REQUIRE = {
+    'code-check': [
+        'pytest',
+        'mypy',
+        'liac-arff',
+        'flake8',
+        'pylint'
+    ],
     'tests': [
         'pytest',
         'pytest-cov',
+        'liac-arff'
     ],
     'docs': [
         'sphinx',

@@ -1,0 +1,12 @@
+pytest
+mypy
+liac-arff
+flake8
+pylint
+pytest
+pytest-cov
+liac-arff
+sphinx
+sphinx-gallery
+sphinx_rtd_theme
+numpydoc

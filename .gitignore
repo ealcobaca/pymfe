@@ -1,3 +1,7 @@
+# envs
+env3.7
+env3.6
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
