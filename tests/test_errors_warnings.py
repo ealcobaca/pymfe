@@ -320,7 +320,7 @@ class TestErrorsWarnings:
         mfe._fill_col_ind_by_type(cat_cols=[2, 3])
         assert mfe._attr_indexes_cat == (2, 3)
 
-    def test_error__set_data_categoric():
+    def test_error__set_data_categoric(self):
         with pytest.raises(TypeError):
             mfe = MFE()
             mfe._set_data_categoric(True)
@@ -330,7 +330,7 @@ class TestErrorsWarnings:
             mfe.X = np.array([])
             mfe._set_data_categoric(True)
 
-    def test_error__set_data_numeric():
+    def test_error__set_data_numeric(self):
         with pytest.raises(TypeError):
             mfe = MFE()
             mfe._set_data_numeric(True)
