@@ -2,6 +2,7 @@
 import pytest
 
 from pymfe.mfe import MFE
+from pymfe.clustering import MFEClustering
 from tests.utils import load_xy
 import numpy as np
 
@@ -87,3 +88,28 @@ class TestClustering():
 
         else:
             assert np.allclose(value, exp_value)
+
+    @staticmethod
+    def test_precompute_nearest_neighbors():
+        N = np.array([[1, 2, 3], [4, 5, 6]])
+        y = np.array([1, 2])
+        aux = MFEClustering.precompute_nearest_neighbors(
+            N, y, class_freqs=None)
+
+        assert isinstance(aux, dict)
+        assert len(aux) == 1
+        assert np.allclose(aux['nearest_neighbors'], np.array([[1], [0]]))
+
+    @staticmethod
+    def test_errors_get_class_representatives():
+        N = np.array([[1, 2, 3], [4, 5, 6]])
+        y = np.array([1, 2])
+        with pytest.raises(ValueError):
+            MFEClustering._get_class_representatives(N, y, representative='42')
+
+        with pytest.raises(TypeError):
+            MFEClustering._get_class_representatives(N, y, representative=1)
+
+        with pytest.raises(TypeError):
+            MFEClustering._get_class_representatives(
+                N, y, classes=np.array([]))
