@@ -1,0 +1,11 @@
+numpy
+scipy
+sklearn
+patsy
+pandas
+statsmodels
+sphinx
+sphinx-gallery
+sphinx_rtd_theme
+numpydoc
+liac-arff
