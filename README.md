@@ -122,7 +122,7 @@ This project is licensed under the MIT License - see the [License](LICENSE) file
 
 ## Cite Us
 
-If you use the pymfe in scientific publication, we would appreciate citations to the following paper:
+If you use the pymfe or [mfe](https://github.com/rivolli/mfe) in scientific publication, we would appreciate citations to the following paper:
 ```
 @article{}
 ```
