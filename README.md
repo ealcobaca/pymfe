@@ -16,7 +16,7 @@ In MtL, meta-features are designed to extract general properties able to charact
 * **Statistical**: Standard statistical measures to describe the numerical properties of a distribution of data.
 * **Information-theoretic**: Particularly appropriate to describe discrete (categorical) attributes and their relationship with the classes.
 * **Model-based**: Measures designed to extract characteristics like the depth, the shape and size of a Decision Tree (DT) model induced from a dataset.
-* **Landmarking**: Represents the performance of simple and efficient learning algorithms. Include the subsampling and relative strategies to decrease the computation cost and enrich the relations between these meta-features. (relative and subsampling landmarking are also available)
+* **Landmarking**: Represents the performance of simple and efficient learning algorithms. Include the subsampling and relative strategies to decrease the computation cost and enrich the relations between these meta-features (relative and subsampling landmarking are also available).
 * **Clustering:** Clustering measures extract information about dataset based on external validation indexes.
 
 ## Dependencies
@@ -120,7 +120,7 @@ You can find in the documentation interesting pages like:
 
 This project is licensed under the MIT License - see the [License](LICENSE) file for details.
 
-## About
+## Cite Us
 
 If you use the pymfe in scientific publication, we would appreciate citations to the following paper:
 ```
