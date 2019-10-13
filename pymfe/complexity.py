@@ -53,8 +53,6 @@ class MFEComplexity:
     def precompute_fx(cls,
                       N: np.ndarray,
                       y: np.ndarray,
-                      classes: np.ndarray,
-                      class_freqs: np.ndarray,
                       **kwargs
                       ) -> t.Dict[str, t.Any]:
 
