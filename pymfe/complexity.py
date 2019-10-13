@@ -58,6 +58,7 @@ class MFEComplexity:
 
         prepcomp_vals = {}
 
+        print("ENTROU!!")
         classes, idx_classes, y_idx, class_freqs = np.unique(
             y, return_index=True, return_inverse=True, return_counts=True)
 
@@ -65,8 +66,10 @@ class MFEComplexity:
         # an alternative is given above
         # idx_class = np.zeros(N.shape[0], idx_classes.shape[0])
         # idx_class[np.arrange(y.shape[0]), y_idx] = 1
-        y_idx_all_classes = [np.equal(y_idx, idx) for idx in idx_classes]
+        y_idx_all_classes = [np.equal(y_idx, idx)
+                             for idx in range(classes.shape[0])]
 
+        print(y_idx_all_classes)
         # get min max for all columns by class
         # line.... --> class
         # columns. --> features
@@ -127,7 +130,7 @@ class MFEComplexity:
         :obj:`np.ndarray`
             The performance of each fold.
         """
-        idx_min, min_n_fi, _ = _compute_f3(N, y, minmax, maxmin)
+        idx_min, min_n_fi, _ = cls._compute_f3(N, y, minmax, maxmin)
         f3 = min_n_fi[idx_min] / N.shape[0]
 
         return f3
