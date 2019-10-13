@@ -5,7 +5,7 @@ import typing as t
 import numpy as np
 
 
-class MFEcomplexity:
+class MFEComplexity:
     """Keep methods for metafeatures of ``landmarking`` group.
 
     The convention adopted for metafeature extraction related methods is to
@@ -80,7 +80,7 @@ class MFEcomplexity:
         max_cls = np.array(max_cls)
 
         if N is not None and y is not None:
-            if "minmax" not in kwargs
+            if "minmax" not in kwargs:
                 minmax = np.max(max_cls, axis=0)
                 prepcomp_vals["minmax"] = minmax
             if "maxmin" not in kwargs:
