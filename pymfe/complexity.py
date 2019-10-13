@@ -58,7 +58,6 @@ class MFEComplexity:
 
         prepcomp_vals = {}
 
-        print("ENTROU!!")
         classes, idx_classes, y_idx, class_freqs = np.unique(
             y, return_index=True, return_inverse=True, return_counts=True)
 
@@ -69,7 +68,6 @@ class MFEComplexity:
         y_idx_all_classes = [np.equal(y_idx, idx)
                              for idx in range(classes.shape[0])]
 
-        print(y_idx_all_classes)
         # get min max for all columns by class
         # line.... --> class
         # columns. --> features
@@ -88,6 +86,7 @@ class MFEComplexity:
                 maxmin = np.max(min_cls)
                 prepcomp_vals["maxmin"] = maxmin
 
+        print(precompute_vals)
         return prepcomp_vals
 
     @staticmethod
@@ -167,7 +166,7 @@ class MFEComplexity:
         maxmin_ = maxmin
         for i in range(N.shape[1]):
             # True if the example is in the overlapping region
-            idx_min, _, overlapped_region_by_feature = _compute_f3(
+            idx_min, _, overlapped_region_by_feature = cls._compute_f3(
                 N, y, minmax, maxmin)
 
             # boolean that if True, this example is in the overlapping region
