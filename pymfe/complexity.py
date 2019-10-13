@@ -68,6 +68,8 @@ class MFELandmarking:
         classes, idx_classes, y_idx, class_freqs = np.unique(
             y, return_index=True, return_inverse=True, return_counts=True)
 
+        # I think we could improve this part of the code
+        # an alternative is given above
         # idx_class = np.zeros(N.shape[0], idx_classes.shape[0])
         # idx_class[np.arrange(y.shape[0]), y_idx] = 1
         y_idx_all_classes = [np.equal(y_idx, idx) for idx in idx_classes]
@@ -117,9 +119,56 @@ class MFELandmarking:
         :obj:`np.ndarray`
             The performance of each fold.
         """
-        # True if the example is in the overlapping region
-        overlapped_region_by_feature = np.logical_and(N > maxmin, N < maxmin)
-        n_fi = np.sum(overlapped_region_by_feature, axis=0)
-        f3 = np.min(n_fi) / N.shape[0]
+        idx_min, min_n_fi, _ = _compute_f3(N, y, minmax, maxmin)
+        f3 = min_n_fi[idx_min] / N.shape[0]
 
         return f3
+
+    @staticmethod
+    def _compute_f3(N_: np.ndarray,
+                    y_: np.ndarray,
+                    minmax_: np.ndarray,
+                    maxmin_: np.ndarray
+                    ) -> np.ndarray:
+
+         # True if the example is in the overlapping region
+        overlapped_region_by_feature = np.logical_and(N_ > maxmin, N_ < maxmin)
+        n_fi = np.sum(overlapped_region_by_feature, axis=0)
+        min_n_fi = np.min(n_fi)
+        idx_min = np.argmin(min_n_fi)
+
+        return idx_min, min_n_fi, overlapped_region_by_feature
+
+    @classmethod
+    def ft_f4(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              minmax: np.ndarray,
+              maxmin: np.ndarray
+              ) -> np.ndarray:
+        """Performance of a the best single decision tree node.
+
+        Construct a single decision tree node model induced by the most
+        informative attribute to establish the linear separability.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            The performance of each fold.
+        """
+        # True if the example is in the overlapping region
+        _compute_f3()
+        min_n_fi = np.min(n_fi)
+        idx_min = np.argmin(min_n_fi)
+        f3 = min_n_fi[idx_min] / N.shape[0]
+
+        return f3
+
