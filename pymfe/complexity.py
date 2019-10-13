@@ -3,14 +3,9 @@
 import typing as t
 
 import numpy as np
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import StratifiedKFold
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
 
-class MFELandmarking:
+class MFEcomplexity:
     """Keep methods for metafeatures of ``landmarking`` group.
 
     The convention adopted for metafeature extraction related methods is to
@@ -55,13 +50,13 @@ class MFELandmarking:
     precomputation or feature extraction method of module ``landmarking``).
     """
     @classmethod
-    def precompute_landmarking_class(cls,
-                                     N: np.ndarray,
-                                     y: np.ndarray,
-                                     classes: np.ndarray,
-                                     class_freqs: np.ndarray,
-                                     **kwargs
-                                     ) -> t.Dict[str, t.Any]:
+    def precompute_fx(cls,
+                      N: np.ndarray,
+                      y: np.ndarray,
+                      classes: np.ndarray,
+                      class_freqs: np.ndarray,
+                      **kwargs
+                      ) -> t.Dict[str, t.Any]:
 
         prepcomp_vals = {}
 
