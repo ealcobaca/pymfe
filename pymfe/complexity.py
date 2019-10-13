@@ -94,6 +94,21 @@ class MFELandmarking:
 
         return prepcomp_vals
 
+    @staticmethod
+    def _compute_f3(N_: np.ndarray,
+                    y_: np.ndarray,
+                    minmax_: np.ndarray,
+                    maxmin_: np.ndarray
+                    ) -> np.ndarray:
+
+         # True if the example is in the overlapping region
+        overlapped_region_by_feature = np.logical_and(N_ > maxmin, N_ < maxmin)
+        n_fi = np.sum(overlapped_region_by_feature, axis=0)
+        min_n_fi = np.min(n_fi)
+        idx_min = np.argmin(min_n_fi)
+
+        return idx_min, min_n_fi, overlapped_region_by_feature
+
     @classmethod
     def ft_f3(cls,
               N: np.ndarray,
@@ -124,21 +139,6 @@ class MFELandmarking:
 
         return f3
 
-    @staticmethod
-    def _compute_f3(N_: np.ndarray,
-                    y_: np.ndarray,
-                    minmax_: np.ndarray,
-                    maxmin_: np.ndarray
-                    ) -> np.ndarray:
-
-         # True if the example is in the overlapping region
-        overlapped_region_by_feature = np.logical_and(N_ > maxmin, N_ < maxmin)
-        n_fi = np.sum(overlapped_region_by_feature, axis=0)
-        min_n_fi = np.min(n_fi)
-        idx_min = np.argmin(min_n_fi)
-
-        return idx_min, min_n_fi, overlapped_region_by_feature
-
     @classmethod
     def ft_f4(cls,
               N: np.ndarray,
@@ -164,11 +164,30 @@ class MFELandmarking:
         :obj:`np.ndarray`
             The performance of each fold.
         """
-        # True if the example is in the overlapping region
-        _compute_f3()
-        min_n_fi = np.min(n_fi)
-        idx_min = np.argmin(min_n_fi)
-        f3 = min_n_fi[idx_min] / N.shape[0]
 
-        return f3
+        N_ = N
+        y_ = y
+        minmax_ = minmax
+        maxmin_ = maxmin
+        for i in range(N.shape[1]):
+            # True if the example is in the overlapping region
+            idx_min, _, overlapped_region_by_feature = _compute_f3(
+                N, y, minmax, maxmin)
 
+            # boolean that if True, this example is in the overlapping region
+            overlapped_region = overlapped_region_by_feature[:, idx_min]
+            # removing the most efficient feature
+            N_ = np.delete(N_, idx_min, axis=0)
+            minmax_ = minmax_[idx_min]
+            maxmin_ = maxmin_[idx_min]
+            # removing the non overlapped features
+            N_ = N_[overlapped_region, :]
+            y_ = y_[overlapped_region, :]
+
+            if N.shape[0] == 0:
+                no_overlap = True
+                break
+
+        f4 = 0 if no_overlap else N_.shape[0]/N.shape[0]
+
+        return f4
