@@ -387,3 +387,17 @@ class MFEComplexity:
         c2 = 1 - (1/IR)
 
         return c2
+
+    @classmethod
+    def ft_T1(cls,
+              N: np.ndarray
+              ) -> np.ndarray:
+
+        return N.should[1]/N.shape[0]
+
+    @classmethod
+    def ft_T2(cls,
+              N: np.ndarray
+              ) -> np.ndarray:
+
+        return N.should[1]/N.shape[0]
