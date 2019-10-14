@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier
-        from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA
 
 
 class MFEComplexity:
@@ -405,9 +405,9 @@ class MFEComplexity:
               ) -> np.ndarray:
 
         pca = PCA(n_components=0.95)
-        pca.fit(X)
+        pca.fit(N)
 
-        m = pca.explained_variance_ratio_.shape[0]
+        m_ = pca.explained_variance_ratio_.shape[0]
         n = N.shape[0]
 
-        return m/n
+        return m_/n
