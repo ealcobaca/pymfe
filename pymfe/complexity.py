@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.decomposition import PCA
-
+from pymfe.general import MFEGeneral
 
 class MFEComplexity:
     """Keep methods for metafeatures of ``landmarking`` group.
@@ -60,36 +60,85 @@ class MFEComplexity:
     """
     @classmethod
     def precompute_fx(cls,
-                      N: np.ndarray,
                       y: np.ndarray,
                       **kwargs
                       ) -> t.Dict[str, t.Any]:
+        """Precompute some useful things to support complexity measures.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
+                - ``ovo_comb`` (:obj:`list`): List of all class OVO
+                  combination, i.e., [(0,1), (0,2) ...].
+                - ``cls_index`` (:obj:`list`):  The list of boolean vectors
+                  indicating the example of each class. The array indexes
+                  represent the classes.
+                  combination, i.e., [(0,1), (0,2) ...].
+                - ``cls_n_ex`` (:obj:`np.ndarray`): The number of examples in
+                  each class. The array indexes represent the classes.
+        """
 
         prepcomp_vals = {}
 
-        classes, idx_classes, y_idx, class_freqs = np.unique(
-            y, return_index=True, return_inverse=True, return_counts=True)
+        if y is not None and not {"classes", "class_freqs",
+                                  "return_inverse"}.issubset(kwargs):
+            prec = MFEGeneral.precompute_general_class(y)
+            classes, y_idx, class_freqs = (prec["classes"],
+                                           prec["y_idx"],
+                                           prec["class_freqs"])
 
         if (y is not None and
                 "ovo_comb" not in kwargs and
                 "cls_index" not in kwargs and
-                "cls_amount" not in kwargs):
-            n_classe = 2
+                "cls_n_ex" not in kwargs):
             cls_index = [np.equal(y_idx, i)
                          for i in range(classes.shape[0])]
-            cls_amount = np.array([np.sum(aux) for aux in cls_index])
+            cls_n_ex = np.array([np.sum(aux) for aux in cls_index])
             ovo_comb = list(itertools.combinations(range(classes.shape[0]), 2))
             prepcomp_vals["ovo_comb"] = ovo_comb
             prepcomp_vals["cls_index"] = cls_index
-            prepcomp_vals["cls_amount"] = cls_amount
+            prepcomp_vals["cls_n_ex"] = cls_n_ex
         return prepcomp_vals
 
     @classmethod
     def precompute_pca_tx(cls,
-                      N: np.ndarray,
-                      **kwargs
-                      ) -> t.Dict[str, t.Any]:
+                          N: np.ndarray,
+                          **kwargs
+                          ) -> t.Dict[str, t.Any]:
+        """Precompute PCA to Tx complexit measures.
 
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
+                - ``m`` (:obj:`int`): Number of features.
+                - ``m_`` (:obj:`int`):  Number of features after PCA with 0.95.
+                - ``n`` (:obj:`int`): Number of examples.
+        """
         prepcomp_vals = {}
 
         if (N is not None and
@@ -112,8 +161,8 @@ class MFEComplexity:
 
     @staticmethod
     def _minmax(N: np.ndarray,
-                class1:np.ndarray,
-                class2:np.ndarray
+                class1: np.ndarray,
+                class2: np.ndarray
                 ) -> np.ndarray:
         min_cls = np.zeros((2, N.shape[1]))
         min_cls[0, :] = np.max(N[class1], axis=0)
@@ -153,7 +202,7 @@ class MFEComplexity:
               N: np.ndarray,
               ovo_comb: np.ndarray,
               cls_index: np.ndarray,
-              cls_amount: np.ndarray,
+              cls_n_ex: np.ndarray,
               ) -> np.ndarray:
         """Performance of a the best single decision tree node.
 
@@ -180,7 +229,7 @@ class MFEComplexity:
                 cls._minmax(N, cls_index[idx1], cls_index[idx2]),
                 cls._maxmin(N, cls_index[idx1], cls_index[idx2])
             )
-            f3.append(n_fi[idx_min] / (cls_amount[idx1] + cls_amount[idx2]))
+            f3.append(n_fi[idx_min] / (cls_n_ex[idx1] + cls_n_ex[idx2]))
 
         return np.mean(f3)
 
@@ -189,7 +238,7 @@ class MFEComplexity:
               N: np.ndarray,
               ovo_comb,
               cls_index,
-              cls_amount,
+              cls_n_ex,
               ) -> np.ndarray:
         """Performance of a the best single decision tree node.
 
@@ -212,7 +261,6 @@ class MFEComplexity:
 
         f4 = []
         for idx1, idx2 in ovo_comb:
-            no_overlap = False
             aux = 0
 
             y_class1 = cls_index[idx1]
@@ -231,7 +279,8 @@ class MFEComplexity:
                     cls._maxmin(N_, y_class1, y_class2)
                 )
 
-                # boolean that if True, this example is in the overlapping region
+                # boolean that if True, this example is in the overlapping
+                # region
                 overlapped_region = overlapped_region_by_feature[:, idx_min]
 
                 # removing the non overlapped features
@@ -248,7 +297,7 @@ class MFEComplexity:
                 # removing the most efficient feature
                 N_ = np.delete(N_, idx_min, axis=1)
 
-            f4.append(aux/(cls_amount[idx1] + cls_amount[idx2]))
+            f4.append(aux/(cls_n_ex[idx1] + cls_n_ex[idx2]))
 
         return np.mean(f4)
 
@@ -276,52 +325,11 @@ class MFEComplexity:
 
         return np.mean(l2)
 
-    # @classmethod
-    # def ft_N1(cls,
-    #           N: np.ndarray,
-    #           ovo_comb: np.ndarray,
-    #           cls_index: np.ndarray,
-    #           dist_measure: str ="euclidean"
-    #           ) -> np.ndarray:
-    #
-    #     n1 = []
-    #     for idx1, idx2 in ovo_comb:
-    #
-    #         y_ = np.logical_or(cls_index[idx1], cls_index[idx2])
-    #         N_ = N[y_, :]
-    #         y_ = cls_index[idx1][y_]
-    #
-    #         # 0-1 scaler
-    #         scaler = MinMaxScaler(feature_range=(0, 1)).fit(N_)
-    #         new_N_ = scaler.transform(N_)
-    #
-    #         # ###
-    #         dist_m = np.triu(distance.cdist(new_N_, new_N_, dist_measure), k=1)
-    #         mst = minimum_spanning_tree(dist_m)
-    #         node_i, node_j = np.where(mst.toarray() > 0)
-    #         # ###
-    #         which_have_diff_cls = np.logical_xor(y_[node_i], y_[node_j])
-    #
-    #         # I have doubts on how to compute it
-    #         # 1) number of edges
-    #         # aux = np.sum(which_have_diff_cls)
-    #
-    #         # 2) number of different vertices connected
-    #         aux = np.unique(np.concatenate([
-    #             node_i[which_have_diff_cls],
-    #             node_j[which_have_diff_cls]
-    #         ])).shape[0]
-    #
-    #         n1.append(aux / N_.shape[0])
-    #
-    #     print(n1)
-    #     return np.mean(n1)
-
     @classmethod
     def ft_N1(cls,
               N: np.ndarray,
               y: np.ndarray,
-              metric: str ="euclidean"
+              metric: str = "euclidean"
               ) -> np.ndarray:
 
         # 0-1 scaler
@@ -352,7 +360,7 @@ class MFEComplexity:
               N: np.ndarray,
               y: np.ndarray,
               cls_index: np.ndarray,
-              metric: str ="euclidean",
+              metric: str = "euclidean",
               p=2,
               n_neighbors=1
               ) -> np.ndarray:
@@ -392,11 +400,11 @@ class MFEComplexity:
 
     @classmethod
     def ft_C1(cls,
-              cls_amount: np.ndarray
+              cls_n_ex: np.ndarray
               ) -> np.ndarray:
 
-        nc = cls_amount.shape[0]
-        pc_i = cls_amount / np.sum(cls_amount)
+        nc = cls_n_ex.shape[0]
+        pc_i = cls_n_ex / np.sum(cls_n_ex)
         c1 = -(1.0/np.log(nc)) * np.sum(pc_i*np.log(pc_i))
 
         # Shuldn't C1 be 1-C1? to match with C2?
@@ -404,12 +412,12 @@ class MFEComplexity:
 
     @classmethod
     def ft_C2(cls,
-              cls_amount: np.ndarray
+              cls_n_ex: np.ndarray
               ) -> np.ndarray:
 
-        n = np.sum(cls_amount)
-        nc = cls_amount.shape[0]
-        nc_i = cls_amount
+        n = np.sum(cls_n_ex)
+        nc = cls_n_ex.shape[0]
+        nc_i = cls_n_ex
         IR = ((nc-1) / nc) * np.sum(nc_i / (n - (nc_i)))
         c2 = 1 - (1/IR)
 
@@ -419,7 +427,7 @@ class MFEComplexity:
     def ft_T2(cls,
               m: int,
               n: int
-              ) -> np.ndarray:
+              ) -> float:
 
         return m/n
 
@@ -427,7 +435,7 @@ class MFEComplexity:
     def ft_T3(cls,
               m_: int,
               n: int
-              ) -> np.ndarray:
+              ) -> float:
 
         return m_/n
 
@@ -435,6 +443,6 @@ class MFEComplexity:
     def ft_T4(cls,
               m: int,
               m_: int
-              ) -> np.ndarray:
+              ) -> float:
 
         return m_/m
