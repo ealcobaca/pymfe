@@ -10,6 +10,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.neighbors import KNeighborsClassifier
 
 
 class MFEComplexity:
@@ -236,68 +237,64 @@ class MFEComplexity:
             y_ = np.logical_or(cls_index[idx1], cls_index[idx2])
             N_ = N[y_, :]
             y_ = cls_index[idx1][y_]
-            print(y_.shape)
-            print(N_.shape)
 
             zscore = StandardScaler()
             svc = SVC(kernel='linear', C=1.0, tol=10e-3, max_iter=10e4)
             pip = Pipeline([('zscore', zscore), ('svc', svc)])
             pip.fit(N_, y_)
             y_pred = pip.predict(N_)
-            erro = 1 - accuracy_score(y_, y_pred)
+            error = 1 - accuracy_score(y_, y_pred)
 
-            l2.append(erro)
+            l2.append(error)
 
-        print(l2)
         return np.mean(l2)
 
-    @classmethod
-    def ft_N1(cls,
-              N: np.ndarray,
-              ovo_comb: np.ndarray,
-              cls_index: np.ndarray,
-              dist_measure: str ="euclidean"
-              ) -> np.ndarray:
-
-        n1 = []
-        for idx1, idx2 in ovo_comb:
-
-            y_ = np.logical_or(cls_index[idx1], cls_index[idx2])
-            N_ = N[y_, :]
-            y_ = cls_index[idx1][y_]
-            print(y_.shape)
-            print(N_.shape)
-
-            # 0-1 scaler
-            scaler = MinMaxScaler(feature_range=(0, 1)).fit(N_)
-            new_N_ = scaler.transform(N_)
-
-            # ###
-            dist_m = np.triu(distance.cdist(new_N_, new_N_, dist_measure), k=1)
-            mst = minimum_spanning_tree(dist_m)
-            node_i, node_j = np.where(mst.toarray() > 0)
-            # ###
-            which_have_diff_cls = np.logical_xor(y_[node_i], y_[node_j])
-
-            # I have doubts on how to compute it
-            # 1) number of edges
-            aux = np.sum(which_have_diff_cls)
-
-            # 2) number of different vertices connected
-            # aux = np.unique(np.concatenate([
-            #     node_i[which_have_diff_cls],
-            #     node_j[which_have_diff_cls]
-            # ])).shape[0]
-
-            n1.append(aux / N_.shape[0])
-
-        return np.mean(n1)
+    # @classmethod
+    # def ft_N1(cls,
+    #           N: np.ndarray,
+    #           ovo_comb: np.ndarray,
+    #           cls_index: np.ndarray,
+    #           dist_measure: str ="euclidean"
+    #           ) -> np.ndarray:
+    #
+    #     n1 = []
+    #     for idx1, idx2 in ovo_comb:
+    #
+    #         y_ = np.logical_or(cls_index[idx1], cls_index[idx2])
+    #         N_ = N[y_, :]
+    #         y_ = cls_index[idx1][y_]
+    #
+    #         # 0-1 scaler
+    #         scaler = MinMaxScaler(feature_range=(0, 1)).fit(N_)
+    #         new_N_ = scaler.transform(N_)
+    #
+    #         # ###
+    #         dist_m = np.triu(distance.cdist(new_N_, new_N_, dist_measure), k=1)
+    #         mst = minimum_spanning_tree(dist_m)
+    #         node_i, node_j = np.where(mst.toarray() > 0)
+    #         # ###
+    #         which_have_diff_cls = np.logical_xor(y_[node_i], y_[node_j])
+    #
+    #         # I have doubts on how to compute it
+    #         # 1) number of edges
+    #         # aux = np.sum(which_have_diff_cls)
+    #
+    #         # 2) number of different vertices connected
+    #         aux = np.unique(np.concatenate([
+    #             node_i[which_have_diff_cls],
+    #             node_j[which_have_diff_cls]
+    #         ])).shape[0]
+    #
+    #         n1.append(aux / N_.shape[0])
+    #
+    #     print(n1)
+    #     return np.mean(n1)
 
     @classmethod
     def ft_N1(cls,
               N: np.ndarray,
               y: np.ndarray,
-              dist_measure: str ="euclidean"
+              metric: str ="euclidean"
               ) -> np.ndarray:
 
         # 0-1 scaler
@@ -305,23 +302,63 @@ class MFEComplexity:
         N_ = scaler.transform(N)
 
         # ###
-        dist_m = np.triu(distance.cdist(N_, N_, dist_measure), k=1)
+        dist_m = np.triu(distance.cdist(N_, N_, metric), k=1)
         mst = minimum_spanning_tree(dist_m)
         node_i, node_j = np.where(mst.toarray() > 0)
         # ###
         which_have_diff_cls = y[node_i] != y[node_j]
-        print(which_have_diff_cls)
 
         # I have doubts on how to compute it
         # 1) number of edges
         # aux = np.sum(which_have_diff_cls)
 
         # 2) number of different vertices connected
-        print(node_i[which_have_diff_cls])
-        print(node_j[which_have_diff_cls])
         aux = np.unique(np.concatenate([
             node_i[which_have_diff_cls],
             node_j[which_have_diff_cls]
         ])).shape[0]
 
         return aux/N.shape[0]
+
+    @classmethod
+    def ft_N4(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              cls_index: np.ndarray,
+              metric: str ="euclidean",
+              p=2,
+              n_neighbors=1
+              ) -> np.ndarray:
+
+        interp_N = []
+        interp_y = []
+
+        # 0-1 scaler
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
+        N = scaler.transform(N)
+
+        for idx in cls_index:
+            N_ = N[idx]
+
+            A = np.random.choice(N_.shape[0], N_.shape[0])
+            A = N_[A]
+            B = np.random.choice(N_.shape[0], N_.shape[0])
+            B = N_[B]
+            delta = np.random.ranf(N_.shape)
+
+            interp_N_ = A + ((B - A) * delta)
+            interp_y_ = y[idx]
+
+            interp_N.append(interp_N_)
+            interp_y.append(interp_y_)
+
+        # join the datasets
+        N_test = np.concatenate(interp_N)
+        y_test = np.concatenate(interp_y)
+
+        knn = KNeighborsClassifier(
+            n_neighbors=n_neighbors, p=p, metric=metric).fit(N, y)
+        y_pred = knn.predict(N_test)
+        error = 1 - accuracy_score(y_test, y_pred)
+
+        return error
