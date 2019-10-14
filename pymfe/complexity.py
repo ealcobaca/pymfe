@@ -368,8 +368,6 @@ class MFEComplexity:
               cls_amount: np.ndarray
               ) -> np.ndarray:
 
-        print(np.sum(cls_amount))
-
         pc_i = cls_amount / np.sum(cls_amount)
         n4 = -(1.0/np.log(cls_amount.shape[0])) * np.sum(pc_i*np.log(pc_i))
 
