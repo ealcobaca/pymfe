@@ -368,8 +368,20 @@ class MFEComplexity:
               cls_amount: np.ndarray
               ) -> np.ndarray:
 
+        nc = cls_amount.shape[0]
         pc_i = cls_amount / np.sum(cls_amount)
-        n4 = -(1.0/np.log(cls_amount.shape[0])) * np.sum(pc_i*np.log(pc_i))
+        c1 = -(1.0/np.log(nc)) * np.sum(pc_i*np.log(pc_i))
 
-        return n4
+        # Shuldn't C1 be 1-C1? to match with C2?
+        return c1
 
+    @classmethod
+    def ft_C2(cls,
+              cls_amount: np.ndarray
+              ) -> np.ndarray:
+        nc = cls_amount[0]
+        nc_i = cls_amount[0]
+        IR = ((nc-1) / nc) * np.sum(nc_i / (nc - (nc_i)))
+        c2 = 1 - (1/IR)
+
+        return c2
