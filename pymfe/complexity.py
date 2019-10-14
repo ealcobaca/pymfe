@@ -320,11 +320,11 @@ class MFEComplexity:
         scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
         N_ = scaler.transform(N)
 
-        # ###
+        # compute the distance matrix and the minimum spanning tree.
         dist_m = np.triu(distance.cdist(N_, N_, metric), k=1)
         mst = minimum_spanning_tree(dist_m)
         node_i, node_j = np.where(mst.toarray() > 0)
-        # ###
+        # which edges have nodes with different class 
         which_have_diff_cls = y[node_i] != y[node_j]
 
         # I have doubts on how to compute it
