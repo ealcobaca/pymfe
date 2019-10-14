@@ -84,6 +84,32 @@ class MFEComplexity:
             prepcomp_vals["cls_amount"] = cls_amount
         return prepcomp_vals
 
+    @classmethod
+    def precompute_pca_tx(cls,
+                      N: np.ndarray,
+                      **kwargs
+                      ) -> t.Dict[str, t.Any]:
+
+        prepcomp_vals = {}
+
+        if (N is not None and
+                "m" not in kwargs and
+                "m_" not in kwargs and
+                "n" not in kwargs):
+
+            pca = PCA(n_components=0.95)
+            pca.fit(N)
+
+            m_ = pca.explained_variance_ratio_.shape[0]
+            m = N.shape[1]
+            n = N.shape[0]
+
+            prepcomp_vals["m_"] = m_
+            prepcomp_vals["m"] = m
+            prepcomp_vals["n"] = n
+
+        return prepcomp_vals
+
     @staticmethod
     def _minmax(N: np.ndarray,
                 class1:np.ndarray,
@@ -391,24 +417,17 @@ class MFEComplexity:
 
     @classmethod
     def ft_T2(cls,
-              N: np.ndarray
+              m: int,
+              n: int
               ) -> np.ndarray:
-
-        m = N.shape[1]
-        n = N.shape[0]
 
         return m/n
 
     @classmethod
     def ft_T3(cls,
-              N: np.ndarray
+              m_: int,
+              n: int
               ) -> np.ndarray:
-
-        pca = PCA(n_components=0.95)
-        pca.fit(N)
-
-        m_ = pca.explained_variance_ratio_.shape[0]
-        n = N.shape[0]
 
         return m_/n
 
