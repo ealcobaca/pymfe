@@ -379,9 +379,11 @@ class MFEComplexity:
     def ft_C2(cls,
               cls_amount: np.ndarray
               ) -> np.ndarray:
-        nc = cls_amount[0]
-        nc_i = cls_amount[0]
-        IR = ((nc-1) / nc) * np.sum(nc_i / (nc - (nc_i)))
+
+        n = np.sum(cls_amount)
+        nc = cls_amount.shape[0]
+        nc_i = cls_amount
+        IR = ((nc-1) / nc) * np.sum(nc_i / (n - (nc_i)))
         c2 = 1 - (1/IR)
 
         return c2
