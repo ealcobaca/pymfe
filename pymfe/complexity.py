@@ -3,6 +3,10 @@
 import typing as t
 import itertools
 import numpy as np
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+from sklearn.pipeline import Pipeline
 
 
 class MFEComplexity:
@@ -114,7 +118,7 @@ class MFEComplexity:
         return idx_min, n_fi, overlapped_region_by_feature
 
     @classmethod
-    def ft_f3(cls,
+    def ft_F3(cls,
               N: np.ndarray,
               ovo_comb: np.ndarray,
               cls_index: np.ndarray,
@@ -150,7 +154,7 @@ class MFEComplexity:
         return np.mean(f3)
 
     @classmethod
-    def ft_f4(cls,
+    def ft_F4(cls,
               N: np.ndarray,
               ovo_comb,
               cls_index,
@@ -216,3 +220,30 @@ class MFEComplexity:
             f4.append(aux/(cls_amount[idx1] + cls_amount[idx2]))
 
         return np.mean(f4)
+
+    @classmethod
+    def ft_L2(cls,
+              N: np.ndarray,
+              ovo_comb: np.ndarray,
+              cls_index: np.ndarray) -> np.ndarray:
+
+        l2 = []
+        for idx1, idx2 in ovo_comb:
+
+            y_ = np.logical_or(cls_index[idx1], cls_index[idx2])
+            N_ = N[y_, :]
+            y_ = cls_index[idx1][y_]
+            print(y_.shape)
+            print(N_.shape)
+
+            zscore = StandardScaler()
+            svc = SVC(kernel='linear', C=1.0, tol=10e-3, max_iter=10e4)
+            pip = Pipeline([('zscore', zscore), ('svc', svc)])
+            pip.fit(N_, y_)
+            y_pred = pip.predict(N_)
+            erro = 1 - accuracy_score(y_, y_pred)
+
+            l2.append(erro)
+
+        print(l2)
+        return np.mean(l2)
