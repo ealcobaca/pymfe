@@ -431,4 +431,10 @@ class MFEComplexity:
 
         return m_/n
 
+    @classmethod
+    def ft_T4(cls,
+              m: int,
+              m_: int
+              ) -> np.ndarray:
 
+        return m_/m
