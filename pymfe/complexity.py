@@ -1,7 +1,7 @@
 """Module dedicated to extraction of Complexity Metafeatures."""
 
 import typing as t
-
+import itertools
 import numpy as np
 
 
@@ -61,55 +61,64 @@ class MFEComplexity:
         classes, idx_classes, y_idx, class_freqs = np.unique(
             y, return_index=True, return_inverse=True, return_counts=True)
 
-        # I think we could improve this part of the code
-        # an alternative is given above
-        # idx_class = np.zeros(N.shape[0], idx_classes.shape[0])
-        # idx_class[np.arrange(y.shape[0]), y_idx] = 1
-        y_idx_all_classes = [np.equal(y_idx, idx)
-                             for idx in range(classes.shape[0])]
-
-        # get min max for all columns by class
-        # line.... --> class
-        # columns. --> features
-        min_cls = [np.min(N[feature, :], axis=0)
-                   for feature in y_idx_all_classes]
-        max_cls = [np.max(N[feature, :], axis=0)
-                   for feature in y_idx_all_classes]
-        min_cls = np.array(min_cls)
-        max_cls = np.array(max_cls)
-
-        if N is not None and y is not None:
-            if "minmax" not in kwargs:
-                minmax = np.max(max_cls, axis=0)
-                prepcomp_vals["minmax"] = minmax
-            if "maxmin" not in kwargs:
-                maxmin = np.max(min_cls)
-                prepcomp_vals["maxmin"] = maxmin
-
-        print(precompute_vals)
+        if (y is not None and
+                "ovo_comb" not in kwargs and
+                "cls_index" not in kwargs and
+                "cls_amount" not in kwargs):
+            n_classe = 2
+            cls_index = [np.equal(y_idx, i)
+                         for i in range(classes.shape[0])]
+            cls_amount = [np.sum(aux) for aux in cls_index]
+            ovo_comb = list(itertools.combinations(range(classes.shape[0]), 2))
+            prepcomp_vals["ovo_comb"] = ovo_comb
+            prepcomp_vals["cls_index"] = cls_index
+            prepcomp_vals["cls_amount"] = cls_amount
         return prepcomp_vals
 
     @staticmethod
+    def _minmax(N: np.ndarray,
+                class1:np.ndarray,
+                class2:np.ndarray
+                ) -> np.ndarray:
+        min_cls = np.zeros((2, N.shape[1]))
+        min_cls[0, :] = np.max(N[class1], axis=0)
+        min_cls[1, :] = np.max(N[class2], axis=0)
+        aux = np.min(min_cls, axis=0)
+        return aux
+
+    @staticmethod
+    def _maxmin(N: np.ndarray,
+                class1: np.ndarray,
+                class2: np.ndarray
+                ) -> np.ndarray:
+        max_cls = np.zeros((2, N.shape[1]))
+        max_cls[0, :] = np.min(N[class1], axis=0)
+        max_cls[1, :] = np.min(N[class2], axis=0)
+        aux = np.max(max_cls, axis=0)
+        return aux
+
+    @staticmethod
     def _compute_f3(N_: np.ndarray,
-                    y_: np.ndarray,
                     minmax_: np.ndarray,
                     maxmin_: np.ndarray
                     ) -> np.ndarray:
 
-         # True if the example is in the overlapping region
-        overlapped_region_by_feature = np.logical_and(N_ > maxmin, N_ < maxmin)
-        n_fi = np.sum(overlapped_region_by_feature, axis=0)
-        min_n_fi = np.min(n_fi)
-        idx_min = np.argmin(min_n_fi)
+        # True if the example is in the overlapping region
+        # Should be > and < instead of >= and <= ?
+        overlapped_region_by_feature = np.logical_and(
+            N_ >= maxmin_, N_ <= minmax_)
 
-        return idx_min, min_n_fi, overlapped_region_by_feature
+        n_fi = np.sum(overlapped_region_by_feature, axis=0)
+        idx_min = np.argmin(n_fi)
+
+        return idx_min, n_fi, overlapped_region_by_feature
 
     @classmethod
     def ft_f3(cls,
               N: np.ndarray,
-              y: np.ndarray,
-              minmax: np.ndarray,
-              maxmin: np.ndarray
+              ovo_comb: np.ndarray,
+              cls_index: np.ndarray,
+              cls_amount: np.ndarray,
               ) -> np.ndarray:
         """Performance of a the best single decision tree node.
 
@@ -129,17 +138,23 @@ class MFEComplexity:
         :obj:`np.ndarray`
             The performance of each fold.
         """
-        idx_min, min_n_fi, _ = cls._compute_f3(N, y, minmax, maxmin)
-        f3 = min_n_fi[idx_min] / N.shape[0]
+        f3 = []
+        for idx1, idx2 in ovo_comb:
+            idx_min, n_fi, _ = cls._compute_f3(
+                N,
+                cls._minmax(N, cls_index[idx1], cls_index[idx2]),
+                cls._maxmin(N, cls_index[idx1], cls_index[idx2])
+            )
+            f3.append(n_fi[idx_min] / (cls_amount[idx1] + cls_amount[idx2]))
 
-        return f3
+        return np.mean(f3)
 
     @classmethod
     def ft_f4(cls,
               N: np.ndarray,
-              y: np.ndarray,
-              minmax: np.ndarray,
-              maxmin: np.ndarray
+              ovo_comb,
+              cls_index,
+              cls_amount,
               ) -> np.ndarray:
         """Performance of a the best single decision tree node.
 
@@ -160,29 +175,44 @@ class MFEComplexity:
             The performance of each fold.
         """
 
-        N_ = N
-        y_ = y
-        minmax_ = minmax
-        maxmin_ = maxmin
-        for i in range(N.shape[1]):
-            # True if the example is in the overlapping region
-            idx_min, _, overlapped_region_by_feature = cls._compute_f3(
-                N, y, minmax, maxmin)
+        f4 = []
+        for idx1, idx2 in ovo_comb:
+            no_overlap = False
+            aux = 0
 
-            # boolean that if True, this example is in the overlapping region
-            overlapped_region = overlapped_region_by_feature[:, idx_min]
-            # removing the most efficient feature
-            N_ = np.delete(N_, idx_min, axis=0)
-            minmax_ = minmax_[idx_min]
-            maxmin_ = maxmin_[idx_min]
-            # removing the non overlapped features
-            N_ = N_[overlapped_region, :]
-            y_ = y_[overlapped_region, :]
+            y_class1 = cls_index[idx1]
+            y_class2 = cls_index[idx2]
+            sub_set = np.logical_or(y_class1, y_class2)
+            y_class1 = y_class1[sub_set]
+            y_class2 = y_class2[sub_set]
+            N_ = N[sub_set, :]
+            # N_ = N[np.logical_or(y_class1, y_class2),:]
 
-            if N.shape[0] == 0:
-                no_overlap = True
-                break
+            for i in range(N.shape[1]):
+                # True if the example is in the overlapping region
+                idx_min, _, overlapped_region_by_feature = cls._compute_f3(
+                    N_,
+                    cls._minmax(N_, y_class1, y_class2),
+                    cls._maxmin(N_, y_class1, y_class2)
+                )
 
-        f4 = 0 if no_overlap else N_.shape[0]/N.shape[0]
+                # boolean that if True, this example is in the overlapping region
+                overlapped_region = overlapped_region_by_feature[:, idx_min]
 
-        return f4
+                # removing the non overlapped features
+                N_ = N_[overlapped_region, :]
+                y_class1 = y_class1[overlapped_region]
+                y_class2 = y_class2[overlapped_region]
+
+                if N_.shape[0] == 0:
+                    aux = 0
+                    break
+                else:
+                    aux = N_.shape[0]
+
+                # removing the most efficient feature
+                N_ = np.delete(N_, idx_min, axis=1)
+
+            f4.append(aux/(cls_amount[idx1] + cls_amount[idx2]))
+
+        return np.mean(f4)
