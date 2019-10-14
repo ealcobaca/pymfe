@@ -14,6 +14,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.decomposition import PCA
 from pymfe.general import MFEGeneral
 
+
 class MFEComplexity:
     """Keep methods for metafeatures of ``landmarking`` group.
 
@@ -97,9 +98,8 @@ class MFEComplexity:
         if y is not None and not {"classes", "class_freqs",
                                   "return_inverse"}.issubset(kwargs):
             prec = MFEGeneral.precompute_general_class(y)
-            classes, y_idx, class_freqs = (prec["classes"],
-                                           prec["y_idx"],
-                                           prec["class_freqs"])
+            classes, y_idx, _ = (prec["classes"],
+                                 prec["y_idx"], prec["class_freqs"])
 
         if (y is not None and
                 "ovo_comb" not in kwargs and
@@ -164,6 +164,10 @@ class MFEComplexity:
                 class1: np.ndarray,
                 class2: np.ndarray
                 ) -> np.ndarray:
+        """ This function computes the minimum of the maximum values per class
+        for all features. The index i indicate the minmax of feature i.
+        """
+
         min_cls = np.zeros((2, N.shape[1]))
         min_cls[0, :] = np.max(N[class1], axis=0)
         min_cls[1, :] = np.max(N[class2], axis=0)
@@ -175,6 +179,10 @@ class MFEComplexity:
                 class1: np.ndarray,
                 class2: np.ndarray
                 ) -> np.ndarray:
+        """ This function computes the maximum of the minimum values per class
+        for all features. The index i indicate the maxmin of feature i.
+        """
+
         max_cls = np.zeros((2, N.shape[1]))
         max_cls[0, :] = np.min(N[class1], axis=0)
         max_cls[1, :] = np.min(N[class2], axis=0)
@@ -186,6 +194,9 @@ class MFEComplexity:
                     minmax_: np.ndarray,
                     maxmin_: np.ndarray
                     ) -> np.ndarray:
+        """ This function computes the F3 complexit measure given
+        minmax and maxmin.
+        """
 
         # True if the example is in the overlapping region
         # Should be > and < instead of >= and <= ?
@@ -204,23 +215,7 @@ class MFEComplexity:
               cls_index: np.ndarray,
               cls_n_ex: np.ndarray,
               ) -> np.ndarray:
-        """Performance of a the best single decision tree node.
-
-        Construct a single decision tree node model induced by the most
-        informative attribute to establish the linear separability.
-
-        Parameters
-        ----------
-        N : :obj:`np.ndarray`
-            Attributes from fitted data.
-
-        y : :obj:`np.ndarray`
-            Target attribute from fitted data.
-
-        Returns
-        -------
-        :obj:`np.ndarray`
-            The performance of each fold.
+        """TODO
         """
         f3 = []
         for idx1, idx2 in ovo_comb:
@@ -240,23 +235,7 @@ class MFEComplexity:
               cls_index,
               cls_n_ex,
               ) -> np.ndarray:
-        """Performance of a the best single decision tree node.
-
-        Construct a single decision tree node model induced by the most
-        informative attribute to establish the linear separability.
-
-        Parameters
-        ----------
-        N : :obj:`np.ndarray`
-            Attributes from fitted data.
-
-        y : :obj:`np.ndarray`
-            Target attribute from fitted data.
-
-        Returns
-        -------
-        :obj:`np.ndarray`
-            The performance of each fold.
+        """TODO
         """
 
         f4 = []
@@ -305,7 +284,10 @@ class MFEComplexity:
     def ft_L2(cls,
               N: np.ndarray,
               ovo_comb: np.ndarray,
-              cls_index: np.ndarray) -> np.ndarray:
+              cls_index: np.ndarray
+              ) -> np.ndarray:
+        """TODO
+        """
 
         l2 = []
         for idx1, idx2 in ovo_comb:
@@ -331,6 +313,8 @@ class MFEComplexity:
               y: np.ndarray,
               metric: str = "euclidean"
               ) -> np.ndarray:
+        """TODO
+        """
 
         # 0-1 scaler
         scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
@@ -364,6 +348,8 @@ class MFEComplexity:
               p=2,
               n_neighbors=1
               ) -> np.ndarray:
+        """TODO
+        """
 
         interp_N = []
         interp_y = []
@@ -402,6 +388,8 @@ class MFEComplexity:
     def ft_C1(cls,
               cls_n_ex: np.ndarray
               ) -> np.ndarray:
+        """TODO
+        """
 
         nc = cls_n_ex.shape[0]
         pc_i = cls_n_ex / np.sum(cls_n_ex)
@@ -414,6 +402,8 @@ class MFEComplexity:
     def ft_C2(cls,
               cls_n_ex: np.ndarray
               ) -> np.ndarray:
+        """TODO
+        """
 
         n = np.sum(cls_n_ex)
         nc = cls_n_ex.shape[0]
@@ -428,6 +418,8 @@ class MFEComplexity:
               m: int,
               n: int
               ) -> float:
+        """TODO
+        """
 
         return m/n
 
@@ -436,6 +428,8 @@ class MFEComplexity:
               m_: int,
               n: int
               ) -> float:
+        """TODO
+        """
 
         return m_/n
 
@@ -444,5 +438,7 @@ class MFEComplexity:
               m: int,
               m_: int
               ) -> float:
+        """TODO
+        """
 
         return m_/m
