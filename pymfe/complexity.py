@@ -76,7 +76,7 @@ class MFEComplexity:
             n_classe = 2
             cls_index = [np.equal(y_idx, i)
                          for i in range(classes.shape[0])]
-            cls_amount = [np.sum(aux) for aux in cls_index]
+            cls_amount = np.array([np.sum(aux) for aux in cls_index])
             ovo_comb = list(itertools.combinations(range(classes.shape[0]), 2))
             prepcomp_vals["ovo_comb"] = ovo_comb
             prepcomp_vals["cls_index"] = cls_index
@@ -369,8 +369,9 @@ class MFEComplexity:
               ) -> np.ndarray:
 
         print(np.sum(cls_amount))
-        n4 = -(1/np.log(cls_amount.shape[0])) * \
-            np.sum(cls_amount*np.log(cls_amount))
+
+        pc_i = cls_amount / np.sum(cls_amount)
+        n4 = -(1.0/np.log(cls_amount.shape[0])) * np.sum(pc_i*np.log(pc_i))
 
         return n4
 
