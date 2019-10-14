@@ -362,3 +362,15 @@ class MFEComplexity:
         error = 1 - accuracy_score(y_test, y_pred)
 
         return error
+
+    @classmethod
+    def ft_C1(cls,
+              cls_amount: np.ndarray
+              ) -> np.ndarray:
+
+        print(np.sum(cls_amount))
+        n4 = -(1/np.log(cls_amount.shape[0])) * \
+            np.sum(cls_amount*np.log(cls_amount))
+
+        return n4
+
