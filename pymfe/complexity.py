@@ -11,6 +11,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier
+        from sklearn.decomposition import PCA
 
 
 class MFEComplexity:
@@ -393,11 +394,20 @@ class MFEComplexity:
               N: np.ndarray
               ) -> np.ndarray:
 
-        return N.should[1]/N.shape[0]
+        m = N.shape[1]
+        n = N.shape[0]
+
+        return m/n
 
     @classmethod
     def ft_T2(cls,
               N: np.ndarray
               ) -> np.ndarray:
 
-        return N.should[1]/N.shape[0]
+        pca = PCA(n_components=0.95)
+        pca.fit(X)
+
+        m = pca.explained_variance_ratio_.shape[0]
+        n = N.shape[0]
+
+        return m/n
