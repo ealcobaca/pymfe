@@ -390,7 +390,7 @@ class MFEComplexity:
         return c2
 
     @classmethod
-    def ft_T1(cls,
+    def ft_T2(cls,
               N: np.ndarray
               ) -> np.ndarray:
 
@@ -400,7 +400,7 @@ class MFEComplexity:
         return m/n
 
     @classmethod
-    def ft_T2(cls,
+    def ft_T3(cls,
               N: np.ndarray
               ) -> np.ndarray:
 
