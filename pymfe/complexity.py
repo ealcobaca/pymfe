@@ -250,7 +250,7 @@ class MFEComplexity:
             N_ = N[sub_set, :]
             # N_ = N[np.logical_or(y_class1, y_class2),:]
 
-            for i in range(N.shape[1]):
+            while N_.shape[1] > 0 and N_.shape[0] > 0:
                 # True if the example is in the overlapping region
                 idx_min, _, overlapped_region_by_feature = cls._compute_f3(
                     N_,
@@ -267,11 +267,10 @@ class MFEComplexity:
                 y_class1 = y_class1[overlapped_region]
                 y_class2 = y_class2[overlapped_region]
 
-                if N_.shape[0] == 0:
-                    aux = 0
-                    break
-                else:
+                if N_.shape[0] > 0:
                     aux = N_.shape[0]
+                else:
+                    aux = 0
 
                 # removing the most efficient feature
                 N_ = np.delete(N_, idx_min, axis=1)
@@ -324,7 +323,8 @@ class MFEComplexity:
         dist_m = np.triu(distance.cdist(N_, N_, metric), k=1)
         mst = minimum_spanning_tree(dist_m)
         node_i, node_j = np.where(mst.toarray() > 0)
-        # which edges have nodes with different class 
+
+        # which edges have nodes with different class
         which_have_diff_cls = y[node_i] != y[node_j]
 
         # I have doubts on how to compute it
