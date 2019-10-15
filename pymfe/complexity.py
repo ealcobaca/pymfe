@@ -445,7 +445,7 @@ class MFEComplexity:
 
     @classmethod
     def ft_weighted_distance(cls,
-                             N: np.ndArray,
+                             N: np.ndarray,
                              wd_alpha: int = 2
                              ) -> float:
         """TODO
