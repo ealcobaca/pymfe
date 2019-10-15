@@ -1098,7 +1098,7 @@ class MFE:
             class_ind = _internal.VALID_GROUPS.index(group)
 
             mtf_names += (  # type: ignore
-                _internal.get_prefixed_mtds_from_class(
+                _internal.get_prefixed_mtds_from_class(  # type: ignore
                     class_obj=_internal.VALID_MFECLASSES[class_ind],
                     prefix=_internal.MTF_PREFIX,
                     only_name=True,
