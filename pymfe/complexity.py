@@ -442,3 +442,47 @@ class MFEComplexity:
         """
 
         return m_/m
+
+    @classmethod
+    def ft_weighted_distance(cls,
+              N: int,
+              y: int,
+              wd_alpha = 2,
+              ) -> float:
+
+        # 0-1 scaler
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
+        N = scaler.transform(N)
+
+        from scipy.spatial import distance
+        dist = distance.cdist(N, N, 'euclidean')
+
+        d = dist/(np.sqrt(N.shape[0]-dist))
+        w = 1/(np.power(2,wd_alpha*d))
+
+        wd = np.sum(w*dist, axis=1)/(np.sum(w, axis=1)-1)
+
+        return wd
+
+    @classmethod
+    def ft_cohesiveness(cls,
+              N: int,
+              y: int,
+              wd_alpha = 3,
+              ) -> float:
+
+        # 0-1 scaler
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
+        N = scaler.transform(N)
+
+        from scipy.spatial import distance
+        dist = distance.cdist(N, N, 'euclidean')
+
+        w = 1/(np.power(2,wd_alpha*dist))
+
+        w_ = np.sort(w)
+        w_ = w_[:,::-1]
+        cohe_i = np.sum(w_*np.arange(N.shape[0]), axis=1)
+
+
+        return cohe_i
