@@ -49,8 +49,9 @@ class MFEItemset:
     precomputation or feature extraction method of module ``landmarking``).
     """
     @classmethod
-    def precompute_foo(cls,
-                       N: np.ndarray) -> t.Dict[str, t.Any]:
+    def precompute_foo_itemset(cls,
+                               N: np.ndarray,
+                               **kwargs) -> t.Dict[str, t.Any]:
         """Precompute PCA to Tx complexit measures.
 
         Parameters
@@ -72,12 +73,11 @@ class MFEItemset:
                 - ``n`` (:obj:`int`): Number of examples.
         """
         prepcomp_vals = {}
-
         return prepcomp_vals
 
     @classmethod
-    def ft_foo(cls,
-               N: np.ndarray) -> float:
+    def ft_foo_itemset(cls,
+                       N: np.ndarray) -> float:
         """TODO
         """
 
