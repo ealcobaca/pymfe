@@ -16,7 +16,7 @@ from pymfe.general import MFEGeneral
 
 
 class MFEComplexity:
-    """Keep methods for metafeatures of ``landmarking`` group.
+    """Keep methods for metafeatures of ``Complexity`` group.
 
     The convention adopted for metafeature extraction related methods is to
     always start with ``ft_`` prefix to allow automatic method detection. This
