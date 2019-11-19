@@ -83,6 +83,8 @@ import pymfe.relative as relative
 import pymfe.clustering as clustering
 import pymfe.model_based as model_based
 import pymfe.complexity as complexity
+import pymfe.itemset as itemset
+import pymfe.concept as concept
 import pymfe.scoring as scoring
 
 VALID_VALUE_PREFIX = "VALID_"
@@ -95,7 +97,9 @@ VALID_GROUPS = (
     "info-theory",
     "relative",
     "clustering",
-    "complexity"
+    "complexity",
+    "itemset",
+    "concept"
 )  # type: t.Tuple[str, ...]
 
 GROUP_PREREQUISITES = (
@@ -105,6 +109,8 @@ GROUP_PREREQUISITES = (
     None,
     None,
     "landmarking",
+    None,
+    None,
     None,
     None
 )  # type: t.Tuple[t.Optional[str], ...]
@@ -117,7 +123,9 @@ VALID_MFECLASSES = (
     info_theory.MFEInfoTheory,
     relative.MFERelativeLandmarking,
     clustering.MFEClustering,
-    complexity.MFEComplexity
+    complexity.MFEComplexity,
+    itemset.MFEItemset,
+    concept.MFEConcept
 )  # type: t.Tuple
 
 VALID_SUMMARY = (*_summary.SUMMARY_METHODS, )  # type: t.Tuple[str, ...]
