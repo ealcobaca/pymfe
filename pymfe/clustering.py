@@ -688,20 +688,20 @@ class MFEClustering:
             cls,
             N: np.ndarray,
             y: np.ndarray) -> float:
-        """Calinski and Harabaz index.
+        """Calinski and Harabasz index.
         Check `cahascore`_ for more information.
 
         Returns
         -------
         :obj:`float`
-            Calinski-Harabanz index.
+            Calinski-Harabasz index.
 
         Notes
         -----
-            .. _cahascore: ``sklearn.metrics.calinski_harabaz_score``
+            .. _cahascore: ``sklearn.metrics.calinski_harabasz_score``
                 documentation.
         """
-        return sklearn.metrics.calinski_harabaz_score(X=N, labels=y)
+        return sklearn.metrics.calinski_harabasz_score(X=N, labels=y)
 
     @classmethod
     def ft_nre(
