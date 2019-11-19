@@ -698,10 +698,10 @@ class MFEClustering:
 
         Notes
         -----
-            .. _cahascore: ``sklearn.metrics.calinski_harabasz_score``
+            .. _cahascore: ``sklearn.metrics.calinski_harabaz_score``
                 documentation.
         """
-        return sklearn.metrics.calinski_harabasz_score(X=N, labels=y)
+        return sklearn.metrics.calinski_harabaz_score(X=N, labels=y)
 
     @classmethod
     def ft_nre(
