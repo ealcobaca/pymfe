@@ -434,7 +434,9 @@ class MFE:
             verbose: int = 0,
             # enable_parallel: bool = False,
             suppress_warnings: bool = False,
-            **kwargs) -> t.Tuple[t.List, ...]:
+            **kwargs) -> t.Tuple[t.List[str],
+                                 t.List[t.Union[int, float, t.Sequence]],
+                                 t.List[float]]:
         """Invoke feature methods/functions loaded in the model and gather
         results.
 
@@ -1023,7 +1025,7 @@ class MFE:
             verbose=verbose,
             enable_parallel=enable_parallel,
             suppress_warnings=suppress_warnings,
-            **kwargs)
+            **kwargs)  # type: t.Tuple[t.List, ...]
 
         _internal.post_processing(
             results=results,
@@ -1050,7 +1052,7 @@ class MFE:
                 "Metafeature extraction process done.",
                 "Total of {0} values obtained. Time elapsed "
                 "({1}) = {2:.8f} seconds.".format(
-                    len(res_vals), time_type, sum(res_times)),
+                    len(res_vals), time_type, np.sum(res_times)),
                 sep="\n")
 
         if self.timeopt:
@@ -1136,11 +1138,11 @@ class MFE:
 
         deps = _internal.check_group_dependencies(groups)
 
-        mtf_names = []  # type: t.List[str]
+        mtf_names = []  # type: t.List
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
-            mtf_names += (  # type: ignore
+            mtf_names += (
                 _internal.get_prefixed_mtds_from_class(
                     class_obj=_internal.VALID_MFECLASSES[class_ind],
                     prefix=_internal.MTF_PREFIX,
