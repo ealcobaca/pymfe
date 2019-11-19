@@ -60,9 +60,9 @@ class MFEConcept:
     precomputation or feature extraction method of module ``landmarking``).
     """
     @classmethod
-    def precompute_foo(cls,
-                      y: np.ndarray,
-                      **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_foo_concept(cls,
+                               y: np.ndarray,
+                               **kwargs) -> t.Dict[str, t.Any]:
         """Precompute some useful things to support complexity measures.
 
         Parameters
