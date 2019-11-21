@@ -1003,11 +1003,11 @@ class MFE:
             else:
                 time_type = "total"
 
+            print(type(len(res_vals)))
             print(
                 "Metafeature extraction process done.",
-                "Total of {0} values obtained. Time elapsed "
-                "({1}) = {2:.8f} seconds.".format(
-                    len(res_vals), time_type, sum(res_times)),
+                f"Total of {len(res_vals)} values obtained. Time elapsed "
+                f"({time_type}) = {sum(res_times):.8f} seconds.",
                 sep="\n")
 
         if self.timeopt:
@@ -1098,7 +1098,7 @@ class MFE:
             class_ind = _internal.VALID_GROUPS.index(group)
 
             mtf_names += (  # type: ignore
-                _internal.get_prefixed_mtds_from_class(
+                _internal.get_prefixed_mtds_from_class(  # type: ignore
                     class_obj=_internal.VALID_MFECLASSES[class_ind],
                     prefix=_internal.MTF_PREFIX,
                     only_name=True,
