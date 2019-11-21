@@ -420,6 +420,10 @@ class MFE:
 
         _t_num_cols, _ = shutil.get_terminal_size()
         _t_num_cols -= 8
+
+        if _t_num_cols <= 0:
+            return
+
         _total_prog_symb = int(cur_progress * _t_num_cols / 100)
 
         print("".join([
