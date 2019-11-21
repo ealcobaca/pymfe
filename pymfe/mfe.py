@@ -1154,3 +1154,51 @@ class MFE:
         )
 
         return tuple(filtered_res)
+
+    @classmethod
+    def description(
+        cls,
+        groups: t.Optional[t.Union[str, t.Iterable[str]]]
+    ) -> t.Set[str]:
+        """Cast ``groups`` to a tuple of valid metafeature group names."""
+        def check_groups_type(
+                groups: t.Optional[t.Union[str, t.Iterable[str]]]
+                ) -> t.Set[str]:
+            """Cast ``groups`` to a tuple of valid metafeature group names."""
+            if groups is None:
+                return set(_internal.VALID_GROUPS)
+
+            if isinstance(groups, str):
+                return {groups}
+
+            return set(groups)
+
+        def filter_groups(groups: t.Set[str]) -> t.Set[str]:
+            """Filter given groups by the available metafeature group names."""
+            filtered_group_set = {
+                group for group in groups
+                if group in _internal.VALID_GROUPS
+            }
+            return filtered_group_set
+
+        groups = check_groups_type(groups)
+        groups = filter_groups(groups)
+
+        deps = _internal.check_group_dependencies(groups)
+
+        mtf_names = []  # type: t.List[str]
+        mtf_desc = {"group": [], "name": [], "desc": []}
+        for group in groups.union(deps):
+            class_ind = _internal.VALID_GROUPS.index(group)
+
+            mtf_names = (  # type: ignore
+                _internal.get_prefixed_mtds_from_class(
+                    class_obj=_internal.VALID_MFECLASSES[class_ind],
+                    prefix=_internal.MTF_PREFIX,
+                    only_name=False,
+                    prefix_removal=True))
+            for i, j in enumerate(mtf_names):
+                mtf_desc["group"].append(group)
+                mtf_desc["name"].append(j[0])
+                mtf_desc["desc"].append(j[1].__doc__.split("\n")[0])
+        return mtf_desc
