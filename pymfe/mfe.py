@@ -1003,7 +1003,6 @@ class MFE:
             else:
                 time_type = "total"
 
-            print(type(len(res_vals)))
             print(
                 "Metafeature extraction process done.",
                 f"Total of {len(res_vals)} values obtained. Time elapsed "
