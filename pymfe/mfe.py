@@ -203,7 +203,9 @@ class MFE:
 
         """
         self.groups = _internal.process_generic_set(
-            values=groups, group_name="groups")  # type: t.Tuple[str, ...]
+            values=groups, group_name="groups",
+            groups_alias=[('default', _internal.DEFAULT_GROUP)],
+            wildcard=wildcard)  # type: t.Tuple[str, ...]
 
         self.groups, self.inserted_group_dep = (
             _internal.solve_group_dependencies(
@@ -220,7 +222,8 @@ class MFE:
         del proc_feat
 
         self.summary, self._metadata_mtd_sm = _internal.process_summary(
-            summary)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
+            summary,
+            wildcard=wildcard)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
         self.timeopt = _internal.process_generic_option(
             value=measure_time, group_name="timeopt",
@@ -1156,10 +1159,10 @@ class MFE:
         return tuple(filtered_res)
 
     @classmethod
-    def description(
-        cls,
-        groups: t.Optional[t.Union[str, t.Iterable[str]]]
-    ) -> t.Set[str]:
+    def description(cls,
+                    groups: t.Optional[t.Union[str, t.Iterable[str]]],
+                    print_table: bool = True
+                   ) -> t.Set[str]:
         """Cast ``groups`` to a tuple of valid metafeature group names."""
         def check_groups_type(
                 groups: t.Optional[t.Union[str, t.Iterable[str]]]
@@ -1187,7 +1190,7 @@ class MFE:
         deps = _internal.check_group_dependencies(groups)
 
         mtf_names = []  # type: t.List[str]
-        mtf_desc = {"group": [], "name": [], "desc": []}
+        mtf_desc = [["Group", "Meta-feature name", "Description"]]
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
@@ -1198,7 +1201,12 @@ class MFE:
                     only_name=False,
                     prefix_removal=True))
             for i, j in enumerate(mtf_names):
-                mtf_desc["group"].append(group)
-                mtf_desc["name"].append(j[0])
-                mtf_desc["desc"].append(j[1].__doc__.split("\n")[0])
+                aux = [group, j[0], j[1].__doc__.split("\n")[0]]
+                mtf_desc.append(aux)
+        if print_table:
+            from texttable import Texttable
+            tb = Texttable()
+            tb.add_rows(mtf_desc)
+            print(tb.draw())
+            return
         return mtf_desc
