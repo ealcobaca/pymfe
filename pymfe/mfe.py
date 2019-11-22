@@ -2,6 +2,7 @@
 """
 import typing as t
 import collections
+from texttable import Texttable
 
 import numpy as np
 
@@ -35,6 +36,7 @@ class MFE:
             Tuple object which contains summary functions names for features
             summarization.
     """
+    groups_alias = [('default', _internal.DEFAULT_GROUP)]
 
     def __init__(self,
                  groups: t.Union[str, t.Iterable[str]] = "all",
@@ -204,7 +206,7 @@ class MFE:
         """
         self.groups = _internal.process_generic_set(
             values=groups, group_name="groups",
-            groups_alias=[('default', _internal.DEFAULT_GROUP)],
+            groups_alias=MFE.groups_alias,
             wildcard=wildcard)  # type: t.Tuple[str, ...]
 
         self.groups, self.inserted_group_dep = (
@@ -1008,9 +1010,8 @@ class MFE:
 
             print(
                 "Metafeature extraction process done.",
-                "Total of {0} values obtained. Time elapsed "
-                "({1}) = {2:.8f} seconds.".format(
-                    len(res_vals), time_type, sum(res_times)),
+                f"Total of {len(res_vals)} values obtained. Time elapsed "
+                f"({time_type}) = {sum(res_times):.8f} seconds.",
                 sep="\n")
 
         if self.timeopt:
@@ -1045,6 +1046,29 @@ class MFE:
         return _internal.VALID_SUMMARY
 
     @classmethod
+    def _check_groups_type(cls,
+                           groups: t.Optional[t.Union[str, t.Iterable[str]]]
+                           ) -> t.Set[str]:
+        """Cast ``groups`` to a tuple of valid metafeature group names."""
+        if groups is None:
+            return set(_internal.VALID_GROUPS)
+
+        groups = _internal.convert_alias(MFE.groups_alias, groups)
+
+        return set(groups)
+
+    @classmethod
+    def _filter_groups(cls,
+                       groups: t.Set[str]
+                       ) -> t.Set[str]:
+        """Filter given groups by the available metafeature group names."""
+        filtered_group_set = {
+            group for group in groups
+            if group in _internal.VALID_GROUPS
+        }
+        return filtered_group_set
+
+    @classmethod
     def valid_metafeatures(
             cls,
             groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
@@ -1071,28 +1095,8 @@ class MFE:
         returned metafeatures are available in the ``Pymfe`` package. Check
         the ``MFE`` documentation for deeper information.
         """
-        def check_groups_type(
-                groups: t.Optional[t.Union[str, t.Iterable[str]]]
-                ) -> t.Set[str]:
-            """Cast ``groups`` to a tuple of valid metafeature group names."""
-            if groups is None:
-                return set(_internal.VALID_GROUPS)
-
-            if isinstance(groups, str):
-                return {groups}
-
-            return set(groups)
-
-        def filter_groups(groups: t.Set[str]) -> t.Set[str]:
-            """Filter given groups by the available metafeature group names."""
-            filtered_group_set = {
-                group for group in groups
-                if group in _internal.VALID_GROUPS
-            }
-            return filtered_group_set
-
-        groups = check_groups_type(groups)
-        groups = filter_groups(groups)
+        groups = MFE._check_groups_type(groups)
+        groups = MFE._filter_groups(groups)
 
         deps = _internal.check_group_dependencies(groups)
 
@@ -1101,7 +1105,7 @@ class MFE:
             class_ind = _internal.VALID_GROUPS.index(group)
 
             mtf_names += (  # type: ignore
-                _internal.get_prefixed_mtds_from_class(
+                _internal.get_prefixed_mtds_from_class(  # type: ignore
                     class_obj=_internal.VALID_MFECLASSES[class_ind],
                     prefix=_internal.MTF_PREFIX,
                     only_name=True,
@@ -1159,33 +1163,41 @@ class MFE:
         return tuple(filtered_res)
 
     @classmethod
-    def description(cls,
-                    groups: t.Optional[t.Union[str, t.Iterable[str]]],
-                    print_table: bool = True
-                   ) -> t.Set[str]:
-        """Cast ``groups`` to a tuple of valid metafeature group names."""
-        def check_groups_type(
-                groups: t.Optional[t.Union[str, t.Iterable[str]]]
-                ) -> t.Set[str]:
-            """Cast ``groups`` to a tuple of valid metafeature group names."""
-            if groups is None:
-                return set(_internal.VALID_GROUPS)
+    def metafeature_description(
+            cls,
+            groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
+            sort: bool = False,
+            print_table: bool = True) -> t.Optional[t.List[t.List[str]]]:
+        """Print a table with groups, metafeatures and description.
 
-            if isinstance(groups, str):
-                return {groups}
+        Parameters
+        ----------
+        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`, optional:
+            Can be a string such value is a name of a specific metafeature
+            group (see ``valid_groups`` method for more information) or a
+            sequence of metafeature group names. It can be also None, which
+            in that case all available metafeature names will be returned.
+        print_table : bool:
+            If True a table will be printed with the description, otherwise the
+            table will be send by return.
+        print_table : bool:
+            If True sort the table by metafeature name.
 
-            return set(groups)
+        Returns
+        -------
+        :obj: `List` of `List`
+            A table with the metafeature descriptions or None.
 
-        def filter_groups(groups: t.Set[str]) -> t.Set[str]:
-            """Filter given groups by the available metafeature group names."""
-            filtered_group_set = {
-                group for group in groups
-                if group in _internal.VALID_GROUPS
-            }
-            return filtered_group_set
+        Notes
+        -----
+        The returned ``metafeatures`` are not related to the groups or to the
+        metafeatures fitted in the model instantation. All the
+        returned metafeatures are available in the ``Pymfe`` package. Check
+        the ``MFE`` documentation for deeper information.
+        """
 
-        groups = check_groups_type(groups)
-        groups = filter_groups(groups)
+        groups = MFE._check_groups_type(groups)
+        groups = MFE._filter_groups(groups)
 
         deps = _internal.check_group_dependencies(groups)
 
@@ -1195,18 +1207,22 @@ class MFE:
             class_ind = _internal.VALID_GROUPS.index(group)
 
             mtf_names = (  # type: ignore
-                _internal.get_prefixed_mtds_from_class(
+                _internal.get_prefixed_mtds_from_class(  # type: ignore
                     class_obj=_internal.VALID_MFECLASSES[class_ind],
                     prefix=_internal.MTF_PREFIX,
                     only_name=False,
                     prefix_removal=True))
-            for i, j in enumerate(mtf_names):
-                aux = [group, j[0], j[1].__doc__.split("\n")[0]]
+            for name, method in mtf_names:
+                aux = [group, name,
+                       method.__doc__.split("\n")[0]]  # type: ignore
                 mtf_desc.append(aux)
+
+        if sort:
+            mtf_desc.sort(key=lambda i: i[1])
+
         if print_table:
-            from texttable import Texttable
             tb = Texttable()
             tb.add_rows(mtf_desc)
             print(tb.draw())
-            return
+            return None
         return mtf_desc
