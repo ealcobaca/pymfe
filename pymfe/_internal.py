@@ -644,9 +644,9 @@ def check_summary_warnings(value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
             RuntimeWarning)
 
 
-def _convert_alias(groups_alias: t.Iterable[t.Iterable],
-                   values: t.Optional[t.Union[t.Iterable[str], str]] = None
-                   ) -> t.List[str]:
+def convert_alias(groups_alias: t.Iterable[t.Iterable],
+                  values: t.Optional[t.Union[t.Iterable[str], str]] = None
+                  ) -> t.List[str]:
     """Change the values of the alias to the groups.
     """
     if not values:
@@ -754,7 +754,7 @@ def process_generic_set(
                          "are available for use.".format(group_name))
 
     if groups_alias:
-        values = _convert_alias(groups_alias, values)
+        values = convert_alias(groups_alias, values)
 
     in_valid_set, not_in_valid_set = _check_values_in_group(
         value=values,
