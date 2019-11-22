@@ -445,7 +445,7 @@ class MFEClustering:
 
         representative = np.array(representative)
 
-        num_repr, repr_dim = representative.shape
+        num_repr, repr_dim = representative.shape  # pylint: disable=E0633
         _, num_attr = N.shape
 
         if num_repr != classes.size:
