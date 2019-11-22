@@ -644,11 +644,32 @@ def check_summary_warnings(value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
             RuntimeWarning)
 
 
+def _convert_alias(groups_alias: t.Iterable[t.Iterable],
+                   values: t.Optional[t.Union[t.Iterable[str], str]] = None
+                   ) -> t.List[str]:
+    """Change the values of the alias to the groups.
+    """
+    if not values:
+        values = []
+    elif isinstance(values, str):
+        values = [values]
+    else:
+        values = list(values)
+
+    for alias_name, alias_value in groups_alias:
+        # verifying if the alias is in the set
+        if alias_name in values:
+            values.remove(alias_name)  # remove from values
+            values = list(values) + list(alias_value)  # add real groups
+
+    return values
+
+
 def process_generic_set(
         values: t.Optional[t.Union[t.Iterable[str], str]],
         group_name: str,
         wildcard: t.Optional[str] = "all",
-        groups_alias: t.Iterable[t.Iterable[str]] = None,
+        groups_alias: t.Iterable[t.Iterable] = None,
         allow_none: bool = False,
         allow_empty: bool = False,
         ) -> t.Tuple[str, ...]:
@@ -732,16 +753,8 @@ def process_generic_set(
                          "module documentation to verify which ones "
                          "are available for use.".format(group_name))
 
-    for alias in groups_alias:
-        if isinstance(values, str):
-            # verifying if the alias is the string
-            if alias[0] == values:
-                values = alias[1]
-        else:
-            # verifying if the alias is in the set
-            if alias[0] in values:
-                values.remove(alias[0])  # remove from values
-                values = list(values) + list(alias[1])  # add the real groups
+    if groups_alias:
+        values = _convert_alias(groups_alias, values)
 
     in_valid_set, not_in_valid_set = _check_values_in_group(
         value=values,
