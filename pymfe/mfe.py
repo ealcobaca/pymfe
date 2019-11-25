@@ -1202,7 +1202,7 @@ class MFE:
         deps = _internal.check_group_dependencies(groups)
 
         mtf_names = []  # type: t.List[str]
-        mtf_desc = [["Group", "Meta-feature name", "Description"]]
+        mtf_desc = [["Group", "Metafeature name", "Description"]]
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
