@@ -9,10 +9,6 @@ groups, and summaries available.
 from sklearn.datasets import load_iris
 from pymfe.mfe import MFE
 
-data = load_iris()
-y = data.target
-X = data.data
-
 ###############################################################################
 # Print all available metafeature groups from the ``pymfe`` package.
 model = MFE()

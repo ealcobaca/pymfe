@@ -86,6 +86,14 @@ import pymfe.scoring as scoring
 
 VALID_VALUE_PREFIX = "VALID_"
 
+DEFAULT_GROUP = (
+    "general",
+    "info-theory",
+    "statistical",
+    "model-based",
+    "landmarking",
+)  # type: t.Tuple[str, ...]
+
 VALID_GROUPS = (
     "landmarking",
     "general",
@@ -243,7 +251,6 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
         value_set = set(map(str.lower, value))
         if wildcard and wildcard.lower() in value_set:
             in_group = tuple(valid_group)
-
         else:
             in_group = tuple(value_set.intersection(valid_group))
             not_in_group = tuple(value_set.difference(valid_group))
@@ -637,10 +644,32 @@ def check_summary_warnings(value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
             RuntimeWarning)
 
 
+def convert_alias(groups_alias: t.Iterable[t.Iterable],
+                  values: t.Optional[t.Union[t.Iterable[str], str]] = None
+                  ) -> t.List[str]:
+    """Change the values of the alias to the groups.
+    """
+    if not values:
+        values = []
+    elif isinstance(values, str):
+        values = [values]
+    else:
+        values = list(values)
+
+    for alias_name, alias_value in groups_alias:
+        # verifying if the alias is in the set
+        if alias_name in values:
+            values.remove(alias_name)  # remove from values
+            values = list(values) + list(alias_value)  # add real groups
+
+    return values
+
+
 def process_generic_set(
         values: t.Optional[t.Union[t.Iterable[str], str]],
         group_name: str,
         wildcard: t.Optional[str] = "all",
+        groups_alias: t.Iterable[t.Iterable] = None,
         allow_none: bool = False,
         allow_empty: bool = False,
         ) -> t.Tuple[str, ...]:
@@ -657,6 +686,10 @@ def process_generic_set(
             up options, and this parameter must be the name of the group with-
             out its prefix. For example, to select ``VALID_CLASSES`` group for
             ``values`` reference, then group_names must be just ``classes``.
+
+        groups_alias (:obj:`iterable` of :obj:`iterable`): a list of tuples of
+            aliases. Each tuple should have in the alias name in the first
+            position and the real groups mapped int he second position.
 
         wildcard (:obj:`str`, optional): special value to ``accept any value``.
 
@@ -719,6 +752,9 @@ def process_generic_set(
         raise ValueError('Invalid "group_name" "{}". Check _internal '
                          "module documentation to verify which ones "
                          "are available for use.".format(group_name))
+
+    if groups_alias:
+        values = convert_alias(groups_alias, values)
 
     in_valid_set, not_in_valid_set = _check_values_in_group(
         value=values,
