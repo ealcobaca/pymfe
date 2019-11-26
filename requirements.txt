@@ -4,3 +4,4 @@ sklearn
 patsy
 pandas
 statsmodels
+texttable
