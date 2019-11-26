@@ -419,7 +419,7 @@ class MFE:
             return
 
         _t_num_cols, _ = shutil.get_terminal_size()
-        _t_num_cols -= 8
+        _t_num_cols -= 9
 
         if _t_num_cols <= 0:
             return
