@@ -410,12 +410,12 @@ class MFE:
     def _print_verbose_progress(
             cls,
             cur_progress: float,
-            cur_metaft: str,
+            cur_mtf_name: str,
             verbose: int = 0) -> None:
         """Print messages about extraction progress based on ``verbose``."""
         if verbose >= 2:
             print("Done with {} feature (progress of {:.2f}%)."
-                  .format(cur_metaft, cur_progress))
+                  .format(cur_mtf_name, cur_progress))
             return
 
         _t_num_cols, _ = shutil.get_terminal_size()
@@ -505,7 +505,7 @@ class MFE:
 
                 self._print_verbose_progress(
                     cur_progress=100 * ind / len(self._metadata_mtd_ft),
-                    cur_metaft=ft_mtd_name,
+                    cur_mtf_name=ft_mtd_name,
                     verbose=verbose)
 
         if verbose == 1:
