@@ -457,7 +457,7 @@ class MFE:
         for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
 
             if verbose >= 2:
-                print("Extracting {} feature...".format(ft_mtd_name))
+                print("\nExtracting {} feature...".format(ft_mtd_name))
 
             ft_name_without_prefix = _internal.remove_prefix(
                 value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
@@ -1053,7 +1053,7 @@ class MFE:
                 time_type = "total"
 
             print(
-                "Metafeature extraction process done.",
+                "\nMetafeature extraction process done.",
                 "Total of {0} values obtained. Time elapsed "
                 "({1}) = {2:.8f} seconds.".format(
                     len(res_vals), time_type, np.sum(res_times)),
