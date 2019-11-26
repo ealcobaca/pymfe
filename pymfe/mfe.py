@@ -500,12 +500,13 @@ class MFE:
                 metafeat_names.append(ft_name_without_prefix)
                 metafeat_times.append(time_ft)
 
-            ind += 1
+            if verbose > 0:
+                ind += 1
 
-            self._print_verbose_progress(
-                cur_progress=100 * ind / len(self._metadata_mtd_ft),
-                cur_metaft=ft_mtd_name,
-                verbose=verbose)
+                self._print_verbose_progress(
+                    cur_progress=100 * ind / len(self._metadata_mtd_ft),
+                    cur_metaft=ft_mtd_name,
+                    verbose=verbose)
 
         if verbose == 1:
             _t_num_cols, _ = shutil.get_terminal_size()
