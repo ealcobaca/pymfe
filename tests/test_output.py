@@ -91,3 +91,20 @@ class TestErrorsWarnings:
             captured = capsys.readouterr().out
 
             assert not captured
+
+        @pytest.mark.parametrize(
+            "verbosity, msg_expected",
+            [
+                (0, False),
+                (1, True),
+                (2, True),
+            ])
+        def test_verbosity_3(self, verbosity, msg_expected, capsys):
+            X, y = load_xy(0)
+
+            MFE().fit(X=X.values,
+                      y=y.values).extract(verbose=verbosity)
+
+            captured = capsys.readouterr().out
+
+            assert (not msg_expected) or captured
