@@ -443,9 +443,9 @@ class MFEClustering:
                             "or a sequence or a numpy array. "
                             "Got '{}'.".format(type(representative)))
 
-        representative = np.array(representative)
+        representative_arr = np.asarray(representative)
 
-        num_repr, repr_dim = np.shape(representative)
+        num_repr, repr_dim = representative_arr.shape
         _, num_attr = N.shape
 
         if num_repr != classes.size:
@@ -456,7 +456,7 @@ class MFEClustering:
         if repr_dim != num_attr:
             raise ValueError("The dimension of each class representative "
                              "must match the instances dimension. (Expected "
-                             "'{}', got '{}'".format(classes.size, num_repr))
+                             "'{}', got '{}'".format(classes.size, repr_dim))
 
         return representative
 
