@@ -59,20 +59,34 @@ class MFEComplexity:
     computed in module ``statistical`` can freely be used for any
     precomputation or feature extraction method of module ``landmarking``).
     """
+
     @classmethod
     def precompute_fx(cls,
                       y: np.ndarray,
+                      cls_index_cp: bool = True,
+                      cls_n_ex_cp: bool = True,
+                      ovo_comb_cp: bool = True,
                       **kwargs
                       ) -> t.Dict[str, t.Any]:
-        """Precompute some useful things to support complexity measures.
+        """Precompute some useful things to support feature-based measures.
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
-
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
+
+        cls_index_cp : bool, (default=True)
+            True if you want to compute `cls_index`. It is the list of boolean
+            vectors indicating the example of each class. The array indexes
+            represent the classes.
+
+        cls_n_ex_cp : bool, (default=True)
+            True if you want to compute `cls_n_ex`. It is the number of
+            examples in each class. The array indexes represent the classes.
+
+        ovo_comb_cp : list
+            True if you want to compute 'ovo_comb'. It is the List of all class
+            OVO combination, i.e., [(0,1), (0,2) ...].
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -92,7 +106,6 @@ class MFEComplexity:
                 - ``cls_n_ex`` (:obj:`np.ndarray`): The number of examples in
                   each class. The array indexes represent the classes.
         """
-
         prepcomp_vals = {}
 
         if y is not None and not {"classes", "class_freqs",
@@ -105,25 +118,31 @@ class MFEComplexity:
                 "ovo_comb" not in kwargs and
                 "cls_index" not in kwargs and
                 "cls_n_ex" not in kwargs):
-            cls_index = [np.equal(y_idx, i)
-                         for i in range(classes.shape[0])]
-            cls_n_ex = np.array([np.sum(aux) for aux in cls_index])
-            ovo_comb = list(itertools.combinations(range(classes.shape[0]), 2))
-            prepcomp_vals["ovo_comb"] = ovo_comb
-            prepcomp_vals["cls_index"] = cls_index
-            prepcomp_vals["cls_n_ex"] = cls_n_ex
+            if cls_index_cp or cls_n_ex_cp:
+                cls_index = [np.equal(y_idx, i)
+                             for i in range(classes.shape[0])]
+            if cls_index_cp is True:
+                prepcomp_vals["cls_index"] = cls_index
+            if cls_n_ex_cp is True:
+                cls_n_ex = np.array([np.sum(aux) for aux in cls_index])
+                prepcomp_vals["cls_n_ex"] = cls_n_ex
+            if ovo_comb_cp is True:
+                ovo_comb = list(itertools.combinations(
+                    range(classes.shape[0]), 2))
+                prepcomp_vals["ovo_comb"] = ovo_comb
         return prepcomp_vals
 
     @classmethod
     def precompute_pca_tx(cls,
                           N: np.ndarray,
+                          tx_n_components: float = 0.95,
                           **kwargs
                           ) -> t.Dict[str, t.Any]:
-        """Precompute PCA to Tx complexit measures.
+        """Precompute PCA to support dimensionality measures.
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`, optional
+        N : :obj:`np.ndarray`
             Attributes from fitted data.
 
         **kwargs
@@ -146,7 +165,7 @@ class MFEComplexity:
                 "m_" not in kwargs and
                 "n" not in kwargs):
 
-            pca = PCA(n_components=0.95)
+            pca = PCA(n_components=tx_n_components)
             pca.fit(N)
 
             m_ = pca.explained_variance_ratio_.shape[0]
@@ -209,13 +228,37 @@ class MFEComplexity:
         return idx_min, n_fi, overlapped_region_by_feature
 
     @classmethod
-    def ft_F3(cls,
+    def ft_f3(cls,
               N: np.ndarray,
               ovo_comb: np.ndarray,
               cls_index: np.ndarray,
               cls_n_ex: np.ndarray,
               ) -> np.ndarray:
-        """TODO
+        """Computes the maximum individual feature efficiency measure for each
+        feature.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        ovo_comb : :obj: `np.ndarray`
+            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+
+        cls_index : :obj:`list`
+            The list of boolean vectors indicating the example of each class.
+            The array indexes represent the classes combination, i.e.,
+            [(0,1), (0,2) ...].
+
+        cls_n_ex : :obj:`np.ndarray`
+            The number of examples in each class. The array indexes represent
+            the classes.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An array with the maximum individual feature efficiency measure for
+            each feature.
         """
         f3 = []
         for idx1, idx2 in ovo_comb:
@@ -226,18 +269,47 @@ class MFEComplexity:
             )
             f3.append(n_fi[idx_min] / (cls_n_ex[idx1] + cls_n_ex[idx2]))
 
-        return np.mean(f3)
+        # The measure is computed in the literature using the mean. However,
+        # it is formulated here as a meta-feature. Therefore,
+        # the post-processing should be used to get the mean and other measures
+        # as well.
+        # return np.mean(f3)
+
+        return f3
 
     @classmethod
-    def ft_F4(cls,
+    def ft_f4(cls,
               N: np.ndarray,
               ovo_comb,
               cls_index,
               cls_n_ex,
               ) -> np.ndarray:
-        """TODO
-        """
+        """Computes the collective feature efficiency measure  for each
+        feature.
 
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        ovo_comb : :obj: `np.ndarray`
+            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+
+        cls_index : :obj:`list`
+            The list of boolean vectors indicating the example of each class.
+            The array indexes represent the classes combination, i.e.,
+            [(0,1), (0,2) ...].
+
+        cls_n_ex : :obj:`np.ndarray`
+            The number of examples in each class. The array indexes represent
+            the classes.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An array with the collective feature efficiency measure for each
+            feature.
+        """
         f4 = []
         for idx1, idx2 in ovo_comb:
             aux = 0
@@ -277,17 +349,42 @@ class MFEComplexity:
 
             f4.append(aux/(cls_n_ex[idx1] + cls_n_ex[idx2]))
 
-        return np.mean(f4)
+        # The measure is computed in the literature using the mean. However,
+        # it is formulated here as a meta-feature. Therefore,
+        # the post-processing should be used to get the mean and other measures
+        # as well.
+        # return np.mean(f4)
+
+        return f4
 
     @classmethod
-    def ft_L2(cls,
+    def ft_l2(cls,
               N: np.ndarray,
               ovo_comb: np.ndarray,
               cls_index: np.ndarray
               ) -> np.ndarray:
-        """TODO
-        """
+        """Computes the  error rate of linear classifier measure  for each
+        OVO subset.
 
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        ovo_comb : :obj: `np.ndarray`
+            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+
+        cls_index : :obj:`list`
+            The list of boolean vectors indicating the example of each class.
+            The array indexes represent the classes combination, i.e.,
+            [(0,1), (0,2) ...].
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An array with the collective  error rate of linear classifier
+            measure for each OVO subset.
+        """
         l2 = []
         for idx1, idx2 in ovo_comb:
 
@@ -304,17 +401,40 @@ class MFEComplexity:
 
             l2.append(error)
 
-        return np.mean(l2)
+        # The measure is computed in the literature using the mean. However,
+        # it is formulated here as a meta-feature. Therefore,
+        # the post-processing should be used to get the mean and other measures
+        # as well.
+        # return np.mean(l2)
+
+        return l2
 
     @classmethod
-    def ft_N1(cls,
+    def ft_n1(cls,
               N: np.ndarray,
               y: np.ndarray,
               metric: str = "euclidean"
-              ) -> np.ndarray:
-        """TODO
-        """
+              ) -> float:
+        """Computes the fraction of borderline points measure.
 
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        ovo_comb : :obj: `np.ndarray`
+            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+
+        cls_index : :obj:`list`
+            The list of boolean vectors indicating the example of each class.
+            The array indexes represent the classes combination, i.e.,
+            [(0,1), (0,2) ...].
+
+        Returns
+        -------
+        float
+            An float with the fraction of borderline points measure.
+        """
         # 0-1 scaler
         scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
         N_ = scaler.transform(N)
@@ -337,20 +457,50 @@ class MFEComplexity:
             node_j[which_have_diff_cls]
         ])).shape[0]
 
-        return aux/N.shape[0]
+        return float(aux/N.shape[0])
 
     @classmethod
-    def ft_N4(cls,
+    def ft_n4(cls,
               N: np.ndarray,
               y: np.ndarray,
               cls_index: np.ndarray,
-              metric: str = "euclidean",
-              p=2,
-              n_neighbors=1
-              ) -> np.ndarray:
-        """TODO
-        """
+              metric_n4: str = 'minkowski',
+              p_n4: int = 2,
+              n_neighbors_n4: int = 1
+              ) -> float:
+        """Computes the non-linearity of the nearest neighbor Classifier
+        measure.
 
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        cls_index : :obj:`list`
+            The list of boolean vectors indicating the example of each class.
+            The array indexes represent the classes combination, i.e.,
+            [(0,1), (0,2) ...].
+
+        metric_n4 : str, optional (default='minkowski')
+            The distance metric used in the internal kNN classifier. See the
+            documentation of the DistanceMetric class on sklearn for a list of
+            available metrics.
+
+        p_n4 : int, optional (default = 2)
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using manhattan_distance (l1), and
+            euclidean_distance (l2) for p = 2. For arbitrary p,
+            minkowski_distance (l_p) is used. Please, check the
+            KNeighborsClassifier documentation on sklearn for more information.
+
+        Returns
+        -------
+        float
+            An float with the fraction of borderline points measure.
+        """
         interp_N = []
         interp_y = []
 
@@ -378,33 +528,60 @@ class MFEComplexity:
         y_test = np.concatenate(interp_y)
 
         knn = KNeighborsClassifier(
-            n_neighbors=n_neighbors, p=p, metric=metric).fit(N, y)
+            n_neighbors=n_neighbors_n4, p=p_n4, metric=metric_n4).fit(N, y)
         y_pred = knn.predict(N_test)
         error = 1 - accuracy_score(y_test, y_pred)
 
-        return error
+        return float(error)
 
     @classmethod
-    def ft_C1(cls,
-              cls_n_ex: np.ndarray
-              ) -> np.ndarray:
-        """TODO
+    def ft_c1(cls,
+              y: np.array,
+              cls_n_ex: np.ndarray = None,
+              ) -> float:
+        """Computes the entropy of class proportions measure.
+
+        Parameters
+        ----------
+        cls_n_ex : :obj:`np.ndarray`
+            The number of examples in each class. The array indexes represent
+            the classes.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An float with the entropy of class proportions measure.
         """
+        if cls_n_ex is None:
+            dict_precomputed = MFEComplexity.precompute_fx(
+                y=y, cls_index_cp=False, cls_n_ex_cp=True,
+                ovo_comb_cp=False)
+            cls_n_ex = dict_precomputed["cls_n_ex"]
 
         nc = cls_n_ex.shape[0]
         pc_i = cls_n_ex / np.sum(cls_n_ex)
         c1 = -(1.0/np.log(nc)) * np.sum(pc_i*np.log(pc_i))
 
         # Shuldn't C1 be 1-C1? to match with C2?
-        return c1
+        return float(c1)
 
     @classmethod
-    def ft_C2(cls,
+    def ft_c2(cls,
               cls_n_ex: np.ndarray
-              ) -> np.ndarray:
-        """TODO
-        """
+              ) -> float:
+        """Computes the imbalance ratio measure.
 
+        Parameters
+        ----------
+        cls_n_ex : :obj:`np.ndarray`
+            The number of examples in each class. The array indexes represent
+            the classes.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An float with the imbalance ratio measure.
+        """
         n = np.sum(cls_n_ex)
         nc = cls_n_ex.shape[0]
         nc_i = cls_n_ex
@@ -414,74 +591,67 @@ class MFEComplexity:
         return c2
 
     @classmethod
-    def ft_T2(cls,
+    def ft_t2(cls,
               m: int,
               n: int
               ) -> float:
-        """TODO
-        """
+        """Computes the average number of features per dimension measure.
 
+        Parameters
+        ----------
+        m : int
+            Number of features.
+        n : int
+            Number of examples.
+
+        Returns
+        -------
+        :obj:`float`
+            An float with the average number of features per dimension measure.
+        """
         return m/n
 
     @classmethod
-    def ft_T3(cls,
+    def ft_t3(cls,
               m_: int,
               n: int
               ) -> float:
-        """TODO
-        """
+        """Computes the average number of PCA dimensions per points measure.
 
+        Parameters
+        ----------
+        m_ : int
+            Number of features after PCA with 0.95.
+        n : int
+            Number of examples.
+
+        Returns
+        -------
+        :obj:`float`
+            An float with the average number of PCA dimensions per points
+            measure.
+        """
         return m_/n
 
     @classmethod
-    def ft_T4(cls,
+    def ft_t4(cls,
               m: int,
               m_: int
               ) -> float:
-        """TODO
-        """
+        """Computes the ratio of the PCA dimension to the original dimension
+        measure.
 
+        Parameters
+        ----------
+        m : int
+            Number of features.
+        m_ : int
+            Number of features after PCA with 0.95.
+
+        Returns
+        -------
+        :obj:`float`
+            An float with the ratio of the PCA dimension to the original
+            dimension measure.
+        """
         return m_/m
-
-    @classmethod
-    def ft_weighted_distance(cls,
-                             N: np.ndarray,
-                             wd_alpha: int = 2
-                             ) -> float:
-        """TODO
-        """
-
-        # 0-1 scaler
-        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
-        N = scaler.transform(N)
-
-        dist = distance.cdist(N, N, 'euclidean')
-
-        d = dist/(np.sqrt(N.shape[0]-dist))
-        w = 1/(np.power(2, wd_alpha*d))
-
-        wd = np.sum(w*dist, axis=1)/(np.sum(w, axis=1)-1)
-
-        return wd
-
-    @classmethod
-    def ft_cohesiveness(cls,
-                        N: np.ndarray,
-                        wd_alpha: int = 3
-                        ) -> float:
-        """TODO
-        """
-
-        # 0-1 scaler
-        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
-        N = scaler.transform(N)
-
-        dist = distance.cdist(N, N, 'euclidean')
-
-        w = 1/(np.power(2, wd_alpha*dist))
-
-        w_ = np.sort(w)
-        w_ = w_[:, ::-1]
-        cohe_i = np.sum(w_*np.arange(N.shape[0]), axis=1)
-
-        return cohe_i
