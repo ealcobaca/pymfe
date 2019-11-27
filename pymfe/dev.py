@@ -92,8 +92,17 @@ You can use the tag ``code-check`` for chack the `mypy`, `pylint` and
 >>> make code-check
 
 .. note::
+    This example shows how to create a new group of meta-features. If you want
+    only to add a new meta-feature, you should insert it in the meta-feature
+    group file and create an "ft_" method to it. The new meta-feature will be
+    automatically picked up (as the method "ft_foo" in this example). You
+    should not forget to use the precompute methods to save time.
+
+
+.. note::
     You should not forget to create tests for all new functionalities that
     you implemented. The test can be found in `./tests/` fold.
+
 
 .. note::
     This class is being actualized in GitHub, check this

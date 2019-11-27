@@ -169,6 +169,36 @@ class TestArchitecture:
         assert (len(res) == len(_internal.VALID_GROUPS)
                 and not set(res).symmetric_difference(_internal.VALID_GROUPS))
 
+    def test_metafeature_description(self):
+        desc = MFE.metafeature_description(print_table=False)
+        groups = [d[0] for d in desc]
+        assert len(set(groups)) == len(_internal.VALID_GROUPS)
+
+        desc = MFE.metafeature_description(sort=True, print_table=False)
+        print(desc)
+        mtf = [d[1] for d in desc]
+        assert mtf[1][0] < mtf[-1][0]
+
+        desc = MFE.metafeature_description()
+        assert desc is None
+
+
+    def test_default_alias_groups(self):
+        model = MFE(groups="default")
+        res = model.valid_groups()
+        assert (len(res) == len(_internal.VALID_GROUPS)
+                and not set(res).symmetric_difference(_internal.VALID_GROUPS))
+
+        model = MFE(groups=["default"])
+        res = model.valid_groups()
+        assert (len(res) == len(_internal.VALID_GROUPS)
+                and not set(res).symmetric_difference(_internal.VALID_GROUPS))
+
+        model = MFE(groups=["general", "default"])
+        res = model.valid_groups()
+        assert (len(res) == len(_internal.VALID_GROUPS)
+                and not set(res).symmetric_difference(_internal.VALID_GROUPS))
+
     @pytest.mark.parametrize(
         "groups",
         [
