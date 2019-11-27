@@ -3,6 +3,7 @@
 import typing as t
 import collections
 from texttable import Texttable
+import shutil
 
 import numpy as np
 
@@ -286,7 +287,7 @@ class MFE:
             feature_values: t.Sequence[_internal.TypeNumeric],
             feature_name: str,
             remove_nan: bool = True,
-            verbose: bool = False,
+            verbose: int = 0,
             suppress_warnings: bool = False,
             **kwargs
     ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]], t.
@@ -309,8 +310,10 @@ class MFE:
             user must suppress these warnings using some built-in argument of
             the summary method using the kwargs argument, if possible.
 
-        verbose : :obj:`bool`, optional
-            If True, then messages about the summarization process may be
+        verbose : :obj:`int`, optional
+            Select the verbosity level of the summarization process.
+            If == 1, then print just the ending message, without a line break.
+            If >= 2, then messages about the summarization process may be
             printed. Note that there is no relation between this argument and
             warnings (see ``suppress_warnings`` argument below).
 
@@ -358,11 +361,10 @@ class MFE:
         metafeat_times = []  # type: t.List[float]
 
         for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
-
-            if verbose:
+            if verbose >= 2:
                 print(
-                    "  Summarizing {0} feature with {1} summary"
-                    " function...".format(feature_name, sm_mtd_name),
+                    "  Summarizing {0} feature with {1} summary "
+                    "function...".format(feature_name, sm_mtd_name),
                     end=" ")
 
             sm_mtd_args_pack = _internal.build_mtd_kwargs(
@@ -400,18 +402,50 @@ class MFE:
                 metafeat_names.append(".".join((feature_name, sm_mtd_name)))
                 metafeat_times.append(time_sm)
 
-            if verbose:
+            if verbose >= 2:
                 print("Done.")
 
+        if verbose >= 1:
+            print("\rDone Summarizing {0} feature."
+                  .format(feature_name), end="")
+
         return metafeat_names, metafeat_vals, metafeat_times
+
+    @classmethod
+    def _print_verbose_progress(
+            cls,
+            cur_progress: float,
+            cur_mtf_name: str,
+            verbose: int = 0) -> None:
+        """Print messages about extraction progress based on ``verbose``."""
+        if verbose >= 2:
+            print("Done with {} feature (progress of {:.2f}%)."
+                  .format(cur_mtf_name, cur_progress))
+            return
+
+        _t_num_cols, _ = shutil.get_terminal_size()
+        _t_num_cols -= 9
+
+        if _t_num_cols <= 0:
+            return
+
+        _total_prog_symb = int(cur_progress * _t_num_cols / 100)
+
+        print("".join([
+            "\r[",
+            _total_prog_symb * "#",
+            (_t_num_cols - _total_prog_symb) * ".",
+            "]{:.2f}%".format(cur_progress)]), end="")
 
     def _call_feature_methods(
             self,
             remove_nan: bool = True,
-            verbose: bool = False,
+            verbose: int = 0,
             # enable_parallel: bool = False,
             suppress_warnings: bool = False,
-            **kwargs) -> t.Tuple[t.List, ...]:
+            **kwargs) -> t.Tuple[t.List[str],
+                                 t.List[t.Union[int, float, t.Sequence]],
+                                 t.List[float]]:
         """Invoke feature methods/functions loaded in the model and gather
         results.
 
@@ -424,10 +458,11 @@ class MFE:
         metafeat_names = []  # type: t.List[str]
         metafeat_times = []  # type: t.List[float]
 
+        ind = 0
         for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
 
-            if verbose:
-                print("Extracting {} feature...".format(ft_mtd_name))
+            if verbose >= 2:
+                print("\nExtracting {} feature...".format(ft_mtd_name))
 
             ft_name_without_prefix = _internal.remove_prefix(
                 value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
@@ -470,8 +505,19 @@ class MFE:
                 metafeat_names.append(ft_name_without_prefix)
                 metafeat_times.append(time_ft)
 
-            if verbose:
-                print("Done with {} feature.".format(ft_mtd_name))
+            if verbose > 0:
+                ind += 1
+
+                self._print_verbose_progress(
+                    cur_progress=100 * ind / len(self._metadata_mtd_ft),
+                    cur_mtf_name=ft_mtd_name,
+                    verbose=verbose)
+
+        if verbose == 1:
+            _t_num_cols, _ = shutil.get_terminal_size()
+            print("\r{:<{fill}}".format(
+                "Process of metafeature extraction finished.",
+                fill=_t_num_cols))
 
         return metafeat_names, metafeat_vals, metafeat_times
 
@@ -872,7 +918,7 @@ class MFE:
     def extract(
             self,
             remove_nan: bool = True,
-            verbose: bool = False,
+            verbose: int = 0,
             enable_parallel: bool = False,
             suppress_warnings: bool = False,
             **kwargs) -> t.Tuple[t.Sequence, ...]:
@@ -887,10 +933,14 @@ class MFE:
             case, the user must modify this behavior using built-in summary
             method arguments via kwargs, if possible.
 
-        verbose : :obj:`bool`, optional
-            If True, print messages related to the metafeature extraction
-            process. Note that warning messages are not affected by this option
-            (see ``suppress_warnings`` argument below).
+        verbose : :obj:`int`, optional
+            Defines the verbosity level related to the metafeature extraction.
+            If == 1, show just the current progress, without line breaks.
+            If >= 2, print all messages related to the metafeature extraction
+            process.
+
+            Note that warning messages are not affected by this option (see
+            ``suppress_warnings`` argument below).
 
         enable_parallel : :obj:`bool`, optional
             If True, then the meta-feature extraction is done with
@@ -977,7 +1027,7 @@ class MFE:
                 or not isinstance(self.y, np.ndarray)):
             self.X, self.y = _internal.check_data(self.X, self.y)
 
-        if verbose:
+        if verbose >= 2:
             print("Started the metafeature extraction process.")
 
         results = self._call_feature_methods(
@@ -985,7 +1035,7 @@ class MFE:
             verbose=verbose,
             enable_parallel=enable_parallel,
             suppress_warnings=suppress_warnings,
-            **kwargs)
+            **kwargs)  # type: t.Tuple[t.List, ...]
 
         _internal.post_processing(
             results=results,
@@ -1002,16 +1052,17 @@ class MFE:
 
         res_names, res_vals, res_times = results
 
-        if verbose:
+        if verbose >= 2:
             if self._timeopt_type_is_avg():
                 time_type = "average"
             else:
                 time_type = "total"
 
             print(
-                "Metafeature extraction process done.",
-                f"Total of {len(res_vals)} values obtained. Time elapsed "
-                f"({time_type}) = {sum(res_times):.8f} seconds.",
+                "\nMetafeature extraction process done.",
+                "Total of {0} values obtained. Time elapsed "
+                "({1}) = {2:.8f} seconds.".format(
+                    len(res_vals), time_type, np.sum(res_times)),
                 sep="\n")
 
         if self.timeopt:
@@ -1100,12 +1151,12 @@ class MFE:
 
         deps = _internal.check_group_dependencies(groups)
 
-        mtf_names = []  # type: t.List[str]
+        mtf_names = []  # type: t.List
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
-            mtf_names += (  # type: ignore
-                _internal.get_prefixed_mtds_from_class(  # type: ignore
+            mtf_names += (
+                _internal.get_prefixed_mtds_from_class(
                     class_obj=_internal.VALID_MFECLASSES[class_ind],
                     prefix=_internal.MTF_PREFIX,
                     only_name=True,
