@@ -64,3 +64,47 @@ class TestErrorsWarnings:
             vals, names, time = res
 
             assert len(vals) == len(names) == len(time)
+
+        @pytest.mark.parametrize(
+            "verbosity, msg_expected",
+            [
+                (0, False),
+                (1, True),
+                (2, True),
+            ])
+        def test_verbosity_1(self, verbosity, msg_expected, capsys):
+            MFE._print_verbose_progress(
+                cur_progress=0,
+                cur_mtf_name="foo",
+                verbose=verbosity)
+
+            captured = capsys.readouterr().out
+
+            assert (not msg_expected) or captured
+
+        def test_verbosity_2(self, capsys):
+            X, y = load_xy(0)
+
+            MFE().fit(X=X.values,
+                      y=y.values).extract(verbose=0)
+
+            captured = capsys.readouterr().out
+
+            assert not captured
+
+        @pytest.mark.parametrize(
+            "verbosity, msg_expected",
+            [
+                (0, False),
+                (1, True),
+                (2, True),
+            ])
+        def test_verbosity_3(self, verbosity, msg_expected, capsys):
+            X, y = load_xy(0)
+
+            MFE().fit(X=X.values,
+                      y=y.values).extract(verbose=verbosity)
+
+            captured = capsys.readouterr().out
+
+            assert (not msg_expected) or captured

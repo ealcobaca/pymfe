@@ -251,11 +251,12 @@ def _check_values_in_group(value: t.Union[str, t.Iterable[str]],
     return tuple(in_group), tuple(not_in_group)
 
 
-def get_prefixed_mtds_from_class(class_obj: t.Any,
-                                 prefix: str,
-                                 only_name: bool = False,
-                                 prefix_removal: bool = False,
-                                 ) -> t.List[t.Union[str, TypeMtdTuple]]:
+def get_prefixed_mtds_from_class(
+        class_obj: t.Any,
+        prefix: str,
+        only_name: bool = False,
+        prefix_removal: bool = False,
+        ) -> t.Union[t.List[str], t.List[TypeMtdTuple]]:
     """Get all class methods from ``class_obj`` prefixed with ``prefix``.
 
     Args:
@@ -284,7 +285,8 @@ def get_prefixed_mtds_from_class(class_obj: t.Any,
     # It is assumed that all feature-extraction related methods
     # name are all prefixed with "MTF_PREFIX" and all precomputa-
     # tion methos, prefixed with "PRECOMPUTE_PREFIX".
-    feat_mtd_list = []  # type: t.List[t.Union[str, TypeMtdTuple]]
+
+    feat_mtd_list = []  # type: t.List
 
     for ft_method in class_methods:
         mtd_name, remaining_data = ft_method[0], ft_method[1:]
@@ -1475,15 +1477,17 @@ def select_results_by_classes(
     if include_dependencies:
         class_names.update(check_group_dependencies(groups=class_names))
 
-    classes_mtd_names = set()
+    classes_mtd_names = set()  # type: t.Set[str]
 
     for class_name in class_names:
         if class_name in VALID_GROUPS:
-            classes_mtd_names.update(get_prefixed_mtds_from_class(
+            _aux = get_prefixed_mtds_from_class(
                 class_obj=VALID_MFECLASSES[VALID_GROUPS.index(class_name)],
                 prefix=MTF_PREFIX,
                 only_name=True,
-                prefix_removal=True))
+                prefix_removal=True)
+
+            classes_mtd_names.update(_aux)  # type: ignore
 
     re_parse_mtf_name = re.compile(r"([^\.]+)\.?")
 
