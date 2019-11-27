@@ -3,11 +3,15 @@ What is new on pymfe package?
 
 Version 0.1.1
 -------------
-- Bugs solved
-   - False positive of mypy fixed
-   - Contributing link now is working
-- We added a note about how to add a new meta-feature
-- Modified 'verbosity' (from 'extract' method) argument type from boolean to
+* Bugs solved
+
+   * False positive of mypy fixed
+
+   * Contributing link now is working
+
+* We added a note about how to add a new meta-feature
+
+* Modified 'verbosity' (from 'extract' method) argument type from boolean to
   integer. Now the user can choose the desired level of verbosity.
   Verbosity = 1 means that a progress bar will be shown during the metafeature
   extraction process. Verbosity = 2 maintains all the previous verbose messages
@@ -17,38 +21,56 @@ Version 0.1.1
 
 Version 0.1.0
 -------------
-- Meta-feature groups available:
-   - Relative landmarking
-   - Clustering-based
-   - Relative subsampling landmarking
-- Makefile to help developers
+* Meta-feature groups available
 
-- New Functionalities
-   - Now you can list available groups
-   - Now you can list available metafeatures
+   * Relative landmarking
 
-- Documentation
-   - New examples
-   - New README
+   * Clustering-based
 
-- Bugs
-   - Problems in parse categoric metafeatures solved
-   - Categorization of attributes with constant values solved
+   * Relative subsampling landmarking
 
-- Test
-   - Several new tests added
+* Makefile to help developers
+
+* New Functionalities
+
+   * Now you can list available groups
+
+   * Now you can list available metafeatures
+
+* Documentation
+
+   * New examples
+
+   * New README
+
+* Bugs
+
+   * Problems in parse categoric metafeatures solved
+
+   * Categorization of attributes with constant values solved
+
+* Test
+
+   * Several new tests added
 
 Version 0.0.3
 -------------
-- Documentation improvement
-- Setup improvement
+* Documentation improvement
+  
+* Setup improvement
 
 
 Initial Release
 ---------------
-- Meta-feature groups available:
-  - Simple
-  - Statistical
-  - Information-theoretic
-  - Model-based
-  - Landmarking
+* Meta-feature groups available:
+
+  * Simple
+
+  * Statistical
+
+  * Information-theoretic
+
+  * Model-based
+
+  * Landmarking
+
