@@ -2,8 +2,8 @@
 """
 import typing as t
 import collections
-from texttable import Texttable
 import shutil
+from texttable import Texttable
 
 import numpy as np
 
