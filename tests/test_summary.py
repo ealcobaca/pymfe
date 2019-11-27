@@ -1,8 +1,16 @@
 """Test module for General class metafeatures."""
 import pytest
 
+import pymfe._internal
 import pymfe._summary
+import pymfe.mfe
 import numpy as np
+
+
+def test_get_summary():
+    assert (not set(pymfe.mfe.MFE.valid_summary())
+                .symmetric_difference(pymfe._internal.VALID_SUMMARY))
+
 
 def test_sum_histogram():
     mf = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
