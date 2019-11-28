@@ -61,11 +61,26 @@ class MFEComplexity:
     """
 
     @classmethod
+    def _get_clsfreq(cls,
+                     y: np.ndarray,
+                     **kwargs
+                     ) -> t.Dict[str, t.Any]:
+
+        if y is not None and \
+                ("classes" not in kwargs or
+                 "y_idx" not in kwargs or
+                 "classes_freq" not in kwargs):
+
+            res = MFEGeneral.precompute_general_class(y)
+
+        else:
+            res = kwargs
+
+        return res
+
+    @classmethod
     def precompute_fx(cls,
                       y: np.ndarray,
-                      cls_index_cp: bool = True,
-                      cls_n_ex_cp: bool = True,
-                      ovo_comb_cp: bool = True,
                       **kwargs
                       ) -> t.Dict[str, t.Any]:
         """Precompute some useful things to support feature-based measures.
@@ -74,19 +89,6 @@ class MFEComplexity:
         ----------
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
-
-        cls_index_cp : bool, (default=True)
-            True if you want to compute `cls_index`. It is the list of boolean
-            vectors indicating the example of each class. The array indexes
-            represent the classes.
-
-        cls_n_ex_cp : bool, (default=True)
-            True if you want to compute `cls_n_ex`. It is the number of
-            examples in each class. The array indexes represent the classes.
-
-        ovo_comb_cp : list
-            True if you want to compute 'ovo_comb'. It is the List of all class
-            OVO combination, i.e., [(0,1), (0,2) ...].
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -108,29 +110,33 @@ class MFEComplexity:
         """
         prepcomp_vals = {}
 
-        if y is not None and not {"classes", "class_freqs",
-                                  "return_inverse"}.issubset(kwargs):
-            prec = MFEGeneral.precompute_general_class(y)
-            classes, y_idx, _ = (prec["classes"],
-                                 prec["y_idx"], prec["class_freqs"])
-
         if (y is not None and
                 "ovo_comb" not in kwargs and
                 "cls_index" not in kwargs and
                 "cls_n_ex" not in kwargs):
-            if cls_index_cp or cls_n_ex_cp:
-                cls_index = [np.equal(y_idx, i)
-                             for i in range(classes.shape[0])]
-            if cls_index_cp is True:
-                prepcomp_vals["cls_index"] = cls_index
-            if cls_n_ex_cp is True:
-                cls_n_ex = np.array([np.sum(aux) for aux in cls_index])
-                prepcomp_vals["cls_n_ex"] = cls_n_ex
-            if ovo_comb_cp is True:
-                ovo_comb = list(itertools.combinations(
-                    range(classes.shape[0]), 2))
-                prepcomp_vals["ovo_comb"] = ovo_comb
-        return prepcomp_vals
+
+            if ("classes" not in kwargs or
+                    "y_idx" not in kwargs or
+                    "classes_freq" not in kwargs):
+
+                sub_dic = MFEGeneral.precompute_general_class(y)
+
+            classes = sub_dic["classes"]
+            y_idx = sub_dic["y_idx"]
+
+            cls_index = [np.equal(y_idx, i)
+                         for i in range(classes.shape[0])]
+            prepcomp_vals["cls_index"] = cls_index
+
+            cls_n_ex = np.array([np.sum(aux) for aux in cls_index])
+            prepcomp_vals["cls_n_ex"] = cls_n_ex
+
+            ovo_comb = list(itertools.combinations(
+                range(classes.shape[0]), 2))
+            prepcomp_vals["ovo_comb"] = ovo_comb
+
+        return prepcomp_vals.update(sub_dic)
+
 
     @classmethod
     def precompute_pca_tx(cls,
@@ -230,9 +236,10 @@ class MFEComplexity:
     @classmethod
     def ft_f3(cls,
               N: np.ndarray,
-              ovo_comb: np.ndarray,
-              cls_index: np.ndarray,
-              cls_n_ex: np.ndarray,
+              y: np.ndarray,
+              ovo_comb: np.ndarray = None,
+              cls_index: np.ndarray = None,
+              cls_n_ex: np.ndarray = None,
               ) -> np.ndarray:
         """Computes the maximum individual feature efficiency measure for each
         feature.
@@ -260,6 +267,13 @@ class MFEComplexity:
             An array with the maximum individual feature efficiency measure for
             each feature.
         """
+        if ovo_comb is None or cls_index is None or cls_n_ex is None:
+            sub_dic = MFEComplexity.precompute_fx(y=y)
+            ovo_comb = sub_dic["ovo_comb"]
+            cls_index = sub_dic["cls_index"]
+            cls_n_ex = sub_dic["cls_n_ex"]
+            # asdasd
+
         f3 = []
         for idx1, idx2 in ovo_comb:
             idx_min, n_fi, _ = cls._compute_f3(
