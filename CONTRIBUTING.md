@@ -48,11 +48,12 @@ following rules before submitting a pull request:
    [coding-guidelines](http://scikit-learn.org/dev/developers/contributing.html#coding-guidelines)
    as for scikit-learn.
 
--  When applicable, use the validation tools and other code in the
-   `pymfe._internal` submodule.
+-  When applicable, use the validation tools cited below (pytest, pylint and mypy).
+
+-  Avoid reinventing the wheel, reuse the functions from the `pymfe._internal` submodule.
 
 -  If your pull request addresses an issue, please use the title to describe
-   the issue and mention the issue number in the pull request description to
+   the issue and mention the issue number (using #) in the pull request description to
    ensure a link is created to the original issue.
 
 -  All public methods should have informative docstrings with sample
@@ -64,6 +65,10 @@ following rules before submitting a pull request:
    in progress (and changed to `[MRG]` when it matures). WIPs may be useful
    to indicate you are working on something to avoid duplicated work,
    request a broad review of functionality or API, or seek collaborators.
+
+-  Don't forget to activate your virtual environment, if any:
+
+        $ source venv/bin/activate
 
 -  All other tests pass when everything is rebuilt from scratch. On
    Unix-like systems, check with (from the top-level source folder):
