@@ -78,6 +78,24 @@ class MFEComplexity:
 
         return res
 
+    @staticmethod
+    def _compute_cls_index(y_idx: np.ndarray, classes: np.ndarray) -> list:
+        """Computes the ``cls_index`` variable.
+        """
+        return [np.equal(y_idx, i) for i in range(classes.shape[0])]
+
+    @staticmethod
+    def _compute_cls_n_index(cls_index: list) -> np.ndarray:
+        """Computes the ``cls_n_ex`` variable.
+        """
+        return np.array([np.sum(aux) for aux in cls_index])
+
+    @staticmethod
+    def _compute_ovo_comb(classes: np.ndarray) -> list:
+        """Computes the ``ovo_comb`` variable.
+        """
+        return list(itertools.combinations(range(classes.shape[0]), 2))
+
     @classmethod
     def precompute_fx(cls,
                       y: np.ndarray,
@@ -111,32 +129,31 @@ class MFEComplexity:
         prepcomp_vals = {}
 
         if (y is not None and
-                "ovo_comb" not in kwargs and
-                "cls_index" not in kwargs and
-                "cls_n_ex" not in kwargs):
+                ("ovo_comb" not in kwargs or
+                 "cls_index" not in kwargs or
+                 "cls_n_ex" not in kwargs)):
 
-            if ("classes" not in kwargs or
-                    "y_idx" not in kwargs or
-                    "classes_freq" not in kwargs):
-
-                sub_dic = MFEGeneral.precompute_general_class(y)
+            sub_dic = MFEGeneral.precompute_general_class(y)
+            prepcomp_vals.update(sub_dic)
 
             classes = sub_dic["classes"]
             y_idx = sub_dic["y_idx"]
 
-            cls_index = [np.equal(y_idx, i)
-                         for i in range(classes.shape[0])]
+            cls_index = MFEComplexity._compute_cls_index(y_idx, classes)
             prepcomp_vals["cls_index"] = cls_index
 
-            cls_n_ex = np.array([np.sum(aux) for aux in cls_index])
+            cls_n_ex = MFEComplexity._compute_cls_n_index(cls_index)
             prepcomp_vals["cls_n_ex"] = cls_n_ex
 
             ovo_comb = list(itertools.combinations(
                 range(classes.shape[0]), 2))
             prepcomp_vals["ovo_comb"] = ovo_comb
 
-        return prepcomp_vals.update(sub_dic)
+        return prepcomp_vals
 
+    def _compute_n_m(N: np.ndarray):
+        """Computes the ``n`` and ``m`` variables."""
+        return N.shape[0], N.shape[1]
 
     @classmethod
     def precompute_pca_tx(cls,
@@ -175,8 +192,7 @@ class MFEComplexity:
             pca.fit(N)
 
             m_ = pca.explained_variance_ratio_.shape[0]
-            m = N.shape[1]
-            n = N.shape[0]
+            n, m = MFEComplexity._compute_n_m(N=N)
 
             prepcomp_vals["m_"] = m_
             prepcomp_vals["m"] = m
@@ -272,7 +288,6 @@ class MFEComplexity:
             ovo_comb = sub_dic["ovo_comb"]
             cls_index = sub_dic["cls_index"]
             cls_n_ex = sub_dic["cls_n_ex"]
-            # asdasd
 
         f3 = []
         for idx1, idx2 in ovo_comb:
@@ -294,9 +309,10 @@ class MFEComplexity:
     @classmethod
     def ft_f4(cls,
               N: np.ndarray,
-              ovo_comb,
-              cls_index,
-              cls_n_ex,
+              y: np.ndarray,
+              ovo_comb: np.ndarray = None,
+              cls_index: np.ndarray = None,
+              cls_n_ex: np.ndarray = None,
               ) -> np.ndarray:
         """Computes the collective feature efficiency measure  for each
         feature.
@@ -324,6 +340,12 @@ class MFEComplexity:
             An array with the collective feature efficiency measure for each
             feature.
         """
+        if ovo_comb is None or cls_index is None or cls_n_ex is None:
+            sub_dic = MFEComplexity.precompute_fx(y=y)
+            ovo_comb = sub_dic["ovo_comb"]
+            cls_index = sub_dic["cls_index"]
+            cls_n_ex = sub_dic["cls_n_ex"]
+
         f4 = []
         for idx1, idx2 in ovo_comb:
             aux = 0
@@ -374,8 +396,9 @@ class MFEComplexity:
     @classmethod
     def ft_l2(cls,
               N: np.ndarray,
-              ovo_comb: np.ndarray,
-              cls_index: np.ndarray
+              y: np.ndarray,
+              ovo_comb: np.ndarray = None,
+              cls_index: np.ndarray = None
               ) -> np.ndarray:
         """Computes the  error rate of linear classifier measure  for each
         OVO subset.
@@ -399,6 +422,11 @@ class MFEComplexity:
             An array with the collective  error rate of linear classifier
             measure for each OVO subset.
         """
+        if ovo_comb is None or cls_index is None:
+            sub_dic = MFEComplexity.precompute_fx(y=y)
+            ovo_comb = sub_dic["ovo_comb"]
+            cls_index = sub_dic["cls_index"]
+
         l2 = []
         for idx1, idx2 in ovo_comb:
 
@@ -477,7 +505,7 @@ class MFEComplexity:
     def ft_n4(cls,
               N: np.ndarray,
               y: np.ndarray,
-              cls_index: np.ndarray,
+              cls_index: np.ndarray = None,
               metric_n4: str = 'minkowski',
               p_n4: int = 2,
               n_neighbors_n4: int = 1
@@ -515,6 +543,14 @@ class MFEComplexity:
         float
             An float with the fraction of borderline points measure.
         """
+        if cls_index is None:
+            sub_dic = MFEGeneral.precompute_general_class(y)
+
+            classes = sub_dic["classes"]
+            y_idx = sub_dic["y_idx"]
+
+            cls_index = MFEComplexity._compute_cls_index(y_idx, classes)
+
         interp_N = []
         interp_y = []
 
@@ -557,6 +593,9 @@ class MFEComplexity:
 
         Parameters
         ----------
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
         cls_n_ex : :obj:`np.ndarray`
             The number of examples in each class. The array indexes represent
             the classes.
@@ -567,10 +606,14 @@ class MFEComplexity:
             An float with the entropy of class proportions measure.
         """
         if cls_n_ex is None:
-            dict_precomputed = MFEComplexity.precompute_fx(
-                y=y, cls_index_cp=False, cls_n_ex_cp=True,
-                ovo_comb_cp=False)
-            cls_n_ex = dict_precomputed["cls_n_ex"]
+            sub_dic = MFEGeneral.precompute_general_class(y)
+
+            classes = sub_dic["classes"]
+            y_idx = sub_dic["y_idx"]
+
+            cls_index = MFEComplexity._compute_cls_index(y_idx, classes)
+
+            cls_n_ex = MFEComplexity._compute_cls_n_index(cls_index)
 
         nc = cls_n_ex.shape[0]
         pc_i = cls_n_ex / np.sum(cls_n_ex)
@@ -581,12 +624,16 @@ class MFEComplexity:
 
     @classmethod
     def ft_c2(cls,
-              cls_n_ex: np.ndarray
+              y: np.ndarray,
+              cls_n_ex: np.ndarray = None
               ) -> float:
         """Computes the imbalance ratio measure.
 
         Parameters
         ----------
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
         cls_n_ex : :obj:`np.ndarray`
             The number of examples in each class. The array indexes represent
             the classes.
@@ -596,6 +643,16 @@ class MFEComplexity:
         :obj:`np.ndarray`
             An float with the imbalance ratio measure.
         """
+        if cls_n_ex is None:
+            sub_dic = MFEGeneral.precompute_general_class(y)
+
+            classes = sub_dic["classes"]
+            y_idx = sub_dic["y_idx"]
+
+            cls_index = MFEComplexity._compute_cls_index(y_idx, classes)
+
+            cls_n_ex = MFEComplexity._compute_cls_n_index(cls_index)
+
         n = np.sum(cls_n_ex)
         nc = cls_n_ex.shape[0]
         nc_i = cls_n_ex
@@ -606,8 +663,9 @@ class MFEComplexity:
 
     @classmethod
     def ft_t2(cls,
-              m: int,
-              n: int
+              N: np.ndarray,
+              m: int = None,
+              n: int = None
               ) -> float:
         """Computes the average number of features per dimension measure.
 
@@ -615,6 +673,7 @@ class MFEComplexity:
         ----------
         m : int
             Number of features.
+
         n : int
             Number of examples.
 
@@ -623,19 +682,26 @@ class MFEComplexity:
         :obj:`float`
             An float with the average number of features per dimension measure.
         """
+        if n is None or m is None:
+            n, m = MFEComplexity._compute_n_m(N=N)
         return m/n
 
     @classmethod
     def ft_t3(cls,
-              m_: int,
-              n: int
+              N: np.ndarray,
+              m_: int = None,
+              n: int = None
               ) -> float:
         """Computes the average number of PCA dimensions per points measure.
 
         Parameters
         ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
         m_ : int
             Number of features after PCA with 0.95.
+
         n : int
             Number of examples.
 
@@ -645,20 +711,30 @@ class MFEComplexity:
             An float with the average number of PCA dimensions per points
             measure.
         """
+        if n is None or m_ is None:
+            sub_dic = MFEComplexity.precompute_pca_tx(N=N)
+            m_ = sub_dic["m_"]
+            n = sub_dic["n"]
+
         return m_/n
 
     @classmethod
     def ft_t4(cls,
-              m: int,
-              m_: int
+              N: np.ndarray,
+              m: int = None,
+              m_: int = None
               ) -> float:
         """Computes the ratio of the PCA dimension to the original dimension
         measure.
 
         Parameters
         ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
         m : int
             Number of features.
+
         m_ : int
             Number of features after PCA with 0.95.
 
@@ -668,4 +744,9 @@ class MFEComplexity:
             An float with the ratio of the PCA dimension to the original
             dimension measure.
         """
+        if m is None or m_ is None:
+            sub_dic = MFEComplexity.precompute_pca_tx(N=N)
+            m = sub_dic["m"]
+            m_ = sub_dic["m_"]
+
         return m_/m
