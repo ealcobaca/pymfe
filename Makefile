@@ -1,4 +1,4 @@
-all: clean code-check test-cov
+all: install-dev code-check test-cov
 
 clean:
 	find . -name "*.so" -o -name "*.pyc" -o -name "*.md5" -o -name "*.pyd" -o -name "*~" | xargs rm -f
@@ -25,8 +25,11 @@ pypi: clean
 	python3 setup.py sdist bdist_wheel
 	twine upload dist/*
 
-install-dev: install
+install-dev: install-dev-pymfe
 	pip install -U -r requirements-dev.txt
 
 install:
 	pip install -U -r requirements.txt
+
+install-dev-pymfe: install
+	pip install -e .
