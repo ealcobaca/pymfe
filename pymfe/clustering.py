@@ -458,7 +458,7 @@ class MFEClustering:
                              "must match the instances dimension. (Expected "
                              "'{}', got '{}'".format(classes.size, repr_dim))
 
-        return representative
+        return representative_arr
 
     @classmethod
     def ft_vdu(
@@ -688,13 +688,13 @@ class MFEClustering:
             cls,
             N: np.ndarray,
             y: np.ndarray) -> float:
-        """Calinski and Harabaz index.
+        """Calinski and Harabasz index.
         Check `cahascore`_ for more information.
 
         Returns
         -------
         :obj:`float`
-            Calinski-Harabanz index.
+            Calinski-Harabasz index.
 
         Notes
         -----
