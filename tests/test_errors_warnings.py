@@ -259,26 +259,10 @@ class TestErrorsWarnings:
             model = MFE(features="sd").fit(X=X.values, y=y.values)
             model.extract(sd={"ddof": 1, "invalid": "value?"})
 
-    def test_verbose(self, capsys):
-        X, y = load_xy(0)
-        model = MFE(features=["freq_class",
-                              "mean",
-                              "class_conc",
-                              "one_nn",
-                              "nodes"]).fit(X=X.values, y=y.values)
-        model.extract(verbose=True)
-        captured = capsys.readouterr().out
-
-        # Expected number of messages in verbose mode of mtf extraction
-        expected_msg_num = 21
-
-        assert captured.count("\n") == expected_msg_num
-
     def test_error_rescale_data(self):
         X, y = load_xy(0)
         with pytest.raises(ValueError):
             _internal.rescale_data(X, option="42")
-
 
     def test_error_transform_num(self):
         X, y = load_xy(0)
