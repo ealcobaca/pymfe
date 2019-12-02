@@ -151,16 +151,17 @@ class MFEComplexity:
 
         return prepcomp_vals
 
-    def _compute_n_m(N: np.ndarray):
+    @staticmethod
+    def _compute_n_m(N: np.ndarray) -> t.Tuple[int, int]:
         """Computes the ``n`` and ``m`` variables."""
-        return N.shape[0], N.shape[1]
+        return N.shape
 
     @classmethod
     def precompute_pca_tx(cls,
                           N: np.ndarray,
                           tx_n_components: float = 0.95,
                           **kwargs
-                          ) -> t.Dict[str, t.Any]:
+                          ) -> t.Dict[str, int]:
         """Precompute PCA to support dimensionality measures.
 
         Parameters
@@ -664,8 +665,8 @@ class MFEComplexity:
     @classmethod
     def ft_t2(cls,
               N: np.ndarray,
-              m: int = None,
-              n: int = None
+              m: t.Union[int, None] = None,
+              n: t.Union[int, None] = None
               ) -> float:
         """Computes the average number of features per dimension measure.
 
@@ -684,13 +685,14 @@ class MFEComplexity:
         """
         if n is None or m is None:
             n, m = MFEComplexity._compute_n_m(N=N)
+
         return m/n
 
     @classmethod
     def ft_t3(cls,
               N: np.ndarray,
-              m_: int = None,
-              n: int = None
+              m_: t.Union[int, None] = None,
+              n: t.Union[int, None] = None
               ) -> float:
         """Computes the average number of PCA dimensions per points measure.
 
@@ -721,8 +723,8 @@ class MFEComplexity:
     @classmethod
     def ft_t4(cls,
               N: np.ndarray,
-              m: int = None,
-              m_: int = None
+              m: t.Union[int, None] = None,
+              m_: t.Union[int, None] = None
               ) -> float:
         """Computes the ratio of the PCA dimension to the original dimension
         measure.
