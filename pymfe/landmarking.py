@@ -110,8 +110,7 @@ class MFELandmarking:
 
         if "skf" not in kwargs:
             prepcomp_vals["skf"] = StratifiedKFold(
-                n_splits=folds,
-                random_state=random_state)
+                n_splits=folds)
 
         return prepcomp_vals
 
@@ -263,7 +262,7 @@ class MFELandmarking:
             sample_indexes=sample_indexes)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+            skf = StratifiedKFold(n_splits=folds)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -338,7 +337,7 @@ class MFELandmarking:
             sample_indexes=sample_indexes)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+            skf = StratifiedKFold(n_splits=folds)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -419,7 +418,7 @@ class MFELandmarking:
             sample_indexes=sample_indexes)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+            skf = StratifiedKFold(n_splits=folds)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -502,7 +501,7 @@ class MFELandmarking:
             sample_indexes=sample_indexes)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+            skf = StratifiedKFold(n_splits=folds)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -581,7 +580,7 @@ class MFELandmarking:
             sample_indexes=sample_indexes)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+            skf = StratifiedKFold(n_splits=folds)
 
         result = []
         for train_index, test_index in skf.split(N, y):
@@ -660,11 +659,17 @@ class MFELandmarking:
             sample_indexes=sample_indexes)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+            skf = StratifiedKFold(n_splits=folds)
 
         result = []
         for train_index, test_index in skf.split(N, y):
-            model = KNeighborsClassifier(n_neighbors=1)
+            model = KNeighborsClassifier(
+                n_neighbors=1,
+                algorithm="auto",
+                weights="uniform",
+                p=2,
+                metric="minkowski"
+            )
             X_train = N[train_index, :]
             X_test = N[test_index, :]
             y_train, y_test = y[train_index], y[test_index]
@@ -740,7 +745,7 @@ class MFELandmarking:
             sample_indexes=sample_indexes)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds, random_state=random_state)
+            skf = StratifiedKFold(n_splits=folds)
 
         result = []
         for train_index, test_index in skf.split(N, y):
