@@ -78,7 +78,7 @@ class TestErrorsWarnings:
 
     def test_error_folds(self):
         with pytest.raises(ValueError):
-            MFE(folds=1.5)
+            MFE(num_cv_folds=1.5)
 
     def test_error_cat_cols_1(self):
         with pytest.raises(ValueError):
