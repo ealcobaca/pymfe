@@ -121,7 +121,7 @@ class MFELandmarking:
     @classmethod
     def _get_sample_inds(cls, num_inst: int, sample_size: float,
                          random_state: t.Optional[int]) -> np.ndarray:
-        """Sample inds to calculate subsampling landmarking metafeatures."""
+        """Sample indices to calculate subsampling landmarking metafeatures."""
         if random_state is not None:
             np.random.seed(random_state)
 
@@ -162,7 +162,7 @@ class MFELandmarking:
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
-        """Compute the Gini inds of a decision tree.
+        """Compute the Gini index of a decision tree.
 
         It is used the ``DecisionTreeClassifier`` implementation
         from ``sklearn`` package.
@@ -180,7 +180,7 @@ class MFELandmarking:
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
-            Array of inds of instances to be effectively used while
+            Array of indices of instances to be effectively used while
             extracting this metafeature. If None, then ``sample_size``
             is taken into account. Argument used to exploit precomputations.
 
@@ -250,7 +250,7 @@ class MFELandmarking:
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
-            Array of inds of instances to be effectively used while
+            Array of indices of instances to be effectively used while
             extracting this metafeature. If None, then ``sample_size``
             is taken into account. Argument used to exploit precomputations.
 
@@ -335,7 +335,7 @@ class MFELandmarking:
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
-            Array of inds of instances to be effectively used while
+            Array of indices of instances to be effectively used while
             extracting this metafeature. If None, then ``sample_size``
             is taken into account. Argument used to exploit precomputations.
 
@@ -428,7 +428,7 @@ class MFELandmarking:
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
-            Array of inds of instances to be effectively used while
+            Array of indices of instances to be effectively used while
             extracting this metafeature. If None, then ``sample_size``
             is taken into account. Argument used to exploit precomputations.
 
@@ -521,7 +521,7 @@ class MFELandmarking:
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
-            Array of inds of instances to be effectively used while
+            Array of indices of instances to be effectively used while
             extracting this metafeature. If None, then ``sample_size``
             is taken into account. Argument used to exploit precomputations.
 
@@ -610,7 +610,7 @@ class MFELandmarking:
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
-            Array of inds of instances to be effectively used while
+            Array of indices of instances to be effectively used while
             extracting this metafeature. If None, then ``sample_size``
             is taken into account. Argument used to exploit precomputations.
 
@@ -699,7 +699,7 @@ class MFELandmarking:
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
-            Array of inds of instances to be effectively used while
+            Array of indices of instances to be effectively used while
             extracting this metafeature. If None, then ``sample_size``
             is taken into account. Argument used to exploit precomputations.
 
@@ -794,7 +794,7 @@ class MFELandmarking:
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
-            Array of inds of instances to be effectively used while
+            Array of indices of instances to be effectively used while
             extracting this metafeature. If None, then ``sample_size``
             is taken into account. Argument used to exploit precomputations.
 
