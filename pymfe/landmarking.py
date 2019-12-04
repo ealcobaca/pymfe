@@ -237,8 +237,8 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : :obj: `int`, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if ``skf``
-            is None.
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
         shuffle_cv_folds : :obj:`bool`, optional
             If True, shuffle the data before splitting into the k-fold cross
@@ -322,8 +322,8 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : :obj: `int`, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if ``skf``
-            is None.
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
         shuffle_cv_folds : :obj:`bool`, optional
             If True, shuffle the data before splitting into the k-fold cross
@@ -415,8 +415,8 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : :obj: `int`, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if ``skf``
-            is None.
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
         shuffle_cv_folds : :obj:`bool`, optional
             If True, shuffle the data before splitting into the k-fold cross
@@ -508,8 +508,8 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : :obj: `int`, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if ``skf``
-            is None.
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
         shuffle_cv_folds : :obj:`bool`, optional
             If True, shuffle the data before splitting into the k-fold cross
@@ -597,8 +597,8 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : :obj: `int`, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if ``skf``
-            is None.
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
         shuffle_cv_folds : :obj:`bool`, optional
             If True, shuffle the data before splitting into the k-fold cross
@@ -686,8 +686,8 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : :obj: `int`, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if ``skf``
-            is None.
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
         shuffle_cv_folds : :obj:`bool`, optional
             If True, shuffle the data before splitting into the k-fold cross
@@ -781,8 +781,8 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : :obj: `int`, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if ``skf``
-            is None.
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
         shuffle_cv_folds : :obj:`bool`, optional
             If True, shuffle the data before splitting into the k-fold cross

@@ -162,8 +162,8 @@ class MFE:
             Score metric used to extract ``landmarking`` metafeatures.
 
         num_cv_folds : :obj:`int`, optional
-            Number of num_cv_folds to create a Stratified K-Fold cross validation
-            to produce the ``landmarking`` metafeatures.
+            Number of num_cv_folds to create a Stratified K-Fold cross
+            validation to extract the ``landmarking`` metafeatures.
 
         shuffle_cv_folds : :obj:`bool`, optional
             If True, then the fitted data will be shuffled before splitted in
