@@ -55,7 +55,7 @@ class MFEModelBased:
     def precompute_model_based_class(cls, N: np.ndarray, y: np.ndarray,
                                      random_state: t.Optional[int],
                                      **kwargs) -> t.Dict[str, t.Any]:
-        """Precompute ``dt_model``, ``dt_info_table`` and ``tree_depth``.
+        """Precompute ``dt_model``, ``dt_info_table`` and ``dt_nodes_depth``.
 
         Parameters
         ----------
@@ -83,27 +83,27 @@ class MFEModelBased:
                 - ``dt_model`` (:obj:`DecisionTreeClassifier`): decision tree
                   classifier.
                 - ``dt_info_table`` (:obj:`np.ndarray`): tree property dt_info_table.
-                - ``tree_depth`` (:obj: `np.ndarray`): the depth of each tree
+                - ``dt_nodes_depth`` (:obj: `np.ndarray`): the depth of each tree
                   node ordered by node (e.g., index one contain the node one
                   depth, the index two the node two depth and so on).
         """
         prepcomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if (N is not None and y is not None
-                and not {"dt_model", "dt_info_table", "tree_depth"
+                and not {"dt_model", "dt_info_table", "dt_nodes_depth"
                          }.issubset(kwargs)):
-            dt_model = MFEModelBased._built_dt_model(
+            dt_model = MFEModelBased._fit_dt_model(
                 N=N, y=y, random_state=random_state)
             dt_info_table = MFEModelBased._extract_table(N, y, dt_model)
-            tree_depth = MFEModelBased.tree_depth(dt_model)
+            dt_nodes_depth = MFEModelBased._calc_tree_depth(dt_model)
             prepcomp_vals["dt_model"] = dt_model
             prepcomp_vals["dt_info_table"] = dt_info_table
-            prepcomp_vals["tree_depth"] = tree_depth
+            prepcomp_vals["dt_nodes_depth"] = dt_nodes_depth
 
         return prepcomp_vals
 
     @classmethod
-    def _built_dt_model(
+    def _fit_dt_model(
             cls,
             N: np.ndarray,
             y: np.ndarray,
@@ -117,7 +117,7 @@ class MFEModelBased:
     @classmethod
     def _extract_table(cls, N: np.ndarray, y: np.ndarray,
                        dt_model: DecisionTreeClassifier) -> np.ndarray:
-        """Precompute ``dt_model``, ``dt_info_table`` and ``tree_depth``.
+        """Precompute ``dt_model``, ``dt_info_table`` and ``dt_nodes_depth``.
 
         Parameters
         ----------
@@ -172,42 +172,7 @@ class MFEModelBased:
         return dt_info_table
 
     @classmethod
-    def ft_leaves(cls, dt_info_table: np.ndarray) -> int:
-        """Number of leaves of the DT model.
-
-        Parameters
-        ----------
-        dt_info_table : :obj:`np.ndarray`
-            Decision tree properties table.
-
-        Returns
-        -------
-        :obj:`np.ndarray`
-            Number of leaves.
-        """
-
-        return np.sum(dt_info_table[:, 1], dtype=int)
-
-    @classmethod
-    def ft_tree_depth(cls, tree_depth: np.ndarray) -> np.ndarray:
-        """Tree depth, which is the level of all tree nodes and leaves of the
-        DT model.
-
-        Parameters
-        ----------
-        tree_depth : :obj:`np.ndarray`
-            Tree depth from ``tree_depth`` method.
-
-        Returns
-        -------
-        :obj:`np.ndarray`
-            Tree depth.
-        """
-
-        return tree_depth
-
-    @classmethod
-    def tree_depth(cls, dt_model: DecisionTreeClassifier) -> np.ndarray:
+    def _calc_tree_depth(cls, dt_model: DecisionTreeClassifier) -> np.ndarray:
         """Compute the depth of each node.
 
         Parameters
@@ -232,16 +197,52 @@ class MFEModelBased:
         son_id_l = dt_model.tree_.children_left
         son_id_r = dt_model.tree_.children_right
 
-        depths = np.zeros(dt_model.tree_.node_count)
+        depths = np.zeros(dt_model.tree_.node_count, dtype=int)
 
         node_depth(node_ind=0, cur_depth=0)
 
         return depths
 
     @classmethod
+    def ft_leaves(cls, dt_info_table: np.ndarray) -> int:
+        """Number of leaves of the DT model.
+
+        Parameters
+        ----------
+        dt_info_table : :obj:`np.ndarray`
+            Decision tree properties table.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Number of leaves.
+        """
+
+        return np.sum(dt_info_table[:, 1], dtype=int)
+
+    @classmethod
+    def ft_tree_depth(cls, dt_nodes_depth: np.ndarray) -> np.ndarray:
+        """Calculate the depth of every node in the DT model.
+
+        Parameters
+        ----------
+        dt_nodes_depth : :obj:`np.ndarray`, optional
+            Depth of each node in the DT model.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Depth of every node in the DT model.
+        """
+
+        return dt_nodes_depth
+
+    @classmethod
     def ft_leaves_branch(cls, dt_info_table: np.ndarray,
-                         tree_depth: np.ndarray) -> np.ndarray:
-        """Size of branches, which consists in the level of all leaves of the
+                         dt_nodes_depth: np.ndarray) -> np.ndarray:
+        """Compute the size of branches in the DT model.
+
+        The size of branches consists in the depth of all leaves of the
         DT model.
 
         Parameters
@@ -249,21 +250,23 @@ class MFEModelBased:
         dt_info_table : :obj:`np.ndarray`
             Decision tree properties table.
 
-        tree_depth : :obj:`np.ndarray`
-            Tree depth from ``tree_depth`` method.
+        dt_nodes_depth : :obj:`np.ndarray`
+            Tree depth from ``dt_nodes_depth`` method.
 
         Returns
         -------
         :obj:`np.ndarray`
-            Size of branches.
+            Size of branches of the DT model.
         """
 
-        return tree_depth[dt_info_table[:, 1] == 1]
+        return dt_nodes_depth[dt_info_table[:, 1] == 1]
 
     @classmethod
     def ft_leaves_corrob(cls, N: np.ndarray,
                          dt_info_table: np.ndarray) -> np.ndarray:
-        """Leaves corroboration, which is the proportion of examples that
+        """Calculate the Leaves corroboration of the DT model.
+
+        The Leaves corroboration is the proportion of examples that
         belong to each leaf of the DT model.
 
         Parameters
@@ -279,11 +282,11 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Leaves corroboration.
         """
-        return dt_info_table[:, 2][dt_info_table[:, 1] == 1] / N.shape[0]
+        return dt_info_table[dt_info_table[:, 1] == 1, 2] / N.shape[0]
 
     @classmethod
     def ft_tree_shape(cls, dt_info_table: np.ndarray,
-                      tree_depth: np.ndarray) -> np.ndarray:
+                      dt_nodes_depth: np.ndarray) -> np.ndarray:
         """Calculate the Tree shape.
 
         The tree shape is the probability of arrive in each leaf given a
@@ -294,46 +297,52 @@ class MFEModelBased:
         dt_info_table : :obj:`np.ndarray`
             Decision tree properties table.
 
-        tree_depth : :obj:`np.ndarray`
-            Tree depth from ``tree_depth`` method.
+        dt_nodes_depth : :obj:`np.ndarray`
+            Tree depth from ``dt_nodes_depth`` method.
 
         Returns
         -------
         :obj:`np.ndarray`
             The tree shape.
         """
-        aux = tree_depth[dt_info_table[:, 1] == 1]  # type: np.ndarray
-        return -(1.0 / 2**aux) * np.log2(1.0 / 2**aux)
+        leaf_depths = dt_nodes_depth[dt_info_table[:, 1] == 1]
+        aux = 1.0 / 2**leaf_depths
+        return -aux * np.log2(aux)
 
     @classmethod
     def ft_leaves_homo(cls, dt_info_table: np.ndarray,
-                       tree_depth: np.ndarray) -> np.ndarray:
-        """Homogeneity, which is the number of leaves divided by the structural
-        shape of the DT model.
+                       dt_nodes_depth: np.ndarray) -> np.ndarray:
+        """Calculate the DT model Homogeneity.
+
+        The DT model homogeneity is calculated by the number of leaves divided
+        by the ``structural shape`` (calculated by the ``ft_tree_shape`` method)
+        of the DT model.
 
         Parameters
         ----------
         dt_info_table : :obj:`np.ndarray`
             Decision tree properties table.
 
-        tree_depth : :obj:`np.ndarray`
-            Tree depth from ``tree_depth`` method.
+        dt_nodes_depth : :obj:`np.ndarray`
+            Tree depth from ``dt_nodes_depth`` method.
 
         Returns
         -------
         :obj:`np.ndarray`
-            The homogeneity.
+            The DT model homogeneity.
         """
         num_leaves = MFEModelBased.ft_leaves(dt_info_table)  # type: int
 
         tree_shape = MFEModelBased.ft_tree_shape(
-            dt_info_table, tree_depth)  # type: np.ndarray
+            dt_info_table, dt_nodes_depth)  # type: np.ndarray
 
         return num_leaves / tree_shape
 
     @classmethod
     def ft_leaves_per_class(cls, dt_info_table: np.ndarray) -> np.ndarray:
-        """Leaves per class, which is the proportion of leaves of the DT model
+        """Computer the proportion of leaves per class in the DT model.
+
+        This quantity is computed by the proportion of leaves of the DT model
         associated with each class.
 
         Parameters
@@ -346,16 +355,14 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Leaves per class.
         """
-        aux = np.array(list(Counter(
-            dt_info_table[:, 3]).values()))  # np.ndarray
+        _, class_id_freqs = np.unique(dt_info_table[:, 3], return_counts=True)
 
-        aux = aux[1:] / MFEModelBased.ft_leaves(dt_info_table)
-
-        return aux
+        # Note: the id == 0 is not associated to any class.
+        return class_id_freqs[1:] / MFEModelBased.ft_leaves(dt_info_table)
 
     @classmethod
     def ft_nodes(cls, dt_info_table: np.ndarray) -> int:
-        """Number of nodes of the DT model.
+        """Number of non-leaf nodes of the DT model.
 
         Parameters
         ----------
@@ -365,15 +372,14 @@ class MFEModelBased:
         Returns
         -------
         :obj:`np.ndarray`
-            Number of nodes.
+            Number of non-leaf nodes.
         """
-        return np.sum(dt_info_table[:, 1] != 1)
+        return np.sum(dt_info_table[:, 1] != 1, dtype=int)
 
     @classmethod
     def ft_nodes_per_attr(cls, N: np.ndarray,
                           dt_info_table: np.ndarray) -> float:
-        """Ratio of the number of nodes of the DT model per the number of
-        attributes.
+        """Ratio of the DT model number of nodes per number of attributes.
 
         Parameters
         ----------
@@ -388,16 +394,15 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Ratio of the number of nodes.
         """
-        num_nodes = MFEModelBased.ft_nodes(dt_info_table)  # type: int
+        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_info_table)  # type: int
         num_attr = N.shape[1]  # type: float
 
-        return num_nodes / num_attr
+        return num_non_leaf_nodes / num_attr
 
     @classmethod
     def ft_nodes_per_inst(cls, N: np.ndarray,
                           dt_info_table: np.ndarray) -> float:
-        """Ratio of the number of nodes of the DT model per the number of
-        instances.
+        """Ratio of the number of non-leaf nodes per the number of instances.
 
         Parameters
         ----------
@@ -410,32 +415,32 @@ class MFEModelBased:
         Returns
         -------
         :obj:`np.ndarray`
-            Ratio of the number of nodes per instances.
+            Ratio of the number of non-leaf nodes per instances.
         """
-        num_nodes = MFEModelBased.ft_nodes(dt_info_table)  # type: int
+        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_info_table)  # type: int
         num_inst = N.shape[0]  # type: float
 
-        return num_nodes / num_inst
+        return num_non_leaf_nodes / num_inst
 
     @classmethod
     def ft_nodes_per_level(cls, dt_info_table: np.ndarray,
-                           tree_depth: np.ndarray) -> float:
-        """Number of nodes of the DT model per level.
+                           dt_nodes_depth: np.ndarray) -> float:
+        """Number of nodes of the DT model per tree level.
 
         Parameters
         ----------
         dt_info_table : :obj:`np.ndarray`
             Decision tree properties table.
 
-        tree_depth : :obj:`np.ndarray`
-            Tree depth from ``tree_depth`` method.
+        dt_nodes_depth : :obj:`np.ndarray`
+            Tree depth from ``dt_nodes_depth`` method.
 
         Returns
         -------
         :obj:`np.ndarray`
             Number of nodes per level.
         """
-        non_leaf_depths = tree_depth[dt_info_table[:, 1] == 0]
+        non_leaf_depths = dt_nodes_depth[dt_info_table[:, 1] == 0]
 
         _, node_num_per_level = np.unique(non_leaf_depths, return_counts=True)
 
@@ -485,7 +490,7 @@ class MFEModelBased:
 
     @classmethod
     def ft_tree_imbalance(cls, dt_info_table: np.ndarray,
-                          tree_depth: np.ndarray) -> np.ndarray:
+                          dt_nodes_depth: np.ndarray) -> np.ndarray:
         """Tree imbalance.
 
         Parameters
@@ -493,16 +498,16 @@ class MFEModelBased:
         dt_info_table : :obj:`np.ndarray`
             Decision tree properties table.
 
-        tree_depth : :obj:`np.ndarray`
-            Tree depth from ``tree_depth`` method.
+        dt_nodes_depth : :obj:`np.ndarray`
+            Tree depth from ``dt_nodes_depth`` method.
 
         Returns
         -------
         :obj:`np.ndarray`
             Tree imbalance values.
         """
-        leaves_depth = tree_depth[dt_info_table[:, 1] == 1]  # np.ndarray
-        aux = 1.0 / 2**leaves_depth
+        leaf_depths = dt_nodes_depth[dt_info_table[:, 1] == 1]  # np.ndarray
+        aux = 1.0 / 2**leaf_depths
         tmp = 1.0 / 2**np.multiply(*np.unique(
             aux, return_counts=True))  # np.ndarray
         return -tmp * np.log2(tmp)
