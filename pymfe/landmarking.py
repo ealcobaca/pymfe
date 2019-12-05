@@ -114,7 +114,7 @@ class MFELandmarking:
             prepcomp_vals["skf"] = StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state)
+                random_state=random_state if shuffle_cv_folds else None)
 
         return prepcomp_vals
 
@@ -275,7 +275,7 @@ class MFELandmarking:
             skf = StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state)
+                random_state=random_state if shuffle_cv_folds else None)
 
         result = np.zeros(skf.n_splits, dtype=float)
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
@@ -360,7 +360,7 @@ class MFELandmarking:
             skf = StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state)
+                random_state=random_state if shuffle_cv_folds else None)
 
         if random_state is not None:
             np.random.seed(random_state)
@@ -453,7 +453,7 @@ class MFELandmarking:
             skf = StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state)
+                random_state=random_state if shuffle_cv_folds else None)
 
         result = np.zeros(skf.n_splits, dtype=float)
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
@@ -546,7 +546,7 @@ class MFELandmarking:
             skf = StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state)
+                random_state=random_state if shuffle_cv_folds else None)
 
         result = np.zeros(skf.n_splits, dtype=float)
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
@@ -635,7 +635,7 @@ class MFELandmarking:
             skf = StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state)
+                random_state=random_state if shuffle_cv_folds else None)
 
         result = np.zeros(skf.n_splits, dtype=float)
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
@@ -724,7 +724,7 @@ class MFELandmarking:
             skf = StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state)
+                random_state=random_state if shuffle_cv_folds else None)
 
         result = np.zeros(skf.n_splits, dtype=float)
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
@@ -819,7 +819,7 @@ class MFELandmarking:
             skf = StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state)
+                random_state=random_state if shuffle_cv_folds else None)
 
         result = np.zeros(skf.n_splits, dtype=float)
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
