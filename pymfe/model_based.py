@@ -104,8 +104,8 @@ class MFEModelBased:
                 dt_model=dt_model, leaf_nodes=leaf_nodes)
             dt_nodes_depth = MFEModelBased._calc_tree_depth(dt_model)
 
-            precomp_vals["leaf_nodes"] = leaf_nodes
-            precomp_vals["non_leaf_nodes"] = ~leaf_nodes
+            precomp_vals["leaf_nodes"] = np.flatnonzero(leaf_nodes)
+            precomp_vals["non_leaf_nodes"] = np.flatnonzero(~leaf_nodes)
             precomp_vals["dt_model"] = dt_model
             precomp_vals["dt_info_table"] = dt_info_table
             precomp_vals["dt_nodes_depth"] = dt_nodes_depth
@@ -171,7 +171,6 @@ class MFEModelBased:
         :obj:`np.ndarray`
             The depth of each node.
         """
-
         def node_depth(node_ind: int, cur_depth: int) -> None:
             if not 0 <= node_ind < depths.size:
                 return
@@ -243,7 +242,6 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Size of branches of the DT model.
         """
-
         return dt_nodes_depth[leaf_nodes]
 
     @classmethod
@@ -379,7 +377,7 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Ratio of the number of nodes.
         """
-        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)  # type: int
+        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)
 
         return num_non_leaf_nodes / dt_model.tree_.n_features
 
@@ -397,7 +395,7 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Ratio of the number of non-leaf nodes per instances.
         """
-        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)  # type: int
+        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)
         num_inst = dt_model.tree_.n_node_samples[0]
 
         return num_non_leaf_nodes / num_inst
@@ -445,7 +443,7 @@ class MFEModelBased:
         Returns
         -------
         :obj:`np.ndarray`
-            Absolute frequency of each repeated nodes.
+            Absolute frequency of each repeated node.
         """
         nodes_attr_ids = dt_info_table[non_leaf_nodes, 0]
 
@@ -467,7 +465,7 @@ class MFEModelBased:
 
         Return:
         :obj:`np.ndarray`
-            Features importance.
+            Features importance given by the DT model.
         """
         return dt_model.tree_.compute_feature_importances()
 
