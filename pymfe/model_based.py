@@ -108,7 +108,7 @@ class MFEModelBased:
 
             dt_info_table = MFEModelBased._extract_table(
                 dt_model=dt_model, leaf_nodes=leaf_nodes)
-            dt_nodes_depth = MFEModelBased._calc_tree_depth(dt_model)
+            dt_nodes_depth = MFEModelBased._calc_dt_node_depths(dt_model)
 
             precomp_vals["leaf_nodes"] = np.flatnonzero(leaf_nodes)
             precomp_vals["non_leaf_nodes"] = np.flatnonzero(~leaf_nodes)
@@ -162,8 +162,9 @@ class MFEModelBased:
         return dt_info_table
 
     @classmethod
-    def _calc_tree_depth(cls, dt_model: DecisionTreeClassifier) -> np.ndarray:
-        """Compute the depth of each node.
+    def _calc_dt_node_depths(cls,
+                             dt_model: DecisionTreeClassifier) -> np.ndarray:
+        """Compute the depth of each node in the DT model.
 
         Parameters
         ----------
@@ -223,7 +224,6 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Depth of every node in the DT model.
         """
-
         return dt_nodes_depth
 
     @classmethod
@@ -250,18 +250,15 @@ class MFEModelBased:
         return dt_nodes_depth[leaf_nodes]
 
     @classmethod
-    def ft_leaves_corrob(cls, N: np.ndarray, leaf_nodes: np.ndarray,
+    def ft_leaves_corrob(cls, leaf_nodes: np.ndarray,
                          dt_info_table: np.ndarray) -> np.ndarray:
-        """Calculate the Leaves corroboration of the DT model.
+        """Calculate the leaves corroboration of the DT model.
 
         The Leaves corroboration is the proportion of examples that
         belong to each leaf of the DT model.
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`
-            Attributes from fitted data.
-
         leaf_nodes : :obj:`np.ndarray`
             Array referencing the leaf nodes of the DT model.
 
@@ -273,12 +270,18 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Leaves corroboration.
         """
-        return dt_info_table[leaf_nodes, 1] / N.shape[0]
+        num_samples_leaves = dt_info_table[leaf_nodes, 1]  # type: np.ndarray
+
+        # Note: the 0th node is the tree root and, therefore,
+        # contains all training samples
+        num_samples_total = dt_info_table[0, 1]  # type: int
+
+        return num_samples_leaves / num_samples_total
 
     @classmethod
     def ft_tree_shape(cls, leaf_nodes: np.ndarray,
                       dt_nodes_depth: np.ndarray) -> np.ndarray:
-        """Calculate the Tree shape.
+        """Calculate the tree shape.
 
         The tree shape is the probability of arrive in each leaf given a
         random walk. We call this as the ``structural shape of the DT model.``
@@ -322,7 +325,7 @@ class MFEModelBased:
         :obj:`np.ndarray`
             The DT model homogeneity.
         """
-        num_leaves = MFEModelBased.ft_leaves(dt_model)  # type: int
+        num_leaves = MFEModelBased.ft_leaves(dt_model)
 
         tree_shape = MFEModelBased.ft_tree_shape(
             leaf_nodes, dt_nodes_depth)  # type: np.ndarray
@@ -347,7 +350,9 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Leaves per class.
         """
-        _, class_id_freqs = np.unique(dt_info_table[:, 2], return_counts=True)
+        node_class_ids = dt_info_table[:, 2]
+
+        _, class_id_freqs = np.unique(node_class_ids, return_counts=True)
 
         # Note: the id == 0 is not associated to any class.
         return class_id_freqs[1:] / MFEModelBased.ft_leaves(dt_model)
@@ -472,7 +477,7 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Features importance given by the DT model.
         """
-        return dt_model.tree_.compute_feature_importances()
+        return dt_model.feature_importances_
 
     @classmethod
     def ft_tree_imbalance(cls, leaf_nodes: np.ndarray,
@@ -492,7 +497,7 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Tree imbalance values.
         """
-        leaf_depths = dt_nodes_depth[leaf_nodes]  # np.ndarray
+        leaf_depths = dt_nodes_depth[leaf_nodes]
         prob_random_arrival = 1.0 / 2**leaf_depths
         aux = 1.0 / 2**np.multiply(*np.unique(
             prob_random_arrival, return_counts=True))  # np.ndarray
