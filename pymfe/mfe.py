@@ -48,6 +48,7 @@ class MFE:
                  score="accuracy",
                  folds=10,
                  sample_size=1.0,
+                 hypparam_model_dt: t.Optional[t.Dict[str, t.Any]] = None,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
         """This class provides easy access for metafeature extraction from
@@ -168,6 +169,19 @@ class MFE:
             Sample proportion used to produce the ``landmarking`` metafeatures.
             This argument must be in 0.5 and 1.0 (both inclusive) interval.
 
+        hypparam_model_dt : :obj:`dict`, optional
+            Dictionary providing extra hyperparameters for the Decision Tree
+            algorithm for building the Decision Tree model, used to extract the
+            model-based metafeatures. The class used to fit the model is the
+            ``sklearn.tree.DecisionTreeClassifier`` (sklearn library). Using
+            this argument, it is possible to provide extra arguments in the
+            DecisionTreeClassifier class initialization (e.g., ``max_depth``
+            and ``min_samples_split``.) In order to use this argument, provide
+            the DecisionTreeClassifier init argument name as the dictionary
+            keys and the corresponding custom values, as the dictionary values.
+            Example:
+            {"min_samples_split": 10, "criterion": "entropy"}
+
         suppress_warnings : :obj:`bool`, optional
             If True, then ignore all warnings invoked at the instantiation
             time.
@@ -281,6 +295,8 @@ class MFE:
                              .format(random_state))
 
         self.score = _internal.check_score(score, self.groups)
+        self.hypparam_model_dt = (hypparam_model_dt.copy()
+                                  if hypparam_model_dt else None)
 
     def _call_summary_methods(
             self,
@@ -893,6 +909,7 @@ class MFE:
             "score": self.score,
             "random_state": self.random_state,
             "cat_cols": self._attr_indexes_cat,
+            "hypparam_model_dt": self.hypparam_model_dt,
         }
 
         # Custom arguments from preprocessing methods
