@@ -52,7 +52,9 @@ class MFEModelBased:
     """
 
     @classmethod
-    def precompute_model_based_class(cls, N: np.ndarray, y: np.ndarray,
+    def precompute_model_based_class(cls,
+                                     N: np.ndarray,
+                                     y: np.ndarray,
                                      random_state: t.Optional[int] = None,
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute ``dt_model``, ``dt_info_table`` and ``dt_nodes_depth``.
@@ -82,10 +84,11 @@ class MFEModelBased:
             With following precomputed items:
                 - ``dt_model`` (:obj:`DecisionTreeClassifier`): decision tree
                   classifier.
-                - ``dt_info_table`` (:obj:`np.ndarray`): tree property dt_info_table.
-                - ``dt_nodes_depth`` (:obj: `np.ndarray`): the depth of each tree
-                  node ordered by node (e.g., index one contain the node one
-                  depth, the index two the node two depth and so on).
+                - ``dt_info_table`` (:obj:`np.ndarray`): some tree properties
+                  table.
+                - ``dt_nodes_depth`` (:obj: `np.ndarray`): the depth of each
+                  tree node ordered by node (e.g., index one contain the node
+                  one depth, the index two the node two depth and so on.)
         """
         precomp_vals = {}  # type: t.Dict[str, t.Any]
 
@@ -97,8 +100,8 @@ class MFEModelBased:
 
             leaf_nodes = dt_model.tree_.feature < 0
 
-            dt_info_table = MFEModelBased._extract_table(dt_model=dt_model,
-                                                         leaf_nodes=leaf_nodes)
+            dt_info_table = MFEModelBased._extract_table(
+                dt_model=dt_model, leaf_nodes=leaf_nodes)
             dt_nodes_depth = MFEModelBased._calc_tree_depth(dt_model)
 
             precomp_vals["leaf_nodes"] = leaf_nodes
@@ -122,7 +125,8 @@ class MFEModelBased:
         return dt_model
 
     @classmethod
-    def _extract_table(cls, dt_model: DecisionTreeClassifier, leaf_nodes: np.ndarray) -> np.ndarray:
+    def _extract_table(cls, dt_model: DecisionTreeClassifier,
+                       leaf_nodes: np.ndarray) -> np.ndarray:
         """Bookkeep some information table from the ``dt_model`` into an array.
 
         Parameters
@@ -137,20 +141,18 @@ class MFEModelBased:
                 - Each line represents a node.
                 - Column 0: It is the id of the attribute splitted in that
                   node.
-                - Column 1: It is 1 if the node is a leaf node, otherwise 0.
-                - Columns 2: It is the number of examples that fall on that
+                - Columns 1: It is the number of examples that fall on that
                   node.
-                - Columns 3: It is 0 if the node is not a leaf, otherwise is
+                - Columns 2: It is 0 if the node is not a leaf, otherwise is
                   the class number represented by that leaf node.
         """
-        dt_info_table = np.zeros((dt_model.tree_.node_count, 4),
+        dt_info_table = np.zeros((dt_model.tree_.node_count, 3),
                                  dtype=int)  # type: np.ndarray
 
         dt_info_table[:, 0] = dt_model.tree_.feature
-        dt_info_table[:, 2] = dt_model.tree_.n_node_samples
+        dt_info_table[:, 1] = dt_model.tree_.n_node_samples
 
-        dt_info_table[leaf_nodes, 1] = 1
-        dt_info_table[leaf_nodes, 3] = np.argmax(
+        dt_info_table[leaf_nodes, 2] = np.argmax(
             dt_model.tree_.value[leaf_nodes], axis=2).ravel() + 1
 
         return dt_info_table
@@ -245,8 +247,7 @@ class MFEModelBased:
         return dt_nodes_depth[leaf_nodes]
 
     @classmethod
-    def ft_leaves_corrob(cls, N: np.ndarray,
-                         leaf_nodes: np.ndarray,
+    def ft_leaves_corrob(cls, N: np.ndarray, leaf_nodes: np.ndarray,
                          dt_info_table: np.ndarray) -> np.ndarray:
         """Calculate the Leaves corroboration of the DT model.
 
@@ -269,11 +270,10 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Leaves corroboration.
         """
-        return dt_info_table[leaf_nodes, 2] / N.shape[0]
+        return dt_info_table[leaf_nodes, 1] / N.shape[0]
 
     @classmethod
-    def ft_tree_shape(cls,
-                      leaf_nodes: np.ndarray,
+    def ft_tree_shape(cls, leaf_nodes: np.ndarray,
                       dt_nodes_depth: np.ndarray) -> np.ndarray:
         """Calculate the Tree shape.
 
@@ -298,15 +298,13 @@ class MFEModelBased:
         return -prob_random_arrival * np.log2(prob_random_arrival)
 
     @classmethod
-    def ft_leaves_homo(cls,
-                       leaf_nodes: np.ndarray,
-                       dt_nodes_depth: np.ndarray,
+    def ft_leaves_homo(cls, leaf_nodes: np.ndarray, dt_nodes_depth: np.ndarray,
                        dt_model: DecisionTreeClassifier) -> np.ndarray:
         """Calculate the DT model Homogeneity.
 
-        The DT model homogeneity is calculated by the number of leaves divided
-        by the ``structural shape`` (calculated by the ``ft_tree_shape`` method)
-        of the DT model.
+        The DT model homogeneity is calculated by the number of leaves
+        divided by the ``structural shape`` (which is calculated by the
+        ``ft_tree_shape`` method) of the DT model.
 
         Parameters
         ----------
@@ -346,7 +344,7 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Leaves per class.
         """
-        _, class_id_freqs = np.unique(dt_info_table[:, 3], return_counts=True)
+        _, class_id_freqs = np.unique(dt_info_table[:, 2], return_counts=True)
 
         # Note: the id == 0 is not associated to any class.
         return class_id_freqs[1:] / MFEModelBased.ft_leaves(dt_model)
@@ -368,16 +366,11 @@ class MFEModelBased:
         return dt_model.tree_.node_count - dt_model.tree_.n_leaves
 
     @classmethod
-    def ft_nodes_per_attr(cls,
-                          dt_info_table: np.ndarray,
-                          dt_model: DecisionTreeClassifier) -> float:
+    def ft_nodes_per_attr(cls, dt_model: DecisionTreeClassifier) -> float:
         """Ratio of the DT model number of nodes per number of attributes.
 
         Parameters
         ----------
-        dt_info_table : :obj:`np.ndarray`
-            DT model properties table.
-
         dt_model : :obj:`DecisionTreeClassifier`
             The DT model.
 
@@ -391,16 +384,11 @@ class MFEModelBased:
         return num_non_leaf_nodes / dt_model.tree_.n_features
 
     @classmethod
-    def ft_nodes_per_inst(cls,
-                          dt_info_table: np.ndarray,
-                          dt_model: DecisionTreeClassifier) -> float:
+    def ft_nodes_per_inst(cls, dt_model: DecisionTreeClassifier) -> float:
         """Ratio of the number of non-leaf nodes per the number of instances.
 
         Parameters
         ----------
-        dt_info_table : :obj:`np.ndarray`
-            DT model properties table.
-
         dt_model : :obj:`DecisionTreeClassifier`
             The DT model.
 
@@ -415,19 +403,17 @@ class MFEModelBased:
         return num_non_leaf_nodes / num_inst
 
     @classmethod
-    def ft_nodes_per_level(cls,
-                           dt_info_table: np.ndarray,
-                           dt_nodes_depth: np.ndarray,
+    def ft_nodes_per_level(cls, dt_nodes_depth: np.ndarray,
                            non_leaf_nodes: np.ndarray) -> float:
         """Number of nodes of the DT model per tree level.
 
         Parameters
         ----------
-        dt_info_table : :obj:`np.ndarray`
-            DT model properties table.
-
         dt_nodes_depth : :obj:`np.ndarray`
             Tree depth from ``dt_nodes_depth`` method.
+
+        non_leaf_nodes : :obj:`np.ndarray`
+            Array referencing the non-leaf nodes of the DT model.
 
         Returns
         -------
@@ -441,7 +427,8 @@ class MFEModelBased:
         return node_num_per_level
 
     @classmethod
-    def ft_nodes_repeated(cls, dt_info_table: np.ndarray, non_leaf_nodes: np.ndarray) -> np.ndarray:
+    def ft_nodes_repeated(cls, dt_info_table: np.ndarray,
+                          non_leaf_nodes: np.ndarray) -> np.ndarray:
         """Counts the number of repeated nodes.
 
         The number of repeated nodes is the number of repeated attributes
@@ -485,8 +472,7 @@ class MFEModelBased:
         return dt_model.tree_.compute_feature_importances()
 
     @classmethod
-    def ft_tree_imbalance(cls,
-                          leaf_nodes: np.ndarray,
+    def ft_tree_imbalance(cls, leaf_nodes: np.ndarray,
                           dt_nodes_depth: np.ndarray) -> np.ndarray:
         """Tree imbalance.
 
