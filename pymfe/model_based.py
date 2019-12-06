@@ -52,12 +52,14 @@ class MFEModelBased:
     """
 
     @classmethod
-    def precompute_model_based_class(cls,
-                                     N: np.ndarray,
-                                     y: np.ndarray,
-                                     random_state: t.Optional[int] = None,
-                                     **kwargs) -> t.Dict[str, t.Any]:
-        """Precompute ``dt_model``, ``dt_info_table`` and ``dt_nodes_depth``.
+    def precompute_model_based_class(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            random_state: t.Optional[int] = None,
+            hypparam_model_dt: t.Optional[t.Dict[str, t.Any]] = None,
+            **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute the DT Model and some information related to it.
 
         Parameters
         ----------
@@ -92,11 +94,15 @@ class MFEModelBased:
         """
         precomp_vals = {}  # type: t.Dict[str, t.Any]
 
-        if (N is not None and y is not None
-                and not {"dt_model", "dt_info_table", "dt_nodes_depth"
-                         }.issubset(kwargs)):
+        if (N is not None and y is not None and not {
+                "dt_model", "dt_info_table", "dt_nodes_depth", "leaf_nodes",
+                "non_leaf_nodes"
+        }.issubset(kwargs)):
+            if hypparam_model_dt is None:
+                hypparam_model_dt = {}
+
             dt_model = MFEModelBased._fit_dt_model(
-                N=N, y=y, random_state=random_state)
+                N=N, y=y, random_state=random_state, **hypparam_model_dt)
 
             leaf_nodes = dt_model.tree_.feature < 0
 
@@ -113,16 +119,14 @@ class MFEModelBased:
         return precomp_vals
 
     @classmethod
-    def _fit_dt_model(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            random_state: t.Optional[int] = None,
-    ) -> DecisionTreeClassifier:
+    def _fit_dt_model(cls,
+                      N: np.ndarray,
+                      y: np.ndarray,
+                      random_state: t.Optional[int] = None,
+                      **kwargs) -> DecisionTreeClassifier:
         """Build a Decision Tree Classifier model."""
-        dt_model = DecisionTreeClassifier(random_state=random_state)
-        dt_model.fit(N, y)
-        return dt_model
+        dt_model = DecisionTreeClassifier(random_state=random_state, **kwargs)
+        return dt_model.fit(X=N, y=y)
 
     @classmethod
     def _extract_table(cls, dt_model: DecisionTreeClassifier,
@@ -171,6 +175,7 @@ class MFEModelBased:
         :obj:`np.ndarray`
             The depth of each node.
         """
+
         def node_depth(node_ind: int, cur_depth: int) -> None:
             if not 0 <= node_ind < depths.size:
                 return
