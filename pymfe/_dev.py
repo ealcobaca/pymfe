@@ -312,12 +312,13 @@ class MFEBoilerplate:
         receptor metafeature extraction methods must be responsible to verify
         if all values were effectively precomputed (i.e., they are not
         ``None``). If this is not the case, unfortunately these methods must
-        compute for themselves those arguments. If it is not clear how it
+        compute those arguments for themselves. If it is not clear how it
         works for you by now, it will probably be easier to grasp when we
         reach our first actual metafeature extraction method. For now, it is
         just important to keep in mind that: you will need to recompute all
-        stuff precomputed in all precomputations methods inside other methods
-        for the case when the user disable the precomputation methods.
+        the stuff precomputed in every precomputations methods inside other
+        methods whenever those values are needed for the case when the user
+        disable the precomputation methods.
 
         Parameters
         ----------
@@ -408,7 +409,7 @@ class MFEBoilerplate:
         Uncontrolled pseudo-random behavior is absolutely forbidden in
         this package.
 
-        Also, pseudo-random methods must have tests related to it too.
+        Also, pseudo-random methods must have related automated tests.
         Therefore, setting up the random seed (as long as the user define
         it) is never optional.
         """
