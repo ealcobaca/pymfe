@@ -1,7 +1,7 @@
 """Module dedicated to extraction of Model-Based Metafeatures."""
 
-from collections import Counter
 import typing as t
+
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 
@@ -53,7 +53,7 @@ class MFEModelBased:
 
     @classmethod
     def precompute_model_based_class(cls, N: np.ndarray, y: np.ndarray,
-                                     random_state: t.Optional[int],
+                                     random_state: t.Optional[int] = None,
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute ``dt_model``, ``dt_info_table`` and ``dt_nodes_depth``.
 
@@ -94,7 +94,7 @@ class MFEModelBased:
                          }.issubset(kwargs)):
             dt_model = MFEModelBased._fit_dt_model(
                 N=N, y=y, random_state=random_state)
-            dt_info_table = MFEModelBased._extract_table(N, y, dt_model)
+            dt_info_table = MFEModelBased._extract_table(dt_model)
             dt_nodes_depth = MFEModelBased._calc_tree_depth(dt_model)
             prepcomp_vals["dt_model"] = dt_model
             prepcomp_vals["dt_info_table"] = dt_info_table
@@ -115,28 +115,13 @@ class MFEModelBased:
         return dt_model
 
     @classmethod
-    def _extract_table(cls, N: np.ndarray, y: np.ndarray,
-                       dt_model: DecisionTreeClassifier) -> np.ndarray:
-        """Precompute ``dt_model``, ``dt_info_table`` and ``dt_nodes_depth``.
+    def _extract_table(cls, dt_model: DecisionTreeClassifier) -> np.ndarray:
+        """Bookkeep some information table from the ``dt_model`` into an array.
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`
-            Attributes from fitted data.
-
-        y : :obj:`np.ndarray`
-            Target attribute from fitted data.
-
-        random_state : :obj:`int`, optional
-            If int, random_state is the seed used by the random number
-            generator; If RandomState instance, random_state is the random
-            number generator; If None, the random number generator is the
-            RandomState instance used by np.random.
-
-        kwargs:
-            Additional arguments. May have previously precomputed before this
-            method from other precomputed methods, so they can help speed up
-            this precomputation.
+        dt_model : :obj:`DecisionTreeClassifier`
+            The DT model.
 
         Returns
         -------
@@ -151,23 +136,16 @@ class MFEModelBased:
                 - Columns 3: It is 0 if the node is not a leaf, otherwise is
                   the class number represented by that leaf node.
         """
-        dt_info_table = np.zeros((dt_model.tree_.node_count,
-                                  4))  # type: np.ndarray
+        dt_info_table = np.zeros((dt_model.tree_.node_count, 4),
+                                 dtype=int)  # type: np.ndarray
+
         dt_info_table[:, 0] = dt_model.tree_.feature
         dt_info_table[:, 2] = dt_model.tree_.n_node_samples
 
-        leaves = dt_model.apply(N)  # type: DecisionTreeClassifier
-
-        if not isinstance(y, np.number):
-            _, y = np.unique(y, return_inverse=True)
-
-        tmp = np.array([leaves, y + 1])  # type: np.ndarray
-
-        x = 0  # type: int
-        for x in set(leaves):
-            dt_info_table[x, 3] = list(Counter(
-                tmp[1, tmp[0, :] == x]).keys())[0] + 1
-            dt_info_table[x, 1] = 1
+        leaf_nodes = dt_model.tree_.feature < 0
+        dt_info_table[leaf_nodes, 1] = 1
+        dt_info_table[leaf_nodes, 3] = np.argmax(
+            dt_model.tree_.value[leaf_nodes], axis=2).ravel() + 1
 
         return dt_info_table
 
@@ -204,21 +182,20 @@ class MFEModelBased:
         return depths
 
     @classmethod
-    def ft_leaves(cls, dt_info_table: np.ndarray) -> int:
+    def ft_leaves(cls, dt_model: DecisionTreeClassifier) -> int:
         """Number of leaves of the DT model.
 
         Parameters
         ----------
-        dt_info_table : :obj:`np.ndarray`
-            Decision tree properties table.
+        dt_model : :obj:`DecisionTreeClassifier`
+            The DT model.
 
         Returns
         -------
         :obj:`np.ndarray`
             Number of leaves.
         """
-
-        return np.sum(dt_info_table[:, 1], dtype=int)
+        return dt_model.tree_.n_leaves
 
     @classmethod
     def ft_tree_depth(cls, dt_nodes_depth: np.ndarray) -> np.ndarray:
@@ -226,7 +203,7 @@ class MFEModelBased:
 
         Parameters
         ----------
-        dt_nodes_depth : :obj:`np.ndarray`, optional
+        dt_nodes_depth : :obj:`np.ndarray`
             Depth of each node in the DT model.
 
         Returns
@@ -311,7 +288,8 @@ class MFEModelBased:
 
     @classmethod
     def ft_leaves_homo(cls, dt_info_table: np.ndarray,
-                       dt_nodes_depth: np.ndarray) -> np.ndarray:
+                       dt_nodes_depth: np.ndarray,
+                       dt_model: DecisionTreeClassifier) -> np.ndarray:
         """Calculate the DT model Homogeneity.
 
         The DT model homogeneity is calculated by the number of leaves divided
@@ -331,7 +309,7 @@ class MFEModelBased:
         :obj:`np.ndarray`
             The DT model homogeneity.
         """
-        num_leaves = MFEModelBased.ft_leaves(dt_info_table)  # type: int
+        num_leaves = MFEModelBased.ft_leaves(dt_model)  # type: int
 
         tree_shape = MFEModelBased.ft_tree_shape(
             dt_info_table, dt_nodes_depth)  # type: np.ndarray
@@ -339,7 +317,8 @@ class MFEModelBased:
         return num_leaves / tree_shape
 
     @classmethod
-    def ft_leaves_per_class(cls, dt_info_table: np.ndarray) -> np.ndarray:
+    def ft_leaves_per_class(cls, dt_info_table: np.ndarray,
+                            dt_model: DecisionTreeClassifier) -> np.ndarray:
         """Computer the proportion of leaves per class in the DT model.
 
         This quantity is computed by the proportion of leaves of the DT model
@@ -358,27 +337,27 @@ class MFEModelBased:
         _, class_id_freqs = np.unique(dt_info_table[:, 3], return_counts=True)
 
         # Note: the id == 0 is not associated to any class.
-        return class_id_freqs[1:] / MFEModelBased.ft_leaves(dt_info_table)
+        return class_id_freqs[1:] / MFEModelBased.ft_leaves(dt_model)
 
     @classmethod
-    def ft_nodes(cls, dt_info_table: np.ndarray) -> int:
+    def ft_nodes(cls, dt_model: DecisionTreeClassifier) -> int:
         """Number of non-leaf nodes of the DT model.
 
         Parameters
         ----------
-        dt_info_table : :obj:`np.ndarray`
-            Decision tree properties table.
+        dt_model : :obj:`DecisionTreeClassifier`
+            The DT model.
 
         Returns
         -------
         :obj:`np.ndarray`
             Number of non-leaf nodes.
         """
-        return np.sum(dt_info_table[:, 1] != 1, dtype=int)
+        return dt_model.tree_.node_count - dt_model.tree_.n_leaves
 
     @classmethod
-    def ft_nodes_per_attr(cls, N: np.ndarray,
-                          dt_info_table: np.ndarray) -> float:
+    def ft_nodes_per_attr(cls, N: np.ndarray, dt_info_table: np.ndarray,
+                          dt_model: DecisionTreeClassifier) -> float:
         """Ratio of the DT model number of nodes per number of attributes.
 
         Parameters
@@ -394,14 +373,14 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Ratio of the number of nodes.
         """
-        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_info_table)  # type: int
-        num_attr = N.shape[1]  # type: float
+        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)  # type: int
+        num_attr = N.shape[1]
 
         return num_non_leaf_nodes / num_attr
 
     @classmethod
-    def ft_nodes_per_inst(cls, N: np.ndarray,
-                          dt_info_table: np.ndarray) -> float:
+    def ft_nodes_per_inst(cls, N: np.ndarray, dt_info_table: np.ndarray,
+                          dt_model: DecisionTreeClassifier) -> float:
         """Ratio of the number of non-leaf nodes per the number of instances.
 
         Parameters
@@ -417,8 +396,8 @@ class MFEModelBased:
         :obj:`np.ndarray`
             Ratio of the number of non-leaf nodes per instances.
         """
-        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_info_table)  # type: int
-        num_inst = N.shape[0]  # type: float
+        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)  # type: int
+        num_inst = N.shape[0]
 
         return num_non_leaf_nodes / num_inst
 
