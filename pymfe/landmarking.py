@@ -58,7 +58,7 @@ class MFELandmarking:
     @classmethod
     def precompute_landmarking_class(cls,
                                      N: np.ndarray,
-                                     sample_size: float,
+                                     lm_sample_frac: float,
                                      num_cv_folds: int,
                                      shuffle_cv_folds: bool,
                                      random_state: t.Optional[int] = None,
@@ -70,7 +70,7 @@ class MFELandmarking:
         N : :obj:`np.ndarray`, optional
             Attributes from fitted data.
 
-        sample_size : :obj: `float`
+        lm_sample_frac : :obj: `float`
             The percentage of examples subsampled. Value different from default
             will generate the subsampling-based relative landmarking
             metafeatures.
@@ -97,36 +97,34 @@ class MFELandmarking:
                   cross-validator. Provides train/test indices to split data in
                   train/test sets.
         """
-
-        prepcomp_vals = {}
+        precomp_vals = {}
 
         if N is not None and "sample_inds" not in kwargs:
-            if sample_size != 1:
+            if lm_sample_frac < 1.0:
                 num_inst, _ = N.shape
 
-                prepcomp_vals["sample_inds"] = (
-                    MFELandmarking._get_sample_inds(
-                        num_inst=num_inst,
-                        sample_size=sample_size,
-                        random_state=random_state))
+                precomp_vals["sample_inds"] = (MFELandmarking._get_sample_inds(
+                    num_inst=num_inst,
+                    lm_sample_frac=lm_sample_frac,
+                    random_state=random_state))
 
         if "skf" not in kwargs:
-            prepcomp_vals["skf"] = StratifiedKFold(
+            precomp_vals["skf"] = StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
 
-        return prepcomp_vals
+        return precomp_vals
 
     @classmethod
-    def _get_sample_inds(cls, num_inst: int, sample_size: float,
+    def _get_sample_inds(cls, num_inst: int, lm_sample_frac: float,
                          random_state: t.Optional[int]) -> np.ndarray:
         """Sample indices to calculate subsampling landmarking metafeatures."""
         if random_state is not None:
             np.random.seed(random_state)
 
         sample_inds = np.random.choice(
-            a=num_inst, size=int(sample_size * num_inst), replace=False)
+            a=num_inst, size=int(lm_sample_frac * num_inst), replace=False)
 
         return sample_inds
 
@@ -135,12 +133,12 @@ class MFELandmarking:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            sample_size: float,
+            lm_sample_frac: float,
             random_state: t.Optional[int] = None,
             sample_inds: t.Optional[np.ndarray] = None,
     ) -> t.Tuple[np.ndarray, np.ndarray]:
-        """Select ``sample_size`` percent of data points in ``N`` and ``y``."""
-        if sample_size >= 1.0 and sample_inds is None:
+        """Select ``lm_sample_frac`` percent of data from ``N`` and ``y``."""
+        if lm_sample_frac >= 1.0 and sample_inds is None:
             return N, y
 
         if sample_inds is None:
@@ -148,7 +146,7 @@ class MFELandmarking:
 
             sample_inds = MFELandmarking._get_sample_inds(
                 num_inst=num_inst,
-                sample_size=sample_size,
+                lm_sample_frac=lm_sample_frac,
                 random_state=random_state)
 
         return N[sample_inds, :], y[sample_inds]
@@ -158,7 +156,7 @@ class MFELandmarking:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            sample_size: float = 1.0,
+            lm_sample_frac: float = 1.0,
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
@@ -175,13 +173,13 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
             Array of indices of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -197,7 +195,7 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
             sample_inds=sample_inds)
 
@@ -212,7 +210,7 @@ class MFELandmarking:
                      skf: t.Optional[StratifiedKFold] = None,
                      num_cv_folds: int = 10,
                      shuffle_cv_folds: bool = False,
-                     sample_size: float = 1.0,
+                     lm_sample_frac: float = 1.0,
                      sample_inds: t.Optional[np.ndarray] = None,
                      random_state: t.Optional[int] = None) -> np.ndarray:
         """Performance of a the best single decision tree node.
@@ -245,13 +243,13 @@ class MFELandmarking:
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
             Array of indices of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -267,7 +265,7 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
             sample_inds=sample_inds)
 
@@ -300,7 +298,7 @@ class MFELandmarking:
                        skf: t.Optional[StratifiedKFold] = None,
                        num_cv_folds: int = 10,
                        shuffle_cv_folds: bool = False,
-                       sample_size: float = 1.0,
+                       lm_sample_frac: float = 1.0,
                        sample_inds: t.Optional[np.ndarray] = None,
                        random_state: t.Optional[int] = None) -> np.ndarray:
         """Single decision tree node model induced by a random attribute.
@@ -330,13 +328,13 @@ class MFELandmarking:
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
             Array of indices of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -352,7 +350,7 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
             sample_inds=sample_inds)
 
@@ -392,7 +390,7 @@ class MFELandmarking:
             skf: t.Optional[StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
-            sample_size: float = 1.0,
+            lm_sample_frac: float = 1.0,
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
@@ -423,13 +421,13 @@ class MFELandmarking:
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
             Array of indices of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -445,7 +443,7 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
             sample_inds=sample_inds)
 
@@ -482,7 +480,7 @@ class MFELandmarking:
             skf: t.Optional[StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
-            sample_size: float = 1.0,
+            lm_sample_frac: float = 1.0,
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
@@ -516,13 +514,13 @@ class MFELandmarking:
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
             Array of indices of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -538,7 +536,7 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
             sample_inds=sample_inds)
 
@@ -571,7 +569,7 @@ class MFELandmarking:
             skf: t.Optional[StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
-            sample_size: float = 1.0,
+            lm_sample_frac: float = 1.0,
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
@@ -605,13 +603,13 @@ class MFELandmarking:
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
             Array of indices of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -627,7 +625,7 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
             sample_inds=sample_inds)
 
@@ -660,7 +658,7 @@ class MFELandmarking:
             skf: t.Optional[StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
-            sample_size: float = 1.0,
+            lm_sample_frac: float = 1.0,
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
@@ -694,13 +692,13 @@ class MFELandmarking:
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
             Array of indices of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -716,7 +714,7 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
             sample_inds=sample_inds)
 
@@ -754,7 +752,7 @@ class MFELandmarking:
             skf: t.Optional[StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
-            sample_size: float = 1.0,
+            lm_sample_frac: float = 1.0,
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
@@ -789,13 +787,13 @@ class MFELandmarking:
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
         sample_inds : :obj:`np.ndarray`, optional
             Array of indices of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -811,7 +809,7 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
             sample_inds=sample_inds)
 

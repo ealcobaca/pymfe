@@ -48,11 +48,10 @@ class MFE:
                  score: str = "accuracy",
                  num_cv_folds: int = 10,
                  shuffle_cv_folds: bool = False,
-                 sample_size: float = 1.0,
+                 lm_sample_frac: float = 1.0,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
-        """This class provides easy access for metafeature extraction from
-        datasets.
+        """Provides easy access for metafeature extraction from datasets.
 
         It expected that user first calls ``fit`` method after instantiation
         and then ``extract`` for effectively extract the selected metafeatures.
@@ -170,7 +169,7 @@ class MFE:
             the Stratified K-Fold Cross Validation of ``landmarking`` features.
             The shuffle random seed is the ``random_state`` argument.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Sample proportion used to produce the ``landmarking`` metafeatures.
             This argument must be in 0.5 and 1.0 (both inclusive) interval.
 
@@ -281,15 +280,15 @@ class MFE:
             raise ValueError('Invalid "num_cv_folds" argument ({0}). '
                              'Expecting an integer.'.format(random_state))
 
-        if isinstance(sample_size, int):
-            sample_size = float(sample_size)
+        if isinstance(lm_sample_frac, int):
+            lm_sample_frac = float(lm_sample_frac)
 
-        if isinstance(sample_size, float)\
-           and 0.5 <= sample_size <= 1.0:
-            self.sample_size = sample_size
+        if isinstance(lm_sample_frac, float)\
+           and 0.5 <= lm_sample_frac <= 1.0:
+            self.lm_sample_frac = lm_sample_frac
 
         else:
-            raise ValueError('Invalid "sample_size" argument ({0}). '
+            raise ValueError('Invalid "lm_sample_frac" argument ({0}). '
                              'Expecting an float [0.5, 1].'
                              .format(random_state))
 
@@ -903,7 +902,7 @@ class MFE:
             "y": self.y,
             "num_cv_folds": self.num_cv_folds,
             "shuffle_cv_folds": self.shuffle_cv_folds,
-            "sample_size": self.sample_size,
+            "lm_sample_frac": self.lm_sample_frac,
             "score": self.score,
             "random_state": self.random_state,
             "cat_cols": self._attr_indexes_cat,

@@ -11,7 +11,7 @@ GNAME = "landmarking"
 class TestRelativeLandmarking():
 
     @pytest.mark.parametrize(
-        "dt_id, summary, precompute, sample_size, exp_value",
+        "dt_id, summary, precompute, lm_sample_frac, exp_value",
         [
             #######################################
             # Mean Relative Landmarking
@@ -54,7 +54,7 @@ class TestRelativeLandmarking():
             (2, "sd", True,  0.5, [2.5, 7.0, 4.0, 5.0, 1.0, 2.5, 6.0]),
         ])
     def test_ft_method_relative(self, dt_id, summary, precompute,
-                                sample_size, exp_value):
+                                lm_sample_frac, exp_value):
         """Test relative and subsampling relative landmarking."""
         precomp_group = "relative" if precompute else None
 
@@ -62,7 +62,7 @@ class TestRelativeLandmarking():
         mfe = MFE(
             groups=["relative"],
             summary=summary,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=1234)
 
         mfe.fit(X.values, y.values, precomp_groups=precomp_group)
@@ -96,7 +96,7 @@ class TestRelativeLandmarking():
         mfe = MFE(
             groups="all",
             summary=summary,
-            sample_size=0.5,
+            lm_sample_frac=0.5,
             random_state=1234)
 
         mfe.fit(X.values, y.values)
