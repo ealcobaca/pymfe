@@ -73,9 +73,10 @@ class TestClustering():
             (2, 'vdb', 0.7517428073901388, True),
             (2, 'vdu', 2.3392212797698888e-05, True),
         ])
-    def test_ft_methods_general(self, dt_id, ft_name, exp_value, precompute):
-        """Function to test each meta-feature belongs to general group.
-        """
+    def test_ft_methods_clustering(self, dt_id, ft_name, exp_value,
+                                   precompute):
+        """Function to test each meta-feature belongs to clustering group."""
+
         precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
         mfe = MFE(
@@ -88,6 +89,17 @@ class TestClustering():
 
         else:
             assert np.allclose(value, exp_value)
+
+    @pytest.mark.parametrize("precompute", [False, True])
+    def test_silhouette_subsampling(self, precompute):
+        X, y = load_xy(0)
+        precomp_group = GNAME if precompute else None
+        mfe = MFE(
+            features="sil", random_state=1234).fit(
+                X.values, y.values, precomp_groups=precomp_group)
+        value = mfe.extract(sil={"sample_frac": 0.5})[1]
+
+        assert np.allclose(value, -0.07137712254830314)
 
     @staticmethod
     def test_precompute_nearest_neighbors():
