@@ -607,8 +607,8 @@ class MFEClustering:
             distance metrics.
 
         sample_frac : :obj:`int`, optional
-            Sample size used to compute the silhouette coefficient. If
-            None is used, then all data is used.
+            Sample fraction used to compute the silhouette coefficient. If
+            None is given, then all data is used.
 
         random_state : :obj:`int`, optional
             Used if ``sample_frac`` is not None. Random seed used while
