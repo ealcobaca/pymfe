@@ -161,8 +161,15 @@ class MFEClustering:
                     classes=classes,
                     get_max_dist=False))
 
-            precomp_vals["intraclass_dists"] = (
-                precomp_vals["pairwise_intraclass_dists"].max(axis=1))
+            if precomp_vals["pairwise_intraclass_dists"].ndim == 2:
+                precomp_vals["intraclass_dists"] = (
+                    precomp_vals["pairwise_intraclass_dists"].max(axis=1))
+
+            else:
+                precomp_vals["intraclass_dists"] = np.array([
+                    np.max(class_arr)
+                    for class_arr in precomp_vals["pairwise_intraclass_dists"]
+                ])
 
         return precomp_vals
 
@@ -626,14 +633,16 @@ class MFEClustering:
             .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
                 documentation.
         """
+        sample_size = N.shape[0]
+
         if sample_frac is not None:
-            sample_frac = int(sample_frac * N.shape[0])
+            sample_size = int(sample_frac * sample_size)
 
         silhouette = sklearn.metrics.silhouette_score(
             X=N,
             labels=y,
             metric=dist_metric,
-            sample_size=sample_frac,
+            sample_size=sample_size,
             random_state=random_state)
 
         return silhouette
