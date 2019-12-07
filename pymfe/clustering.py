@@ -302,10 +302,7 @@ class MFEClustering:
         if not {"representative"}.issubset(kwargs):
             precomp_vals["representative"] = (
                 MFEClustering._get_class_representatives(
-                    N=N,
-                    y=y,
-                    representative=representative,
-                    classes=classes))
+                    N=N, y=y, representative=representative, classes=classes))
 
         return precomp_vals
 
@@ -590,14 +587,12 @@ class MFEClustering:
         return pairwise_norm_interclass_dist.sum() * norm_factor
 
     @classmethod
-    def ft_sil(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            dist_metric: str = "euclidean",
-            sample_size: t.Optional[int] = None,
-            random_state: t.Optional[int] = None
-    ) -> float:
+    def ft_sil(cls,
+               N: np.ndarray,
+               y: np.ndarray,
+               dist_metric: str = "euclidean",
+               sample_frac: t.Optional[int] = None,
+               random_state: t.Optional[int] = None) -> float:
         """Calculate the mean silhouette value from ``N``.
 
         Metric range is -1 to +1 (both inclusive).
@@ -611,12 +606,12 @@ class MFEClustering:
             instances. Check `distmetric`_ for a full list of valid
             distance metrics.
 
-        sample_size : :obj:`int`, optional
+        sample_frac : :obj:`int`, optional
             Sample size used to compute the silhouette coefficient. If
             None is used, then all data is used.
 
         random_state : :obj:`int`, optional
-            Used if ``sample_size`` is not None. Random seed used while
+            Used if ``sample_frac`` is not None. Random seed used while
             sampling the data.
 
         Returns
@@ -631,15 +626,14 @@ class MFEClustering:
             .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
                 documentation.
         """
-
-        if sample_size is not None:
-            sample_size = int(sample_size*len(N))
+        if sample_frac is not None:
+            sample_frac = int(sample_frac * N.shape[0])
 
         silhouette = sklearn.metrics.silhouette_score(
             X=N,
             labels=y,
             metric=dist_metric,
-            sample_size=sample_size,
+            sample_size=sample_frac,
             random_state=random_state)
 
         return silhouette
@@ -684,10 +678,7 @@ class MFEClustering:
         return correlation
 
     @classmethod
-    def ft_ch(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray) -> float:
+    def ft_ch(cls, N: np.ndarray, y: np.ndarray) -> float:
         """Calinski and Harabasz index.
         Check `cahascore`_ for more information.
 
@@ -733,7 +724,7 @@ class MFEClustering:
               y: np.ndarray,
               size: int = 15,
               class_freqs: t.Optional[np.ndarray] = None,
-              normalize: bool = False) -> t.Union[int]:
+              normalize: bool = False) -> int:
         """Number of clusters with size smaller than ``size``.
 
         Parameters
