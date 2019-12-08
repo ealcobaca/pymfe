@@ -157,18 +157,15 @@ class MFEConcept:
         div = np.sqrt(n_col)-distances
         div[div <= 0] = minimum  # to guarantee that the minimum will be 0
         weights = 1 / np.power(2, alpha_conceptvar*(distances/div))
+        np.fill_diagonal(weights, 0.0)
 
         rep_class_matrix = np.repeat([y], y.shape[0], axis=0)
-        # check if class is equal
+        # check if class is different
         class_diff = np.not_equal(rep_class_matrix.T,
                                   rep_class_matrix).astype(int)
 
-        # We sum i==j because multiplied by class_diff, it becomes zero.
-        dividend = np.sum(weights*class_diff, axis=0)
-        # Here it is necessary subtract when i==j, we do it for each line
-        divisor = np.sum(weights, axis=0)-1
-
-        amount_concept_attr = dividend/divisor
+        amount_concept_attr = np.sum(
+            weights*class_diff, axis=0)/np.sum(weights, axis=0)
 
         # The original meta-feature is the mean of the return.
         # It will be done by the summary functions.
