@@ -92,26 +92,6 @@ class MFEConcept:
         return prepcomp_vals
 
     # @classmethod
-    # def ft_wg_dist(cls,
-    #                N: np.ndarray,
-    #                wd_alpha: int = 2) -> float:
-    #     """TODO
-    #     """
-    #
-    #     # 0-1 scaler
-    #     scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
-    #     N = scaler.transform(N)
-    #
-    #     dist = distance.cdist(N, N, 'euclidean')
-    #
-    #     d = dist/(np.sqrt(N.shape[0]-dist))
-    #     w = 1/(np.power(2, wd_alpha*d))
-    #
-    #     wd = np.sum(w*dist, axis=1)/(np.sum(w, axis=1)-1)
-    #
-    #     return wd
-    #
-    # @classmethod
     # def ft_cohesiveness(cls,
     #                     N: np.ndarray,
     #                     wd_alpha: int = 3
@@ -170,6 +150,37 @@ class MFEConcept:
         # The original meta-feature is the mean of the return.
         # It will be done by the summary functions.
         return amount_concept_attr
+
+    @classmethod
+    def ft_wg_dist(cls,
+                   N: np.ndarray,
+                   alpha_wg_dist: float = 2,
+                   dist_measure_wg_dist: str = "euclidean",
+                   minimum: float = 10e-8
+                   ) -> float:
+        """TODO
+        """
+        # normalizar N
+        # 0-1 scaler
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
+        N = scaler.transform(N)
+
+        # gerar matrix de distância D
+        distances = distance.cdist(N, N, dist_measure_wg_dist)
+
+        n_col = N.shape[1]
+
+        div = np.sqrt(n_col)-distances
+        div[div <= 0] = minimum  # to guarantee that the minimum will be 0
+        weights = 1 / np.power(2, alpha_wg_dist*(distances/div))
+        np.fill_diagonal(weights, 0.0)
+
+        wg_dist_attr = np.sum(
+            weights*distances, axis=0)/np.sum(weights, axis=0)
+
+        # The original meta-feature is the mean of the return.
+        # It will be done by the summary functions.
+        return wg_dist_attr
 
     # @classmethod
     # def ft_impconceptvar(cls,
