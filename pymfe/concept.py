@@ -60,18 +60,15 @@ class MFEConcept:
     precomputation or feature extraction method of module ``landmarking``).
     """
     @classmethod
-    def precompute_foo_concept(cls,
-                               y: np.ndarray,
-                               **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_dist(cls,
+                        N: np.ndarray,
+                        **kwargs) -> t.Dict[str, t.Any]:
         """Precompute some useful things to support complexity measures.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`, optional
             Attributes from fitted data.
-
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -82,61 +79,38 @@ class MFEConcept:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``ovo_comb`` (:obj:`list`): List of all class OVO
-                  combination, i.e., [(0,1), (0,2) ...].
-                - ``cls_n_ex`` (:obj:`np.ndarray`): The number of examples in
-                  each class. The array indexes represent the classes.
+                - ``distances`` (:obj:`np.ndarray`): Distance Matrix
         """
 
         prepcomp_vals = {}
-        return prepcomp_vals
 
-    # @classmethod
-    # def ft_cohesiveness(cls,
-    #                     N: np.ndarray,
-    #                     wd_alpha: int = 3
-    #                     ) -> float:
-    #     """TODO
-    #     """
-    #
-    #     # 0-1 scaler
-    #     scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
-    #     N = scaler.transform(N)
-    #
-    #     dist = distance.cdist(N, N, 'euclidean')
-    #
-    #     w = 1/(np.power(2, wd_alpha*dist))
-    #
-    #     w_ = np.sort(w)
-    #     w_ = w_[:, ::-1]
-    #     cohe_i = np.sum(w_*np.arange(N.shape[0]), axis=1)
-    #
-    #     return cohe_i
+        # 0-1 scaler
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
+        N = scaler.transform(N)
+
+        # distance matrix
+        distances = distance.cdist(N, N, dist_measure)
+
+        prepcomp_vals["distances"] = distances
+
+        return prepcomp_vals
 
     @classmethod
     def ft_conceptvar(cls,
                       N: np.ndarray,
                       y: np.ndarray,
-                      alpha_conceptvar: float = 2,
-                      dist_measure_conceptvar: str = "euclidean",
-                      minimum: float = 10e-8
+                      conceptvar_alpha: float = 2.0,
+                      concept_dist_measure: str = "euclidean",
+                      concept_minimum: float = 10e-10
                       ) -> np.ndarray:
         """Concept variation estimates the variability of class labels among
         examples.
         """
-        # normalizar N
-        # 0-1 scaler
-        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
-        N = scaler.transform(N)
-
-        # gerar matrix de distância D
-        distances = distance.cdist(N, N, dist_measure_conceptvar)
-
         n_col = N.shape[1]
 
         div = np.sqrt(n_col)-distances
-        div[div <= 0] = minimum  # to guarantee that the minimum will be 0
-        weights = 1 / np.power(2, alpha_conceptvar*(distances/div))
+        div[div <= 0] = concept_minimum  # to guarantee that the minimum will be 0
+        weights = 1 / np.power(2, conceptvar_alpha*(distances/div))
         np.fill_diagonal(weights, 0.0)
 
         rep_class_matrix = np.repeat([y], y.shape[0], axis=0)
@@ -144,19 +118,19 @@ class MFEConcept:
         class_diff = np.not_equal(rep_class_matrix.T,
                                   rep_class_matrix).astype(int)
 
-        amount_concept_attr = np.sum(
+        conceptvar_by_example = np.sum(
             weights*class_diff, axis=0)/np.sum(weights, axis=0)
 
         # The original meta-feature is the mean of the return.
         # It will be done by the summary functions.
-        return amount_concept_attr
+        return conceptvar_by_example
 
     @classmethod
     def ft_wg_dist(cls,
                    N: np.ndarray,
-                   alpha_wg_dist: float = 2,
-                   dist_measure_wg_dist: str = "euclidean",
-                   minimum: float = 10e-8
+                   alpha_wg_dist: float = 2.0,
+                   concept_dist_measure: str = "euclidean",
+                   concept_minimum: float = 10e-10
                    ) -> float:
         """TODO
         """
@@ -175,16 +149,45 @@ class MFEConcept:
         weights = 1 / np.power(2, alpha_wg_dist*(distances/div))
         np.fill_diagonal(weights, 0.0)
 
-        wg_dist_attr = np.sum(
+        wg_dist_example = np.sum(
             weights*distances, axis=0)/np.sum(weights, axis=0)
 
         # The original meta-feature is the mean of the return.
-        # It will be done by the summary functions.
-        return wg_dist_attr
+        # It will be done by summary functions.
+        return wg_dist_example
 
-    # @classmethod
-    # def ft_impconceptvar(cls,
-    #                      N: np.ndarray) -> float:
-    #     """TODO
-    #     """
-    #     return 0.0
+    @classmethod
+    def ft_impconceptvar(cls,
+                         N: np.ndarray,
+                         y: np.ndarray,
+                         alpha_impconceptvar: float = 1.0,
+                         concept_dist_measure: str = "euclidean",
+                         ) -> np.ndarray:
+        """TODO
+        """
+        # normalizar N
+        # 0-1 scaler
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
+        N = scaler.transform(N)
+
+        # gerar matrix de distância D
+        distances = distance.cdist(N, N, dist_measure_conceptvar)
+
+        radius = np.ceil(distances).astype(int)
+        radius[radius == 0] = 1
+
+
+        weights = 1.0/np.power(2, alpha_impconceptvar*radius)
+        np.fill_diagonal(weights, 0.0)
+
+        rep_class_matrix = np.repeat([y], y.shape[0], axis=0)
+        # check if class is different
+        class_diff = np.not_equal(rep_class_matrix.T,
+                                  rep_class_matrix).astype(int)
+
+        impconceptvar_by_example = np.sum(weights * class_diff, axis=0)
+
+        # The original meta-feature is the mean of the return.
+        # It will be done by summary functions.
+        return impconceptvar_by_example
+
