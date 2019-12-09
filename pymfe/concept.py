@@ -191,3 +191,33 @@ class MFEConcept:
         # It will be done by summary functions.
         return impconceptvar_by_example
 
+    @classmethod
+    def ft_cohesiveness(cls,
+                        N: np.ndarray,
+                        impconceptvar_alpha: float = 1.0,
+                        concept_dist_measure: str = "euclidean",
+                        ) -> np.ndarray:
+        """TODO
+        """
+        # normalizar N
+        # 0-1 scaler
+        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
+        N = scaler.transform(N)
+
+        # gerar matrix de distância D
+        distances = distance.cdist(N, N, dist_measure_conceptvar)
+
+        radius = np.ceil(distances).astype(int)
+        radius[radius == 0] = 1
+
+
+        weights = 1.0/np.power(2, impconceptvar_alpha*radius)
+        np.fill_diagonal(weights, 0.0)
+
+        cohesiveness_by_example = np.sum(weights, axis=0)
+
+        # The original meta-feature is the mean of the return.
+        # It will be done by summary functions.
+        return cohesiveness_by_example
+
+
