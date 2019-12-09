@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Complexity Metafeatures."""
+"""Module dedicated to extraction of Concept Metafeatures."""
 
 import typing as t
 import numpy as np
