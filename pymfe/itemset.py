@@ -76,16 +76,18 @@ class MFEItemset:
         return prepcomp_vals
 
     @staticmethod
-    def _array_to_binary(col):
-        values = np.unique(col)
-        res = np.zeros((col.shape[0], values.shape[0])).astype(bool)
+    def _array_to_binary(array: np.ndarray):
+        """Convert an array to its binary representation."""
+        values = np.unique(array)
+        res = np.zeros((array.shape[0], values.shape[0])).astype(bool)
         for i, val in enumerate(values):
-            res[:, i] = col == val
+            res[:, i] = array == val
         return res
 
     @staticmethod
-    def _matrix_to_binary(C_: np.array):
-        return [MFEItemset._array_to_binary(col) for col in C_.T]
+    def _matrix_to_binary(C: np.array):
+        """Convert an matrix to its binary representation."""
+        return [MFEItemset._array_to_binary(col) for col in C.T]
 
     @classmethod
     def ft_two_itemset(cls,
