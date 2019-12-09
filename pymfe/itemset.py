@@ -94,7 +94,7 @@ class MFEItemset:
     @classmethod
     def ft_two_itemset(cls,
                        C: np.ndarray,
-                       itemset_binary_matrix: t.List[np.ndarray],
+                       itemset_binary_matrix: t.List[np.ndarray] = None,
                        ) -> np.ndarray:
         """Computes the one itemset meta-feature, which is the individual
         frequency of each attribute in binary format.
@@ -120,12 +120,12 @@ class MFEItemset:
            Pattern recognition, 45(7), 2672-2689.
         """
         if itemset_binary_matrix is None:
-            sub_dic = MFEItemset._matrix_to_binary(C)
+            sub_dic = MFEItemset.precompute_binary_matrix(C)
             itemset_binary_matrix = sub_dic["itemset_binary_matrix"]
 
         B = itemset_binary_matrix
 
-        result = []
+        result = []  # type: t.List[float]
         while B:
             Bi = B[0]
             del B[0]
@@ -141,7 +141,7 @@ class MFEItemset:
     @classmethod
     def ft_one_itemset(cls,
                        C: np.ndarray,
-                       itemset_binary_matrix: t.List[np.ndarray]
+                       itemset_binary_matrix: t.List[np.ndarray] = None
                        ) -> np.ndarray:
         """Computes the two itemset meta-feature, which can be seen as the
         correlation information of each two attributes value pairs in binary
@@ -168,7 +168,7 @@ class MFEItemset:
            Pattern recognition, 45(7), 2672-2689.
         """
         if itemset_binary_matrix is None:
-            sub_dic = MFEItemset._matrix_to_binary(C)
+            sub_dic = MFEItemset.precompute_binary_matrix(C)
             itemset_binary_matrix = sub_dic["itemset_binary_matrix"]
 
         B = itemset_binary_matrix
