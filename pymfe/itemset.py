@@ -88,6 +88,27 @@ class MFEItemset:
         return [MFEItemset._array_to_binary(col) for col in C_.T]
 
     @classmethod
+    def ft_two_itemset(cls,
+                       C: np.ndarray,
+                       ) -> np.ndarray:
+        """TODO.
+        """
+        B = MFEItemset._matrix_to_binary(C)
+
+        result = []
+        while B:
+            Bi = B[0]
+            del B[0]
+            for Bj in B:
+                aux = [np.sum(np.logical_xor(i, j))
+                       for i in Bi.T for j in Bj.T]
+                result += aux
+
+        twoitem_by_attr = np.array(result) / C.shape[0]
+
+        return twoitem_by_attr
+
+    @classmethod
     def ft_one_itemset(cls,
                        C: np.ndarray,
                        ) -> np.ndarray:
