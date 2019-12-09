@@ -103,3 +103,18 @@ This is the full API documentation of the `pymfe` toolbox.
    :toctree: generated/
 
    landmarking.MFELandmarking
+
+
+:mod:`pymfe.itemset`: Itemset Meta-features
+===================================================
+
+.. automodule:: pymfe.itemset
+   :no-members:
+   :no-inherited-members:
+
+.. currentmodule:: pymfe
+
+.. autosummary::
+   :toctree: generated/
+
+   itemset.MFEItemset
