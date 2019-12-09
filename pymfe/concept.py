@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 class MFEConcept:
-    """Keep methods for metafeatures of ``Concept Characterization`` group.
+    """Keep methods for metafeatures of ``Concept`` group.
 
     The convention adopted for metafeature extraction related methods is to
     always start with ``ft_`` prefix to allow automatic method detection. This
@@ -132,6 +132,13 @@ class MFEConcept:
         -------
         :obj:`np.ndarray`
             An array with the concept variation for each example.
+
+        References
+        ----------
+        .. [1] Vilalta, R. (1999). Understanding accuracy performance through
+           concept characterization and algorithm analysis. In Proceedings of
+           the ICML-99 workshop on recent advances in meta-learning and future
+           work (pp. 3-9).
         """
         if concept_distances is None:
             sub_dic = MFEConcept.precompute_concept_dist(
@@ -192,6 +199,13 @@ class MFEConcept:
         -------
         :obj:`np.ndarray`
             An array with the weighted distance for each example.
+
+        References
+        ----------
+        .. [1] Vilalta, R. (1999). Understanding accuracy performance through
+           concept characterization and algorithm analysis. In Proceedings of
+           the ICML-99 workshop on recent advances in meta-learning and future
+           work (pp. 3-9).
         """
         if concept_distances is None:
             sub_dic = MFEConcept.precompute_concept_dist(
@@ -246,6 +260,12 @@ class MFEConcept:
         -------
         :obj:`np.ndarray`
             An array with the improved concept variation for each example.
+
+        References
+        ----------
+        .. [1] Vilalta, R and Drissi, Y (2002). A Characterization of Difficult
+           Problems in Classification. Proceedings of the 2002 International
+           Conference on Machine Learning and Applications (pp. 133-138).
         """
         if concept_distances is None:
             sub_dic = MFEConcept.precompute_concept_dist(
@@ -299,6 +319,12 @@ class MFEConcept:
         -------
         :obj:`np.ndarray`
             An array with the cohesiveness for each example.
+
+        References
+        ----------
+        .. [1] Vilalta, R and Drissi, Y (2002). A Characterization of Difficult
+           Problems in Classification. Proceedings of the 2002 International
+           Conference on Machine Learning and Applications (pp. 133-138).
         """
         if concept_distances is None:
             sub_dic = MFEConcept.precompute_concept_dist(
