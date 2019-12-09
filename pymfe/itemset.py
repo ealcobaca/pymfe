@@ -49,14 +49,14 @@ class MFEItemset:
     precomputation or feature extraction method of module ``landmarking``).
     """
     @classmethod
-    def precompute_foo_itemset(cls,
-                               N: np.ndarray,
-                               **kwargs) -> t.Dict[str, t.Any]:
-        """Precompute PCA to Tx complexit measures.
+    def precompute_binary_matrix(cls,
+                                 C: np.ndarray,
+                                 **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute the binary representation of attributes.
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`, optional
+        C : :obj:`np.ndarray`, optional
             Attributes from fitted data.
 
         **kwargs
@@ -68,11 +68,13 @@ class MFEItemset:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``m`` (:obj:`int`): Number of features.
-                - ``m_`` (:obj:`int`):  Number of features after PCA with 0.95.
-                - ``n`` (:obj:`int`): Number of examples.
+                - ``itemset_binary_matrix`` (:obj:`list`): Binary
+                  representation of the attributes.
         """
         prepcomp_vals = {}
+        if C is not None and 'itemset_binary_matrix' not in kwargs:
+            itemset_binary_matrix = MFEItemset._matrix_to_binary(C)
+            prepcomp_vals["itemset_binary_matrix"] = itemset_binary_matrix
         return prepcomp_vals
 
     @staticmethod
@@ -92,10 +94,36 @@ class MFEItemset:
     @classmethod
     def ft_two_itemset(cls,
                        C: np.ndarray,
+                       itemset_binary_matrix: t.List[np.ndarray],
                        ) -> np.ndarray:
-        """TODO.
+        """Computes the one itemset meta-feature, which is the individual
+        frequency of each attribute in binary format.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        itemset_binary_matrix : list
+            Binary representation of the attributes. Each list value has a
+            binary representation of each attributes in the dataset.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An array with the twoitem for each attribute.
+
+        References
+        ----------
+        .. [1] Song, Q., Wang, G., & Wang, C. (2012). Automatic recommendation
+           of classification algorithms based on data set characteristics.
+           Pattern recognition, 45(7), 2672-2689.
         """
-        B = MFEItemset._matrix_to_binary(C)
+        if itemset_binary_matrix is None:
+            sub_dic = MFEItemset._matrix_to_binary(C)
+            itemset_binary_matrix = sub_dic["itemset_binary_matrix"]
+
+        B = itemset_binary_matrix
 
         result = []
         while B:
@@ -113,11 +141,39 @@ class MFEItemset:
     @classmethod
     def ft_one_itemset(cls,
                        C: np.ndarray,
+                       itemset_binary_matrix: t.List[np.ndarray]
                        ) -> np.ndarray:
-        """TODO.
+        """Computes the two itemset meta-feature, which can be seen as the
+        correlation information of each two attributes value pairs in binary
+        format.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        itemset_binary_matrix : list
+            Binary representation of the attributes. Each list value has a
+            binary representation of each attributes in the dataset.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An array with the oneitem for each attribute.
+
+        References
+        ----------
+        .. [1] Song, Q., Wang, G., & Wang, C. (2012). Automatic recommendation
+           of classification algorithms based on data set characteristics.
+           Pattern recognition, 45(7), 2672-2689.
         """
-        B = MFEItemset._matrix_to_binary(C)
+        if itemset_binary_matrix is None:
+            sub_dic = MFEItemset._matrix_to_binary(C)
+            itemset_binary_matrix = sub_dic["itemset_binary_matrix"]
+
+        B = itemset_binary_matrix
         B = np.concatenate(B, axis=1)
+
         oneitem_by_attr = np.sum(B, axis=0) / C.shape[0]
 
         return oneitem_by_attr
