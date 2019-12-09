@@ -1,18 +1,9 @@
 """Module dedicated to extraction of Complexity Metafeatures."""
 
 import typing as t
-import itertools
 import numpy as np
 from scipy.spatial import distance
-from scipy.sparse.csgraph import minimum_spanning_tree
-from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.decomposition import PCA
-from pymfe.general import MFEGeneral
 
 
 class MFEConcept:
@@ -62,7 +53,7 @@ class MFEConcept:
     @classmethod
     def precompute_concept_dist(cls,
                                 N: np.ndarray,
-                                concept_dist_measure: str = "euclidean",
+                                concept_dist_metric: str = "euclidean",
                                 **kwargs) -> t.Dict[str, t.Any]:
         """Precompute some useful things to support complexity measures.
 
@@ -70,6 +61,10 @@ class MFEConcept:
         ----------
         N : :obj:`np.ndarray`, optional
             Attributes from fitted data.
+
+        concept_dist_metric : str
+            Metric used to compute distance between each pair of examples. See
+            cdist from scipy for more options.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -80,7 +75,8 @@ class MFEConcept:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``concept_distances`` (:obj:`np.ndarray`): Distance Matrix
+                - ``concept_distances`` (:obj:`np.ndarray`): Distance matrix of
+                  examples from N.
         """
 
         prepcomp_vals = {}
@@ -91,7 +87,7 @@ class MFEConcept:
             N = scaler.transform(N)
 
             # distance matrix
-            concept_distances = distance.cdist(N, N, concept_dist_measure)
+            concept_distances = distance.cdist(N, N, concept_dist_metric)
 
             prepcomp_vals["concept_distances"] = concept_distances
 
@@ -103,15 +99,43 @@ class MFEConcept:
                       y: np.ndarray,
                       concept_distances: np.ndarray = None,
                       conceptvar_alpha: float = 2.0,
-                      concept_dist_measure: str = "euclidean",
+                      concept_dist_metric: str = "euclidean",
                       concept_minimum: float = 10e-10
                       ) -> np.ndarray:
-        """Concept variation estimates the variability of class labels among
-        examples.
+        """Computes the concept variation that estimates the variability of
+        class labels among examples.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        concept_distances : :obj:`np.ndarray`
+            Distance matrix of examples from N.
+
+        conceptvar_alpha : float
+            The alpha value to adjust the weight. The higher the alpha less
+            is the effect of the weight in the computation.
+
+        concept_dist_metric: str
+            Metric used to compute distance between each pair of examples. See
+            cdist from scipy for more options.
+
+        concept_minimum: float
+            This variable is the minimum value considered in the computation.
+            It will be sum when necessary to avoid division by zero.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An array with the concept variation for each example.
         """
         if concept_distances is None:
             sub_dic = MFEConcept.precompute_concept_dist(
-                N,concept_dist_measure)
+                N, concept_dist_metric)
             concept_distances = sub_dic["concept_distances"]
 
         n_col = N.shape[1]
@@ -137,22 +161,48 @@ class MFEConcept:
     def ft_wg_dist(cls,
                    N: np.ndarray,
                    concept_distances: np.ndarray = None,
-                   alpha_wg_dist: float = 2.0,
-                   concept_dist_measure: str = "euclidean",
+                   wg_dist_alpha: float = 2.0,
+                   concept_dist_metric: str = "euclidean",
                    concept_minimum: float = 10e-10
-                   ) -> float:
-        """TODO
+                   ) -> np.ndarray:
+        """Computes the weighted distance, that captures how dense or sparse
+        is the example distribution.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        concept_distances : :obj:`np.ndarray`
+            Distance matrix of examples from N.
+
+        wg_dist_alpha : float
+            The alpha value to adjust the weight. The higher the alpha less
+            is the effect of the weight in the computation.
+
+        concept_dist_metric: str
+            Metric used to compute distance between each pair of examples. See
+            cdist from scipy for more options.
+
+        concept_minimum: float
+            This variable is the minimum value considered in the computation.
+            It will be sum when necessary to avoid division by zero.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An array with the weighted distance for each example.
         """
         if concept_distances is None:
             sub_dic = MFEConcept.precompute_concept_dist(
-                N,concept_dist_measure)
+                N, concept_dist_metric)
             concept_distances = sub_dic["concept_distances"]
 
         n_col = N.shape[1]
 
         div = np.sqrt(n_col)-concept_distances
         div[div <= 0] = concept_minimum  # to guarantee that minimum will be 0
-        weights = 1 / np.power(2, alpha_wg_dist*(concept_distances/div))
+        weights = 1 / np.power(2, wg_dist_alpha*(concept_distances/div))
         np.fill_diagonal(weights, 0.0)
 
         wg_dist_example = np.sum(
@@ -167,21 +217,45 @@ class MFEConcept:
                          N: np.ndarray,
                          y: np.ndarray,
                          concept_distances: np.ndarray = None,
-                         alpha_impconceptvar: float = 1.0,
-                         concept_dist_measure: str = "euclidean",
+                         impconceptvar_alpha: float = 1.0,
+                         concept_dist_metric: str = "euclidean",
                          ) -> np.ndarray:
-        """TODO
+        """Computes the improved concept variation that estimates the
+        variability of class labels among examples.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        concept_distances : :obj:`np.ndarray`
+            Distance matrix of examples from N.
+
+        impconceptvar_alpha : float
+            The alpha value to adjust the weight. The higher the alpha less
+            is the effect of the weight in the computation.
+
+        concept_dist_metric: str
+            Metric used to compute distance between each pair of examples. See
+            cdist from scipy for more options.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An array with the improved concept variation for each example.
         """
         if concept_distances is None:
             sub_dic = MFEConcept.precompute_concept_dist(
-                N,concept_dist_measure)
+                N, concept_dist_metric)
             concept_distances = sub_dic["concept_distances"]
 
         radius = np.ceil(concept_distances).astype(int)
         radius[radius == 0] = 1
 
-
-        weights = 1.0/np.power(2, alpha_impconceptvar*radius)
+        weights = 1.0/np.power(2, impconceptvar_alpha*radius)
         np.fill_diagonal(weights, 0.0)
 
         rep_class_matrix = np.repeat([y], y.shape[0], axis=0)
@@ -199,21 +273,42 @@ class MFEConcept:
     def ft_cohesiveness(cls,
                         N: np.ndarray,
                         concept_distances: np.ndarray = None,
-                        impconceptvar_alpha: float = 1.0,
-                        concept_dist_measure: str = "euclidean",
+                        cohesiveness_alpha: float = 1.0,
+                        concept_dist_metric: str = "euclidean",
                         ) -> np.ndarray:
-        """TODO
+        """Computes the improved version of the weighted distance, that
+        captures how dense or sparse is the example distribution.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        concept_distances : :obj:`np.ndarray`
+            Distance matrix of examples from N.
+
+        cohesiveness_alpha : float
+            The alpha value to adjust the weight. The higher the alpha less
+            is the effect of the weight in the computation.
+
+        concept_dist_metric: str
+            Metric used to compute distance between each pair of examples. See
+            cdist from scipy for more options.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            An array with the cohesiveness for each example.
         """
         if concept_distances is None:
             sub_dic = MFEConcept.precompute_concept_dist(
-                N,concept_dist_measure)
+                N, concept_dist_metric)
             concept_distances = sub_dic["concept_distances"]
 
         radius = np.ceil(concept_distances).astype(int)
         radius[radius == 0] = 1
 
-
-        weights = 1.0/np.power(2, impconceptvar_alpha*radius)
+        weights = 1.0/np.power(2, cohesiveness_alpha*radius)
         np.fill_diagonal(weights, 0.0)
 
         cohesiveness_by_example = np.sum(weights, axis=0)
