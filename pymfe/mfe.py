@@ -73,7 +73,9 @@ class MFE:
             selected ``groups``. Check this class ``features`` attribute to get
             a list of available metafeatures from selected groups, or use the
             method ``valid_metafeatures`` to get a list of all available
-            metafeatures filtered by group.
+            metafeatures filtered by group. Alternatively, you can use the
+            method ``metafeature_description`` to get or print a table with
+            all metafeatures with its respectives groups and descriptions.
 
             The value provided by the argument ``wildcard`` can be used to
             select all features from all selected groups rapidly.
