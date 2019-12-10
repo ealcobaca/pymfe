@@ -100,7 +100,7 @@ the master branch.
 .. note::
     This example shows how to create a new group of meta-features. If you want
     only to add a new meta-feature, you should insert it in the meta-feature
-    group file and create an "ft\_" method to it. The new meta-feature will be
+    group file and create an "ft\\_" method to it. The new meta-feature will be
     automatically picked up (as the method "ft_metafeature_name" in this
     example). You should not forget to use the precompute methods to save
     time.
