@@ -48,9 +48,9 @@ class MFEItemset:
     computed in module ``statistical`` can freely be used for any
     precomputation or feature extraction method of module ``landmarking``).
     """
+
     @classmethod
-    def precompute_binary_matrix(cls,
-                                 C: t.Optional[np.ndarray],
+    def precompute_binary_matrix(cls, C: t.Optional[np.ndarray],
                                  **kwargs) -> t.Dict[str, t.Any]:
         """Precompute the binary representation of attributes.
 
@@ -94,13 +94,14 @@ class MFEItemset:
         return [MFEItemset._array_to_binary(col) for col in C.T]
 
     @classmethod
-    def ft_two_itemset(cls,
-                       C: np.ndarray,
-                       itemset_binary_matrix: t.List[np.ndarray] = None,
-                       ) -> np.ndarray:
-        """Computes the one itemset meta-feature.
+    def ft_two_itemset(
+            cls,
+            C: np.ndarray,
+            itemset_binary_matrix: t.List[np.ndarray] = None,
+    ) -> np.ndarray:
+        """Computes the two itemset meta-feature.
 
-        The one itemset is the individual frequency of each attribute
+        The two itemset is the individual frequency of each attribute
         in binary format.
 
         Parameters
@@ -115,7 +116,7 @@ class MFEItemset:
         Returns
         -------
         :obj:`np.ndarray`
-            An array with the twoitem for each attribute.
+            An array with the oneitem for each attribute.
 
         References
         ----------
@@ -134,8 +135,9 @@ class MFEItemset:
             Bi = B[0]
             del B[0]
             for Bj in B:
-                aux = [np.sum(np.logical_xor(i, j))
-                       for i in Bi.T for j in Bj.T]
+                aux = [
+                    np.sum(np.logical_xor(i, j)) for i in Bi.T for j in Bj.T
+                ]
                 result += aux
 
         twoitem_by_attr = np.array(result) / C.shape[0]
@@ -147,10 +149,10 @@ class MFEItemset:
                        C: np.ndarray,
                        itemset_binary_matrix: t.List[np.ndarray] = None
                        ) -> np.ndarray:
-        """Computes the two itemset meta-feature.
+        """Computes the one itemset meta-feature.
 
-        The two itemset meta-feature can be seen as the correlation
-        information of each two attributes value pairs in binary
+        The one itemset meta-feature can be seen as the correlation
+        information of each one attributes value pairs in binary
         format.
 
         Parameters
@@ -165,7 +167,7 @@ class MFEItemset:
         Returns
         -------
         :obj:`np.ndarray`
-            An array with the oneitem for each attribute.
+            An array with the twoitem for each attribute.
 
         References
         ----------
