@@ -61,17 +61,8 @@ class MFE:
         ----------
         groups : :obj:`Iterable` of :obj:`str` or :obj:`str`
             A collection or a single metafeature group name representing the
-            desired group of metafeatures for extraction. The supported groups
-            are:
-
-                1. ``general``: general/simples metafeatures.
-                2. ``statistical``: statistical metafeatures.
-                3. ``info-theory``: information-theoretic type of metafeature.
-                4. ``model-based``: metafeatures based on machine learning
-                   model characteristics.
-                5. ``landmarking``: metafeatures representing performance
-                   metrics from simple machine learning models or machine
-                   learning models induced with sampled data.
+            desired group of metafeatures for extraction. Use the method
+            ``valid_groups`` to get a list of all available groups.
 
             The value provided by the argument ``wildcard`` can be used to
             select all metafeature groups rapidly.
@@ -79,8 +70,10 @@ class MFE:
         features : :obj:`Iterable` of :obj:`str` or :obj:`str`, optional
             A collection or a single metafeature name desired for extraction.
             Keep in mind that the extraction only gathers features also in the
-            selected ``groups``. Check this class ``feature`` attribute to get
-            a list of available metafeatures from selected groups.
+            selected ``groups``. Check this class ``features`` attribute to get
+            a list of available metafeatures from selected groups, or use the
+            method ``valid_metafeatures`` to get a list of all available
+            metafeatures filtered by group.
 
             The value provided by the argument ``wildcard`` can be used to
             select all features from all selected groups rapidly.
@@ -114,6 +107,9 @@ class MFE:
 
             The particular value provided by the argument ``wildcard`` can be
             used to select all summary functions rapidly.
+
+            Use the method ``valid_summary`` to get a list of all available
+            summary functions.
 
         measure_time : :obj:`str`, optional
             Options for measuring the time elapsed during metafeature
@@ -363,7 +359,7 @@ class MFE:
         for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
             if verbose >= 2:
                 print(
-                    "  Summarizing {0} feature with {1} summary "
+                    "  Summarizing '{0}' feature with '{1}' summary "
                     "function...".format(feature_name, sm_mtd_name),
                     end=" ")
 
@@ -405,9 +401,8 @@ class MFE:
             if verbose >= 2:
                 print("Done.")
 
-        if verbose >= 1:
-            print("\rDone Summarizing {0} feature."
-                  .format(feature_name), end="")
+        if verbose >= 2:
+            print("Done Summarizing '{0}' feature.".format(feature_name))
 
         return metafeat_names, metafeat_vals, metafeat_times
 
@@ -419,7 +414,7 @@ class MFE:
             verbose: int = 0) -> None:
         """Print messages about extraction progress based on ``verbose``."""
         if verbose >= 2:
-            print("Done with {} feature (progress of {:.2f}%)."
+            print("Done with '{}' feature (progress of {:.2f}%)."
                   .format(cur_mtf_name, cur_progress))
             return
 
@@ -462,7 +457,8 @@ class MFE:
         for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
 
             if verbose >= 2:
-                print("\nExtracting {} feature...".format(ft_mtd_name))
+                print("\nExtracting '{}' feature ({} of {})..."
+                      .format(ft_mtd_name, ind + 1, len(self._metadata_mtd_ft)))
 
             ft_name_without_prefix = _internal.remove_prefix(
                 value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
