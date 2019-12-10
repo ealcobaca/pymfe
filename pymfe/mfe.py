@@ -45,13 +45,13 @@ class MFE:
                  summary: t.Union[str, t.Iterable[str]] = ("mean", "sd"),
                  measure_time: t.Optional[str] = None,
                  wildcard: str = "all",
-                 score="accuracy",
-                 folds=10,
-                 sample_size=1.0,
+                 score: str = "accuracy",
+                 num_cv_folds: int = 10,
+                 shuffle_cv_folds: bool = False,
+                 lm_sample_frac: float = 1.0,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
-        """This class provides easy access for metafeature extraction from
-        datasets.
+        """Provides easy access for metafeature extraction from datasets.
 
         It expected that user first calls ``fit`` method after instantiation
         and then ``extract`` for effectively extract the selected metafeatures.
@@ -157,20 +157,29 @@ class MFE:
             Value used as ``select all`` for ``groups``, ``features`` and
             ``summary`` arguments.
 
-         score : :obj:`str`, optional
+        score : :obj:`str`, optional
             Score metric used to extract ``landmarking`` metafeatures.
 
-         folds : :obj:`int`, optional
-            Number of folds to create a Stratified K-Fold cross validation
-            to produce the ``landmarking`` metafeatures.
+        num_cv_folds : :obj:`int`, optional
+            Number of folds to create a Stratified K-Fold cross
+            validation to extract the ``landmarking`` metafeatures.
 
-         sample_size : :obj:`float`, optional
+        shuffle_cv_folds : :obj:`bool`, optional
+            If True, then the fitted data will be shuffled before splitted in
+            the Stratified K-Fold Cross Validation of ``landmarking`` features.
+            The shuffle random seed is the ``random_state`` argument.
+
+        lm_sample_frac : :obj:`float`, optional
             Sample proportion used to produce the ``landmarking`` metafeatures.
             This argument must be in 0.5 and 1.0 (both inclusive) interval.
 
         suppress_warnings : :obj:`bool`, optional
             If True, then ignore all warnings invoked at the instantiation
             time.
+
+        random_state : :obj:`int`, optional
+            Random seed used to control random events. Keeps the experiments
+            reproducible.
 
         Notes
         -----
@@ -262,21 +271,24 @@ class MFE:
                 'Invalid "random_state" argument ({0}). '
                 'Expecting None or an integer.'.format(random_state))
 
-        if isinstance(folds, int):
-            self.folds = folds
+        self.shuffle_cv_folds = shuffle_cv_folds
+
+        if isinstance(num_cv_folds, int):
+            self.num_cv_folds = num_cv_folds
+
         else:
-            raise ValueError('Invalid "folds" argument ({0}). '
+            raise ValueError('Invalid "num_cv_folds" argument ({0}). '
                              'Expecting an integer.'.format(random_state))
 
-        if isinstance(sample_size, int):
-            sample_size = float(sample_size)
+        if isinstance(lm_sample_frac, int):
+            lm_sample_frac = float(lm_sample_frac)
 
-        if isinstance(sample_size, float)\
-           and 0.5 <= sample_size <= 1.0:
-            self.sample_size = sample_size
+        if isinstance(lm_sample_frac, float)\
+           and 0.5 <= lm_sample_frac <= 1.0:
+            self.lm_sample_frac = lm_sample_frac
 
         else:
-            raise ValueError('Invalid "sample_size" argument ({0}). '
+            raise ValueError('Invalid "lm_sample_frac" argument ({0}). '
                              'Expecting an float [0.5, 1].'
                              .format(random_state))
 
@@ -888,8 +900,9 @@ class MFE:
             "N": data_num,
             "C": data_cat,
             "y": self.y,
-            "folds": self.folds,
-            "sample_size": self.sample_size,
+            "num_cv_folds": self.num_cv_folds,
+            "shuffle_cv_folds": self.shuffle_cv_folds,
+            "lm_sample_frac": self.lm_sample_frac,
             "score": self.score,
             "random_state": self.random_state,
             "cat_cols": self._attr_indexes_cat,

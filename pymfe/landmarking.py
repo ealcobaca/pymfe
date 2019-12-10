@@ -54,11 +54,13 @@ class MFELandmarking:
     computed in module ``statistical`` can freely be used for any
     precomputation or feature extraction method of module ``landmarking``).
     """
+
     @classmethod
     def precompute_landmarking_class(cls,
                                      N: np.ndarray,
-                                     sample_size: float,
-                                     folds: int,
+                                     lm_sample_frac: float,
+                                     num_cv_folds: int,
+                                     shuffle_cv_folds: bool,
                                      random_state: t.Optional[int] = None,
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute k-fold cross validation strategy.
@@ -68,13 +70,13 @@ class MFELandmarking:
         N : :obj:`np.ndarray`, optional
             Attributes from fitted data.
 
-        sample_size : :obj: `float`
+        lm_sample_frac : :obj: `float`
             The percentage of examples subsampled. Value different from default
             will generate the subsampling-based relative landmarking
             metafeatures.
 
-        folds : :obj: `int`
-            Number of folds to k-fold cross validation.
+        num_cv_folds : :obj: `int`
+            Number of num_cv_folds to k-fold cross validation.
 
         random_state : :obj:`int`, optional
             If int, random_state is the seed used by the random number
@@ -95,67 +97,67 @@ class MFELandmarking:
                   cross-validator. Provides train/test indices to split data in
                   train/test sets.
         """
+        precomp_vals = {}
 
-        prepcomp_vals = {}
-
-        if N is not None and "sample_indexes" not in kwargs:
-            if sample_size != 1:
+        if N is not None and "sample_inds" not in kwargs:
+            if lm_sample_frac < 1.0:
                 num_inst, _ = N.shape
 
-                prepcomp_vals["sample_indexes"] = (
-                    MFELandmarking._get_sample_indexes(
-                        num_inst=num_inst,
-                        sample_size=sample_size,
-                        random_state=random_state))
+                precomp_vals["sample_inds"] = (MFELandmarking._get_sample_inds(
+                    num_inst=num_inst,
+                    lm_sample_frac=lm_sample_frac,
+                    random_state=random_state))
 
         if "skf" not in kwargs:
-            prepcomp_vals["skf"] = StratifiedKFold(
-                n_splits=folds)
+            precomp_vals["skf"] = StratifiedKFold(
+                n_splits=num_cv_folds,
+                shuffle=shuffle_cv_folds,
+                random_state=random_state if shuffle_cv_folds else None)
 
-        return prepcomp_vals
+        return precomp_vals
 
     @classmethod
-    def _get_sample_indexes(cls, num_inst: int, sample_size: float,
-                            random_state: t.Optional[int]) -> np.ndarray:
-        """Sample indexes to calculate subsampling landmarking metafeatures."""
+    def _get_sample_inds(cls, num_inst: int, lm_sample_frac: float,
+                         random_state: t.Optional[int]) -> np.ndarray:
+        """Sample indices to calculate subsampling landmarking metafeatures."""
         if random_state is not None:
             np.random.seed(random_state)
 
-        sample_indexes = np.random.choice(
-            a=num_inst, size=int(sample_size * num_inst), replace=False)
+        sample_inds = np.random.choice(
+            a=num_inst, size=int(lm_sample_frac * num_inst), replace=False)
 
-        return sample_indexes
+        return sample_inds
 
     @classmethod
     def _sample_data(
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            sample_size: float,
+            lm_sample_frac: float,
             random_state: t.Optional[int] = None,
-            sample_indexes: t.Optional[np.ndarray] = None,
+            sample_inds: t.Optional[np.ndarray] = None,
     ) -> t.Tuple[np.ndarray, np.ndarray]:
-        """Select ``sample_size`` percent of data points in ``N`` and ``y``."""
-        if sample_size >= 1.0 and sample_indexes is None:
+        """Select ``lm_sample_frac`` percent of data from ``N`` and ``y``."""
+        if lm_sample_frac >= 1.0 and sample_inds is None:
             return N, y
 
-        if sample_indexes is None:
+        if sample_inds is None:
             num_inst = y.size
 
-            sample_indexes = MFELandmarking._get_sample_indexes(
+            sample_inds = MFELandmarking._get_sample_inds(
                 num_inst=num_inst,
-                sample_size=sample_size,
+                lm_sample_frac=lm_sample_frac,
                 random_state=random_state)
 
-        return N[sample_indexes, :], y[sample_indexes]
+        return N[sample_inds, :], y[sample_inds]
 
     @classmethod
     def _importance(
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            sample_size: float = 1.0,
-            sample_indexes: t.Optional[np.ndarray] = None,
+            lm_sample_frac: float = 1.0,
+            sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Compute the Gini index of a decision tree.
@@ -171,13 +173,13 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        sample_size : :obj:`float`, optional
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
-            metafeature. Used only if ``sample_indexes`` is None.
+            metafeature. Used only if ``sample_inds`` is None.
 
-        sample_indexes : :obj:`np.ndarray`, optional
-            Array of indexes of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+        sample_inds : :obj:`np.ndarray`, optional
+            Array of indices of instances to be effectively used while
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -193,9 +195,9 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_indexes=sample_indexes)
+            sample_inds=sample_inds)
 
         clf = DecisionTreeClassifier(random_state=random_state).fit(N, y)
         return np.argsort(clf.feature_importances_)
@@ -206,9 +208,10 @@ class MFELandmarking:
                      y: np.ndarray,
                      score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
                      skf: t.Optional[StratifiedKFold] = None,
-                     folds: int = 10,
-                     sample_size: float = 1.0,
-                     sample_indexes: t.Optional[np.ndarray] = None,
+                     num_cv_folds: int = 10,
+                     shuffle_cv_folds: bool = False,
+                     lm_sample_frac: float = 1.0,
+                     sample_inds: t.Optional[np.ndarray] = None,
                      random_state: t.Optional[int] = None) -> np.ndarray:
         """Performance of a the best single decision tree node.
 
@@ -231,17 +234,22 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        folds : :obj: `int`, optional
-            Number of folds to k-fold cross validation. Used only if ``skf``
-            is None.
+        num_cv_folds : :obj: `int`, optional
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
-        sample_size : :obj:`float`, optional
+        shuffle_cv_folds : :obj:`bool`, optional
+            If True, shuffle the data before splitting into the k-fold cross
+            validation folds. The random seed used for this process is the
+            ``random_state`` argument.
+
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
-            metafeature. Used only if ``sample_indexes`` is None.
+            metafeature. Used only if ``sample_inds`` is None.
 
-        sample_indexes : :obj:`np.ndarray`, optional
-            Array of indexes of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+        sample_inds : :obj:`np.ndarray`, optional
+            Array of indices of instances to be effectively used while
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -257,26 +265,30 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_indexes=sample_indexes)
+            sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds)
+            skf = StratifiedKFold(
+                n_splits=num_cv_folds,
+                shuffle=shuffle_cv_folds,
+                random_state=random_state if shuffle_cv_folds else None)
 
-        result = []
-        for train_index, test_index in skf.split(N, y):
+        result = np.zeros(skf.n_splits, dtype=float)
+        for fold_ind, split_inds in enumerate(skf.split(N, y)):
+            train_inds, test_inds = split_inds
             model = DecisionTreeClassifier(
                 max_depth=1, random_state=random_state)
-            X_train = N[train_index, :]
-            X_test = N[test_index, :]
-            y_train, y_test = y[train_index], y[test_index]
+            X_train = N[train_inds, :]
+            X_test = N[test_inds, :]
+            y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
             pred = model.predict(X_test)
-            result.append(score(y_test, pred))
+            result[fold_ind] = score(y_test, pred)
 
-        return np.array(result)
+        return result
 
     @classmethod
     def ft_random_node(cls,
@@ -284,9 +296,10 @@ class MFELandmarking:
                        y: np.ndarray,
                        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
                        skf: t.Optional[StratifiedKFold] = None,
-                       folds: int = 10,
-                       sample_size: float = 1.0,
-                       sample_indexes: t.Optional[np.ndarray] = None,
+                       num_cv_folds: int = 10,
+                       shuffle_cv_folds: bool = False,
+                       lm_sample_frac: float = 1.0,
+                       sample_inds: t.Optional[np.ndarray] = None,
                        random_state: t.Optional[int] = None) -> np.ndarray:
         """Single decision tree node model induced by a random attribute.
 
@@ -306,17 +319,22 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        folds : :obj: `int`, optional
-            Number of folds to k-fold cross validation. Used only if ``skf``
-            is None.
+        num_cv_folds : :obj: `int`, optional
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
-        sample_size : :obj:`float`, optional
+        shuffle_cv_folds : :obj:`bool`, optional
+            If True, shuffle the data before splitting into the k-fold cross
+            validation folds. The random seed used for this process is the
+            ``random_state`` argument.
+
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
-            metafeature. Used only if ``sample_indexes`` is None.
+            metafeature. Used only if ``sample_inds`` is None.
 
-        sample_indexes : :obj:`np.ndarray`, optional
-            Array of indexes of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+        sample_inds : :obj:`np.ndarray`, optional
+            Array of indices of instances to be effectively used while
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -332,30 +350,36 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_indexes=sample_indexes)
+            sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds)
+            skf = StratifiedKFold(
+                n_splits=num_cv_folds,
+                shuffle=shuffle_cv_folds,
+                random_state=random_state if shuffle_cv_folds else None)
 
-        result = []
-        for train_index, test_index in skf.split(N, y):
-            if isinstance(random_state, int):
-                np.random.seed(random_state)
+        if random_state is not None:
+            np.random.seed(random_state)
 
-            attr = np.random.randint(0, N.shape[1], size=(1, ))
+        rand_attr_ind = np.random.randint(0, N.shape[1], size=1)
+
+        result = np.zeros(skf.n_splits, dtype=float)
+        for fold_ind, split_inds in enumerate(skf.split(N, y)):
+            train_inds, test_inds = split_inds
+
             model = DecisionTreeClassifier(
                 max_depth=1, random_state=random_state)
-            X_train = N[train_index, :][:, attr]
-            X_test = N[test_index, :][:, attr]
-            y_train, y_test = y[train_index], y[test_index]
+            X_train = N[train_inds, :][:, rand_attr_ind]
+            X_test = N[test_inds, :][:, rand_attr_ind]
+            y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
             pred = model.predict(X_test)
-            result.append(score(y_test, pred))
+            result[fold_ind] = score(y_test, pred)
 
-        return np.array(result)
+        return result
 
     @classmethod
     def ft_worst_node(
@@ -364,9 +388,10 @@ class MFELandmarking:
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
             skf: t.Optional[StratifiedKFold] = None,
-            folds: int = 10,
-            sample_size: float = 1.0,
-            sample_indexes: t.Optional[np.ndarray] = None,
+            num_cv_folds: int = 10,
+            shuffle_cv_folds: bool = False,
+            lm_sample_frac: float = 1.0,
+            sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Single decision tree node model induced by the worst informative attribute.
@@ -387,17 +412,22 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        folds : :obj: `int`, optional
-            Number of folds to k-fold cross validation. Used only if ``skf``
-            is None.
+        num_cv_folds : :obj: `int`, optional
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
-        sample_size : :obj:`float`, optional
+        shuffle_cv_folds : :obj:`bool`, optional
+            If True, shuffle the data before splitting into the k-fold cross
+            validation folds. The random seed used for this process is the
+            ``random_state`` argument.
+
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
-            metafeature. Used only if ``sample_indexes`` is None.
+            metafeature. Used only if ``sample_inds`` is None.
 
-        sample_indexes : :obj:`np.ndarray`, optional
-            Array of indexes of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+        sample_inds : :obj:`np.ndarray`, optional
+            Array of indices of instances to be effectively used while
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -413,29 +443,33 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_indexes=sample_indexes)
+            sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds)
+            skf = StratifiedKFold(
+                n_splits=num_cv_folds,
+                shuffle=shuffle_cv_folds,
+                random_state=random_state if shuffle_cv_folds else None)
 
-        result = []
-        for train_index, test_index in skf.split(N, y):
+        result = np.zeros(skf.n_splits, dtype=float)
+        for fold_ind, split_inds in enumerate(skf.split(N, y)):
+            train_inds, test_inds = split_inds
             importance = MFELandmarking._importance(
-                N=N[train_index], y=y[train_index], random_state=random_state)
+                N=N[train_inds], y=y[train_inds], random_state=random_state)
 
             model = DecisionTreeClassifier(
                 max_depth=1, random_state=random_state)
-            X_train = N[train_index, :][:, [importance[0]]]
-            X_test = N[test_index, :][:, [importance[0]]]
-            y_train, y_test = y[train_index], y[test_index]
+            X_train = N[train_inds, :][:, [importance[0]]]
+            X_test = N[test_inds, :][:, [importance[0]]]
+            y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
             pred = model.predict(X_test)
-            result.append(score(y_test, pred))
+            result[fold_ind] = score(y_test, pred)
 
-        return np.array(result)
+        return result
 
     @classmethod
     def ft_linear_discr(
@@ -444,9 +478,10 @@ class MFELandmarking:
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
             skf: t.Optional[StratifiedKFold] = None,
-            folds: int = 10,
-            sample_size: float = 1.0,
-            sample_indexes: t.Optional[np.ndarray] = None,
+            num_cv_folds: int = 10,
+            shuffle_cv_folds: bool = False,
+            lm_sample_frac: float = 1.0,
+            sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Apply the Linear Discriminant classifier.
@@ -470,17 +505,22 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        folds : :obj: `int`, optional
-            Number of folds to k-fold cross validation. Used only if ``skf``
-            is None.
+        num_cv_folds : :obj: `int`, optional
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
-        sample_size : :obj:`float`, optional
+        shuffle_cv_folds : :obj:`bool`, optional
+            If True, shuffle the data before splitting into the k-fold cross
+            validation folds. The random seed used for this process is the
+            ``random_state`` argument.
+
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
-            metafeature. Used only if ``sample_indexes`` is None.
+            metafeature. Used only if ``sample_inds`` is None.
 
-        sample_indexes : :obj:`np.ndarray`, optional
-            Array of indexes of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+        sample_inds : :obj:`np.ndarray`, optional
+            Array of indices of instances to be effectively used while
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -496,25 +536,29 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_indexes=sample_indexes)
+            sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds)
+            skf = StratifiedKFold(
+                n_splits=num_cv_folds,
+                shuffle=shuffle_cv_folds,
+                random_state=random_state if shuffle_cv_folds else None)
 
-        result = []
-        for train_index, test_index in skf.split(N, y):
+        result = np.zeros(skf.n_splits, dtype=float)
+        for fold_ind, split_inds in enumerate(skf.split(N, y)):
+            train_inds, test_inds = split_inds
             model = LinearDiscriminantAnalysis()
-            X_train = N[train_index, :]
-            X_test = N[test_index, :]
-            y_train, y_test = y[train_index], y[test_index]
+            X_train = N[train_inds, :]
+            X_test = N[test_inds, :]
+            y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
             pred = model.predict(X_test)
-            result.append(score(y_test, pred))
+            result[fold_ind] = score(y_test, pred)
 
-        return np.array(result)
+        return result
 
     @classmethod
     def ft_naive_bayes(
@@ -523,9 +567,10 @@ class MFELandmarking:
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
             skf: t.Optional[StratifiedKFold] = None,
-            folds: int = 10,
-            sample_size: float = 1.0,
-            sample_indexes: t.Optional[np.ndarray] = None,
+            num_cv_folds: int = 10,
+            shuffle_cv_folds: bool = False,
+            lm_sample_frac: float = 1.0,
+            sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Evaluate the performance of the Naive Bayes classifier.
@@ -549,17 +594,22 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        folds : :obj: `int`, optional
-            Number of folds to k-fold cross validation. Used only if ``skf``
-            is None.
+        num_cv_folds : :obj: `int`, optional
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
-        sample_size : :obj:`float`, optional
+        shuffle_cv_folds : :obj:`bool`, optional
+            If True, shuffle the data before splitting into the k-fold cross
+            validation folds. The random seed used for this process is the
+            ``random_state`` argument.
+
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
-            metafeature. Used only if ``sample_indexes`` is None.
+            metafeature. Used only if ``sample_inds`` is None.
 
-        sample_indexes : :obj:`np.ndarray`, optional
-            Array of indexes of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+        sample_inds : :obj:`np.ndarray`, optional
+            Array of indices of instances to be effectively used while
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -575,25 +625,29 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_indexes=sample_indexes)
+            sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds)
+            skf = StratifiedKFold(
+                n_splits=num_cv_folds,
+                shuffle=shuffle_cv_folds,
+                random_state=random_state if shuffle_cv_folds else None)
 
-        result = []
-        for train_index, test_index in skf.split(N, y):
+        result = np.zeros(skf.n_splits, dtype=float)
+        for fold_ind, split_inds in enumerate(skf.split(N, y)):
+            train_inds, test_inds = split_inds
             model = GaussianNB()
-            X_train = N[train_index, :]
-            X_test = N[test_index, :]
-            y_train, y_test = y[train_index], y[test_index]
+            X_train = N[train_inds, :]
+            X_test = N[test_inds, :]
+            y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
             pred = model.predict(X_test)
-            result.append(score(y_test, pred))
+            result[fold_ind] = score(y_test, pred)
 
-        return np.array(result)
+        return result
 
     @classmethod
     def ft_one_nn(
@@ -602,9 +656,10 @@ class MFELandmarking:
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
             skf: t.Optional[StratifiedKFold] = None,
-            folds: int = 10,
-            sample_size: float = 1.0,
-            sample_indexes: t.Optional[np.ndarray] = None,
+            num_cv_folds: int = 10,
+            shuffle_cv_folds: bool = False,
+            lm_sample_frac: float = 1.0,
+            sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Evaluate the performance of the 1-nearest neighbor classifier.
@@ -628,17 +683,22 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        folds : :obj: `int`, optional
-            Number of folds to k-fold cross validation. Used only if ``skf``
-            is None.
+        num_cv_folds : :obj: `int`, optional
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
-        sample_size : :obj:`float`, optional
+        shuffle_cv_folds : :obj:`bool`, optional
+            If True, shuffle the data before splitting into the k-fold cross
+            validation folds. The random seed used for this process is the
+            ``random_state`` argument.
+
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
-            metafeature. Used only if ``sample_indexes`` is None.
+            metafeature. Used only if ``sample_inds`` is None.
 
-        sample_indexes : :obj:`np.ndarray`, optional
-            Array of indexes of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+        sample_inds : :obj:`np.ndarray`, optional
+            Array of indices of instances to be effectively used while
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -654,31 +714,34 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_indexes=sample_indexes)
+            sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds)
+            skf = StratifiedKFold(
+                n_splits=num_cv_folds,
+                shuffle=shuffle_cv_folds,
+                random_state=random_state if shuffle_cv_folds else None)
 
-        result = []
-        for train_index, test_index in skf.split(N, y):
+        result = np.zeros(skf.n_splits, dtype=float)
+        for fold_ind, split_inds in enumerate(skf.split(N, y)):
+            train_inds, test_inds = split_inds
             model = KNeighborsClassifier(
                 n_neighbors=1,
                 algorithm="auto",
                 weights="uniform",
                 p=2,
-                metric="minkowski"
-            )
-            X_train = N[train_index, :]
-            X_test = N[test_index, :]
-            y_train, y_test = y[train_index], y[test_index]
+                metric="minkowski")
+            X_train = N[train_inds, :]
+            X_test = N[test_inds, :]
+            y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
             pred = model.predict(X_test)
-            result.append(score(y_test, pred))
+            result[fold_ind] = score(y_test, pred)
 
-        return np.array(result)
+        return result
 
     @classmethod
     def ft_elite_nn(
@@ -687,9 +750,10 @@ class MFELandmarking:
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
             skf: t.Optional[StratifiedKFold] = None,
-            folds: int = 10,
-            sample_size: float = 1.0,
-            sample_indexes: t.Optional[np.ndarray] = None,
+            num_cv_folds: int = 10,
+            shuffle_cv_folds: bool = False,
+            lm_sample_frac: float = 1.0,
+            sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Compute the Elite Nearest Neighbor score of dataset.
@@ -714,17 +778,22 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        folds : :obj: `int`, optional
-            Number of folds to k-fold cross validation. Used only if ``skf``
-            is None.
+        num_cv_folds : :obj: `int`, optional
+            Number of num_cv_folds to k-fold cross validation. Used only if
+            ``skf`` is None.
 
-        sample_size : :obj:`float`, optional
+        shuffle_cv_folds : :obj:`bool`, optional
+            If True, shuffle the data before splitting into the k-fold cross
+            validation folds. The random seed used for this process is the
+            ``random_state`` argument.
+
+        lm_sample_frac : :obj:`float`, optional
             Proportion of instances to be sampled before extracting the
-            metafeature. Used only if ``sample_indexes`` is None.
+            metafeature. Used only if ``sample_inds`` is None.
 
-        sample_indexes : :obj:`np.ndarray`, optional
-            Array of indexes of instances to be effectively used while
-            extracting this metafeature. If None, then ``sample_size``
+        sample_inds : :obj:`np.ndarray`, optional
+            Array of indices of instances to be effectively used while
+            extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj`int`, optional
@@ -740,25 +809,29 @@ class MFELandmarking:
         N, y = MFELandmarking._sample_data(
             N=N,
             y=y,
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_indexes=sample_indexes)
+            sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(n_splits=folds)
+            skf = StratifiedKFold(
+                n_splits=num_cv_folds,
+                shuffle=shuffle_cv_folds,
+                random_state=random_state if shuffle_cv_folds else None)
 
-        result = []
-        for train_index, test_index in skf.split(N, y):
+        result = np.zeros(skf.n_splits, dtype=float)
+        for fold_ind, split_inds in enumerate(skf.split(N, y)):
+            train_inds, test_inds = split_inds
             importance = MFELandmarking._importance(
-                N=N[train_index], y=y[train_index], random_state=random_state)
+                N=N[train_inds], y=y[train_inds], random_state=random_state)
 
             model = KNeighborsClassifier(n_neighbors=1)
-            X_train = N[train_index, :][:, [importance[-1]]]
-            X_test = N[test_index, :][:, [importance[-1]]]
-            y_train, y_test = y[train_index], y[test_index]
+            X_train = N[train_inds, :][:, [importance[-1]]]
+            X_test = N[test_inds, :][:, [importance[-1]]]
+            y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
             pred = model.predict(X_test)
-            result.append(score(y_test, pred))
+            result[fold_ind] = score(y_test, pred)
 
-        return np.array(result)
+        return result
