@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Complexity Metafeatures."""
+"""Module dedicated to extraction of Itemset Metafeatures."""
 
 import typing as t
 import numpy as np
@@ -71,14 +71,16 @@ class MFEItemset:
                 - ``itemset_binary_matrix`` (:obj:`list`): Binary
                   representation of the attributes.
         """
-        prepcomp_vals = {}
+        precomp_vals = {}
+
         if C is not None and 'itemset_binary_matrix' not in kwargs:
             itemset_binary_matrix = MFEItemset._matrix_to_binary(C)
-            prepcomp_vals["itemset_binary_matrix"] = itemset_binary_matrix
-        return prepcomp_vals
+            precomp_vals["itemset_binary_matrix"] = itemset_binary_matrix
+
+        return precomp_vals
 
     @staticmethod
-    def _array_to_binary(array: np.ndarray):
+    def _array_to_binary(array: np.ndarray) -> np.ndarray:
         """Convert an array to its binary representation."""
         values = np.unique(array)
         res = np.zeros((array.shape[0], values.shape[0])).astype(bool)
@@ -87,7 +89,7 @@ class MFEItemset:
         return res
 
     @staticmethod
-    def _matrix_to_binary(C: np.array):
+    def _matrix_to_binary(C: np.array) -> t.List[np.ndarray]:
         """Convert an matrix to its binary representation."""
         return [MFEItemset._array_to_binary(col) for col in C.T]
 
@@ -96,15 +98,17 @@ class MFEItemset:
                        C: np.ndarray,
                        itemset_binary_matrix: t.List[np.ndarray] = None,
                        ) -> np.ndarray:
-        """Computes the one itemset meta-feature, which is the individual
-        frequency of each attribute in binary format.
+        """Computes the one itemset meta-feature.
+
+        The one itemset is the individual frequency of each attribute
+        in binary format.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        itemset_binary_matrix : list
+        itemset_binary_matrix : :obj:`list`
             Binary representation of the attributes. Each list value has a
             binary representation of each attributes in the dataset.
 
@@ -143,8 +147,10 @@ class MFEItemset:
                        C: np.ndarray,
                        itemset_binary_matrix: t.List[np.ndarray] = None
                        ) -> np.ndarray:
-        """Computes the two itemset meta-feature, which can be seen as the
-        correlation information of each two attributes value pairs in binary
+        """Computes the two itemset meta-feature.
+
+        The two itemset meta-feature can be seen as the correlation
+        information of each two attributes value pairs in binary
         format.
 
         Parameters
@@ -152,7 +158,7 @@ class MFEItemset:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        itemset_binary_matrix : list
+        itemset_binary_matrix : :obj:`list`
             Binary representation of the attributes. Each list value has a
             binary representation of each attributes in the dataset.
 
