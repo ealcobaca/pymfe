@@ -3,7 +3,7 @@
 [run]
 source = pymfe/
 omit =
-    pymfe/dev.py
+    pymfe/_dev.py
 
 [report]
 exclude_lines =
