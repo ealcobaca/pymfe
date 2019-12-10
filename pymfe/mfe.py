@@ -45,14 +45,14 @@ class MFE:
                  summary: t.Union[str, t.Iterable[str]] = ("mean", "sd"),
                  measure_time: t.Optional[str] = None,
                  wildcard: str = "all",
-                 score="accuracy",
-                 folds=10,
-                 sample_size=1.0,
+                 score: str = "accuracy",
+                 num_cv_folds: int = 10,
+                 shuffle_cv_folds: bool = False,
+                 lm_sample_frac: float = 1.0,
                  hypparam_model_dt: t.Optional[t.Dict[str, t.Any]] = None,
                  suppress_warnings: bool = False,
                  random_state: t.Optional[int] = None) -> None:
-        """This class provides easy access for metafeature extraction from
-        datasets.
+        """Provides easy access for metafeature extraction from datasets.
 
         It expected that user first calls ``fit`` method after instantiation
         and then ``extract`` for effectively extract the selected metafeatures.
@@ -62,17 +62,8 @@ class MFE:
         ----------
         groups : :obj:`Iterable` of :obj:`str` or :obj:`str`
             A collection or a single metafeature group name representing the
-            desired group of metafeatures for extraction. The supported groups
-            are:
-
-                1. ``general``: general/simples metafeatures.
-                2. ``statistical``: statistical metafeatures.
-                3. ``info-theory``: information-theoretic type of metafeature.
-                4. ``model-based``: metafeatures based on machine learning
-                   model characteristics.
-                5. ``landmarking``: metafeatures representing performance
-                   metrics from simple machine learning models or machine
-                   learning models induced with sampled data.
+            desired group of metafeatures for extraction. Use the method
+            ``valid_groups`` to get a list of all available groups.
 
             The value provided by the argument ``wildcard`` can be used to
             select all metafeature groups rapidly.
@@ -80,8 +71,12 @@ class MFE:
         features : :obj:`Iterable` of :obj:`str` or :obj:`str`, optional
             A collection or a single metafeature name desired for extraction.
             Keep in mind that the extraction only gathers features also in the
-            selected ``groups``. Check this class ``feature`` attribute to get
-            a list of available metafeatures from selected groups.
+            selected ``groups``. Check this class ``features`` attribute to get
+            a list of available metafeatures from selected groups, or use the
+            method ``valid_metafeatures`` to get a list of all available
+            metafeatures filtered by group. Alternatively, you can use the
+            method ``metafeature_description`` to get or print a table with
+            all metafeatures with its respectives groups and descriptions.
 
             The value provided by the argument ``wildcard`` can be used to
             select all features from all selected groups rapidly.
@@ -115,6 +110,9 @@ class MFE:
 
             The particular value provided by the argument ``wildcard`` can be
             used to select all summary functions rapidly.
+
+            Use the method ``valid_summary`` to get a list of all available
+            summary functions.
 
         measure_time : :obj:`str`, optional
             Options for measuring the time elapsed during metafeature
@@ -158,14 +156,19 @@ class MFE:
             Value used as ``select all`` for ``groups``, ``features`` and
             ``summary`` arguments.
 
-         score : :obj:`str`, optional
+        score : :obj:`str`, optional
             Score metric used to extract ``landmarking`` metafeatures.
 
-         folds : :obj:`int`, optional
-            Number of folds to create a Stratified K-Fold cross validation
-            to produce the ``landmarking`` metafeatures.
+        num_cv_folds : :obj:`int`, optional
+            Number of folds to create a Stratified K-Fold cross
+            validation to extract the ``landmarking`` metafeatures.
 
-         sample_size : :obj:`float`, optional
+        shuffle_cv_folds : :obj:`bool`, optional
+            If True, then the fitted data will be shuffled before splitted in
+            the Stratified K-Fold Cross Validation of ``landmarking`` features.
+            The shuffle random seed is the ``random_state`` argument.
+
+        lm_sample_frac : :obj:`float`, optional
             Sample proportion used to produce the ``landmarking`` metafeatures.
             This argument must be in 0.5 and 1.0 (both inclusive) interval.
 
@@ -185,6 +188,10 @@ class MFE:
         suppress_warnings : :obj:`bool`, optional
             If True, then ignore all warnings invoked at the instantiation
             time.
+
+        random_state : :obj:`int`, optional
+            Random seed used to control random events. Keeps the experiments
+            reproducible.
 
         Notes
         -----
@@ -276,21 +283,24 @@ class MFE:
                 'Invalid "random_state" argument ({0}). '
                 'Expecting None or an integer.'.format(random_state))
 
-        if isinstance(folds, int):
-            self.folds = folds
+        self.shuffle_cv_folds = shuffle_cv_folds
+
+        if isinstance(num_cv_folds, int):
+            self.num_cv_folds = num_cv_folds
+
         else:
-            raise ValueError('Invalid "folds" argument ({0}). '
+            raise ValueError('Invalid "num_cv_folds" argument ({0}). '
                              'Expecting an integer.'.format(random_state))
 
-        if isinstance(sample_size, int):
-            sample_size = float(sample_size)
+        if isinstance(lm_sample_frac, int):
+            lm_sample_frac = float(lm_sample_frac)
 
-        if isinstance(sample_size, float)\
-           and 0.5 <= sample_size <= 1.0:
-            self.sample_size = sample_size
+        if isinstance(lm_sample_frac, float)\
+           and 0.5 <= lm_sample_frac <= 1.0:
+            self.lm_sample_frac = lm_sample_frac
 
         else:
-            raise ValueError('Invalid "sample_size" argument ({0}). '
+            raise ValueError('Invalid "lm_sample_frac" argument ({0}). '
                              'Expecting an float [0.5, 1].'
                              .format(random_state))
 
@@ -379,7 +389,7 @@ class MFE:
         for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
             if verbose >= 2:
                 print(
-                    "  Summarizing {0} feature with {1} summary "
+                    "  Summarizing '{0}' feature with '{1}' summary "
                     "function...".format(feature_name, sm_mtd_name),
                     end=" ")
 
@@ -421,9 +431,8 @@ class MFE:
             if verbose >= 2:
                 print("Done.")
 
-        if verbose >= 1:
-            print("\rDone Summarizing {0} feature."
-                  .format(feature_name), end="")
+        if verbose >= 2:
+            print("Done Summarizing '{0}' feature.".format(feature_name))
 
         return metafeat_names, metafeat_vals, metafeat_times
 
@@ -435,7 +444,7 @@ class MFE:
             verbose: int = 0) -> None:
         """Print messages about extraction progress based on ``verbose``."""
         if verbose >= 2:
-            print("Done with {} feature (progress of {:.2f}%)."
+            print("Done with '{}' feature (progress of {:.2f}%)."
                   .format(cur_mtf_name, cur_progress))
             return
 
@@ -478,7 +487,8 @@ class MFE:
         for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
 
             if verbose >= 2:
-                print("\nExtracting {} feature...".format(ft_mtd_name))
+                print("\nExtracting '{}' feature ({} of {})..."
+                      .format(ft_mtd_name, ind + 1, len(self._metadata_mtd_ft)))
 
             ft_name_without_prefix = _internal.remove_prefix(
                 value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
@@ -904,8 +914,9 @@ class MFE:
             "N": data_num,
             "C": data_cat,
             "y": self.y,
-            "folds": self.folds,
-            "sample_size": self.sample_size,
+            "num_cv_folds": self.num_cv_folds,
+            "shuffle_cv_folds": self.shuffle_cv_folds,
+            "lm_sample_frac": self.lm_sample_frac,
             "score": self.score,
             "random_state": self.random_state,
             "cat_cols": self._attr_indexes_cat,

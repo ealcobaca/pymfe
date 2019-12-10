@@ -220,7 +220,7 @@ class TestArchitecture:
         mfe = MFE(
             groups="all",
             summary=None,
-            sample_size=0.5,
+            lm_sample_frac=0.5,
             random_state=1234)
 
         mfe.fit(X.values, y.values)
