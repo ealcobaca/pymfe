@@ -83,7 +83,7 @@ import pymfe.relative as relative
 import pymfe.clustering as clustering
 import pymfe.model_based as model_based
 import pymfe.complexity as complexity
-# import pymfe.itemset as itemset
+import pymfe.itemset as itemset
 import pymfe.concept as concept
 import pymfe.scoring as scoring
 
@@ -106,7 +106,7 @@ VALID_GROUPS = (
     "relative",
     "clustering",
     "complexity",
-    # "itemset",
+    "itemset",
     "concept"
 )  # type: t.Tuple[str, ...]
 
@@ -119,7 +119,7 @@ GROUP_PREREQUISITES = (
     "landmarking",
     None,
     None,
-    # None,
+    None,
     None
 )  # type: t.Tuple[t.Optional[str], ...]
 
@@ -132,7 +132,7 @@ VALID_MFECLASSES = (
     relative.MFERelativeLandmarking,
     clustering.MFEClustering,
     complexity.MFEComplexity,
-    # itemset.MFEItemset,
+    itemset.MFEItemset,
     concept.MFEConcept
 )  # type: t.Tuple
 
