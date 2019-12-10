@@ -50,7 +50,7 @@ class MFEItemset:
     """
     @classmethod
     def precompute_binary_matrix(cls,
-                                 C: np.ndarray,
+                                 C: t.Optional[np.ndarray],
                                  **kwargs) -> t.Dict[str, t.Any]:
         """Precompute the binary representation of attributes.
 
@@ -73,7 +73,7 @@ class MFEItemset:
         """
         precomp_vals = {}
 
-        if C is not None and 'itemset_binary_matrix' not in kwargs:
+        if C is not None and "itemset_binary_matrix" not in kwargs:
             itemset_binary_matrix = MFEItemset._matrix_to_binary(C)
             precomp_vals["itemset_binary_matrix"] = itemset_binary_matrix
 
@@ -105,7 +105,7 @@ class MFEItemset:
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`
+        C : :obj:`np.ndarray`
             Attributes from fitted data.
 
         itemset_binary_matrix : :obj:`list`
@@ -155,7 +155,7 @@ class MFEItemset:
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`
+        C : :obj:`np.ndarray`
             Attributes from fitted data.
 
         itemset_binary_matrix : :obj:`list`
