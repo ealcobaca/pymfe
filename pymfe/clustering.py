@@ -669,7 +669,7 @@ class MFEClustering:
             y: np.ndarray,
             dist_metric: str = "euclidean",
     ) -> float:
-        """Pearson Correlation between class matching and instance distances.
+        """Pearson correlation between class matching and instance distances.
 
         The measure interval is -1 and +1 (inclusive).
 
@@ -683,7 +683,7 @@ class MFEClustering:
         Returns
         -------
         :obj:`float`
-            Point Biseral coefficient.
+            Point Biserial coefficient.
 
         References
         ----------
