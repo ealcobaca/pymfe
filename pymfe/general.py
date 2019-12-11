@@ -173,12 +173,6 @@ class MFEGeneral:
         :obj:`np.ndarray`
             Relative frequency of each distinct class.
 
-        Parameters
-        ----------
-        class_freqs : :obj:`np.ndarray`, optional
-            Array of (absolute, not relative) frequency of each class in
-            data. Argument used to take advantage of precomputations.
-
         References
         ----------
         .. [1] Guido Lindner and Rudi Studer. AST: Support for algorithm
