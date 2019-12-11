@@ -105,7 +105,7 @@ class MFEComplexity:
             cls_n_ex = MFEComplexity._compute_cls_n_index(cls_index)
             precomp_vals["cls_n_ex"] = cls_n_ex
 
-            ovo_comb = list(itertools.combinations(range(classes.shape[0]), 2))
+            ovo_comb = MFEComplexity._compute_ovo_comb(classes)
             precomp_vals["ovo_comb"] = ovo_comb
 
         return precomp_vals
@@ -154,18 +154,6 @@ class MFEComplexity:
             precomp_vals["n"] = n
 
         return precomp_vals
-
-    @classmethod
-    def _get_clsfreq(cls, y: np.ndarray, **kwargs) -> t.Dict[str, t.Any]:
-        if (y is not None and ("classes" not in kwargs or "y_idx" not in kwargs
-                               or "classes_freq" not in kwargs)):
-
-            res = MFEGeneral.precompute_general_class(y)
-
-        else:
-            res = kwargs
-
-        return res
 
     @staticmethod
     def _compute_cls_index(y_idx: np.ndarray,
