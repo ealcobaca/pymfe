@@ -468,7 +468,7 @@ class MFEClustering:
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
             epsilon: float = 1.0e-8,
     ) -> float:
-        """Calculate the Dunn Index.
+        """Compute the Dunn Index.
 
         Metric range is 0 (inclusive) and infinity.
 
@@ -531,7 +531,7 @@ class MFEClustering:
 
     @classmethod
     def ft_vdb(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Calculate the Davies and Bouldin Index.
+        """Compute the Davies and Bouldin Index.
 
         Metric range is 0 (inclusive) and infinity.
 
@@ -566,7 +566,7 @@ class MFEClustering:
             classes: t.Optional[np.ndarray] = None,
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
     ) -> float:
-        """Calculate the INT index.
+        """Compute the INT index.
 
         Metric range is 0 (inclusive) and infinity.
 
@@ -631,7 +631,7 @@ class MFEClustering:
                dist_metric: str = "euclidean",
                sample_frac: t.Optional[int] = None,
                random_state: t.Optional[int] = None) -> float:
-        """Calculate the mean silhouette value from ``N``.
+        """Compute the mean silhouette value.
 
         Metric range is -1 to +1 (both inclusive).
 
@@ -697,7 +697,8 @@ class MFEClustering:
             y: np.ndarray,
             dist_metric: str = "euclidean",
     ) -> float:
-        """Pearson correlation between class matching and instance distances.
+        """Compute the pearson correlation between class matching and instance
+        distances.
 
         The measure interval is -1 and +1 (inclusive).
 
@@ -743,7 +744,7 @@ class MFEClustering:
 
     @classmethod
     def ft_ch(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Calinski and Harabasz index.
+        """Compute the Calinski and Harabasz index.
 
         Check `cahascore`_ for more information.
 
@@ -778,7 +779,7 @@ class MFEClustering:
             y: np.ndarray,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> float:
-        """Normalized relative entropy.
+        """Compute the normalized relative entropy.
 
         An indicator of uniformity distributed of instances among clusters.
 
@@ -798,9 +799,9 @@ class MFEClustering:
         References
         ----------
         .. [1] Bruno Almeida Pimentel, André C.P.L.F. de Carvalho.
-        A new data characterization for selecting clustering algorithms
-        using meta-learning. Information Sciences, Volume 477, 2019,
-        Pages 203-219.
+           A new data characterization for selecting clustering algorithms
+           using meta-learning. Information Sciences, Volume 477, 2019,
+           Pages 203-219.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
@@ -813,7 +814,7 @@ class MFEClustering:
               size: int = 15,
               class_freqs: t.Optional[np.ndarray] = None,
               normalize: bool = False) -> int:
-        """Number of clusters with size smaller than ``size``.
+        """Compute the number of clusters with size smaller than a given size.
 
         Parameters
         ----------
@@ -841,9 +842,9 @@ class MFEClustering:
         References
         ----------
         .. [1] Bruno Almeida Pimentel, André C.P.L.F. de Carvalho.
-        A new data characterization for selecting clustering algorithms
-        using meta-learning. Information Sciences, Volume 477, 2019,
-        Pages 203-219.
+           A new data characterization for selecting clustering algorithms
+           using meta-learning. Information Sciences, Volume 477, 2019,
+           Pages 203-219.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
