@@ -1240,6 +1240,7 @@ class MFE:
         )
 
         return tuple(filtered_res)
+
     @staticmethod
     def _parse_description(docstring: str) -> t.Tuple[str, str]:
         """Parse the docstring to get initial description and reference.
@@ -1265,10 +1266,9 @@ class MFE:
             initial_description = " ".join(split[0].split())
 
         # get reference description
-        docstring_ref = docstring.split("References\n        ----------\n")
-        if len(docstring_ref) >= 2:
-            docstring_ref = docstring_ref[1]
-            split = docstring.split(f".. [")
+        aux = docstring.split("References\n        ----------\n")
+        if len(aux) >= 2:
+            split = aux[1].split(f".. [")
             if len(split) >= 2:
                 del split[0]
                 for spl in split:
@@ -1282,7 +1282,8 @@ class MFE:
             cls,
             groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
             sort: bool = False,
-            print_table: bool = True) -> t.Tuple[t.List[t.List[str]], str]:
+            print_table: bool = True
+    ) -> t.Optional[t.Tuple[t.List[t.List[str]], str]]:
         """Print a table with groups, metafeatures and description.
 
         Parameters
