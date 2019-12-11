@@ -57,7 +57,7 @@ class MFEGeneral:
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
         **kwargs
@@ -90,9 +90,14 @@ class MFEGeneral:
 
     @classmethod
     def ft_attr_to_inst(cls, X: np.ndarray) -> int:
-        """Ratio between the number of attributes.
+        """Compute the ratio between the number of attributes.
 
         It is effectively the inverse of value given by ``ft_inst_to_attr``.
+
+        Parameters
+        ----------
+        X : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
 
         Returns
         -------
@@ -111,7 +116,8 @@ class MFEGeneral:
     @classmethod
     def ft_cat_to_num(cls, X: np.ndarray,
                       cat_cols: t.Sequence[int]) -> t.Union[int, np.float]:
-        """Returns ratio between the number of categoric and numeric features.
+        """Compute the ratio between the number of categoric and numeric
+        features.
 
         If the number of numeric features is zero, :obj:`np.nan` is returned
         instead.
@@ -120,6 +126,9 @@ class MFEGeneral:
 
         Parameters
         ----------
+        X : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
+
         cat_cols : :obj:`list`
             Sequence containing the indices of each categorical column
             in ``X``.
@@ -148,12 +157,12 @@ class MFEGeneral:
                       y: np.ndarray,
                       class_freqs: t.Optional[np.ndarray] = None
                       ) -> np.ndarray:
-        """Computes the relative frequency of each distinct class.
+        """Compute the relative frequency of each distinct class.
 
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Array with the dependent attribute values.
+            Target attribute from fitted data.
 
         class_freqs : :obj:`np.ndarray`, optional
             Absolute frequency of each distinct class. Argument
@@ -187,9 +196,14 @@ class MFEGeneral:
 
     @classmethod
     def ft_inst_to_attr(cls, X: np.ndarray) -> float:
-        """Returns the ratio between the number of instances and attributes.
+        """Compute the ratio between the number of instances and attributes.
 
         It is effectively the inverse of value given by ``ft_attr_to_inst``.
+
+        Parameters
+        ----------
+        X : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
 
         Returns
         -------
@@ -207,7 +221,12 @@ class MFEGeneral:
 
     @classmethod
     def ft_nr_attr(cls, X: np.ndarray) -> int:
-        """Returns the total number of attributes.
+        """Compute the total number of attributes.
+
+        Parameters
+        ----------
+        X : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
 
         Returns
         -------
@@ -224,10 +243,15 @@ class MFEGeneral:
 
     @classmethod
     def ft_nr_bin(cls, X: np.ndarray) -> int:
-        """Returns the number of binary attributes.
+        """Compute the number of binary attributes.
 
         Any attribute that has exactly two distinct values is considered
         a binary attribute, independently of its data type.
+
+        Parameters
+        ----------
+        X : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
 
         Returns
         -------
@@ -247,7 +271,13 @@ class MFEGeneral:
 
     @classmethod
     def ft_nr_cat(cls, cat_cols: t.Sequence[int]) -> int:
-        """Returns the number of categorical attributes.
+        """Compute the number of categorical attributes.
+
+        Parameters
+        ----------
+        cat_cols : list
+            Sequence containing the indices of each categorical column
+            in ``X``.
 
         Returns
         -------
@@ -268,15 +298,15 @@ class MFEGeneral:
             cls,
             y: t.Optional[np.ndarray] = None,
             classes: t.Optional[np.ndarray] = None) -> t.Union[float, int]:
-        """Returns the number of distinct classes.
+        """Compute the number of distinct classes.
 
         ``y`` and ``classes`` can not be :obj:`NoneType` simultaneously,
         or else :obj:`np.nan` is returned.
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
-            Target vector.
+        y : :obj:`np.ndarray`
+            Target attribute from fitted data.
 
         classes : :obj:`np.ndarray`, optional
             Vector with all distinct classes. This argument purpose is
@@ -304,7 +334,12 @@ class MFEGeneral:
 
     @classmethod
     def ft_nr_inst(cls, X: np.ndarray) -> int:
-        """Returns the number of instances (rows) in the dataset.
+        """Compute the number of instances (rows) in the dataset.
+
+        Parameters
+        ----------
+        X : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
 
         Returns
         -------
@@ -321,11 +356,14 @@ class MFEGeneral:
 
     @classmethod
     def ft_nr_num(cls, X: np.ndarray, cat_cols: t.Sequence[int]) -> int:
-        """Returns the number of numeric features.
+        """Compute the number of numeric features.
 
         Parameters
         ----------
-        cat_cols : :obj:`list`
+        X : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
+
+        cat_cols : list
             Sequence containing the indices of each categorical column
             in ``X``.
 
@@ -346,7 +384,7 @@ class MFEGeneral:
     @classmethod
     def ft_num_to_cat(cls, X: np.ndarray,
                       cat_cols: t.Sequence[int]) -> t.Union[int, np.float]:
-        """Ratio of the number of numerical and categorical features.
+        """Compute the number of numerical and categorical features.
 
         If the number of categoric features is zero, :obj:`np.nan` is returned
         instead.
@@ -355,6 +393,9 @@ class MFEGeneral:
 
         Parameters
         ----------
+        X : :obj:`np.ndarray`, optional
+            Attributes from fitted data.
+
         cat_cols : :obj:`list`
             Sequence containing the indices of each categorical column
             in ``X``.
