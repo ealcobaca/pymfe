@@ -80,7 +80,7 @@ class MFEComplexity:
             With following precomputed items:
                 - ``ovo_comb`` (:obj:`list`): List of all class OVO
                   combination, i.e., [(0,1), (0,2) ...].
-                - ``cls_index`` (:obj:`list`):  The list of boolean vectors
+                - ``cls_index`` (:obj:`list`): The list of boolean vectors
                   indicating the example of each class. The array indexes
                   represent the classes.
                   combination, i.e., [(0,1), (0,2) ...].
@@ -121,6 +121,9 @@ class MFEComplexity:
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
+
+        tx_n_components : :obj:`float`, optional
+            Number of principal components to keep in the PCA.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -471,9 +474,8 @@ class MFEComplexity:
            A survey on measuring classification complexity (V2). (2019)
            Page 9-10.
         """
-        # 0-1 scaler
-        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
-        N_ = scaler.transform(N)
+        # 0-1 scaling
+        N_ = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
 
         # compute the distance matrix and the minimum spanning tree.
         dist_m = np.triu(distance.cdist(N_, N_, metric), k=1)
@@ -553,9 +555,8 @@ class MFEComplexity:
         interp_N = []
         interp_y = []
 
-        # 0-1 scaler
-        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
-        N = scaler.transform(N)
+        # 0-1 scaling
+        N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
 
         for idx in cls_index:
             N_ = N[idx]
