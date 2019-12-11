@@ -6,7 +6,6 @@ import collections
 
 import numpy as np
 import scipy.spatial.distance
-# import statsmodels.tools.eval_measures
 import sklearn.metrics
 import sklearn.neighbors
 
@@ -75,7 +74,6 @@ class MFEClustering:
         Returns
         -------
         :obj:`dict`
-
             The following precomputed items are returned:
                 * ``classes`` (:obj:`np.ndarray`):  distinct classes of
                   ``y``, if ``y`` is not :obj:`NoneType`.
@@ -125,7 +123,6 @@ class MFEClustering:
         Returns
         -------
         :obj:`dict`
-
             The following precomputed items are returned:
                 * ``pairwise_norm_interclass_dist`` (:obj:`np.ndarray`):
                   normalized distance between each distinct pair of
@@ -206,9 +203,7 @@ class MFEClustering:
         Returns
         -------
         :obj:`dict`
-
             The following precomputed items are returned:
-
                 * ``pairwise_intraclass_dists`` (:obj:`np.ndarray`):
                   distance between each distinct pair of instances of
                   the same class.
@@ -242,7 +237,7 @@ class MFEClustering:
             representative: str = "mean",
             classes: t.Optional[np.ndarray] = None,
             **kwargs) -> t.Dict[str, t.Any]:
-        """
+        """Precomputations related to cluster representative instances.
 
         Parameters
         ----------
@@ -292,9 +287,7 @@ class MFEClustering:
         Returns
         -------
         :obj:`dict`
-
             The following precomputed items are returned:
-
                 * ``pairwise_intraclass_dists`` (:obj:`np.ndarray`):
                   distance between each distinct pair of instances of
                   the same class.
@@ -506,6 +499,11 @@ class MFEClustering:
         :obj:`float`
             Dunn index for given parameters.
 
+        References
+        ----------
+        .. [1] J.C. Dunn, Well-separated clusters and optimal fuzzy
+           partitions, J. Cybern. 4 (1) (1974) 95–104.
+
         Notes
         -----
             .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
@@ -531,6 +529,11 @@ class MFEClustering:
         Metric range is 0 (inclusive) and infinity.
 
         Check `dbindex`_ for more information.
+
+        References
+        ----------
+        .. [1] D.L. Davies, D.W. Bouldin, A cluster separation measure,
+           IEEE Trans. Pattern Anal. Mach. Intell. 1 (2) (1979) 224–227.
 
         Notes
         -----
@@ -571,6 +574,12 @@ class MFEClustering:
         -------
         :obj:`float`
             INT index.
+
+        References
+        ----------
+        .. [1] Bezdek, J. C.; Pal, N. R. (1998a). Some new indexes of
+           cluster validity. IEEE Transactions on Systems, Man, and
+           Cybernetics, Part B, v.28, n.3, p.301–315.
 
         Notes
         -----
@@ -626,6 +635,12 @@ class MFEClustering:
         :obj:`float`
             Mean Silhouette value.
 
+        References
+        ----------
+        .. [1] P.J. Rousseeuw, Silhouettes: a graphical aid to the
+           interpretation and validation of cluster analysis, J.
+           Comput. Appl. Math. 20 (1987) 53–65.
+
         Notes
         -----
             .. _silhouette: :obj:`sklearn.metrics.silhouette_score`
@@ -668,7 +683,12 @@ class MFEClustering:
         Returns
         -------
         :obj:`float`
-            Point Bisseral coefficient.
+            Point Biseral coefficient.
+
+        References
+        ----------
+        .. [1] J. Lev, "The Point Biserial Coefficient of Correlation", Ann. Math.
+           Statist., Vol. 20, no.1, pp. 125-126, 1949.
 
         Notes
         -----
@@ -689,12 +709,18 @@ class MFEClustering:
     @classmethod
     def ft_ch(cls, N: np.ndarray, y: np.ndarray) -> float:
         """Calinski and Harabasz index.
+
         Check `cahascore`_ for more information.
 
         Returns
         -------
         :obj:`float`
             Calinski-Harabasz index.
+
+        References
+        ----------
+        .. [1] T. Calinski, J. Harabasz, A dendrite method for cluster
+           analysis, Commun. Stat. Theory Methods 3 (1) (1974) 1–27.
 
         Notes
         -----
@@ -722,6 +748,9 @@ class MFEClustering:
         -------
         :obj:`float`
             Entropy of relative class frequencies.
+
+        References
+        ----------
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
@@ -755,6 +784,9 @@ class MFEClustering:
             Number of classes with less than ``size`` instances if
             ``normalize`` is False, proportion of classes with less
             than ``size`` instances otherwise.
+
+        References
+        ----------
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
