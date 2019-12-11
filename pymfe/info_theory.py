@@ -199,7 +199,7 @@ class MFEInfoTheory:
         pij = pd.crosstab(vec_x, vec_y, normalize=True).values + epsilon
 
         isum = pij.sum(axis=0)
-        jsum2 = sum(pij.sum(axis=1)**2.0)
+        jsum2 = np.sum(pij.sum(axis=1)**2.0)
 
         conc = ((
             (pij**2.0 / isum).sum().sum() - jsum2) / (1.0 - jsum2 + epsilon))
@@ -208,8 +208,20 @@ class MFEInfoTheory:
 
     @classmethod
     def ft_attr_conc(cls, C: np.ndarray) -> np.ndarray:
-        """Compute concentration coef. of each pair of distinct attributes."""
+        """Compute concentration coef. of each pair of distinct attributes.
 
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Concentration coefficient for each pair of distinct
+            predictive attribute.
+
+        References
+        ----------
+        .. [1] Alexandros Kalousis and Melanie Hilario. Model selection
+           via meta-learning: a comparative study. International Journal
+           on Artificial Intelligence Tools, 10(4):525–554, 2001.
+        """
         _, num_col = C.shape
 
         col_permutations = itertools.permutations(range(num_col), 2)
@@ -240,6 +252,17 @@ class MFEInfoTheory:
         attr_ent : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
             possible attribute entropy precomputations.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Entropy of each predictive attribute.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if attr_ent is not None:
             return attr_ent
@@ -253,7 +276,20 @@ class MFEInfoTheory:
 
     @classmethod
     def ft_class_conc(cls, C: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """Compute concentration coefficient between each attr. and class."""
+        """Compute concentration coefficient between each attr. and class.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Concentration coefficient between each predictive attribute
+            and the target attribute (class.)
+
+        References
+        ----------
+        .. [1] Alexandros Kalousis and Melanie Hilario. Model selection
+           via meta-learning: a comparative study. International Journal
+           on Artificial Intelligence Tools, 10(4):525–554, 2001.
+        """
         return np.apply_along_axis(
             func1d=MFEInfoTheory._conc, axis=0, arr=C, vec_y=y)
 
@@ -283,6 +319,17 @@ class MFEInfoTheory:
             Absolute frequency of each distinct class in ``y``. This argument
             is meant to exploit precomputations, used if ``class_ent`` is
             :obj:`NoneType`.
+
+        Returns
+        -------
+        :obj:`float`
+            Entropy of the target attribute.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if class_ent is not None:
             return class_ent
@@ -328,6 +375,17 @@ class MFEInfoTheory:
             argument purpose is to exploit the precomputations of mutual
             information. If this argument value is :obj:`NoneType`, then it is
             calculated using the method ``ft_mut_int``.
+
+        Returns
+        -------
+        :obj:`float`
+            Estimated number of equivalent predictive attributes.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if class_ent is None:
             class_ent = MFEInfoTheory.ft_class_ent(y, class_freqs=class_freqs)
@@ -337,7 +395,7 @@ class MFEInfoTheory:
 
         _, num_col = C.shape
 
-        return num_col * (class_ent / (epsilon + sum(mut_inf)))
+        return num_col * (class_ent / (epsilon + np.sum(mut_inf)))
 
     @classmethod
     def ft_joint_ent(cls,
@@ -365,6 +423,18 @@ class MFEInfoTheory:
         joint_ent : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
             possible joint entropy precomputations.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Estimated joint entropy between each predictive attribute and
+            the target attribute (class attribute.)
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if joint_ent is None:
             joint_ent = np.apply_along_axis(
@@ -414,6 +484,18 @@ class MFEInfoTheory:
             Joint entropy between each independent attribute in ``N`` and
             target attribute ``y``. If :obj:`NoneType`, this argument is
             calculated using the method ``ft_joint_ent``.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Mutual information between each attribute and the target
+            attribute.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if mut_inf is not None:
             return mut_inf
@@ -464,6 +546,17 @@ class MFEInfoTheory:
             argument purpose is to exploit the precomputations of mutual
             information. If this argument value is :obj:`NoneType`, then it is
             calculated using the method ``ft_mut_int``.
+
+        Returns
+        -------
+        :obj:`float`
+            Estimated noisiness of the predictive attributes.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if attr_ent is None:
             attr_ent = MFEInfoTheory.ft_attr_ent(C)
@@ -471,7 +564,7 @@ class MFEInfoTheory:
         if mut_inf is None:
             mut_inf = MFEInfoTheory.ft_mut_inf(C, y)
 
-        ent_attr = sum(attr_ent)
-        mut_inf = sum(mut_inf)
+        ent_attr = np.sum(attr_ent)
+        mut_inf = np.sum(mut_inf)
 
         return (ent_attr - mut_inf) / (epsilon + mut_inf)
