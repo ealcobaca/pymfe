@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Landmarking Metafeatures."""
+"""Module dedicated to extraction of landmarking metafeatures."""
 
 import typing as t
 
@@ -70,12 +70,12 @@ class MFELandmarking:
         N : :obj:`np.ndarray`, optional
             Attributes from fitted data.
 
-        lm_sample_frac : :obj: `float`
+        lm_sample_frac : :obj:`float`
             The percentage of examples subsampled. Value different from default
             will generate the subsampling-based relative landmarking
             metafeatures.
 
-        num_cv_folds : :obj: `int`
+        num_cv_folds : :obj:`int`
             Number of num_cv_folds to k-fold cross validation.
 
         random_state : :obj:`int`, optional
@@ -182,7 +182,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj`int`, optional
+        random_state : :obj:`int`, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -234,7 +234,7 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj: `int`, optional
+        num_cv_folds : :obj:`int`, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
@@ -252,7 +252,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj`int`, optional
+        random_state : :obj:`int`, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -261,6 +261,17 @@ class MFELandmarking:
         -------
         :obj:`np.ndarray`
             The performance of each fold.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
+           landmarking variants. In 1st ECML/PKDD International Workshop
+           on Integration and Collaboration Aspects of Data Mining,
+           Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
@@ -319,7 +330,7 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj: `int`, optional
+        num_cv_folds : :obj:`int`, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
@@ -337,7 +348,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj`int`, optional
+        random_state : :obj:`int`, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -346,6 +357,17 @@ class MFELandmarking:
         -------
         :obj:`np.ndarray`
             The performance of each fold.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
+           landmarking variants. In 1st ECML/PKDD International Workshop
+           on Integration and Collaboration Aspects of Data Mining,
+           Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
@@ -412,7 +434,7 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj: `int`, optional
+        num_cv_folds : :obj:`int`, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
@@ -430,7 +452,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj`int`, optional
+        random_state : :obj:`int`, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -439,6 +461,17 @@ class MFELandmarking:
         -------
         :obj:`np.ndarray`
             The performance of each fold.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
+           landmarking variants. In 1st ECML/PKDD International Workshop
+           on Integration and Collaboration Aspects of Data Mining,
+           Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
@@ -505,7 +538,7 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj: `int`, optional
+        num_cv_folds : :obj:`int`, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
@@ -523,7 +556,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj`int`, optional
+        random_state : :obj:`int`, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -532,6 +565,17 @@ class MFELandmarking:
         -------
         :obj:`np.ndarray`
             The performance of each fold.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
+           landmarking variants. In 1st ECML/PKDD International Workshop
+           on Integration and Collaboration Aspects of Data Mining,
+           Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
@@ -594,7 +638,7 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj: `int`, optional
+        num_cv_folds : :obj:`int`, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
@@ -612,7 +656,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj`int`, optional
+        random_state : :obj:`int`, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -621,6 +665,17 @@ class MFELandmarking:
         -------
         :obj:`np.ndarray`
             The performance of each fold.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
+           landmarking variants. In 1st ECML/PKDD International Workshop
+           on Integration and Collaboration Aspects of Data Mining,
+           Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
@@ -683,7 +738,7 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj: `int`, optional
+        num_cv_folds : :obj:`int`, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
@@ -701,7 +756,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj`int`, optional
+        random_state : :obj:`int`, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -710,6 +765,13 @@ class MFELandmarking:
         -------
         :obj:`np.ndarray`
             The performance of each fold.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
@@ -778,7 +840,7 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj: `int`, optional
+        num_cv_folds : :obj:`int`, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
@@ -796,7 +858,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj`int`, optional
+        random_state : :obj:`int`, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -805,6 +867,13 @@ class MFELandmarking:
         -------
         :obj:`np.ndarray`
             The performance of each fold.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
