@@ -77,8 +77,8 @@ class MFEGeneral:
         """
         precomp_vals = {}
 
-        if y is not None and not {"classes", "class_freqs",
-                                  "return_inverse"}.issubset(kwargs):
+        if y is not None and not {"classes", "class_freqs", "return_inverse"
+                                  }.issubset(kwargs):
             classes, y_idx, class_freqs = np.unique(
                 y, return_inverse=True, return_counts=True)
 
@@ -96,9 +96,15 @@ class MFEGeneral:
 
         Returns
         -------
-        float
+        :obj:`float`
             The ration between the number of attributes and instances.
 
+        References
+        ----------
+        .. [1] Alexandros Kalousis and Theoharis Theoharis. NOEMON: Design,
+           implementation and performance results of an intelligent assistant
+           for classifier selection. Intelligent Data Analysis, 3(5):319–337,
+           1999.
         """
         return X.shape[1] / X.shape[0]
 
@@ -111,6 +117,24 @@ class MFEGeneral:
         instead.
 
         Effectively the inverse of value given by ``ft_num_to_cat``.
+
+        Arguments
+        ---------
+        cat_cols : :obj:`list`
+            Sequence containing the indices of each categorical column
+            in ``X``.
+
+        Returns
+        -------
+        :obj:`int` | :obj:`float`
+            Proportion of categorical and numerical attributes.
+
+        References
+        ----------
+        .. [1] Matthias Feurer, Jost Tobias Springenberg, and Frank Hutter.
+           Using meta-learning toinitialize bayesian optimization of
+           hyperparameters. InInternational Conference on Meta-learning and
+           Algorithm Selection (MLAS), pages 3 – 10, 2014.
         """
         num_cat = len(cat_cols)
 
@@ -124,13 +148,34 @@ class MFEGeneral:
                       y: np.ndarray,
                       class_freqs: t.Optional[np.ndarray] = None
                       ) -> np.ndarray:
-        """Returns an array of the relative frequency of each distinct class.
+        """Computes the relative frequency of each distinct class.
+
+        Arguments
+        ---------
+        y : :obj:`np.ndarray`
+            Array with the dependent attribute values.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            Absolute frequency of each distinct class. Argument
+            used to take advantage of precomputations.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Relative frequency of each distinct class.
 
         Parameters
         ----------
-            class_freqs : :obj:`np.ndarray`, optional
-                Vector of (absolute, not relative) frequency of each class in
-                data.
+        class_freqs : :obj:`np.ndarray`, optional
+            Array of (absolute, not relative) frequency of each class in
+            data. Argument used to take advantage of precomputations.
+
+        References
+        ----------
+        .. [1] Guido Lindner and Rudi Studer. AST: Support for algorithm
+           selection with a CBR approach. InEuropean Conference on
+           Principles of Data Mining and Knowledge Discovery (PKDD),
+           pages 418 – 423, 1999.
         """
         if y.size == 0:
             return np.array([np.nan])
@@ -141,29 +186,81 @@ class MFEGeneral:
         return class_freqs / y.size
 
     @classmethod
-    def ft_inst_to_attr(cls, X: np.ndarray) -> int:
+    def ft_inst_to_attr(cls, X: np.ndarray) -> float:
         """Returns the ratio between the number of instances and attributes.
 
         It is effectively the inverse of value given by ``ft_attr_to_inst``.
+
+        Returns
+        -------
+        :obj:`float`
+            Ratio of number of instances and number of predictive attributes.
+
+        References
+        ----------
+        .. [1] Petr Kuba, Pavel Brazdil, Carlos Soares, and Adam Woznica.
+           Exploiting sampling andmeta-learning for parameter setting for
+           support vector machines. In 8th IBERAMIA Workshop on Learning
+           and Data Mining, pages 209 – 216, 2002.
         """
         return X.shape[0] / X.shape[1]
 
     @classmethod
     def ft_nr_attr(cls, X: np.ndarray) -> int:
-        """Returns the number of total attributes."""
+        """Returns the total number of attributes.
+
+        Returns
+        -------
+        :obj:`int`
+            Total number of attributes in the data without transformations.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper SaddleRiver, 1994.
+        """
         return X.shape[1]
 
     @classmethod
     def ft_nr_bin(cls, X: np.ndarray) -> int:
-        """Returns the number of binary attributes."""
+        """Returns the number of binary attributes.
+
+        Any attribute that has exactly two distinct values is considered
+        a binary attribute, independently of its data type.
+
+        Returns
+        -------
+        :obj:`int`
+            Number of binary attributes in ``X``.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper SaddleRiver, 1994.
+        """
         bin_cols = np.apply_along_axis(
             func1d=lambda col: np.unique(col).size == 2, axis=0, arr=X)
 
-        return sum(bin_cols)
+        return np.sum(bin_cols)
 
     @classmethod
     def ft_nr_cat(cls, cat_cols: t.Sequence[int]) -> int:
-        """Returns the number of categorical attributes."""
+        """Returns the number of categorical attributes.
+
+        Returns
+        -------
+        :obj:`int`
+            Number of categorical attributes in ``X``.
+
+        References
+        ----------
+        .. [1] Robert Engels and Christiane Theusinger. Using a data metric for
+           preprocessing advice for data mining applications. In 13th European
+           Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
+           1998.
+        """
         return len(cat_cols)
 
     @classmethod
@@ -178,18 +275,24 @@ class MFEGeneral:
 
         Parameters
         ----------
-            y : :obj:`np.ndarray`, optional
-                Target vector.
+        y : :obj:`np.ndarray`, optional
+            Target vector.
 
-            classes : :obj:`np.ndarray`, optional
-                Vector with all distinct classes. This argument purpose is
-                mainly for benefit from precomputations.
+        classes : :obj:`np.ndarray`, optional
+            Vector with all distinct classes. This argument purpose is
+            mainly for benefit from precomputations.
 
         Returns
         -------
         :obj:`int` | :obj:`float`
             Number of distinct classes in a target vector if either ``y`` or
             ``classes`` is given. Otherwise, returns :obj:`np.nan`.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper SaddleRiver, 1994.
         """
         if classes is not None:
             return classes.size
@@ -201,24 +304,74 @@ class MFEGeneral:
 
     @classmethod
     def ft_nr_inst(cls, X: np.ndarray) -> int:
-        """Returns the number of instances (rows) in the dataset."""
+        """Returns the number of instances (rows) in the dataset.
+
+        Returns
+        -------
+        :obj:`int`
+            Number of instances in ``X``.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper SaddleRiver, 1994.
+        """
         return X.shape[0]
 
     @classmethod
     def ft_nr_num(cls, X: np.ndarray, cat_cols: t.Sequence[int]) -> int:
-        """Returns the number of numeric features."""
+        """Returns the number of numeric features.
+
+        Arguments
+        ---------
+        cat_cols : :obj:`list`
+            Sequence containing the indices of each categorical column
+            in ``X``.
+
+        Returns
+        -------
+        :obj:`int`
+            Number of numerical attributes in ``X``.
+
+        References
+        ----------
+        .. [1] Robert Engels and Christiane Theusinger. Using a data metric for
+           preprocessing advice for data mining applications. In 13th European
+           Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
+           1998.
+        """
         return X.shape[1] - len(cat_cols)
 
     @classmethod
     def ft_num_to_cat(cls, X: np.ndarray,
                       cat_cols: t.Sequence[int]) -> t.Union[int, np.float]:
-        """Returns the ratio between the number of numeric and categoric
-        features.
+        """Ratio of the number of numerical and categorical features.
 
         If the number of categoric features is zero, :obj:`np.nan` is returned
         instead.
 
         Effectively the inverse of the value given by ``ft_cat_to_num``.
+
+        Arguments
+        ---------
+        cat_cols : :obj:`list`
+            Sequence containing the indices of each categorical column
+            in ``X``.
+
+        Returns
+        -------
+        :obj:`int` | :obj:`float`
+            If ``X`` has at least one categorical feature, then return the
+            ratio of numerical and categorical features. Return :obj:`np.nan`
+            otherwise.
+
+        References
+        ----------
+        .. [1] Matthias Feurer, Jost Tobias Springenberg, and Frank Hutter.
+           Using meta-learning toinitialize bayesian optimization of
+           hyperparameters. InInternational Conference on Meta-learning and
+           Algorithm Selection (MLAS), pages 3 – 10, 2014.
         """
         if not cat_cols:
             return np.nan
