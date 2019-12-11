@@ -215,7 +215,6 @@ class MFEComplexity:
     def _compute_f3(N_: np.ndarray, minmax_: np.ndarray,
                     maxmin_: np.ndarray) -> np.ndarray:
         """Compute the F3 complexit measure given minmax and maxmin."""
-
         # True if the example is in the overlapping region
         # Should be > and < instead of >= and <= ?
         overlapped_region_by_feature = np.logical_and(N_ >= maxmin_,
@@ -242,7 +241,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj: `np.ndarray`
+        ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
         cls_index : :obj:`list`
@@ -304,7 +303,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj: `np.ndarray`
+        ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
         cls_index : :obj:`list`
@@ -393,7 +392,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj: `np.ndarray`
+        ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
         cls_index : :obj:`list`
@@ -452,7 +451,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj: `np.ndarray`
+        ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
         cls_index : :obj:`list`
@@ -519,12 +518,12 @@ class MFEComplexity:
             The array indexes represent the classes combination, i.e.,
             [(0,1), (0,2) ...].
 
-        metric_n4 : :obj`str`, optional (default='minkowski')
+        metric_n4 : :obj:`str`, optional (default='minkowski')
             The distance metric used in the internal kNN classifier. See the
             documentation of the DistanceMetric class on sklearn for a list of
             available metrics.
 
-        p_n4 : :obj`int`, optional (default = 2)
+        p_n4 : :obj:`int`, optional (default = 2)
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using manhattan_distance (l1), and
             euclidean_distance (l2) for p = 2. For arbitrary p,
@@ -594,7 +593,7 @@ class MFEComplexity:
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
         cls_n_ex : :obj:`np.ndarray`
@@ -632,11 +631,11 @@ class MFEComplexity:
 
     @classmethod
     def ft_c2(cls, y: np.ndarray, cls_n_ex: np.ndarray = None) -> float:
-        """Computes the imbalance ratio measure.
+        """Compute the imbalance ratio measure.
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
         cls_n_ex : :obj:`np.ndarray`
@@ -678,14 +677,14 @@ class MFEComplexity:
               N: np.ndarray,
               m: t.Union[int, None] = None,
               n: t.Union[int, None] = None) -> float:
-        """Computes the average number of features per dimension measure.
+        """Compute the average number of features per dimension measure.
 
         Parameters
         ----------
-        m : :obj`int`
+        m : :obj:`int`
             Number of features.
 
-        n : :obj`int`
+        n : :obj:`int`
             Number of examples.
 
         Returns
@@ -717,10 +716,10 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        m_ : :obj`int`
+        m_ : :obj:`int`
             Number of features after PCA with 0.95.
 
-        n : :obj`int`
+        n : :obj:`int`
             Number of examples.
 
         Returns
@@ -754,7 +753,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        m : :obj`int`
+        m : :obj:`int`
             Number of features.
 
         m_ : :obj:`int`
