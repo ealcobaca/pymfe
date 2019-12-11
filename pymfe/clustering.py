@@ -751,6 +751,10 @@ class MFEClustering:
 
         References
         ----------
+        .. [1] Bruno Almeida Pimentel, André C.P.L.F. de Carvalho.
+        A new data characterization for selecting clustering algorithms
+        using meta-learning. Information Sciences, Volume 477, 2019,
+        Pages 203-219.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
@@ -787,6 +791,10 @@ class MFEClustering:
 
         References
         ----------
+        .. [1] Bruno Almeida Pimentel, André C.P.L.F. de Carvalho.
+        A new data characterization for selecting clustering algorithms
+        using meta-learning. Information Sciences, Volume 477, 2019,
+        Pages 203-219.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
