@@ -1240,38 +1240,70 @@ class MFE:
         )
 
         return tuple(filtered_res)
+    @staticmethod
+    def _parse_description(docstring: str) -> t.Tuple[str, str]:
+        """Parse the docstring to get initial description and reference.
+
+        Parameters
+        ----------
+        docstring : str
+            An numpy docstring as ``str``.
+
+        Returns
+        -------
+        tuple of str
+            The initial docstring description in the first position and the
+            reference in the second.
+
+        """
+        initial_description = ""  # type: str
+        reference_description = ""  # type: str
+
+        # get initial description
+        split = docstring.split("\n\n")
+        if split:
+            initial_description = " ".join(split[0].split())
+
+        # get reference description
+        docstring_ref = docstring.split("References\n        ----------\n")
+        if len(docstring_ref) >= 2:
+            docstring_ref = docstring_ref[1]
+            split = docstring.split(f".. [")
+            if len(split) >= 2:
+                del split[0]
+                for spl in split:
+                    reference_description += "[" + " ".join(
+                        spl.split()) + "\n"
+
+        return (initial_description, reference_description)
 
     @classmethod
     def metafeature_description(
             cls,
             groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
             sort: bool = False,
-            print_table: bool = True) -> t.Optional[t.List[t.List[str]]]:
+            print_table: bool = True) -> t.Tuple[t.List[t.List[str]], str]:
         """Print a table with groups, metafeatures and description.
 
         Parameters
         ----------
-        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`, optional
+        groups : sequence of str or str, optional:
             Can be a string such value is a name of a specific metafeature
             group (see ``valid_groups`` method for more information) or a
             sequence of metafeature group names. It can be also None, which
             in that case all available metafeature names will be returned.
 
-        sort : :obj:`bool`, optional
-            If True sort the table by metafeature name.
-
-        print_table : :obj:`bool`, optional
+        print_table : bool
             If True a table will be printed with the description, otherwise the
             table will be send by return.
 
+        print_table : bool
+            If True sort the table by metafeature name.
+
         Returns
         -------
-        If ``print_table`` is False:
-            :obj:`list` of :obj:`list`
-                A table with the metafeature descriptions.
-
-        else:
-            None.
+        list of list
+            A table with the metafeature descriptions or None.
 
         Notes
         -----
@@ -1287,7 +1319,7 @@ class MFE:
         deps = _internal.check_group_dependencies(groups)
 
         mtf_names = []  # type: t.List[str]
-        mtf_desc = [["Group", "Metafeature name", "Description"]]
+        mtf_desc = [["Group", "Meta-feature name", "Description", "Reference"]]
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
@@ -1298,17 +1330,17 @@ class MFE:
                     only_name=False,
                     prefix_removal=True))
             for name, method in mtf_names:
-                aux = [group, name,
-                       method.__doc__.split("\n")[0]]  # type: ignore
-                mtf_desc.append(aux)
+                ini_desc, ref_desc = MFE._parse_description(
+                    str(method.__doc__))
+                mtf_desc.append([group, name, ini_desc, ref_desc])
 
         if sort:
             mtf_desc.sort(key=lambda i: i[1])
 
+        tb = Texttable()
+        tb.set_cols_dtype(['t', 't', 't', 't'])
+        draw = tb.add_rows(mtf_desc).draw()
         if print_table:
-            tb = Texttable()
-            tb.add_rows(mtf_desc)
-            print(tb.draw())
+            print(draw)
             return None
-
-        return mtf_desc
+        return mtf_desc, draw
