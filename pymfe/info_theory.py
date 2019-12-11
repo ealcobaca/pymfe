@@ -95,11 +95,11 @@ class MFEInfoTheory:
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
-            The target attribute vector.
-
-        C : :obj:`np.ndarray`, optional
+        C : :obj:`np.ndarray`
             Categorical attributes from fitted data.
+
+        y : :obj:`np.ndarray`
+            The target attribute vector.
 
         class_freqs : :obj:`np.ndarray`, optional
             Absolute frequency of each distinct class in ``y``.
@@ -210,6 +210,11 @@ class MFEInfoTheory:
     def ft_attr_conc(cls, C: np.ndarray) -> np.ndarray:
         """Compute concentration coef. of each pair of distinct attributes.
 
+        Parameters
+        ----------
+        C : :obj:`np.ndarray`
+            Categorical attributes from fitted data.
+
         Returns
         -------
         :obj:`np.ndarray`
@@ -237,7 +242,7 @@ class MFEInfoTheory:
     def ft_attr_ent(cls,
                     C: np.ndarray,
                     attr_ent: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """Calculates Shannon's entropy for each predictive attribute.
+        """Compute Shannon's entropy for each predictive attribute.
 
         The Shannon's Entropy H of a vector x is defined as:
 
@@ -249,6 +254,9 @@ class MFEInfoTheory:
 
         Parameters
         ----------
+        C : :obj:`np.ndarray`
+            Categorical attributes from fitted data.
+
         attr_ent : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
             possible attribute entropy precomputations.
@@ -276,7 +284,15 @@ class MFEInfoTheory:
 
     @classmethod
     def ft_class_conc(cls, C: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """Compute concentration coefficient between each attr. and class.
+        """Compute concentration coefficient between each attribute and class.
+
+        Parameters
+        ----------
+        C : :obj:`np.ndarray`
+            Categorical attributes from fitted data.
+
+        y : :obj:`np.ndarray`
+            The target attribute vector.
 
         Returns
         -------
@@ -298,7 +314,7 @@ class MFEInfoTheory:
                      y: np.ndarray,
                      class_ent: t.Optional[np.ndarray] = None,
                      class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Calculates target attribute Shannon's entropy.
+        """Compute target attribute Shannon's entropy.
 
         The Shannon's Entropy H of a vector y is defined as:
 
@@ -310,7 +326,10 @@ class MFEInfoTheory:
 
         Parameters
         ----------
-        class_ent : :obj:`float`, optional
+        y : :obj:`np.ndarray`
+            The target attribute vector.
+
+        class_ent : float, optional
             Entropy of the target attribute ``y``. Used to explot
             precomputations. If :obj:`NoneType`, this argument is calculated
             using the method ``ft_class_ent``.
@@ -344,7 +363,7 @@ class MFEInfoTheory:
                        class_ent: t.Optional[np.ndarray] = None,
                        class_freqs: t.Optional[np.ndarray] = None,
                        mut_inf: t.Optional[np.ndarray] = None) -> float:
-        """Number of attributes equivalent for a predictive task.
+        """Compute the number of attributes equivalent for a predicti/ve task.
 
         The attribute equivalence E is defined as:
 
@@ -356,10 +375,16 @@ class MFEInfoTheory:
 
         Parameters
         ----------
-        epsilon : :obj:`float`, optional
+        C : :obj:`np.ndarray`
+            Categorical attributes from fitted data.
+
+        y : :obj:`np.ndarray`
+            The target attribute vector.
+
+        epsilon : float, optional
             Tiny numeric value to avoid division by zero.
 
-        class_ent : :obj:`float`, optional
+        class_ent : float, optional
             Entropy of the target attribute ``y``. Used to explot
             precomputations. If :obj:`NoneType`, this argument is calculated
             using the method ``ft_class_ent``.
@@ -402,7 +427,7 @@ class MFEInfoTheory:
                      C: np.ndarray,
                      y: np.ndarray,
                      joint_ent: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """Calculate the joint entropy between each attribute and class.
+        """Compute the joint entropy between each attribute and class.
 
         The Joint Entropy H between a predictive attribute x and target attri-
         bute ``y`` is defined as:
@@ -420,6 +445,12 @@ class MFEInfoTheory:
 
         Parameters
         ----------
+        C : :obj:`np.ndarray`
+            Categorical attributes from fitted data.
+
+        y : :obj:`np.ndarray`
+            The target attribute vector.
+
         joint_ent : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
             possible joint entropy precomputations.
@@ -451,7 +482,7 @@ class MFEInfoTheory:
                    class_ent: t.Optional[float] = None,
                    joint_ent: t.Optional[np.ndarray] = None,
                    class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """Mutual information between each attribute in ``C`` and target ``y``.
+        """Compute the mutual information between each attribute and target.
 
         The mutual Information MI between an independent attribute ``x`` and
         target attribute ``y`` is defined as:
@@ -465,15 +496,21 @@ class MFEInfoTheory:
 
         Parameters
         ----------
+        C : :obj:`np.ndarray`
+            Categorical attributes from fitted data.
+
+        y : :obj:`np.ndarray`
+            The target attribute vector.
+
+        mut_inf : :obj:`np.ndarray`, optional
+            This argument is this method own return value, meant to exploit
+            possible mutual information precomputations.
+
         attr_ent : :obj:`np.ndarray`, optional
             Values of each attribute entropy in ``N``. This argument purpose is
             to exploit possible precomputations of attribute entropy. If
             :obj:`NoneType`, this argument is calculated using ``ft_attr_ent``
             method.
-
-        mut_inf : :obj:`np.ndarray`, optional
-            This argument is this method own return value, meant to exploit
-            possible mutual information precomputations.
 
         class_ent : :obj:`float`, optional
             Entropy of the target attribute ``y``. Used to explot
@@ -484,6 +521,9 @@ class MFEInfoTheory:
             Joint entropy between each independent attribute in ``N`` and
             target attribute ``y``. If :obj:`NoneType`, this argument is
             calculated using the method ``ft_joint_ent``.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            Absolute frequency of each distinct class in ``y``.
 
         Returns
         -------
@@ -531,7 +571,7 @@ class MFEInfoTheory:
 
         Parameters
         ----------
-        epsilon : :obj:`float`, optional
+        epsilon : float, optional
             Tiny numeric value to avoid division by zero.
 
         attr_ent : :obj:`np.ndarray`, optional
