@@ -12,7 +12,7 @@ class TestLandmarking():
     """TestClass dedicated to test Landmarking metafeatures."""
 
     @pytest.mark.parametrize(
-        "dt_id, ft_name, exp_value, precompute, sample_size",
+        "dt_id, ft_name, exp_value, precompute, lm_sample_frac",
         [
             ###################
             # Mixed data
@@ -84,7 +84,7 @@ class TestLandmarking():
             (2, 'random_node', [0.5982143, 0.02823461], False, 0.5),
         ])
     def test_ft_methods_landmarking(self, dt_id, ft_name, exp_value,
-                                    precompute, sample_size):
+                                    precompute, lm_sample_frac):
         """Function to test each meta-feature belongs to landmarking group.
         """
         precomp_group = "landmarking" if precompute else None
@@ -93,7 +93,7 @@ class TestLandmarking():
         mfe = MFE(
             groups=["landmarking"],
             features=[ft_name],
-            sample_size=sample_size,
+            lm_sample_frac=lm_sample_frac,
             random_state=1234)
 
         mfe.fit(X.values, y.values, precomp_groups=precomp_group)
