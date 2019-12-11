@@ -1,5 +1,4 @@
-"""A module dedicated to the extraction of Statistical Metafeatures.
-"""
+"""A module dedicated to the extraction of statistical metafeatures."""
 import typing as t
 
 import numpy as np
@@ -65,6 +64,7 @@ class MFEStatistical:
         ----------
         y : :obj:`np.ndarray`, optional
             The target attribute from fitted data.
+
         kwargs:
             Additional arguments. May have previously precomputed before this
             method from other precomputed methods, so they can help speed up

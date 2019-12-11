@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Landmarking Metafeatures."""
+"""Module dedicated to extraction of landmarking metafeatures."""
 
 import typing as t
 

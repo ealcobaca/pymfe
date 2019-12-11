@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Relative Landmarking Metafeatures."""
+"""Module dedicated to extraction of relative landmarking metafeatures."""
 
 import typing as t
 import time
@@ -64,8 +64,8 @@ class MFERelativeLandmarking:
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
         """Generate Relative Landmarking from Landmarking metafeatures.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         mtf_names : :obj:`str`
             Name of each generated metafeature (after extraction and
             summarization).

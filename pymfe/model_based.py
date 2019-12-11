@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Model-Based Metafeatures."""
+"""Module dedicated to extraction of model-based metafeatures."""
 
 import typing as t
 
@@ -557,8 +557,8 @@ class MFEModelBased:
         dt_model : :obj:`DecisionTreeClassifier`
             The DT model.
 
-        Return
-        ------
+        Returns
+        -------
         :obj:`np.ndarray`
             Features importance given by the DT model.
 

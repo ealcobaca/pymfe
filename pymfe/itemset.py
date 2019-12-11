@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Itemset Metafeatures."""
+"""Module dedicated to extraction of itemset metafeatures."""
 
 import typing as t
 import numpy as np
