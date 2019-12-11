@@ -173,7 +173,7 @@ class MFEGeneral:
         References
         ----------
         .. [1] Guido Lindner and Rudi Studer. AST: Support for algorithm
-           selection with a CBR approach. InEuropean Conference on
+           selection with a CBR approach. In European Conference on
            Principles of Data Mining and Knowledge Discovery (PKDD),
            pages 418 – 423, 1999.
         """
@@ -218,7 +218,7 @@ class MFEGeneral:
         ----------
         .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
            John Campbell. Machine Learning, Neural and Statistical
-           Classification, volume 37. Ellis Horwood Upper SaddleRiver, 1994.
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         return X.shape[1]
 
@@ -238,7 +238,7 @@ class MFEGeneral:
         ----------
         .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
            John Campbell. Machine Learning, Neural and Statistical
-           Classification, volume 37. Ellis Horwood Upper SaddleRiver, 1994.
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         bin_cols = np.apply_along_axis(
             func1d=lambda col: np.unique(col).size == 2, axis=0, arr=X)
@@ -292,7 +292,7 @@ class MFEGeneral:
         ----------
         .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
            John Campbell. Machine Learning, Neural and Statistical
-           Classification, volume 37. Ellis Horwood Upper SaddleRiver, 1994.
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if classes is not None:
             return classes.size
@@ -315,7 +315,7 @@ class MFEGeneral:
         ----------
         .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
            John Campbell. Machine Learning, Neural and Statistical
-           Classification, volume 37. Ellis Horwood Upper SaddleRiver, 1994.
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         return X.shape[0]
 
