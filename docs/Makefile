@@ -23,3 +23,4 @@ clean_all:
 	make clean
 	rm -rf source/generated
 	rm -rf source/auto_examples
+	rm -rf source/auto_pages
