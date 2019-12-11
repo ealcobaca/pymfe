@@ -488,7 +488,8 @@ class MFE:
 
             if verbose >= 2:
                 print("\nExtracting '{}' feature ({} of {})..."
-                      .format(ft_mtd_name, ind + 1, len(self._metadata_mtd_ft)))
+                      .format(ft_mtd_name, ind + 1,
+                              len(self._metadata_mtd_ft)))
 
             ft_name_without_prefix = _internal.remove_prefix(
                 value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
