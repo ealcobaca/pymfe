@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Complexity Metafeatures."""
+"""Module dedicated to extraction of complexity metafeatures."""
 
 import typing as t
 import itertools

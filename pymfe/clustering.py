@@ -1,4 +1,4 @@
-"""A module dedicated to the extraction of Clustering Metafeatures.
+"""A module dedicated to the extraction of clustering metafeatures.
 """
 import typing as t
 import itertools

@@ -1,4 +1,4 @@
-"""A module dedicated to the extraction of General Metafeatures.
+"""A module dedicated to the extraction of general metafeatures.
 """
 import typing as t
 import numpy as np
@@ -118,8 +118,8 @@ class MFEGeneral:
 
         Effectively the inverse of value given by ``ft_num_to_cat``.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cat_cols : :obj:`list`
             Sequence containing the indices of each categorical column
             in ``X``.
@@ -150,8 +150,8 @@ class MFEGeneral:
                       ) -> np.ndarray:
         """Computes the relative frequency of each distinct class.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         y : :obj:`np.ndarray`
             Array with the dependent attribute values.
 
@@ -323,8 +323,8 @@ class MFEGeneral:
     def ft_nr_num(cls, X: np.ndarray, cat_cols: t.Sequence[int]) -> int:
         """Returns the number of numeric features.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cat_cols : :obj:`list`
             Sequence containing the indices of each categorical column
             in ``X``.
@@ -353,8 +353,8 @@ class MFEGeneral:
 
         Effectively the inverse of the value given by ``ft_cat_to_num``.
 
-        Arguments
-        ---------
+        Parameters
+        ----------
         cat_cols : :obj:`list`
             Sequence containing the indices of each categorical column
             in ``X``.
