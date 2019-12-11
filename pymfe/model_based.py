@@ -88,7 +88,7 @@ class MFEModelBased:
                   classifier.
                 - ``dt_info_table`` (:obj:`np.ndarray`): some tree properties
                   table.
-                - ``dt_nodes_depth`` (:obj: `np.ndarray`): the depth of each
+                - ``dt_nodes_depth`` (:obj:`np.ndarray`): the depth of each
                   tree node ordered by node (e.g., index one contain the node
                   one depth, the index two the node two depth and so on.)
         """
