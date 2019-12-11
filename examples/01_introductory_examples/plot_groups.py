@@ -36,6 +36,7 @@ mfe.fit(X, y)
 ft = mfe.extract()
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+
 ###############################################################################
 # Statistical
 # -----------
@@ -60,6 +61,7 @@ mfe = MFE(features=["can_cor", "cor", "iq_range"])
 mfe.fit(X, y)
 ft = mfe.extract()
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
 
 ###############################################################################
 # Information theory
@@ -87,8 +89,9 @@ mfe.fit(X, y)
 ft = mfe.extract()
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
+
 ###############################################################################
-# Model based
+# Model-based
 # -----------
 #
 # These measures describe characteristics of the investigated models. These
@@ -155,6 +158,23 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 
 ###############################################################################
+# Subsampling Landmarking
+# -----------------------
+#
+# Subsampling Landmarking measures are simple and fast algorithms, from which
+# performance characteristics can be extracted. Nevertheless,
+# different from landmarking, the performance is computed from a subsample of
+# dataset.
+
+###############################################################################
+# Extract all relative landmarking measures
+mfe = MFE(groups=["landmarking"], lm_sample_frac=0.7)
+mfe.fit(X, y)
+ft = mfe.extract()
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+
+###############################################################################
 # Clustering
 # ----------
 #
@@ -164,6 +184,49 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 ###############################################################################
 # Extract all clustering based measures
 mfe = MFE(groups=["clustering"])
+mfe.fit(X, y)
+ft = mfe.extract()
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+
+###############################################################################
+# Concept
+# -------
+# Concept measures estimate the variability of class labels among examples and
+# the examples density.
+
+###############################################################################
+# Extract all clustering based measures
+mfe = MFE(groups=["concept"])
+mfe.fit(X, y)
+ft = mfe.extract()
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+
+###############################################################################
+# Itemset
+# -------
+# The Itemset computes the correlation between binary attributes.
+#
+
+###############################################################################
+# Extract all clustering based measures
+mfe = MFE(groups=["itemset"])
+mfe.fit(X, y)
+ft = mfe.extract()
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+
+###############################################################################
+# Complexity
+# ----------
+# The complexity measures estimate the difficulty in separating the data points
+# into their expected classes.
+#
+
+###############################################################################
+# Extract all clustering based measures
+mfe = MFE(groups=["complexity"])
 mfe.fit(X, y)
 ft = mfe.extract()
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
