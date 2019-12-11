@@ -264,7 +264,11 @@ class MFELandmarking:
 
         References
         ----------
-        .. [1] Johannes Furnkranz and Johann Petrak. An evaluation of
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
            landmarking variants. In 1st ECML/PKDD International Workshop
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
@@ -356,7 +360,11 @@ class MFELandmarking:
 
         References
         ----------
-        .. [1] Johannes Furnkranz and Johann Petrak. An evaluation of
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
            landmarking variants. In 1st ECML/PKDD International Workshop
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
@@ -456,7 +464,11 @@ class MFELandmarking:
 
         References
         ----------
-        .. [1] Johannes Furnkranz and Johann Petrak. An evaluation of
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
            landmarking variants. In 1st ECML/PKDD International Workshop
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
@@ -556,7 +568,11 @@ class MFELandmarking:
 
         References
         ----------
-        .. [1] Johannes Furnkranz and Johann Petrak. An evaluation of
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
            landmarking variants. In 1st ECML/PKDD International Workshop
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
@@ -652,7 +668,11 @@ class MFELandmarking:
 
         References
         ----------
-        .. [1] Johannes Furnkranz and Johann Petrak. An evaluation of
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
+        .. [2] Johannes Furnkranz and Johann Petrak. An evaluation of
            landmarking variants. In 1st ECML/PKDD International Workshop
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
@@ -748,6 +768,10 @@ class MFELandmarking:
 
         References
         ----------
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
@@ -846,6 +870,10 @@ class MFELandmarking:
 
         References
         ----------
+        .. [1] Hilan Bensusan and Christophe Giraud-Carrier. Discovering task
+           neighbourhoods through landmark learning performances. In 4th
+           European Conference on Principles of Data Mining and Knowledge
+           Discovery (PKDD), pages 325 – 330, 2000.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
