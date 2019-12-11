@@ -122,7 +122,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        tx_n_components : :obj:`float`, optional
+        tx_n_components : float, optional
             Number of principal components to keep in the PCA.
 
         **kwargs
@@ -225,7 +225,7 @@ class MFEComplexity:
             cls_index: np.ndarray = None,
             cls_n_ex: np.ndarray = None,
     ) -> np.ndarray:
-        """Computes each feature maximum individual efficiency.
+        """Compute feature maximum individual efficiency.
 
         Parameters
         ----------
@@ -235,7 +235,7 @@ class MFEComplexity:
         ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
-        cls_index : :obj:`list`
+        cls_index : list
             The list of boolean vectors indicating the example of each class.
             The array indexes represent the classes combination, i.e.,
             [(0,1), (0,2) ...].
@@ -287,7 +287,7 @@ class MFEComplexity:
             cls_index: np.ndarray = None,
             cls_n_ex: np.ndarray = None,
     ) -> np.ndarray:
-        """Computes the features collective feature efficiency.
+        """Compute the collective feature efficiency.
 
         Parameters
         ----------
@@ -297,7 +297,7 @@ class MFEComplexity:
         ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
-        cls_index : :obj:`list`
+        cls_index : list
             The list of boolean vectors indicating the example of each class.
             The array indexes represent the classes combination, i.e.,
             [(0,1), (0,2) ...].
@@ -376,7 +376,7 @@ class MFEComplexity:
               y: np.ndarray,
               ovo_comb: np.ndarray = None,
               cls_index: np.ndarray = None) -> np.ndarray:
-        """Computes the OVO subsets error rate of linear classifier.
+        """Compute the OVO subsets error rate of linear classifier.
 
         Parameters
         ----------
@@ -386,7 +386,7 @@ class MFEComplexity:
         ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
-        cls_index : :obj:`list`
+        cls_index : list
             The list of boolean vectors indicating the example of each class.
             The array indexes represent the classes combination, i.e.,
             [(0,1), (0,2) ...].
@@ -435,7 +435,7 @@ class MFEComplexity:
     @classmethod
     def ft_n1(cls, N: np.ndarray, y: np.ndarray,
               metric: str = "euclidean") -> float:
-        """Computes the fraction of borderline points measure.
+        """Compute the fraction of borderline points measure.
 
         Parameters
         ----------
@@ -445,7 +445,7 @@ class MFEComplexity:
         ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
-        cls_index : :obj:`list`
+        cls_index : list
             The list of boolean vectors indicating the example of each class.
             The array indexes represent the classes combination, i.e.,
             [(0,1), (0,2) ...].
@@ -493,7 +493,7 @@ class MFEComplexity:
               metric_n4: str = 'minkowski',
               p_n4: int = 2,
               n_neighbors_n4: int = 1) -> float:
-        """Computes the non-linearity of the NN Classifier.
+        """Compute the non-linearity of the NN Classifier.
 
         Parameters
         ----------
@@ -503,17 +503,17 @@ class MFEComplexity:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        cls_index : :obj:`list`
+        cls_index : list
             The list of boolean vectors indicating the example of each class.
             The array indexes represent the classes combination, i.e.,
             [(0,1), (0,2) ...].
 
-        metric_n4 : :obj:`str`, optional (default='minkowski')
+        metric_n4 : str, optional (default='minkowski')
             The distance metric used in the internal kNN classifier. See the
             documentation of the DistanceMetric class on sklearn for a list of
             available metrics.
 
-        p_n4 : :obj:`int`, optional (default = 2)
+        p_n4 : int, optional (default = 2)
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using manhattan_distance (l1), and
             euclidean_distance (l2) for p = 2. For arbitrary p,
@@ -578,7 +578,7 @@ class MFEComplexity:
             y: np.array,
             cls_n_ex: np.ndarray = None,
     ) -> float:
-        """Computes the entropy of class proportions measure.
+        """Compute the entropy of class proportions measure.
 
         Parameters
         ----------
@@ -670,10 +670,10 @@ class MFEComplexity:
 
         Parameters
         ----------
-        m : :obj:`int`
+        m : int
             Number of features.
 
-        n : :obj:`int`
+        n : int
             Number of examples.
 
         Returns
@@ -698,17 +698,17 @@ class MFEComplexity:
               N: np.ndarray,
               m_: t.Union[int, None] = None,
               n: t.Union[int, None] = None) -> float:
-        """Computes the average number of PCA dimensions per points measure.
+        """Compute the average number of PCA dimensions per points measure.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        m_ : :obj:`int`
+        m_ : int
             Number of features after PCA with 0.95.
 
-        n : :obj:`int`
+        n : int
             Number of examples.
 
         Returns
@@ -735,17 +735,17 @@ class MFEComplexity:
               N: np.ndarray,
               m: t.Union[int, None] = None,
               m_: t.Union[int, None] = None) -> float:
-        """Computes the ratio of the PCA dimension to the original dimension.
+        """Compute the ratio of the PCA dimension to the original dimension.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        m : :obj:`int`
+        m : int
             Number of features.
 
-        m_ : :obj:`int`
+        m_ : int
             Number of features after PCA with 0.95.
 
         Returns
