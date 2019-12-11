@@ -471,8 +471,7 @@ class MFE:
             **kwargs) -> t.Tuple[t.List[str],
                                  t.List[t.Union[int, float, t.Sequence]],
                                  t.List[float]]:
-        """Invoke feature methods/functions loaded in the model and gather
-        results.
+        """Invoke feature methods loaded in the model and gather results.
 
         The returned values are already summarized if needed.
 
@@ -1165,7 +1164,7 @@ class MFE:
 
         Returns
         -------
-        :obj: `Tuple` of `str`
+        :obj:`tuple` of :obj:`str`
             Tuple with all available metafeature names of the given ``groups``.
 
         Notes
@@ -1211,14 +1210,14 @@ class MFE:
             relative to. Use ``valid_groups`` method to check the available
             metafeature groups.
 
-        extracted_results : :obj:`Tuple` of :obj:`Sequences`
+        extracted_results : :obj:`tuple` of :obj:`t.Sequence`
             Output of ``extract`` method. Should contain all outputed lists
             (metafeature names, values and elapsed time for extraction, if
             present.)
 
         Returns
         -------
-        :obj:`Tuple` of :obj:`str`
+        :obj:`tuple` of :obj:`str`
             Slices of lists of ``extracted_results``, selected based on
             given ``groups``.
 
@@ -1252,21 +1251,27 @@ class MFE:
 
         Parameters
         ----------
-        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`, optional:
+        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`, optional
             Can be a string such value is a name of a specific metafeature
             group (see ``valid_groups`` method for more information) or a
             sequence of metafeature group names. It can be also None, which
             in that case all available metafeature names will be returned.
-        print_table : bool:
+
+        sort : :obj:`bool`, optional
+            If True sort the table by metafeature name.
+
+        print_table : :obj:`bool`, optional
             If True a table will be printed with the description, otherwise the
             table will be send by return.
-        print_table : bool:
-            If True sort the table by metafeature name.
 
         Returns
         -------
-        :obj: `List` of `List`
-            A table with the metafeature descriptions or None.
+        If ``print_table`` is False:
+            :obj:`list` of :obj:`list`
+                A table with the metafeature descriptions.
+
+        else:
+            None.
 
         Notes
         -----
@@ -1305,4 +1310,5 @@ class MFE:
             tb.add_rows(mtf_desc)
             print(tb.draw())
             return None
+
         return mtf_desc
