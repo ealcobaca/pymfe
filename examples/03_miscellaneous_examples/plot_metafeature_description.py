@@ -18,8 +18,8 @@ MFE.metafeature_description()
 MFE.metafeature_description(groups=["general", "statistical"])
 
 ###############################################################################
-# You can sort the metafeatures by name.
-MFE.metafeature_description(sort=True)
+# You can sort the metafeatures by name and group.
+MFE.metafeature_description(sort_by_group=True, sort_by_mtf=True)
 
 ###############################################################################
 # You also can get the table instead of printing it.
