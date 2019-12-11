@@ -82,7 +82,7 @@ class MFEModelBased:
 
         Returns
         -------
-        dict
+        :obj:`dict`
             With following precomputed items:
                 - ``dt_model`` (:obj:`DecisionTreeClassifier`): decision tree
                   classifier.
@@ -196,7 +196,7 @@ class MFEModelBased:
 
     @classmethod
     def ft_leaves(cls, dt_model: DecisionTreeClassifier) -> int:
-        """Number of leaves of the DT model.
+        """Number of leaf nodes in the DT model.
 
         Parameters
         ----------
@@ -205,8 +205,16 @@ class MFEModelBased:
 
         Returns
         -------
-        :obj:`np.ndarray`
-            Number of leaves.
+        :obj:`int`
+            Number of leaf nodes in the DT model.
+
+        References
+        ----------
+        .. [1] Yonghong Peng, PA Flach, Pavel Brazdil, and Carlos Soares.
+           Decision tree-based data characterization for meta-learning.
+           In 2nd ECML/PKDD International Workshop on Integration and
+           Collaboration Aspects of Data Mining, Decision Support and
+           Meta-Learning(IDDM), pages 111 – 122, 2002a.
         """
         return dt_model.tree_.n_leaves
 
@@ -223,6 +231,14 @@ class MFEModelBased:
         -------
         :obj:`np.ndarray`
             Depth of every node in the DT model.
+
+        References
+        ----------
+        .. [1] Yonghong Peng, PA Flach, Pavel Brazdil, and Carlos Soares.
+           Decision tree-based data characterization for meta-learning.
+           In 2nd ECML/PKDD International Workshop on Integration and
+           Collaboration Aspects of Data Mining, Decision Support and
+           Meta-Learning(IDDM), pages 111 – 122, 2002a.
         """
         return dt_nodes_depth
 
@@ -246,6 +262,14 @@ class MFEModelBased:
         -------
         :obj:`np.ndarray`
             Size of branches of the DT model.
+
+        References
+        ----------
+        .. [1] Yonghong Peng, PA Flach, Pavel Brazdil, and Carlos Soares.
+           Decision tree-based data characterization for meta-learning.
+           In 2nd ECML/PKDD International Workshop on Integration and
+           Collaboration Aspects of Data Mining, Decision Support and
+           Meta-Learning(IDDM), pages 111 – 122, 2002a.
         """
         return dt_nodes_depth[leaf_nodes]
 
@@ -268,7 +292,13 @@ class MFEModelBased:
         Returns
         -------
         :obj:`np.ndarray`
-            Leaves corroboration.
+            Leaves corroboration for every leaf node.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan, Christophe Giraud-Carrier, and Claire Kennedy.
+            A higher-order approachto meta-learning. In 10th International
+            Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
         num_samples_leaves = dt_info_table[leaf_nodes, 1]  # type: np.ndarray
 
@@ -281,7 +311,7 @@ class MFEModelBased:
     @classmethod
     def ft_tree_shape(cls, leaf_nodes: np.ndarray,
                       dt_nodes_depth: np.ndarray) -> np.ndarray:
-        """Calculate the tree shape.
+        """Calculate the tree shape for every leaf node.
 
         The tree shape is the probability of arrive in each leaf given a
         random walk. We call this as the ``structural shape of the DT model.``
@@ -297,16 +327,22 @@ class MFEModelBased:
         Returns
         -------
         :obj:`np.ndarray`
-            The tree shape.
+            The tree shape for every leaf node.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan, Christophe Giraud-Carrier, and Claire Kennedy.
+            A higher-order approachto meta-learning. In 10th International
+            Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
         leaf_depths = dt_nodes_depth[leaf_nodes]
-        prob_random_arrival = 1.0 / 2**leaf_depths
+        prob_random_arrival = np.power(2.0, -leaf_depths)
         return -prob_random_arrival * np.log2(prob_random_arrival)
 
     @classmethod
     def ft_leaves_homo(cls, leaf_nodes: np.ndarray, dt_nodes_depth: np.ndarray,
                        dt_model: DecisionTreeClassifier) -> np.ndarray:
-        """Calculate the DT model Homogeneity.
+        """Calculate the DT model Homogeneity for every leaf node.
 
         The DT model homogeneity is calculated by the number of leaves
         divided by the ``structural shape`` (which is calculated by the
@@ -323,7 +359,13 @@ class MFEModelBased:
         Returns
         -------
         :obj:`np.ndarray`
-            The DT model homogeneity.
+            The DT model homogeneity for every leaf node.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan, Christophe Giraud-Carrier, and Claire Kennedy.
+            A higher-order approachto meta-learning. In 10th International
+            Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
         num_leaves = MFEModelBased.ft_leaves(dt_model)
 
@@ -349,6 +391,14 @@ class MFEModelBased:
         -------
         :obj:`np.ndarray`
             Leaves per class.
+
+        References
+        ----------
+        .. [1] Andray Filchenkov and Arseniy Pendryak. Datasets meta-feature
+           description for recom-mending feature selection algorithm. In
+           Artificial Intelligence and Natural Language and Information
+           Extraction, Social Media and Web Search FRUCT Conference
+           (AINL-ISMWFRUCT), pages 11 – 18, 2015.
         """
         node_class_ids = dt_info_table[:, 2]
 
@@ -368,8 +418,16 @@ class MFEModelBased:
 
         Returns
         -------
-        :obj:`np.ndarray`
+        :obj:`int`
             Number of non-leaf nodes.
+
+        References
+        ----------
+        .. [1] Yonghong Peng, PA Flach, Pavel Brazdil, and Carlos Soares.
+           Decision tree-based data characterization for meta-learning.
+           In 2nd ECML/PKDD International Workshop on Integration and
+           Collaboration Aspects of Data Mining, Decision Support and
+           Meta-Learning(IDDM), pages 111 – 122, 2002a.
         """
         return dt_model.tree_.node_count - dt_model.tree_.n_leaves
 
@@ -384,8 +442,14 @@ class MFEModelBased:
 
         Returns
         -------
-        :obj:`np.ndarray`
-            Ratio of the number of nodes.
+        :obj:`float`
+            Ratio of the number of non-leaf nodes per number of attributes.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan, Christophe Giraud-Carrier, and Claire Kennedy.
+            A higher-order approachto meta-learning. In 10th International
+            Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
         num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)
 
@@ -402,8 +466,14 @@ class MFEModelBased:
 
         Returns
         -------
-        :obj:`np.ndarray`
+        :obj:`float`
             Ratio of the number of non-leaf nodes per instances.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan, Christophe Giraud-Carrier, and Claire Kennedy.
+            A higher-order approachto meta-learning. In 10th International
+            Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
         num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)
         num_inst = dt_model.tree_.n_node_samples[0]
@@ -412,7 +482,7 @@ class MFEModelBased:
 
     @classmethod
     def ft_nodes_per_level(cls, dt_nodes_depth: np.ndarray,
-                           non_leaf_nodes: np.ndarray) -> float:
+                           non_leaf_nodes: np.ndarray) -> np.ndarray:
         """Number of nodes of the DT model per tree level.
 
         Parameters
@@ -427,6 +497,14 @@ class MFEModelBased:
         -------
         :obj:`np.ndarray`
             Number of nodes per level.
+
+        References
+        ----------
+        .. [1] Yonghong Peng, PA Flach, Pavel Brazdil, and Carlos Soares.
+           Decision tree-based data characterization for meta-learning.
+           In 2nd ECML/PKDD International Workshop on Integration and
+           Collaboration Aspects of Data Mining, Decision Support and
+           Meta-Learning(IDDM), pages 111 – 122, 2002a.
         """
         non_leaf_depths = dt_nodes_depth[non_leaf_nodes]
 
@@ -454,6 +532,12 @@ class MFEModelBased:
         -------
         :obj:`np.ndarray`
             Absolute frequency of each repeated node.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan, Christophe Giraud-Carrier, and Claire Kennedy.
+            A higher-order approachto meta-learning. In 10th International
+            Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
         nodes_attr_ids = dt_info_table[non_leaf_nodes, 0]
 
@@ -473,16 +557,23 @@ class MFEModelBased:
         dt_model : :obj:`DecisionTreeClassifier`
             The DT model.
 
-        Return:
+        Return
+        ------
         :obj:`np.ndarray`
             Features importance given by the DT model.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan, Christophe Giraud-Carrier, and Claire Kennedy.
+            A higher-order approachto meta-learning. In 10th International
+            Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
         return dt_model.feature_importances_
 
     @classmethod
     def ft_tree_imbalance(cls, leaf_nodes: np.ndarray,
                           dt_nodes_depth: np.ndarray) -> np.ndarray:
-        """Tree imbalance.
+        """Calculate the Tree imbalance for each leaf node.
 
         Parameters
         ----------
@@ -495,10 +586,16 @@ class MFEModelBased:
         Returns
         -------
         :obj:`np.ndarray`
-            Tree imbalance values.
+            Tree imbalance values for every leaf node.
+
+        References
+        ----------
+        .. [1] Hilan Bensusan, Christophe Giraud-Carrier, and Claire Kennedy.
+            A higher-order approachto meta-learning. In 10th International
+            Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
         leaf_depths = dt_nodes_depth[leaf_nodes]
-        prob_random_arrival = 1.0 / 2**leaf_depths
-        aux = 1.0 / 2**np.multiply(*np.unique(
-            prob_random_arrival, return_counts=True))  # np.ndarray
+        prob_random_arrival = np.power(2.0, -leaf_depths)
+        aux = np.power(2.0, -np.multiply(
+            *np.unique(prob_random_arrival, return_counts=True)))  # np.ndarray
         return -aux * np.log2(aux)
