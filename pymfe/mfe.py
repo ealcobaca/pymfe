@@ -1281,7 +1281,8 @@ class MFE:
     def metafeature_description(
             cls,
             groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
-            sort: bool = False,
+            sort_by_group: bool = False,
+            sort_by_mtf: bool = False,
             print_table: bool = True
     ) -> t.Optional[t.Tuple[t.List[t.List[str]], str]]:
         """Print a table with groups, metafeatures and description.
@@ -1293,6 +1294,12 @@ class MFE:
             group (see ``valid_groups`` method for more information) or a
             sequence of metafeature group names. It can be also None, which
             in that case all available metafeature names will be returned.
+
+        sort_by_gropu: boll
+            Sort table by meta-feature group name.
+
+        sort_by_mtf: boll
+            Sort table by meta-feature name.
 
         print_table : bool
             If True a table will be printed with the description, otherwise the
@@ -1335,8 +1342,11 @@ class MFE:
                     str(method.__doc__))
                 mtf_desc.append([group, name, ini_desc, ref_desc])
 
-        if sort:
+        if sort_by_mtf:
             mtf_desc.sort(key=lambda i: i[1])
+
+        if sort_by_group:
+            mtf_desc.sort(key=lambda i: i[0])
 
         tb = Texttable()
         tb.set_cols_dtype(['t', 't', 't', 't'])
