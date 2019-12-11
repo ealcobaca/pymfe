@@ -687,8 +687,8 @@ class MFEClustering:
 
         References
         ----------
-        .. [1] J. Lev, "The Point Biserial Coefficient of Correlation", Ann. Math.
-           Statist., Vol. 20, no.1, pp. 125-126, 1949.
+        .. [1] J. Lev, "The Point Biserial Coefficient of Correlation", Ann.
+           Math. Statist., Vol. 20, no.1, pp. 125-126, 1949.
 
         Notes
         -----
