@@ -170,12 +170,13 @@ class TestArchitecture:
                 and not set(res).symmetric_difference(_internal.VALID_GROUPS))
 
     def test_metafeature_description(self):
-        desc = MFE.metafeature_description(print_table=False)
+        desc, _ = MFE.metafeature_description(print_table=False)
         groups = [d[0] for d in desc]
         assert len(set(groups)) == len(_internal.VALID_GROUPS)
 
-        desc = MFE.metafeature_description(sort=True, print_table=False)
-        print(desc)
+        desc, _ = MFE.metafeature_description(sort_by_group=True,
+                                              sort_by_mtf=True,
+                                              print_table=False)
         mtf = [d[1] for d in desc]
         assert mtf[1][0] < mtf[-1][0]
 
