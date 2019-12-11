@@ -101,8 +101,9 @@ class MFEItemset:
     ) -> np.ndarray:
         """Computes the two itemset meta-feature.
 
-        The two itemset is the individual frequency of each attribute
-        in binary format.
+        The two-item set meta-feature can be seen as the correlation
+        information of each one attributes value pairs in binary
+        format.
 
         Parameters
         ----------
@@ -116,7 +117,7 @@ class MFEItemset:
         Returns
         -------
         :obj:`np.ndarray`
-            An array with the oneitem for each attribute.
+            An array with the two-item value for each attribute.
 
         References
         ----------
@@ -151,9 +152,8 @@ class MFEItemset:
                        ) -> np.ndarray:
         """Computes the one itemset meta-feature.
 
-        The one itemset meta-feature can be seen as the correlation
-        information of each one attributes value pairs in binary
-        format.
+        The one itemset is the individual frequency of each attribute
+        in binary format.
 
         Parameters
         ----------
@@ -167,7 +167,7 @@ class MFEItemset:
         Returns
         -------
         :obj:`np.ndarray`
-            An array with the twoitem for each attribute.
+            An array with the one-item value for each attribute.
 
         References
         ----------
