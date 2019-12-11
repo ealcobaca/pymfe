@@ -19,6 +19,7 @@ Welcome to pymfe's documentation!
    :hidden:
    :caption: Documentation
 
+   auto_pages/meta_features_description
    api
 
 .. toctree::
