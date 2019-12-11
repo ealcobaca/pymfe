@@ -1,4 +1,4 @@
-"""Module dedicated to extraction of Complexity Metafeatures."""
+"""Module dedicated to extraction of complexity metafeatures."""
 
 import typing as t
 import itertools
@@ -61,46 +61,7 @@ class MFEComplexity:
     """
 
     @classmethod
-    def _get_clsfreq(cls,
-                     y: np.ndarray,
-                     **kwargs
-                     ) -> t.Dict[str, t.Any]:
-
-        if y is not None and \
-                ("classes" not in kwargs or
-                 "y_idx" not in kwargs or
-                 "classes_freq" not in kwargs):
-
-            res = MFEGeneral.precompute_general_class(y)
-
-        else:
-            res = kwargs
-
-        return res
-
-    @staticmethod
-    def _compute_cls_index(y_idx: np.ndarray, classes: np.ndarray) -> list:
-        """Computes the ``cls_index`` variable.
-        """
-        return [np.equal(y_idx, i) for i in range(classes.shape[0])]
-
-    @staticmethod
-    def _compute_cls_n_index(cls_index: list) -> np.ndarray:
-        """Computes the ``cls_n_ex`` variable.
-        """
-        return np.array([np.sum(aux) for aux in cls_index])
-
-    @staticmethod
-    def _compute_ovo_comb(classes: np.ndarray) -> list:
-        """Computes the ``ovo_comb`` variable.
-        """
-        return list(itertools.combinations(range(classes.shape[0]), 2))
-
-    @classmethod
-    def precompute_fx(cls,
-                      y: np.ndarray,
-                      **kwargs
-                      ) -> t.Dict[str, t.Any]:
+    def precompute_fx(cls, y: np.ndarray, **kwargs) -> t.Dict[str, t.Any]:
         """Precompute some useful things to support feature-based measures.
 
         Parameters
@@ -119,55 +80,50 @@ class MFEComplexity:
             With following precomputed items:
                 - ``ovo_comb`` (:obj:`list`): List of all class OVO
                   combination, i.e., [(0,1), (0,2) ...].
-                - ``cls_index`` (:obj:`list`):  The list of boolean vectors
+                - ``cls_index`` (:obj:`list`): The list of boolean vectors
                   indicating the example of each class. The array indexes
                   represent the classes.
                   combination, i.e., [(0,1), (0,2) ...].
                 - ``cls_n_ex`` (:obj:`np.ndarray`): The number of examples in
                   each class. The array indexes represent the classes.
         """
-        prepcomp_vals = {}
+        precomp_vals = {}
 
-        if (y is not None and
-                ("ovo_comb" not in kwargs or
-                 "cls_index" not in kwargs or
-                 "cls_n_ex" not in kwargs)):
+        if (y is not None
+                and ("ovo_comb" not in kwargs or "cls_index" not in kwargs
+                     or "cls_n_ex" not in kwargs)):
 
             sub_dic = MFEGeneral.precompute_general_class(y)
-            prepcomp_vals.update(sub_dic)
+            precomp_vals.update(sub_dic)
 
             classes = sub_dic["classes"]
             y_idx = sub_dic["y_idx"]
 
             cls_index = MFEComplexity._compute_cls_index(y_idx, classes)
-            prepcomp_vals["cls_index"] = cls_index
+            precomp_vals["cls_index"] = cls_index
 
             cls_n_ex = MFEComplexity._compute_cls_n_index(cls_index)
-            prepcomp_vals["cls_n_ex"] = cls_n_ex
+            precomp_vals["cls_n_ex"] = cls_n_ex
 
-            ovo_comb = list(itertools.combinations(
-                range(classes.shape[0]), 2))
-            prepcomp_vals["ovo_comb"] = ovo_comb
+            ovo_comb = MFEComplexity._compute_ovo_comb(classes)
+            precomp_vals["ovo_comb"] = ovo_comb
 
-        return prepcomp_vals
-
-    @staticmethod
-    def _compute_n_m(N: np.ndarray) -> t.Tuple[int, int]:
-        """Computes the ``n`` and ``m`` variables."""
-        return N.shape
+        return precomp_vals
 
     @classmethod
     def precompute_pca_tx(cls,
                           N: np.ndarray,
                           tx_n_components: float = 0.95,
-                          **kwargs
-                          ) -> t.Dict[str, int]:
+                          **kwargs) -> t.Dict[str, int]:
         """Precompute PCA to support dimensionality measures.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
+
+        tx_n_components : :obj:`float`, optional
+            Number of principal components to keep in the PCA.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -182,12 +138,10 @@ class MFEComplexity:
                 - ``m_`` (:obj:`int`):  Number of features after PCA with 0.95.
                 - ``n`` (:obj:`int`): Number of examples.
         """
-        prepcomp_vals = {}
+        precomp_vals = {}
 
-        if (N is not None and
-                "m" not in kwargs and
-                "m_" not in kwargs and
-                "n" not in kwargs):
+        if (N is not None and "m" not in kwargs and "m_" not in kwargs
+                and "n" not in kwargs):
 
             pca = PCA(n_components=tx_n_components)
             pca.fit(N)
@@ -195,21 +149,40 @@ class MFEComplexity:
             m_ = pca.explained_variance_ratio_.shape[0]
             n, m = MFEComplexity._compute_n_m(N=N)
 
-            prepcomp_vals["m_"] = m_
-            prepcomp_vals["m"] = m
-            prepcomp_vals["n"] = n
+            precomp_vals["m_"] = m_
+            precomp_vals["m"] = m
+            precomp_vals["n"] = n
 
-        return prepcomp_vals
+        return precomp_vals
 
     @staticmethod
-    def _minmax(N: np.ndarray,
-                class1: np.ndarray,
-                class2: np.ndarray
-                ) -> np.ndarray:
-        """ This function computes the minimum of the maximum values per class
-        for all features. The index i indicate the minmax of feature i.
-        """
+    def _compute_cls_index(y_idx: np.ndarray,
+                           classes: np.ndarray) -> t.List[np.ndarray]:
+        """Computes the ``cls_index`` variable."""
+        return [np.equal(y_idx, i) for i in np.arange(classes.shape[0])]
 
+    @staticmethod
+    def _compute_cls_n_index(cls_index: t.List[np.ndarray]) -> np.ndarray:
+        """Computes the ``cls_n_ex`` variable."""
+        return np.array([np.sum(aux) for aux in cls_index])
+
+    @staticmethod
+    def _compute_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
+        """Computes the ``ovo_comb`` variable."""
+        return list(itertools.combinations(np.arange(classes.shape[0]), 2))
+
+    @staticmethod
+    def _compute_n_m(N: np.ndarray) -> t.Tuple[int, int]:
+        """Computes the ``n`` and ``m`` variables."""
+        return N.shape
+
+    @staticmethod
+    def _minmax(N: np.ndarray, class1: np.ndarray,
+                class2: np.ndarray) -> np.ndarray:
+        """Computes the minimum of the maximum values per class for all feat.
+
+        The index i indicate the minmax of feature i.
+        """
         min_cls = np.zeros((2, N.shape[1]))
         min_cls[0, :] = np.max(N[class1], axis=0)
         min_cls[1, :] = np.max(N[class2], axis=0)
@@ -217,14 +190,12 @@ class MFEComplexity:
         return aux
 
     @staticmethod
-    def _maxmin(N: np.ndarray,
-                class1: np.ndarray,
-                class2: np.ndarray
-                ) -> np.ndarray:
-        """ This function computes the maximum of the minimum values per class
-        for all features. The index i indicate the maxmin of feature i.
-        """
+    def _maxmin(N: np.ndarray, class1: np.ndarray,
+                class2: np.ndarray) -> np.ndarray:
+        """Computes the maximum of the minimum values per class for all feat.
 
+        The index i indicate the maxmin of feature i.
+        """
         max_cls = np.zeros((2, N.shape[1]))
         max_cls[0, :] = np.min(N[class1], axis=0)
         max_cls[1, :] = np.min(N[class2], axis=0)
@@ -232,18 +203,13 @@ class MFEComplexity:
         return aux
 
     @staticmethod
-    def _compute_f3(N_: np.ndarray,
-                    minmax_: np.ndarray,
-                    maxmin_: np.ndarray
-                    ) -> np.ndarray:
-        """ This function computes the F3 complexit measure given
-        minmax and maxmin.
-        """
-
+    def _compute_f3(N_: np.ndarray, minmax_: np.ndarray,
+                    maxmin_: np.ndarray) -> np.ndarray:
+        """Compute the F3 complexit measure given minmax and maxmin."""
         # True if the example is in the overlapping region
         # Should be > and < instead of >= and <= ?
-        overlapped_region_by_feature = np.logical_and(
-            N_ >= maxmin_, N_ <= minmax_)
+        overlapped_region_by_feature = np.logical_and(N_ >= maxmin_,
+                                                      N_ <= minmax_)
 
         n_fi = np.sum(overlapped_region_by_feature, axis=0)
         idx_min = np.argmin(n_fi)
@@ -251,22 +217,22 @@ class MFEComplexity:
         return idx_min, n_fi, overlapped_region_by_feature
 
     @classmethod
-    def ft_f3(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              ovo_comb: np.ndarray = None,
-              cls_index: np.ndarray = None,
-              cls_n_ex: np.ndarray = None,
-              ) -> np.ndarray:
-        """Computes the maximum individual feature efficiency measure for each
-        feature.
+    def ft_f3(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            ovo_comb: np.ndarray = None,
+            cls_index: np.ndarray = None,
+            cls_n_ex: np.ndarray = None,
+    ) -> np.ndarray:
+        """Computes each feature maximum individual efficiency.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj: `np.ndarray`
+        ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
         cls_index : :obj:`list`
@@ -283,6 +249,13 @@ class MFEComplexity:
         :obj:`np.ndarray`
             An array with the maximum individual feature efficiency measure for
             each feature.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 6.
         """
         if ovo_comb is None or cls_index is None or cls_n_ex is None:
             sub_dic = MFEComplexity.precompute_fx(y=y)
@@ -293,10 +266,8 @@ class MFEComplexity:
         f3 = []
         for idx1, idx2 in ovo_comb:
             idx_min, n_fi, _ = cls._compute_f3(
-                N,
-                cls._minmax(N, cls_index[idx1], cls_index[idx2]),
-                cls._maxmin(N, cls_index[idx1], cls_index[idx2])
-            )
+                N, cls._minmax(N, cls_index[idx1], cls_index[idx2]),
+                cls._maxmin(N, cls_index[idx1], cls_index[idx2]))
             f3.append(n_fi[idx_min] / (cls_n_ex[idx1] + cls_n_ex[idx2]))
 
         # The measure is computed in the literature using the mean. However,
@@ -305,25 +276,25 @@ class MFEComplexity:
         # as well.
         # return np.mean(f3)
 
-        return f3
+        return np.asarray(f3)
 
     @classmethod
-    def ft_f4(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              ovo_comb: np.ndarray = None,
-              cls_index: np.ndarray = None,
-              cls_n_ex: np.ndarray = None,
-              ) -> np.ndarray:
-        """Computes the collective feature efficiency measure  for each
-        feature.
+    def ft_f4(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            ovo_comb: np.ndarray = None,
+            cls_index: np.ndarray = None,
+            cls_n_ex: np.ndarray = None,
+    ) -> np.ndarray:
+        """Computes the features collective feature efficiency.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj: `np.ndarray`
+        ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
         cls_index : :obj:`list`
@@ -340,6 +311,13 @@ class MFEComplexity:
         :obj:`np.ndarray`
             An array with the collective feature efficiency measure for each
             feature.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 7.
         """
         if ovo_comb is None or cls_index is None or cls_n_ex is None:
             sub_dic = MFEComplexity.precompute_fx(y=y)
@@ -362,10 +340,8 @@ class MFEComplexity:
             while N_.shape[1] > 0 and N_.shape[0] > 0:
                 # True if the example is in the overlapping region
                 idx_min, _, overlapped_region_by_feature = cls._compute_f3(
-                    N_,
-                    cls._minmax(N_, y_class1, y_class2),
-                    cls._maxmin(N_, y_class1, y_class2)
-                )
+                    N_, cls._minmax(N_, y_class1, y_class2),
+                    cls._maxmin(N_, y_class1, y_class2))
 
                 # boolean that if True, this example is in the overlapping
                 # region
@@ -384,7 +360,7 @@ class MFEComplexity:
                 # removing the most efficient feature
                 N_ = np.delete(N_, idx_min, axis=1)
 
-            f4.append(aux/(cls_n_ex[idx1] + cls_n_ex[idx2]))
+            f4.append(aux / (cls_n_ex[idx1] + cls_n_ex[idx2]))
 
         # The measure is computed in the literature using the mean. However,
         # it is formulated here as a meta-feature. Therefore,
@@ -392,24 +368,22 @@ class MFEComplexity:
         # as well.
         # return np.mean(f4)
 
-        return f4
+        return np.asarray(f4)
 
     @classmethod
     def ft_l2(cls,
               N: np.ndarray,
               y: np.ndarray,
               ovo_comb: np.ndarray = None,
-              cls_index: np.ndarray = None
-              ) -> np.ndarray:
-        """Computes the  error rate of linear classifier measure  for each
-        OVO subset.
+              cls_index: np.ndarray = None) -> np.ndarray:
+        """Computes the OVO subsets error rate of linear classifier.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj: `np.ndarray`
+        ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
         cls_index : :obj:`list`
@@ -422,6 +396,13 @@ class MFEComplexity:
         :obj:`np.ndarray`
             An array with the collective  error rate of linear classifier
             measure for each OVO subset.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 9.
         """
         if ovo_comb is None or cls_index is None:
             sub_dic = MFEComplexity.precompute_fx(y=y)
@@ -430,7 +411,6 @@ class MFEComplexity:
 
         l2 = []
         for idx1, idx2 in ovo_comb:
-
             y_ = np.logical_or(cls_index[idx1], cls_index[idx2])
             N_ = N[y_, :]
             y_ = cls_index[idx1][y_]
@@ -450,14 +430,11 @@ class MFEComplexity:
         # as well.
         # return np.mean(l2)
 
-        return l2
+        return np.asarray(l2)
 
     @classmethod
-    def ft_n1(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              metric: str = "euclidean"
-              ) -> float:
+    def ft_n1(cls, N: np.ndarray, y: np.ndarray,
+              metric: str = "euclidean") -> float:
         """Computes the fraction of borderline points measure.
 
         Parameters
@@ -465,7 +442,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj: `np.ndarray`
+        ovo_comb : :obj:`np.ndarray`
             List of all class OVO combination, i.e., [(0,1), (0,2) ...].
 
         cls_index : :obj:`list`
@@ -475,12 +452,18 @@ class MFEComplexity:
 
         Returns
         -------
-        float
-            An float with the fraction of borderline points measure.
+        :obj:`float`
+            Fraction of borderline points measure.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 9-10.
         """
-        # 0-1 scaler
-        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
-        N_ = scaler.transform(N)
+        # 0-1 scaling
+        N_ = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
 
         # compute the distance matrix and the minimum spanning tree.
         dist_m = np.triu(distance.cdist(N_, N_, metric), k=1)
@@ -495,12 +478,12 @@ class MFEComplexity:
         # aux = np.sum(which_have_diff_cls)
 
         # 2) number of different vertices connected
-        aux = np.unique(np.concatenate([
-            node_i[which_have_diff_cls],
-            node_j[which_have_diff_cls]
-        ])).shape[0]
+        aux = np.unique(
+            np.concatenate(
+                [node_i[which_have_diff_cls],
+                 node_j[which_have_diff_cls]])).shape[0]
 
-        return float(aux/N.shape[0])
+        return float(aux / N.shape[0])
 
     @classmethod
     def ft_n4(cls,
@@ -509,10 +492,8 @@ class MFEComplexity:
               cls_index: np.ndarray = None,
               metric_n4: str = 'minkowski',
               p_n4: int = 2,
-              n_neighbors_n4: int = 1
-              ) -> float:
-        """Computes the non-linearity of the nearest neighbor Classifier
-        measure.
+              n_neighbors_n4: int = 1) -> float:
+        """Computes the non-linearity of the NN Classifier.
 
         Parameters
         ----------
@@ -527,12 +508,12 @@ class MFEComplexity:
             The array indexes represent the classes combination, i.e.,
             [(0,1), (0,2) ...].
 
-        metric_n4 : str, optional (default='minkowski')
+        metric_n4 : :obj:`str`, optional (default='minkowski')
             The distance metric used in the internal kNN classifier. See the
             documentation of the DistanceMetric class on sklearn for a list of
             available metrics.
 
-        p_n4 : int, optional (default = 2)
+        p_n4 : :obj:`int`, optional (default = 2)
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using manhattan_distance (l1), and
             euclidean_distance (l2) for p = 2. For arbitrary p,
@@ -541,8 +522,15 @@ class MFEComplexity:
 
         Returns
         -------
-        float
-            An float with the fraction of borderline points measure.
+        :obj:`float`
+            Estimated non-linearity of the NN classifier.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 11.
         """
         if cls_index is None:
             sub_dic = MFEGeneral.precompute_general_class(y)
@@ -555,9 +543,8 @@ class MFEComplexity:
         interp_N = []
         interp_y = []
 
-        # 0-1 scaler
-        scaler = MinMaxScaler(feature_range=(0, 1)).fit(N)
-        N = scaler.transform(N)
+        # 0-1 scaling
+        N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
 
         for idx in cls_index:
             N_ = N[idx]
@@ -586,15 +573,16 @@ class MFEComplexity:
         return float(error)
 
     @classmethod
-    def ft_c1(cls,
-              y: np.array,
-              cls_n_ex: np.ndarray = None,
-              ) -> float:
+    def ft_c1(
+            cls,
+            y: np.array,
+            cls_n_ex: np.ndarray = None,
+    ) -> float:
         """Computes the entropy of class proportions measure.
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
         cls_n_ex : :obj:`np.ndarray`
@@ -603,8 +591,15 @@ class MFEComplexity:
 
         Returns
         -------
-        :obj:`np.ndarray`
-            An float with the entropy of class proportions measure.
+        :obj:`float`
+            Entropy of class proportions measure.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 15.
         """
         if cls_n_ex is None:
             sub_dic = MFEGeneral.precompute_general_class(y)
@@ -618,21 +613,18 @@ class MFEComplexity:
 
         nc = cls_n_ex.shape[0]
         pc_i = cls_n_ex / np.sum(cls_n_ex)
-        c1 = -(1.0/np.log(nc)) * np.sum(pc_i*np.log(pc_i))
+        c1 = -(1.0 / np.log(nc)) * np.sum(pc_i * np.log(pc_i))
 
         # Shuldn't C1 be 1-C1? to match with C2?
         return float(c1)
 
     @classmethod
-    def ft_c2(cls,
-              y: np.ndarray,
-              cls_n_ex: np.ndarray = None
-              ) -> float:
-        """Computes the imbalance ratio measure.
+    def ft_c2(cls, y: np.ndarray, cls_n_ex: np.ndarray = None) -> float:
+        """Compute the imbalance ratio measure.
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
         cls_n_ex : :obj:`np.ndarray`
@@ -641,8 +633,15 @@ class MFEComplexity:
 
         Returns
         -------
-        :obj:`np.ndarray`
-            An float with the imbalance ratio measure.
+        :obj:`float`
+            The imbalance ratio measure.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 16.
         """
         if cls_n_ex is None:
             sub_dic = MFEGeneral.precompute_general_class(y)
@@ -657,8 +656,8 @@ class MFEComplexity:
         n = np.sum(cls_n_ex)
         nc = cls_n_ex.shape[0]
         nc_i = cls_n_ex
-        IR = ((nc-1) / nc) * np.sum(nc_i / (n - (nc_i)))
-        c2 = 1 - (1/IR)
+        IR = ((nc - 1) / nc) * np.sum(nc_i / (n - (nc_i)))
+        c2 = 1 - (1 / IR)
 
         return c2
 
@@ -666,34 +665,39 @@ class MFEComplexity:
     def ft_t2(cls,
               N: np.ndarray,
               m: t.Union[int, None] = None,
-              n: t.Union[int, None] = None
-              ) -> float:
-        """Computes the average number of features per dimension measure.
+              n: t.Union[int, None] = None) -> float:
+        """Compute the average number of features per dimension measure.
 
         Parameters
         ----------
-        m : int
+        m : :obj:`int`
             Number of features.
 
-        n : int
+        n : :obj:`int`
             Number of examples.
 
         Returns
         -------
         :obj:`float`
-            An float with the average number of features per dimension measure.
+            Average number of features per dimension measure.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 15.
         """
         if n is None or m is None:
             n, m = MFEComplexity._compute_n_m(N=N)
 
-        return m/n
+        return m / n
 
     @classmethod
     def ft_t3(cls,
               N: np.ndarray,
               m_: t.Union[int, None] = None,
-              n: t.Union[int, None] = None
-              ) -> float:
+              n: t.Union[int, None] = None) -> float:
         """Computes the average number of PCA dimensions per points measure.
 
         Parameters
@@ -701,43 +705,47 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        m_ : int
+        m_ : :obj:`int`
             Number of features after PCA with 0.95.
 
-        n : int
+        n : :obj:`int`
             Number of examples.
 
         Returns
         -------
         :obj:`float`
-            An float with the average number of PCA dimensions per points
-            measure.
+            Average number of PCA dimensions per points measure.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 15.
         """
         if n is None or m_ is None:
             sub_dic = MFEComplexity.precompute_pca_tx(N=N)
             m_ = sub_dic["m_"]
             n = sub_dic["n"]
 
-        return m_/n
+        return m_ / n
 
     @classmethod
     def ft_t4(cls,
               N: np.ndarray,
               m: t.Union[int, None] = None,
-              m_: t.Union[int, None] = None
-              ) -> float:
-        """Computes the ratio of the PCA dimension to the original dimension
-        measure.
+              m_: t.Union[int, None] = None) -> float:
+        """Computes the ratio of the PCA dimension to the original dimension.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        m : int
+        m : :obj:`int`
             Number of features.
 
-        m_ : int
+        m_ : :obj:`int`
             Number of features after PCA with 0.95.
 
         Returns
@@ -745,10 +753,17 @@ class MFEComplexity:
         :obj:`float`
             An float with the ratio of the PCA dimension to the original
             dimension measure.
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           Page 15.
         """
         if m is None or m_ is None:
             sub_dic = MFEComplexity.precompute_pca_tx(N=N)
             m = sub_dic["m"]
             m_ = sub_dic["m_"]
 
-        return m_/m
+        return m_ / m

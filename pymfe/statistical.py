@@ -1,5 +1,4 @@
-"""A module dedicated to the extraction of Statistical Metafeatures.
-"""
+"""A module dedicated to the extraction of statistical metafeatures."""
 import typing as t
 
 import numpy as np
@@ -65,6 +64,7 @@ class MFEStatistical:
         ----------
         y : :obj:`np.ndarray`, optional
             The target attribute from fitted data.
+
         kwargs:
             Additional arguments. May have previously precomputed before this
             method from other precomputed methods, so they can help speed up
@@ -245,8 +245,7 @@ class MFEStatistical:
 
         Returns
         -------
-        :obj:`tuple`(:obj:`np.ndarray`, :obj:`np.ndarray`)
-
+        :obj:`tuple` (:obj:`np.ndarray`, :obj:`np.ndarray`)
             Eigenvalues and eigenvectors (in this order) of Linear
             Discriminant Analysis Matrix.
         """
@@ -439,6 +438,16 @@ class MFEStatistical:
 
         classes : :obj:`np.ndarray`, optional
             Distinct classes of ``y``.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Canonical correlations of the data.
+
+        References
+        ----------
+        .. [1] Alexandros Kalousis. Algorithm Selection via Meta-Learning.
+           PhD thesis, Faculty of Science of the University of Geneva, 2002.
         """
         if eig_vals is None:
             if classes is None or class_freqs is None:
@@ -488,10 +497,21 @@ class MFEStatistical:
             |-> +inf    | Max value (infinite norm) |
             +-----------+---------------------------+
 
+        Returns
+        -------
+        :obj:`float`
+            Gravity of the numeric dataset.
+
         Raises
         ------
         :obj:`ValueError`
-                If ``norm_ord`` is not numeric.
+            If ``norm_ord`` is not numeric.
+
+        References
+        ----------
+        .. [1] Shawkat Ali and Kate A. Smith. On learning algorithm
+           selection for classification. Applied Soft Computing,
+           6(2):119 – 138, 2006.
         """
         if classes is None or class_freqs is None:
             classes, class_freqs = np.unique(y, return_counts=True)
@@ -515,7 +535,26 @@ class MFEStatistical:
     @classmethod
     def ft_cor(cls, N: np.ndarray,
                abs_corr_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """The absolute value of the correlation of distinct column pairs."""
+        """The absolute value of the correlation of distinct column pairs.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Absolute value of correlation between distinct attributes.
+
+        References
+        ----------
+        .. [1] Ciro Castiello, Giovanna Castellano, and Anna Maria Fanelli.
+           Meta-data: Characterization of input features for meta-learning.
+           In 2nd International Conference on Modeling Decisions for
+           Artificial Intelligence (MDAI), pages 457–468, 2005.
+        .. [2] Matthias Reif, Faisal Shafait, Markus Goldstein, Thomas Breuel,
+           and Andreas Dengel. Automatic classifier selection for non-experts.
+           Pattern Analysis and Applications, 17(1):83–96, 2014.
+        .. [3] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
+        """
         if abs_corr_mat is None:
             abs_corr_mat = abs(np.corrcoef(N, rowvar=False))
 
@@ -533,7 +572,7 @@ class MFEStatistical:
                N: np.ndarray,
                ddof: int = 1,
                cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """The absolute value of the covariance of distinct column pairs.
+        """The absolute value of the covariance of distinct attribute pairs.
 
         Parameters
         ----------
@@ -545,6 +584,21 @@ class MFEStatistical:
             precomputations. Note that this argument value is not the same as
             this method return value, as it only returns the lower-triangle
             values from ``cov_mat``.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Absolute value of covariances between distinct attributes.
+
+        References
+        ----------
+        .. [1] Ciro Castiello, Giovanna Castellano, and Anna Maria Fanelli.
+           Meta-data: Characterization of input features for meta-learning.
+           In 2nd International Conference on Modeling Decisions for
+           Artificial Intelligence (MDAI), pages 457–468, 2005.
+        .. [2] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if cov_mat is None:
             cov_mat = np.cov(N, rowvar=False, ddof=ddof)
@@ -556,18 +610,34 @@ class MFEStatistical:
         return abs(inf_triang_vals)
 
     @classmethod
-    def ft_nr_disc(cls,
-                   N: np.ndarray,
-                   y: np.ndarray,
-                   epsilon: float = 1.0e-10,
-                   eig_vals: t.Optional[np.ndarray] = None,
-                   classes: t.Optional[np.ndarray] = None,
-                   class_freqs: t.Optional[np.ndarray] = None) -> float:
+    def ft_nr_disc(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            epsilon: float = 1.0e-10,
+            eig_vals: t.Optional[np.ndarray] = None,
+            classes: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None,
+    ) -> t.Union[int, float]:
         """Compute the number of canonical corr. between each attr. and class.
 
         This method return value is effectively the size of the return value
         of ``ft_can_cor`` method. Check its documentation for more in-depth
         details.
+
+        Returns
+        -------
+        :obj:`int` | :obj:`float`
+            Number of canonical correlations between each attribute and
+            class, if ``ft_can_cor`` is executed successfully. Returns
+            :obj:`np.nan` otherwise.
+
+        References
+        ----------
+        .. [1] Guido Lindner and Rudi Studer. AST: Support for algorithm
+           selection with a CBR approach. In European Conference on
+           Principles of Data Mining and Knowledge Discovery (PKDD),
+           pages 418 – 423, 1999.
         """
         can_cor = MFEStatistical.ft_can_cor(
             N=N,
@@ -597,6 +667,17 @@ class MFEStatistical:
         cov_mat : :obj:`np.ndarray`, optional
             Covariance matrix of ``N``. Argument meant to exploit
             precomputations.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Eigenvalues of ``N`` covariance matrix.
+
+        References
+        ----------
+        .. [1] Shawkat Ali and Kate A. Smith. On learning algorithm
+           selection for classification. Applied Soft Computing,
+           6(2):119 – 138, 2006.
         """
         if cov_mat is None:
             cov_mat = np.cov(N, rowvar=False, ddof=ddof)
@@ -625,6 +706,17 @@ class MFEStatistical:
         epsilon : :obj:`float`
             A small value which all values with absolute value lesser than it
             is considered zero-valued.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute geometric means.
+
+        References
+        ----------
+        .. [1] Shawkat Ali and Kate A. Smith-Miles. A meta-learning approach
+           to automatic kernel selection for support vector machines.
+           Neurocomputing, 70(1):173 – 186, 2006.
         """
         if N.size == 0:
             return np.array([np.nan])
@@ -657,6 +749,17 @@ class MFEStatistical:
         ----------
         epsilon : :obj:`float`, optional
             A tiny value to prevent division by zero.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute harmonic means.
+
+        References
+        ----------
+        .. [1] Shawkat Ali and Kate A. Smith-Miles. A meta-learning approach
+           to automatic kernel selection for support vector machines.
+           Neurocomputing, 70(1):173 – 186, 2006.
         """
         try:
             return scipy.stats.hmean(N + epsilon, axis=0)
@@ -666,7 +769,19 @@ class MFEStatistical:
 
     @classmethod
     def ft_iq_range(cls, N: np.ndarray) -> np.ndarray:
-        """Compute the interquartile range (IQR) of each attribute in ``N``."""
+        """Compute the interquartile range (IQR) of each attribute in ``N``.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute interquartile ranges.
+
+        References
+        ----------
+        .. [1] Shawkat Ali and Kate A. Smith-Miles. A meta-learning approach
+           to automatic kernel selection for support vector machines.
+           Neurocomputing, 70(1):173 – 186, 2006.
+        """
         return scipy.stats.iqr(N, axis=0)
 
     @classmethod
@@ -703,6 +818,17 @@ class MFEStatistical:
 
         bias : :obj:`bool`
             If False, then the calculations are corrected for statistical bias.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute kurtosis.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         kurt_arr = np.apply_along_axis(
             func1d=_summary.sum_kurtosis,
@@ -724,28 +850,91 @@ class MFEStatistical:
             is 1.4826 since it is an approximated result of MAD of a normally
             distributed data (with any mean and standard deviation of 1.0), so
             it makes this method result comparable with this sort of data.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute MAD (Median Absolute Deviation.)
+
+        References
+        ----------
+        .. [1] Shawkat Ali and Kate A. Smith. On learning algorithm
+           selection for classification. Applied Soft Computing,
+           6(2):119 – 138, 2006.
         """
         median_dev = abs(N - np.median(N, axis=0))
         return np.median(median_dev, axis=0) * factor
 
     @classmethod
     def ft_max(cls, N: np.ndarray) -> np.ndarray:
-        """Get the maximum value from each ``N`` attribute."""
+        """Get the maximum value from each ``N`` attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute maximum values.
+
+        References
+        ----------
+        .. [1] Robert Engels and Christiane Theusinger. Using a data metric for
+           preprocessing advice for data mining applications. In 13th European
+           Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
+           1998.
+        """
         return N.max(axis=0)
 
     @classmethod
     def ft_mean(cls, N: np.ndarray) -> np.ndarray:
-        """Returns the mean value of each ``N`` attribute."""
+        """Returns the mean value of each ``N`` attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute mean values.
+
+        References
+        ----------
+        .. [1] Robert Engels and Christiane Theusinger. Using a data metric for
+           preprocessing advice for data mining applications. In 13th European
+           Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
+           1998.
+        """
         return N.mean(axis=0)
 
     @classmethod
     def ft_median(cls, N: np.ndarray) -> np.ndarray:
-        """Get the median value from each ``N`` attribute."""
+        """Get the median value from each ``N`` attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute median values.
+
+        References
+        ----------
+        .. [1] Robert Engels and Christiane Theusinger. Using a data metric for
+           preprocessing advice for data mining applications. In 13th European
+           Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
+           1998.
+        """
         return np.median(N, axis=0)
 
     @classmethod
     def ft_min(cls, N: np.ndarray) -> np.ndarray:
-        """Get the minimum value from each ``N`` attribute."""
+        """Get the minimum value from each ``N`` attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute minimum values.
+
+        References
+        ----------
+        .. [1] Robert Engels and Christiane Theusinger. Using a data metric for
+           preprocessing advice for data mining applications. In 13th European
+           Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
+           1998.
+        """
         return N.min(axis=0)
 
     @classmethod
@@ -756,8 +945,11 @@ class MFEStatistical:
                        epsilon: float = 1.0e-8,
                        abs_corr_mat: t.Optional[np.ndarray] = None
                        ) -> t.Union[int, float]:
-        """The number of attribute pairs with corr. eq. to or greater than a
-        threshold.
+        """Number of highly correlated pair distinct of attributes.
+
+        A pair of attributes is considered highly correlated if the
+        absolute value of its covariance is equal or larger than a
+        given ``threshold``.
 
         Parameters
         ----------
@@ -775,6 +967,19 @@ class MFEStatistical:
         abs_corr_mat : :obj:`np.ndarray`, optional
             Absolute correlation matrix of ``N``. Argument used to exploit
             precomputations.
+
+        Returns
+        -------
+        :obj:`int` | :obj:`float`
+            If ``normalize`` is False, this method returns the number of
+            highly correlated pair of distinct attributes. Otherwise,
+            return the proportion of highly correlated attributes.
+
+        References
+        ----------
+        .. [1] Mostafa A. Salama, Aboul Ella Hassanien, and Kenneth Revett.
+           Employment of neural network and rough set in meta-learning.
+           Memetic Computing, 5(3):165 – 177, 2013.
         """
         abs_corr_vals = MFEStatistical.ft_cor(N, abs_corr_mat=abs_corr_mat)
 
@@ -785,7 +990,7 @@ class MFEStatistical:
         if normalize:
             norm_factor = 2.0 / (epsilon + num_attr * (num_attr - 1.0))
 
-        return sum(abs_corr_vals >= threshold) * norm_factor
+        return np.sum(abs_corr_vals >= threshold) * norm_factor
 
     @classmethod
     def ft_nr_norm(cls,
@@ -845,15 +1050,22 @@ class MFEStatistical:
 
         Returns
         -------
-            int
-                The number of normally distributed attributes based on the
-                ``method``. If ``max_samples`` is non-positive, :obj:`np.nan`
-                is returned instead.
+        :obj:`int`
+            The number of normally distributed attributes based on the
+            ``method``. If ``max_samples`` is non-positive, :obj:`np.nan`
+            is returned instead.
 
         Raises
         ------
-            ValueError
-                If ``method`` or ``failure`` is not a valid option.
+        ValueError
+            If ``method`` or ``failure`` is not a valid option.
+
+        References
+        ----------
+        .. [1] Christian Kopf, Charles Taylor, and Jorg Keller. Meta-Analysis:
+           From data characterisation for meta-learning to meta-regression. In
+           PKDD Workshop on Data Mining, Decision Support, Meta-Learning and
+           Inductive Logic Programming, pages 15 – 26, 2000.
 
         Notes
         -----
@@ -921,12 +1133,11 @@ class MFEStatistical:
         else:
             attr_is_normal = np.all(test_results, axis=0)
 
-        return sum(attr_is_normal)
+        return np.sum(attr_is_normal)
 
     @classmethod
     def ft_nr_outliers(cls, N: np.ndarray, whis: float = 1.5) -> int:
-        """Calculate the number of attributes which has at least one outlier
-        value.
+        """Calculate the number of attributes with at least one outlier value.
 
         An attribute has outlier if some value is outside the closed interval
         [first_quartile - WHIS * IQR, third_quartile + WHIS * IQR], where IQR
@@ -941,6 +1152,22 @@ class MFEStatistical:
             significant, thus increasing the tolerance against outliers, where
             lower values decrease non-outlier interval and, therefore, creates
             less tolerance against possible outliers.
+
+        Returns
+        -------
+        :obj:`int`
+            Number of attributes with at least one outlier.
+
+        References
+        ----------
+        .. [1] Christian Kopf and Ioannis Iglezakis. Combination of task
+           description strategies and case base properties for meta-learning.
+           In 2nd ECML/PKDD International Workshop on Integration and
+           Collaboration Aspects of Data Mining, Decision Support and
+           Meta-Learning(IDDM), pages 65 – 76, 2002.
+        .. [2] Peter J. Rousseeuw and Mia Hubert. Robust statistics for
+           outlier detection. Wiley Interdisciplinary Reviews: Data Mining
+           and Knowledge Discovery, 1(1):73 – 79, 2011.
         """
         v_min, q_1, q_3, v_max = np.percentile(N, (0, 25, 75, 100), axis=0)
 
@@ -949,11 +1176,23 @@ class MFEStatistical:
         cut_low = q_1 - whis_iqr
         cut_high = q_3 + whis_iqr
 
-        return sum(np.logical_or(cut_low > v_min, cut_high < v_max))
+        return np.sum(np.logical_or(cut_low > v_min, cut_high < v_max))
 
     @classmethod
     def ft_range(cls, N: np.ndarray) -> np.ndarray:
-        """Compute the range (max - min) of each attribute in ``N``."""
+        """Compute the range (max - min) of each attribute in ``N``.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute ranges.
+
+        References
+        ----------
+        .. [1] Shawkat Ali and Kate A. Smith-Miles. A meta-learning approach
+           to automatic kernel selection for support vector machines.
+           Neurocomputing, 70(1):173 – 186, 2006.
+        """
         return np.ptp(N, axis=0)
 
     @classmethod
@@ -964,6 +1203,18 @@ class MFEStatistical:
         ----------
         ddof : :obj:`float`
             Degrees of freedom for standard deviation.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute standard deviations.
+
+        References
+        ----------
+        .. [1] Robert Engels and Christiane Theusinger. Using a data metric for
+           preprocessing advice for data mining applications. In 13th European
+           Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
+           1998.
         """
         sd_array = N.std(axis=0, ddof=ddof)
 
@@ -1000,14 +1251,25 @@ class MFEStatistical:
             ``y`` or ``classes``. If ``classes`` is given, then this argument
             must be paired with it by index.
 
+        Returns
+        -------
+        :obj:`float`
+            Homogeneity of covariances test results.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
+
         Notes
         -----
-            For details about how this test is applied, check out `Rivolli
-            et al.`_ (pag. 32).
+        For details about how this test is applied, check out `Rivolli
+        et al.`_ (pag. 32).
 
-            .. _Rivolli et al.:
-                "Towards Reproducible Empirical Research in Meta-Learning,"
-                Rivolli et al. URL: https://arxiv.org/abs/1808.10406
+        .. _Rivolli et al.:
+            "Towards Reproducible Empirical Research in Meta-Learning,"
+            Rivolli et al. URL: https://arxiv.org/abs/1808.10406
         """
 
         def calc_sample_cov_mat(N, y, epsilon, ddof):
@@ -1035,7 +1297,7 @@ class MFEStatistical:
             gamma = 1.0 - (
                 (2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
                 (epsilon + 6.0 * (num_col + 1.0) *
-                 (num_classes - 1.0))) * (sum(1.0 / vec_weight) - 1.0 /
+                 (num_classes - 1.0))) * (np.sum(1.0 / vec_weight) - 1.0 /
                                           (epsilon + num_inst - num_classes))
             return gamma
 
@@ -1113,6 +1375,17 @@ class MFEStatistical:
 
         bias : :obj:`bool`, optional
             If False, then the calculations are corrected for statistical bias.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute skewness.
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         skew_arr = np.apply_along_axis(
             func1d=_summary.sum_skewness,
@@ -1147,8 +1420,18 @@ class MFEStatistical:
 
         epsilon : :obj:`float`, optional
             A small value to prevent division by zero.
-        """
 
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute sparsities.
+
+        References
+        ----------
+        .. [1] Mostafa A. Salama, Aboul Ella Hassanien, and Kenneth Revett.
+           Employment of neural network and rough set in meta-learning.
+           Memetic Computing, 5(3):165 – 177, 2013.
+        """
         ans = np.array([attr.size / np.unique(attr).size for attr in X.T])
 
         num_inst, _ = X.shape
@@ -1171,6 +1454,18 @@ class MFEStatistical:
             return value is the default mean calculation. If this argument is
             not in mentioned interval, then the return value is :obj:`np.nan`
             instead.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute trimmed means.
+
+        References
+        ----------
+        .. [1] Robert Engels and Christiane Theusinger. Using a data metric for
+           preprocessing advice for data mining applications. In 13th European
+           Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
+           1998.
         """
         if not 0 <= pcut < 0.5:
             return np.array([np.nan])
@@ -1185,6 +1480,18 @@ class MFEStatistical:
         ----------
         ddof : :obj:`float`
             Degrees of freedom for variance.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Attribute variances.
+
+        References
+        ----------
+        .. [1] Ciro Castiello, Giovanna Castellano, and Anna Maria Fanelli.
+           Meta-data: Characterization of input features for meta-learning.
+           In 2nd International Conference on Modeling Decisions for
+           Artificial Intelligence (MDAI), pages 457–468, 2005.
         """
         var_array = N.var(axis=0, ddof=ddof)
 
@@ -1229,6 +1536,18 @@ class MFEStatistical:
             Absolute frequencies of each distinct class in target attribute
             ``y`` or ``classes``. If ``classes`` is given, then this argument
             must be paired with it by index.
+
+        Returns
+        -------
+        :obj:`float`
+            Wilk's lambda value.
+
+        References
+        ----------
+        .. [1] Guido Lindner and Rudi Studer. AST: Support for algorithm
+           selection with a CBR approach. In European Conference on
+           Principles of Data Mining and Knowledge Discovery (PKDD),
+           pages 418 – 423, 1999.
         """
         if eig_vals is None:
             if classes is None or class_freqs is None:

@@ -1456,7 +1456,7 @@ def check_score(score: str, groups: t.Tuple[str, ...]):
     """Checks if a given score is valid.
 
     Args:
-        score (:obj: `str`): the score metrics name.
+        score (:obj:`str`): the score metrics name.
 
         groups (:obj:`Tuple` of :obj:`str`): a tuple of feature group names.
 
