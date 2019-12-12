@@ -99,7 +99,7 @@ class MFEItemset:
             C: np.ndarray,
             itemset_binary_matrix: t.List[np.ndarray] = None,
     ) -> np.ndarray:
-        """Computes the two itemset meta-feature.
+        """Compute the two itemset meta-feature.
 
         The two-item set meta-feature can be seen as the correlation
         information of each one attributes value pairs in binary
@@ -150,7 +150,7 @@ class MFEItemset:
                        C: np.ndarray,
                        itemset_binary_matrix: t.List[np.ndarray] = None
                        ) -> np.ndarray:
-        """Computes the one itemset meta-feature.
+        """Compute the one itemset meta-feature.
 
         The one itemset is the individual frequency of each attribute
         in binary format.

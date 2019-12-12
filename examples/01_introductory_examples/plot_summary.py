@@ -28,8 +28,7 @@ X = data.data
 #
 # The post processing methods are setted using the parameter summary.
 # It is possible to compute min, max, mean, median, kurtosis, standard
-# deviation, among others. Any R method, can be used, as illustrated in the
-# following examples:
+# deviation, among others. It will be illustrated in the following examples:
 
 ###############################################################################
 # Apply several statistical measures as post processing
