@@ -96,7 +96,7 @@ class MFEComplexity:
             sub_dic = MFEGeneral.precompute_general_class(y)
             precomp_vals.update(sub_dic)
 
-        classes = kwargs.get("classes", precomp_vals["classes"])
+        classes = kwargs.get("classes", precomp_vals.get("classes"))
 
         if (y is not None
                 and ("ovo_comb" not in kwargs or "cls_inds" not in kwargs)):
