@@ -2,6 +2,7 @@
 
 import typing as t
 import itertools
+
 import numpy as np
 from scipy.spatial import distance
 from scipy.sparse.csgraph import minimum_spanning_tree
@@ -12,6 +13,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.decomposition import PCA
+
 from pymfe.general import MFEGeneral
 
 

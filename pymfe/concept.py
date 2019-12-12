@@ -1,6 +1,7 @@
 """Module dedicated to extraction of Concept Metafeatures."""
 
 import typing as t
+
 import numpy as np
 from scipy.spatial import distance
 from sklearn.preprocessing import MinMaxScaler
