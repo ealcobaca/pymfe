@@ -22,5 +22,10 @@ MFE.metafeature_description(groups=["general", "statistical"])
 MFE.metafeature_description(sort_by_group=True, sort_by_mtf=True)
 
 ###############################################################################
+# You can include the references.
+MFE.metafeature_description(sort_by_group=True, sort_by_mtf=True,
+                            include_references=True)
+
+###############################################################################
 # You also can get the table instead of printing it.
 MFE.metafeature_description(print_table=False)
