@@ -96,7 +96,7 @@ class MFEComplexity:
             sub_dic = MFEGeneral.precompute_general_class(y)
             precomp_vals.update(sub_dic)
 
-        classes = precomp_vals["classes"]
+        classes = kwargs.get("classes", precomp_vals["classes"])
 
         if (y is not None
                 and ("ovo_comb" not in kwargs or "cls_inds" not in kwargs)):
@@ -112,6 +112,7 @@ class MFEComplexity:
     def precompute_pca_tx(cls,
                           N: np.ndarray,
                           tx_n_components: float = 0.95,
+                          random_state: t.Optional[int] = None,
                           **kwargs) -> t.Dict[str, int]:
         """Precompute PCA to support dimensionality measures.
 
@@ -125,6 +126,13 @@ class MFEComplexity:
             explained by the kept principal components after the PCA analysis.
             Check the ``sklearn.decomposition.PCA`` documentation for more
             detailed information about this argument.
+
+        random_state : int, optional
+            If the fitted data is huge and the number of principal components
+            to be kept is low, then the PCA analysis is done using a randomized
+            strategy for efficiency. This random seed keeps the results
+            replicable. Check ``sklearn.decomposition.PCA`` documentation for
+            more information.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -143,7 +151,7 @@ class MFEComplexity:
         precomp_vals = {}
 
         if N is not None and "num_attr_pca" not in kwargs:
-            pca = PCA(n_components=tx_n_components)
+            pca = PCA(n_components=tx_n_components, random_state=random_state)
             pca.fit(N)
 
             num_attr_pca = pca.explained_variance_ratio_.shape[0]
@@ -486,8 +494,8 @@ class MFEComplexity:
         N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
 
         # Compute the distance matrix and the minimum spanning tree.
-        dist_m = np.triu(distance.cdist(N, N, metric=metric), k=1)
-        mst = minimum_spanning_tree(dist_m)
+        dist_mat = np.triu(distance.cdist(N, N, metric=metric), k=1)
+        mst = minimum_spanning_tree(dist_mat, overwrite=True)
         node_id_i, node_id_j = np.nonzero(mst)
 
         # Which edges have nodes with different class
@@ -541,8 +549,8 @@ class MFEComplexity:
             more information.
 
         random_state : int, optional
-            If given, set the random seed before computing any pseudo-random
-            value.
+            If given, set the random seed before computing the randomized
+            data interpolation.
 
         Returns
         -------
@@ -705,6 +713,7 @@ class MFEComplexity:
             cls,
             N: np.ndarray,
             num_attr_pca: t.Optional[int] = None,
+            random_state: t.Optional[int] = None,
     ) -> float:
         """Computes the average number of PCA dimensions per points measure.
 
@@ -716,6 +725,13 @@ class MFEComplexity:
         num_attr_pca : int, optional
             Number of features after PCA where a fraction of at least 0.95
             of the data variance is explained by the selected components.
+
+        random_state : int, optional
+            If the fitted data is huge and the number of principal components
+            to be kept is low, then the PCA analysis is done using a randomized
+            strategy for efficiency. This random seed keeps the results
+            replicable. Check ``sklearn.decomposition.PCA`` documentation for
+            more information.
 
         Returns
         -------
@@ -730,7 +746,8 @@ class MFEComplexity:
            Page 15.
         """
         if num_attr_pca is None:
-            sub_dic = MFEComplexity.precompute_pca_tx(N=N)
+            sub_dic = MFEComplexity.precompute_pca_tx(
+                N=N, random_state=random_state)
             num_attr_pca = sub_dic["num_attr_pca"]
 
         num_inst = N.shape[0]
@@ -738,8 +755,10 @@ class MFEComplexity:
         return num_attr_pca / num_inst
 
     @classmethod
-    def ft_t4(cls, N: np.ndarray,
-              num_attr_pca: t.Optional[int] = None) -> float:
+    def ft_t4(cls,
+              N: np.ndarray,
+              num_attr_pca: t.Optional[int] = None,
+              random_state: t.Optional[int] = None) -> float:
         """Computes the ratio of the PCA dimension to the original dimension.
 
         Parameters
@@ -750,6 +769,13 @@ class MFEComplexity:
         num_attr_pca : int, optional
             Number of features after PCA where a fraction of at least 0.95
             of the data variance is explained by the selected components.
+
+        random_state : int, optional
+            If the fitted data is huge and the number of principal components
+            to be kept is low, then the PCA analysis is done using a randomized
+            strategy for efficiency. This random seed keeps the results
+            replicable. Check ``sklearn.decomposition.PCA`` documentation for
+            more information.
 
         Returns
         -------
@@ -765,7 +791,8 @@ class MFEComplexity:
            Page 15.
         """
         if num_attr_pca is None:
-            sub_dic = MFEComplexity.precompute_pca_tx(N=N)
+            sub_dic = MFEComplexity.precompute_pca_tx(
+                N=N, random_state=random_state)
             num_attr_pca = sub_dic["num_attr_pca"]
 
         num_attr = N.shape[1]
