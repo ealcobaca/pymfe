@@ -1242,13 +1242,18 @@ class MFE:
         return tuple(filtered_res)
 
     @staticmethod
-    def _parse_description(docstring: str) -> t.Tuple[str, str]:
+    def _parse_description(docstring: str,
+                           include_references: bool = False
+                           ) -> t.Tuple[str, str]:
         """Parse the docstring to get initial description and reference.
 
         Parameters
         ----------
         docstring : str
             An numpy docstring as ``str``.
+
+        include_references : bool
+            If True include a column with article reference.
 
         Returns
         -------
@@ -1266,14 +1271,15 @@ class MFE:
             initial_description = " ".join(split[0].split())
 
         # get reference description
-        aux = docstring.split("References\n        ----------\n")
-        if len(aux) >= 2:
-            split = aux[1].split(f".. [")
-            if len(split) >= 2:
-                del split[0]
-                for spl in split:
-                    reference_description += "[" + " ".join(
-                        spl.split()) + "\n"
+        if include_references:
+            aux = docstring.split("References\n        ----------\n")
+            if len(aux) >= 2:
+                split = aux[1].split(f".. [")
+                if len(split) >= 2:
+                    del split[0]
+                    for spl in split:
+                        reference_description += "[" + " ".join(
+                            spl.split()) + "\n"
 
         return (initial_description, reference_description)
 
@@ -1283,7 +1289,8 @@ class MFE:
             groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
             sort_by_group: bool = False,
             sort_by_mtf: bool = False,
-            print_table: bool = True
+            print_table: bool = True,
+            include_references: bool = False
     ) -> t.Optional[t.Tuple[t.List[t.List[str]], str]]:
         """Print a table with groups, metafeatures and description.
 
@@ -1307,6 +1314,9 @@ class MFE:
 
         print_table : bool
             If True sort the table by metafeature name.
+
+        include_references : bool
+            If True include a column with article reference.
 
         Returns
         -------
@@ -1336,7 +1346,10 @@ class MFE:
             raise TypeError("The parameter print_table should be bool.")
 
         mtf_names = []  # type: t.List[str]
-        mtf_desc = [["Group", "Meta-feature name", "Description", "Reference"]]
+        mtf_desc = [["Group", "Meta-feature name", "Description"]]
+        if include_references:
+            mtf_desc[0].append("Reference")
+
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
@@ -1346,10 +1359,15 @@ class MFE:
                     prefix=_internal.MTF_PREFIX,
                     only_name=False,
                     prefix_removal=True))
+
             for name, method in mtf_names:
                 ini_desc, ref_desc = MFE._parse_description(
-                    str(method.__doc__))
-                mtf_desc.append([group, name, ini_desc, ref_desc])
+                    str(method.__doc__), include_references)
+                mtf_desc_line = [group, name, ini_desc]
+                mtf_desc.append(mtf_desc_line)
+
+                if include_references:
+                    mtf_desc_line.append(ref_desc)
 
         if sort_by_mtf:
             mtf_desc.sort(key=lambda i: i[1])
@@ -1357,9 +1375,7 @@ class MFE:
         if sort_by_group:
             mtf_desc.sort(key=lambda i: i[0])
 
-        tb = Texttable()
-        tb.set_cols_dtype(['t', 't', 't', 't'])
-        draw = tb.add_rows(mtf_desc).draw()
+        draw = Texttable().add_rows(mtf_desc).draw()
         if print_table:
             print(draw)
             return None
