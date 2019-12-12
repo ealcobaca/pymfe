@@ -35,7 +35,8 @@ def meta_features_description():
     """Automatically create the meta-feature description file."""
     data, _ = MFE.metafeature_description(sort_by_group=True,
                                           sort_by_mtf=True,
-                                          print_table=False)
+                                          print_table=False,
+                                          include_references=True)
 
     if not os.path.exists(AUTO_PAGES_PATH):
         os.makedirs(AUTO_PAGES_PATH)
