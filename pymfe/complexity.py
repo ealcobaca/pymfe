@@ -212,6 +212,11 @@ class MFEComplexity:
         """Compute the F3 complexit measure given minmax and maxmin."""
         # True if the example is in the overlapping region
         # Should be > and < instead of >= and <= ?
+        # TODO: the MFE (R version) implements the non-overlapping region
+        # as (N < maxmin || N > minmax) which, consequently, the contra-
+        # positive version implies that the overlapping region is
+        # (N >= maxmin && N <= minmax), just like is implemented here.
+        # The question is: is the MFE (R version) behaviour correct?
         feat_overlapped_region = np.logical_and(N >= maxmin, N <= minmax)
 
         feat_overlap_num = np.sum(feat_overlapped_region, axis=0)
@@ -603,6 +608,10 @@ class MFEComplexity:
 
         y_pred = knn.predict(N_test)
 
+        # TODO: The MFE (R version) returns an boolean array marking all
+        # misclassifications, in order to be summarized by the framework.
+        # Should we adopt the same strategy?
+        # return np.not_equal(y_test, y_pred)
         error = 1 - accuracy_score(y_test, y_pred)
 
         return error
@@ -644,6 +653,8 @@ class MFEComplexity:
 
         pc_i = class_freqs / num_inst
         c1 = -np.sum(pc_i * np.log(pc_i)) / np.log(num_class)
+        # TODO: This feature seems to be a normalized version of the
+        # clustering-group feature 'ft_nre'. Should we keep both?
 
         return c1
 
@@ -707,6 +718,12 @@ class MFEComplexity:
            A survey on measuring classification complexity (V2). (2019)
            Page 15.
         """
+        # TODO: Currently, categorical variables are ignored. Should we adjust
+        # this?
+        # TODO: If the categorical attributes are considered, this feature is
+        # just the 'ft_attr_to_inst' from the General group. Should we
+        # adjust  keep both?
+
         num_inst, num_attr = N.shape
         return num_attr / num_inst
 
