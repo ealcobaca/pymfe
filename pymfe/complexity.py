@@ -444,7 +444,7 @@ class MFEComplexity:
             cls_intersec = np.logical_or(cls_inds[idx1], cls_inds[idx2])
 
             N_subset = N[cls_intersec, :]
-            y_subset = cls_inds[idx1][cls_intersec]
+            y_subset = cls_inds[idx1, cls_intersec]
 
             pip.fit(N_subset, y_subset)
             y_pred = pip.predict(N_subset)
@@ -504,7 +504,8 @@ class MFEComplexity:
         # Number of vertices connected with different classes
         borderline_inst_num = np.unique(
             np.concatenate([
-                node_id_i[which_have_diff_cls], node_id_j[which_have_diff_cls]
+                node_id_i[which_have_diff_cls],
+                node_id_j[which_have_diff_cls],
             ])).size
 
         inst_num = N.shape[0]
@@ -580,18 +581,20 @@ class MFEComplexity:
         ind_cur = 0
 
         for inds_cur_cls in cls_inds:
-            N_cur_class = N[inds_cur_cls, :]
-            subset_size = N_cur_class.shape[0]
+            N_cur_cls = N[inds_cur_cls, :]
+            subset_size = N_cur_cls.shape[0]
 
             # Currently it is allowed to a instance 'interpolate with itself',
             # which holds the instance itself as result.
-            A = N_cur_class[np.random.choice(subset_size, subset_size), :]
-            B = N_cur_class[np.random.choice(subset_size, subset_size), :]
+            sample_a = N_cur_cls[np.random.choice(subset_size, subset_size), :]
+            sample_b = N_cur_cls[np.random.choice(subset_size, subset_size), :]
 
-            rand_noise = np.random.ranf(N_cur_class.shape)
+            rand_delta = np.random.ranf(N_cur_cls.shape)
+
+            N_subset_interp = sample_a + (sample_b - sample_a) * rand_delta
 
             ind_next = ind_cur + subset_size
-            N_test[ind_cur:ind_next, :] = A + ((B - A) * rand_noise)
+            N_test[ind_cur:ind_next, :] = N_subset_interp
             y_test[ind_cur:ind_next] = y[inds_cur_cls]
             ind_cur = ind_next
 
@@ -642,7 +645,6 @@ class MFEComplexity:
         pc_i = class_freqs / num_inst
         c1 = -np.sum(pc_i * np.log(pc_i)) / np.log(num_class)
 
-        # Shuldn't C1 be calculated as '1 - C1', to match with C2?
         return c1
 
     @classmethod
@@ -677,10 +679,10 @@ class MFEComplexity:
         num_inst = y.size
         num_class = class_freqs.size
 
-        IR = np.sum(class_freqs / (num_inst - class_freqs))
-        IR *= (num_class - 1) / num_class
+        aux = (num_class - 1) / num_class
+        imbalance_ratio = aux * np.sum(class_freqs / (num_inst - class_freqs))
 
-        c2 = 1 - (1 / IR)
+        c2 = 1 - 1 / imbalance_ratio
 
         return c2
 
