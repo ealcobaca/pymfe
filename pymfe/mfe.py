@@ -1295,7 +1295,7 @@ class MFE:
             sequence of metafeature group names. It can be also None, which
             in that case all available metafeature names will be returned.
 
-        sort_by_gropu: bool
+        sort_by_group: bool
             Sort table by meta-feature group name.
 
         sort_by_mtf: bool
@@ -1325,6 +1325,15 @@ class MFE:
         groups = MFE._filter_groups(groups)
 
         deps = _internal.check_group_dependencies(groups)
+
+        if not isinstance(sort_by_group, bool):
+            raise TypeError("The parameter sort_by_group should be bool.")
+
+        if not isinstance(sort_by_mtf, bool):
+            raise TypeError("The parameter sort_by_mtf should be bool.")
+
+        if not isinstance(print_table, bool):
+            raise TypeError("The parameter print_table should be bool.")
 
         mtf_names = []  # type: t.List[str]
         mtf_desc = [["Group", "Meta-feature name", "Description", "Reference"]]
