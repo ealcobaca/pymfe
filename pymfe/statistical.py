@@ -105,7 +105,7 @@ class MFEStatistical:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        ddof : :obj:`int`, optional
+        ddof : int, optional
             Degrees of freedom of covariance matrix calculated during LDA.
 
         kwargs:
@@ -178,7 +178,7 @@ class MFEStatistical:
         N : :obj:`np.ndarray`, optional
             Numerical attributes from fitted data.
 
-        ddof : :obj:`int`, optional
+        ddof : int, optional
             Degrees of freedom of covariance matrix.
 
         kwargs:
@@ -234,7 +234,7 @@ class MFEStatistical:
 
         Parameters
         ----------
-        ddof : :obj:`int`, optional
+        ddof : int, optional
             Degrees of freedom of covariance matrix calculated during LDA.
 
         classes : :obj:`np.ndarray`, optional
@@ -324,23 +324,23 @@ class MFEStatistical:
         eig_vals : :obj:`np.ndarray`
             Eigenvalues to be filtered.
 
-        num_attr :  :obj:`int`
+        num_attr : int
             Number of attributes (columns) in data.
 
-        num_classes : :obj:`int`
+        num_classes : int
             Number of distinct classes in fitted data.
 
         eig_vecs : :obj:`np.ndarray`, optional
             Eigenvectors to filter alongside eigenvalues.
 
-        filter_imaginary : :obj:`bool`, optional
+        filter_imaginary : bool, optional
             If True, remove imaginary valued eigenvalues and its correspondent
             eigenvectors.
 
-        filter_less_relevant : :obj:`bool`, optional
+        filter_less_relevant : bool, optional
             If True, remove eigenvalues smaller than ``epsilon``.
 
-        epsilon : :obj:`float`, optional
+        epsilon : float, optional
             A tiny value used to determine ``less relevant`` eigenvalues.
         """
         max_valid_eig = min(num_attr, num_classes)
@@ -427,17 +427,28 @@ class MFEStatistical:
 
         Parameters
         ----------
-        ddof : :obj:`int`, optional
-            Degrees of freedom of covariance matrix calculated during LDA.
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
-        epsilon : :obj:`float`, optional
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        epsilon : float, optional
             A tiny value to prevent division by zero.
+
+        ddof : int, optional
+            Degrees of freedom of covariance matrix calculated during LDA.
 
         eig_vals : :obj:`np.ndarray`, optional
             Eigenvalues of LDA Matrix ``S``, defined above.
 
         classes : :obj:`np.ndarray`, optional
             Distinct classes of ``y``.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            Absolute frequencies of each distinct class in target attribute
+            ``y`` or ``classes``. If ``classes`` is given, then this argument
+            must be paired with it by index.
 
         Returns
         -------
@@ -473,7 +484,7 @@ class MFEStatistical:
                    norm_ord: t.Union[int, float] = 2,
                    classes: t.Optional[np.ndarray] = None,
                    class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Computes the distance between minority and majority classes center
+        """Compute the distance between minority and majority classes center
         of mass.
 
         The center of mass of a class is the average value of each attribute
@@ -484,6 +495,12 @@ class MFEStatistical:
 
         Parameters
         ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
         norm_ord : :obj:`numeric`
             Minkowski Distance parameter. Minkowski Distance has the following
             popular cases for this argument value
@@ -496,6 +513,14 @@ class MFEStatistical:
             |2.0        | Euclidean                 |
             |-> +inf    | Max value (infinite norm) |
             +-----------+---------------------------+
+
+        classes : :obj:`np.ndarray`, optional
+            Distinct classes of ``y``.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            Absolute frequencies of each distinct class in target attribute
+            ``y`` or ``classes``. If ``classes`` is given, then this argument
+            must be paired with it by index.
 
         Returns
         -------
@@ -535,7 +560,17 @@ class MFEStatistical:
     @classmethod
     def ft_cor(cls, N: np.ndarray,
                abs_corr_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """The absolute value of the correlation of distinct column pairs.
+        """Compute the absolute value of the correlation of distinct dataset
+        column pairs.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        abs_corr_mat : :obj:`np.ndarray`, optional
+            Absolute correlation matrix of ``N``. Argument used to exploit
+            precomputations.
 
         Returns
         -------
@@ -572,10 +607,14 @@ class MFEStatistical:
                N: np.ndarray,
                ddof: int = 1,
                cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """The absolute value of the covariance of distinct attribute pairs.
+        """Compute the absolute value of the covariance of distinct dataset
+        attribute pairs.
 
         Parameters
         ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
         ddof : :obj:`int`, optional
             Degrees of freedom for covariance matrix.
 
@@ -619,11 +658,34 @@ class MFEStatistical:
             classes: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> t.Union[int, float]:
-        """Compute the number of canonical corr. between each attr. and class.
+        """Compute the number of canonical correlation between each attribute
+        and class.
 
         This method return value is effectively the size of the return value
         of ``ft_can_cor`` method. Check its documentation for more in-depth
         details.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        epsilon : float, optional
+            A tiny value to prevent division by zero.
+
+        eig_vals : :obj:`np.ndarray`, optional
+            Eigenvalues of LDA Matrix ``S``, defined above.
+
+        classes : :obj:`np.ndarray`, optional
+            Distinct classes of ``y``.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            Absolute frequencies of each distinct class in target attribute
+            ``y`` or ``classes``. If ``classes`` is given, then this argument
+            must be paired with it by index.
 
         Returns
         -------
@@ -657,10 +719,13 @@ class MFEStatistical:
                        N: np.ndarray,
                        ddof: int = 1,
                        cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """Returns the eigenvalues of ``N`` covariance matrix.
+        """Compute the eigenvalues of covariance matrix from dataset.
 
         Parameters
         ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
         ddof : :obj:`int`, optional
             Degrees of freedom for covariance matrix.
 
@@ -695,10 +760,13 @@ class MFEStatistical:
                   N: np.ndarray,
                   allow_zeros: bool = False,
                   epsilon: float = 1.0e-10) -> np.ndarray:
-        """Computes the geometric mean of each attribute in ``N``.
+        """Compute the geometric mean of each attribute.
 
         Parameters
         ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
         allow_zeros : :obj:`bool`
             If True, then the geometric mean of all attributes with zero values
             is set to zero. Otherwise, is set to :obj:`np.nan` these values.
@@ -743,10 +811,13 @@ class MFEStatistical:
 
     @classmethod
     def ft_h_mean(cls, N: np.ndarray, epsilon: float = 1.0e-8) -> np.ndarray:
-        """The harmonic mean of each attribute in ``N``.
+        """Compute the harmonic mean of each attribute.
 
         Parameters
         ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
         epsilon : :obj:`float`, optional
             A tiny value to prevent division by zero.
 
@@ -769,7 +840,12 @@ class MFEStatistical:
 
     @classmethod
     def ft_iq_range(cls, N: np.ndarray) -> np.ndarray:
-        """Compute the interquartile range (IQR) of each attribute in ``N``.
+        """Compute the interquartile range (IQR) of each attribute.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
         Returns
         -------
@@ -787,11 +863,14 @@ class MFEStatistical:
     @classmethod
     def ft_kurtosis(cls, N: np.ndarray, method: int = 3,
                     bias: bool = True) -> np.ndarray:
-        """Compute the kurtosis of each attribute in ``N``.
+        """Compute the kurtosis of each attribute.
 
         Parameters
         ----------
-        method : :obj:`int`, optional
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        method : int, optional
             Defines the strategy used for estimate data kurtosis. Used for
             total compatibility with R package ``e1071``. The options must be
             one of the following:
@@ -816,7 +895,7 @@ class MFEStatistical:
             Note that if the selected method is unable to be calculated due
             to division by zero, then the first method is used instead.
 
-        bias : :obj:`bool`
+        bias : bool
             If False, then the calculations are corrected for statistical bias.
 
         Returns
@@ -841,10 +920,13 @@ class MFEStatistical:
 
     @classmethod
     def ft_mad(cls, N: np.ndarray, factor: float = 1.4826) -> np.ndarray:
-        """Computes Median Absolute Deviation (MAD) adjusted by a ``factor``.
+        """Compute the Median Absolute Deviation (MAD) adjusted by a factor.
 
         Parameters
         ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
         factor : :obj:`float`
             Multiplication factor for output correction. The default ``factor``
             is 1.4826 since it is an approximated result of MAD of a normally
@@ -867,7 +949,12 @@ class MFEStatistical:
 
     @classmethod
     def ft_max(cls, N: np.ndarray) -> np.ndarray:
-        """Get the maximum value from each ``N`` attribute.
+        """Compute the maximum value from each attribute.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
         Returns
         -------
@@ -885,7 +972,12 @@ class MFEStatistical:
 
     @classmethod
     def ft_mean(cls, N: np.ndarray) -> np.ndarray:
-        """Returns the mean value of each ``N`` attribute.
+        """Compute the mean value of each attribute.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
         Returns
         -------
@@ -903,7 +995,12 @@ class MFEStatistical:
 
     @classmethod
     def ft_median(cls, N: np.ndarray) -> np.ndarray:
-        """Get the median value from each ``N`` attribute.
+        """Compute the median value from each attribute.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
         Returns
         -------
@@ -921,7 +1018,12 @@ class MFEStatistical:
 
     @classmethod
     def ft_min(cls, N: np.ndarray) -> np.ndarray:
-        """Get the minimum value from each ``N`` attribute.
+        """Compute the minimum value from each attribute.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
         Returns
         -------
@@ -945,7 +1047,7 @@ class MFEStatistical:
                        epsilon: float = 1.0e-8,
                        abs_corr_mat: t.Optional[np.ndarray] = None
                        ) -> t.Union[int, float]:
-        """Number of highly correlated pair distinct of attributes.
+        """Compute the number of distinct highly correlated pair of attributes.
 
         A pair of attributes is considered highly correlated if the
         absolute value of its covariance is equal or larger than a
@@ -953,15 +1055,18 @@ class MFEStatistical:
 
         Parameters
         ----------
-        threshold : :obj:`float`, optional
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        threshold : float, optional
             A value of the threshold, where correlation is assumed to be strong
             if its absolute value is equal or greater than it.
 
-        normalize : :obj:`bool`, optional
+        normalize : bool, optional
             If True, the result is normalized by a factor of 2/(d*(d-1)), where
             ``d`` is number of attributes (columns) in ``N``.
 
-        epsilon : :obj:`float`, optional
+        epsilon : float, optional
             A tiny value to prevent division by zero.
 
         abs_corr_mat : :obj:`np.ndarray`, optional
@@ -999,12 +1104,15 @@ class MFEStatistical:
                    threshold: float = 0.05,
                    failure: str = "soft",
                    max_samples: int = 5000) -> t.Union[float, int]:
-        """The number of attributes normally distributed based in some
-        ``method``.
+        """Compute the number of attributes normally distributed based in a
+        given method.
 
         Parameters
         ----------
-        method : :obj:`str`, optional
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        method : str, optional
             Select the normality test to be executed. This argument must assume
             one of the options shown below:
 
@@ -1026,11 +1134,11 @@ class MFEStatistical:
               normaly distributed all test results are taken into account with
               equal weight. Check ``failure`` argument for more information.
 
-        threshold : :obj:`float`, optional
+        threshold : float, optional
             Level of significance used to reject the null hypothesis of
             normality tests.
 
-        failure : :obj:`str`, optional
+        failure : str, optional
             Used only if ``method`` argument value is ``all``. This argument
             must assumed one value between ``soft`` or ``hard``. If ``soft``,
             then if a single test can`t have its null hypothesis
@@ -1040,7 +1148,7 @@ class MFEStatistical:
             of the null hypothesis of every single normality test to consider
             the attribute normally distributed.
 
-        max_samples : :obj:`int`, optional
+        max_samples : int, optional
             Max samples used while performing the normality tests.
             Shapiro-Wilks test p-value may not be accurate when sample size is
             higher than 5000. Note that the instances are NOT shuffled before
@@ -1060,18 +1168,18 @@ class MFEStatistical:
         ValueError
             If ``method`` or ``failure`` is not a valid option.
 
+        Notes
+        -----
+            .. _shapiro: :obj:`scipy.stats.shapiro` documentation.
+            .. _normaltest: :obj:`scipy.stats.normaltest` documentation.
+            .. _anderson: :obj:`scipy.stats.anderson` documentation.
+
         References
         ----------
         .. [1] Christian Kopf, Charles Taylor, and Jorg Keller. Meta-Analysis:
            From data characterisation for meta-learning to meta-regression. In
            PKDD Workshop on Data Mining, Decision Support, Meta-Learning and
            Inductive Logic Programming, pages 15 – 26, 2000.
-
-        Notes
-        -----
-            .. _shapiro: :obj:`scipy.stats.shapiro` documentation.
-            .. _normaltest: :obj:`scipy.stats.normaltest` documentation.
-            .. _anderson: :obj:`scipy.stats.anderson` documentation.
         """
         accepted_tests = (
             "shapiro-wilk",
@@ -1137,7 +1245,7 @@ class MFEStatistical:
 
     @classmethod
     def ft_nr_outliers(cls, N: np.ndarray, whis: float = 1.5) -> int:
-        """Calculate the number of attributes with at least one outlier value.
+        """Compute the number of attributes with at least one outlier value.
 
         An attribute has outlier if some value is outside the closed interval
         [first_quartile - WHIS * IQR, third_quartile + WHIS * IQR], where IQR
@@ -1146,7 +1254,10 @@ class MFEStatistical:
 
         Parameters
         ----------
-        whis : :obj:`float`
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        whis : float
             A factor to multiply IQR and set up non-outlier interval
             (as stated above). Higher values make the interval more
             significant, thus increasing the tolerance against outliers, where
@@ -1180,7 +1291,12 @@ class MFEStatistical:
 
     @classmethod
     def ft_range(cls, N: np.ndarray) -> np.ndarray:
-        """Compute the range (max - min) of each attribute in ``N``.
+        """Compute the range (max - min) of each attribute.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
 
         Returns
         -------
@@ -1197,11 +1313,14 @@ class MFEStatistical:
 
     @classmethod
     def ft_sd(cls, N: np.ndarray, ddof: int = 1) -> np.ndarray:
-        """Compute the standard deviation of each attribute in ``N``.
+        """Compute the standard deviation of each attribute.
 
         Parameters
         ----------
-        ddof : :obj:`float`
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        ddof : float
             Degrees of freedom for standard deviation.
 
         Returns
@@ -1231,14 +1350,20 @@ class MFEStatistical:
                     ddof: int = 1,
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Perform a statistical test for homogeneity of covariances.
+        """Compute a statistical test for homogeneity of covariances.
 
         Parameters
         ----------
-        epsilon : :obj:`float`, optional
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        epsilon : float, optional
             A tiny value to prevent division by zero.
 
-        ddof : :obj:`int`, optional
+        ddof : int, optional
             Degrees of freedom for covariance matrix, calculated during this
             test.
 
@@ -1256,12 +1381,6 @@ class MFEStatistical:
         :obj:`float`
             Homogeneity of covariances test results.
 
-        References
-        ----------
-        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
-           John Campbell. Machine Learning, Neural and Statistical
-           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
-
         Notes
         -----
         For details about how this test is applied, check out `Rivolli
@@ -1270,6 +1389,13 @@ class MFEStatistical:
         .. _Rivolli et al.:
             "Towards Reproducible Empirical Research in Meta-Learning,"
             Rivolli et al. URL: https://arxiv.org/abs/1808.10406
+
+        References
+        ----------
+        .. [1] Donald Michie, David J. Spiegelhalter, Charles C. Taylor, and
+           John Campbell. Machine Learning, Neural and Statistical
+           Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
+
         """
 
         def calc_sample_cov_mat(N, y, epsilon, ddof):
@@ -1346,10 +1472,13 @@ class MFEStatistical:
     @classmethod
     def ft_skewness(cls, N: np.ndarray, method: int = 3,
                     bias: bool = True) -> np.ndarray:
-        """Compute the skewness for each attribute in ``N``.
+        """Compute the skewness for each attribute.
 
         Parameters
         ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
         method : :obj:`int`, optional
             Defines the strategy used for estimate data skewness. This argument
             is used fo compatibility with R package ``e1071``. The options must
@@ -1373,7 +1502,7 @@ class MFEStatistical:
             Note that if the selected method is unable to be calculated due to
             division by zero, then the first method will be used instead.
 
-        bias : :obj:`bool`, optional
+        bias : bool, optional
             If False, then the calculations are corrected for statistical bias.
 
         Returns
@@ -1413,12 +1542,15 @@ class MFEStatistical:
 
         Parameters
         ----------
-        normalize : :obj:`bool`, optional
+        X : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        normalize : bool, optional
             If True, then the output will be S(v) as shown above. Otherwise,
             the output is not be multiplied by the ``(1.0 / (n - 1.0))`` factor
             (i.e. new output is defined as S'(v) = ((n / phi(v)) - 1.0)).
 
-        epsilon : :obj:`float`, optional
+        epsilon : float, optional
             A small value to prevent division by zero.
 
         Returns
@@ -1444,11 +1576,14 @@ class MFEStatistical:
 
     @classmethod
     def ft_t_mean(cls, N: np.ndarray, pcut: float = 0.2) -> np.ndarray:
-        """Compute the trimmed mean of each attribute in ``N``.
+        """Compute the trimmed mean of each attribute.
 
         Parameters
         ----------
-        pcut : :obj:`float`
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        pcut : float
             Percentage of cut from both the ``lower`` and ``higher`` values.
             This value should be in interval [0.0, 0.5), where if 0.0 the
             return value is the default mean calculation. If this argument is
@@ -1474,11 +1609,14 @@ class MFEStatistical:
 
     @classmethod
     def ft_var(cls, N: np.ndarray, ddof: int = 1) -> np.ndarray:
-        """Compute the variance of each attribute in ``N``.
+        """Compute the variance of each attribute.
 
         Parameters
         ----------
-        ddof : :obj:`float`
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        ddof : float
             Degrees of freedom for variance.
 
         Returns
@@ -1521,7 +1659,13 @@ class MFEStatistical:
 
         Parameters
         ----------
-        ddof : :obj:`int`, optional)
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        ddof : int, optional
             Degrees of freedom of covariance matrix calculated during LDA.
 
         eig_vals : :obj:`np.ndarray`, optional

@@ -1,3 +1,5 @@
+.. _sphx_api:
+
 #################
 API Documentation
 #################
@@ -105,6 +107,23 @@ This is the full API documentation of the `pymfe` toolbox.
    landmarking.MFELandmarking
 
 
+.. _relative_ref:
+
+:mod:`pymfe.relative`: Relative Landmarking Meta-features
+=========================================================
+
+.. automodule:: pymfe.relative
+   :no-members:
+   :no-inherited-members:
+
+.. currentmodule:: pymfe
+
+.. autosummary::
+   :toctree: generated/
+
+   relative.MFERelativeLandmarking
+
+
 .. _clustering_ref:
 
 :mod:`pymfe.clustering`: Clustering Meta-features
@@ -122,6 +141,23 @@ This is the full API documentation of the `pymfe` toolbox.
    clustering.MFEClustering
 
 
+.. _concept_ref:
+
+:mod:`pymfe.concept`: Concept Meta-features
+===================================================
+
+.. automodule:: pymfe.concept
+   :no-members:
+   :no-inherited-members:
+
+.. currentmodule:: pymfe
+
+.. autosummary::
+   :toctree: generated/
+
+   concept.MFEConcept
+
+   
 .. _itemset_ref:
 
 :mod:`pymfe.itemset`: Itemset Meta-features
@@ -139,12 +175,12 @@ This is the full API documentation of the `pymfe` toolbox.
    itemset.MFEItemset
 
 
-.. _concept_ref:
+.. _complexity_ref:
 
-:mod:`pymfe.concept`: Concept Meta-features
-===================================================
+:mod:`pymfe.complexity`: Complexity Meta-features
+=================================================
 
-.. automodule:: pymfe.concept
+.. automodule:: pymfe.complexity
    :no-members:
    :no-inherited-members:
 
@@ -153,4 +189,4 @@ This is the full API documentation of the `pymfe` toolbox.
 .. autosummary::
    :toctree: generated/
 
-   concept.MFEConcept
+   complexity.MFEComplexity

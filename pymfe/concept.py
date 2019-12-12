@@ -101,7 +101,7 @@ class MFEConcept:
                       conceptvar_alpha: float = 2.0,
                       concept_dist_metric: str = "euclidean",
                       concept_minimum: float = 10e-10) -> np.ndarray:
-        """Computes the concept variation that estimates the variability of
+        """Compute the concept variation that estimates the variability of
         class labels among examples.
 
         Parameters
@@ -170,7 +170,7 @@ class MFEConcept:
                    wg_dist_alpha: float = 2.0,
                    concept_dist_metric: str = "euclidean",
                    concept_minimum: float = 10e-10) -> np.ndarray:
-        """Computes the weighted distance, that captures how dense or sparse
+        """Compute the weighted distance, that captures how dense or sparse
         is the example distribution.
 
         Parameters
@@ -233,7 +233,7 @@ class MFEConcept:
             impconceptvar_alpha: float = 1.0,
             concept_dist_metric: str = "euclidean",
     ) -> np.ndarray:
-        """Computes the improved concept variation that estimates the
+        """Compute the improved concept variation that estimates the
         variability of class labels among examples.
 
         Parameters
@@ -296,7 +296,7 @@ class MFEConcept:
             cohesiveness_alpha: float = 1.0,
             concept_dist_metric: str = "euclidean",
     ) -> np.ndarray:
-        """Computes the improved version of the weighted distance, that
+        """Compute the improved version of the weighted distance, that
         captures how dense or sparse is the example distribution.
 
         Parameters

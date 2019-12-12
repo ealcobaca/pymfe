@@ -86,7 +86,7 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'pymfe-docs'
@@ -175,3 +175,8 @@ linkcode_resolve = make_linkcode_resolve('pymfe',
                                          'pymfe/blob/{revision}/'
                                          '{package}/{path}#L{lineno}')
 # print(linkcode_resolve('py', {'module': 'pymfe.mfe', 'fullname': 'MFE'}))
+
+
+# run auto pages
+import os
+os.system('python pages/run.py')

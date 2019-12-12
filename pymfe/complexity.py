@@ -162,7 +162,7 @@ class MFEComplexity:
 
     @staticmethod
     def _compute_cls_inds(y: np.ndarray, classes: np.ndarray) -> np.ndarray:
-        """Computes the ``cls_inds`` variable.
+        """Compute the ``cls_inds`` variable.
 
         The ``cls_inds`` variable is a boolean array which marks with
         True value whether the instance belongs to each class. Each
@@ -176,7 +176,7 @@ class MFEComplexity:
 
     @staticmethod
     def _compute_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
-        """Computes the ``ovo_comb`` variable.
+        """Compute the ``ovo_comb`` variable.
 
         The ``ovo_comb`` value is a array with all class OVO combination,
         i.e., all combinations of distinct class indices by pairs.
@@ -187,7 +187,7 @@ class MFEComplexity:
     @staticmethod
     def _minmax(N: np.ndarray, class1: np.ndarray,
                 class2: np.ndarray) -> np.ndarray:
-        """Computes the minimum of the maximum values per class for all feat.
+        """Compute the minimum of the maximum values per class for all feat.
 
         The index i indicate the minmax of feature i.
         """
@@ -198,7 +198,7 @@ class MFEComplexity:
     @staticmethod
     def _maxmin(N: np.ndarray, class1: np.ndarray,
                 class2: np.ndarray) -> np.ndarray:
-        """Computes the maximum of the minimum values per class for all feat.
+        """Compute the maximum of the minimum values per class for all feat.
 
         The index i indicate the maxmin of the ith feature.
         """
@@ -233,7 +233,7 @@ class MFEComplexity:
             cls_inds: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        """Computes each feature maximum individual efficiency.
+        """Compute feature maximum individual efficiency.
 
         Parameters
         ----------
@@ -303,7 +303,7 @@ class MFEComplexity:
             cls_inds: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        """Computes the features collective feature efficiency.
+        """Compute the collective feature efficiency.
 
         Parameters
         ----------
@@ -393,7 +393,7 @@ class MFEComplexity:
               ovo_comb: t.Optional[np.ndarray] = None,
               cls_inds: t.Optional[np.ndarray] = None,
               max_iter: t.Union[int, float] = 1e5) -> np.ndarray:
-        """Computes the OVO subsets error rate of linear classifier.
+        """Compute the OVO subsets error rate of linear classifier.
 
         The linear model used is induced by the Support Vector
         Machine algorithm.
@@ -468,7 +468,7 @@ class MFEComplexity:
     @classmethod
     def ft_n1(cls, N: np.ndarray, y: np.ndarray,
               metric: str = "euclidean") -> float:
-        """Computes the fraction of borderline points measure.
+        """Compute the fraction of borderline points measure.
 
         Parameters
         ----------
@@ -526,7 +526,7 @@ class MFEComplexity:
               p_n4: int = 2,
               n_neighbors_n4: int = 1,
               random_state: t.Optional[int] = None) -> float:
-        """Computes the non-linearity of the NN Classifier.
+        """Compute the non-linearity of the NN Classifier.
 
         Parameters
         ----------
@@ -622,7 +622,7 @@ class MFEComplexity:
             y: np.array,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> float:
-        """Computes the entropy of class proportions measure.
+        """Compute the entropy of class proportions measure.
 
         Parameters
         ----------
@@ -734,7 +734,7 @@ class MFEComplexity:
             num_attr_pca: t.Optional[int] = None,
             random_state: t.Optional[int] = None,
     ) -> float:
-        """Computes the average number of PCA dimensions per points measure.
+        """Compute the average number of PCA dimensions per points measure.
 
         Parameters
         ----------
@@ -778,7 +778,7 @@ class MFEComplexity:
               N: np.ndarray,
               num_attr_pca: t.Optional[int] = None,
               random_state: t.Optional[int] = None) -> float:
-        """Computes the ratio of the PCA dimension to the original dimension.
+        """Compute the ratio of the PCA dimension to the original dimension.
 
         Parameters
         ----------

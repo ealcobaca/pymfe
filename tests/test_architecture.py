@@ -170,18 +170,30 @@ class TestArchitecture:
                 and not set(res).symmetric_difference(_internal.VALID_GROUPS))
 
     def test_metafeature_description(self):
-        desc = MFE.metafeature_description(print_table=False)
+        desc, _ = MFE.metafeature_description(print_table=False)
         groups = [d[0] for d in desc]
         assert len(set(groups)) == len(_internal.VALID_GROUPS)
 
-        desc = MFE.metafeature_description(sort=True, print_table=False)
-        print(desc)
+        desc, _ = MFE.metafeature_description(sort_by_group=True,
+                                              sort_by_mtf=True,
+                                              print_table=False,
+                                              include_references=True)
         mtf = [d[1] for d in desc]
         assert mtf[1][0] < mtf[-1][0]
 
         desc = MFE.metafeature_description()
         assert desc is None
 
+    def test_metafeature_description_exceptions(self):
+        """Test metafeature description exceptions"""
+        with pytest.raises(TypeError):
+            MFE.metafeature_description(print_table='False')
+
+        with pytest.raises(TypeError):
+            MFE.metafeature_description(sort_by_mtf=1)
+
+        with pytest.raises(TypeError):
+            MFE.metafeature_description(sort_by_group=[True])
 
     def test_default_alias_groups(self):
         model = MFE(groups="default")

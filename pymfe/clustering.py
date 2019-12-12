@@ -107,7 +107,7 @@ class MFEClustering:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        dist_metric : :obj:`str`, optional
+        dist_metric : str, optional
             The distance metric used to calculate the distances between
             instances. Check `distmetric`_ for a full list of valid
             distance metrics.
@@ -187,10 +187,10 @@ class MFEClustering:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        n_neighbors : :obj:`int`, optional
+        n_neighbors : int, optional
             Number of nearest neighbors returned for each instance.
 
-        dist_metric : :obj:`str`, optional
+        dist_metric : str, optional
             The distance metric used to calculate the distances between
             instances. Check `distmetric`_ for a full list of valid
             distance metrics.
@@ -247,12 +247,12 @@ class MFEClustering:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        dist_metric : :obj:`str`, optional
+        dist_metric : str, optional
             The distance metric used to calculate the distances between
             instances. Check `distmetric`_ for a full list of valid
             distance metrics.
 
-        representative : :obj:`str` or :obj:`np.ndarray` or Sequence, optional
+        representative : str or :obj:`np.ndarray` or Sequence, optional
             * If representative is string-type, then it must assume one
                 value between ``median`` or ``mean``, and the selected
                 method is used to estimate the representative instance of
@@ -468,13 +468,19 @@ class MFEClustering:
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
             epsilon: float = 1.0e-8,
     ) -> float:
-        """Calculate the Dunn Index.
+        """Compute the Dunn Index.
 
         Metric range is 0 (inclusive) and infinity.
 
         Parameters
         ----------
-        dist_metric : :obj:`str`, optional
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        dist_metric : str, optional
             The distance metric used to calculate the distances between
             instances. Check `scipydoc`_ for a full list of valid distance
             metrics. If precomputation in clustering metafeatures is
@@ -491,7 +497,7 @@ class MFEClustering:
             Normalized pairwise distances between instances of different
             classes.
 
-        epsilon : :obj:`float`, optional
+        epsilon : float, optional
             A tiny value used to prevent division by zero.
 
         Returns
@@ -499,14 +505,15 @@ class MFEClustering:
         :obj:`float`
             Dunn index for given parameters.
 
+        Notes
+        -----
+        .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
+
         References
         ----------
         .. [1] J.C. Dunn, Well-separated clusters and optimal fuzzy
            partitions, J. Cybern. 4 (1) (1974) 95–104.
 
-        Notes
-        -----
-            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
@@ -524,21 +531,29 @@ class MFEClustering:
 
     @classmethod
     def ft_vdb(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Calculate the Davies and Bouldin Index.
+        """Compute the Davies and Bouldin Index.
 
         Metric range is 0 (inclusive) and infinity.
 
         Check `dbindex`_ for more information.
 
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        Notes
+        -----
+        .. _dbindex: :obj:``sklearn.metrics.davies_bouldin_score``
+           documentation.
+
         References
         ----------
         .. [1] D.L. Davies, D.W. Bouldin, A cluster separation measure,
            IEEE Trans. Pattern Anal. Mach. Intell. 1 (2) (1979) 224–227.
-
-        Notes
-        -----
-            .. _dbindex: :obj:``sklearn.metrics.davies_bouldin_score``
-                documentation.
         """
         return sklearn.metrics.davies_bouldin_score(X=N, labels=y)
 
@@ -551,13 +566,19 @@ class MFEClustering:
             classes: t.Optional[np.ndarray] = None,
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
     ) -> float:
-        """Calculate the INT index.
+        """Compute the INT index.
 
         Metric range is 0 (inclusive) and infinity.
 
         Parameters
         ----------
-        dist_metric : :obj:`str`, optional
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        dist_metric : str, optional
             The distance metric used to calculate the distances between
             instances. Check `scipydoc`_ for a full list of valid distance
             metrics. If precomputation in clustering metafeatures is
@@ -575,15 +596,16 @@ class MFEClustering:
         :obj:`float`
             INT index.
 
+        Notes
+        -----
+            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
+
         References
         ----------
         .. [1] Bezdek, J. C.; Pal, N. R. (1998a). Some new indexes of
            cluster validity. IEEE Transactions on Systems, Man, and
            Cybernetics, Part B, v.28, n.3, p.301–315.
 
-        Notes
-        -----
-            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
         if classes is None:
             classes = np.unique(y)
@@ -609,7 +631,7 @@ class MFEClustering:
                dist_metric: str = "euclidean",
                sample_frac: t.Optional[int] = None,
                random_state: t.Optional[int] = None) -> float:
-        """Calculate the mean silhouette value from ``N``.
+        """Compute the mean silhouette value.
 
         Metric range is -1 to +1 (both inclusive).
 
@@ -617,16 +639,22 @@ class MFEClustering:
 
         Parameters
         ----------
-        dist_metric : :obj:`str`, optional
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        dist_metric : str, optional
             The distance metric used to calculate the distances between
             instances. Check `distmetric`_ for a full list of valid
             distance metrics.
 
-        sample_frac : :obj:`int`, optional
+        sample_frac : int, optional
             Sample fraction used to compute the silhouette coefficient. If
             None is given, then all data is used.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             Used if ``sample_frac`` is not None. Random seed used while
             sampling the data.
 
@@ -635,18 +663,18 @@ class MFEClustering:
         :obj:`float`
             Mean Silhouette value.
 
-        References
-        ----------
-        .. [1] P.J. Rousseeuw, Silhouettes: a graphical aid to the
-           interpretation and validation of cluster analysis, J.
-           Comput. Appl. Math. 20 (1987) 53–65.
-
         Notes
         -----
             .. _silhouette: :obj:`sklearn.metrics.silhouette_score`
                 documentation.
             .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
                 documentation.
+
+        References
+        ----------
+        .. [1] P.J. Rousseeuw, Silhouettes: a graphical aid to the
+           interpretation and validation of cluster analysis, J.
+           Comput. Appl. Math. 20 (1987) 53–65.
         """
         sample_size = N.shape[0]
 
@@ -669,13 +697,20 @@ class MFEClustering:
             y: np.ndarray,
             dist_metric: str = "euclidean",
     ) -> float:
-        """Pearson correlation between class matching and instance distances.
+        """Compute the pearson correlation between class matching and instance
+        distances.
 
         The measure interval is -1 and +1 (inclusive).
 
         Parameters
         ----------
-        dist_metric : :obj:`str`, optional
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        dist_metric : str, optional
             The distance metric used to calculate the distances between
             instances. Check `scipydoc`_ for a full list of valid distance
             metrics.
@@ -685,14 +720,15 @@ class MFEClustering:
         :obj:`float`
             Point Biserial coefficient.
 
+        Notes
+        -----
+            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
+
         References
         ----------
         .. [1] J. Lev, "The Point Biserial Coefficient of Correlation", Ann.
            Math. Statist., Vol. 20, no.1, pp. 125-126, 1949.
 
-        Notes
-        -----
-            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
         """
         inst_dists = scipy.spatial.distance.pdist(X=N, metric=dist_metric)
 
@@ -708,24 +744,32 @@ class MFEClustering:
 
     @classmethod
     def ft_ch(cls, N: np.ndarray, y: np.ndarray) -> float:
-        """Calinski and Harabasz index.
+        """Compute the Calinski and Harabasz index.
 
         Check `cahascore`_ for more information.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
 
         Returns
         -------
         :obj:`float`
             Calinski-Harabasz index.
 
-        References
-        ----------
-        .. [1] T. Calinski, J. Harabasz, A dendrite method for cluster
-           analysis, Commun. Stat. Theory Methods 3 (1) (1974) 1–27.
-
         Notes
         -----
             .. _cahascore: ``sklearn.metrics.calinski_harabasz_score``
                 documentation.
+
+        References
+        ----------
+        .. [1] T. Calinski, J. Harabasz, A dendrite method for cluster
+           analysis, Commun. Stat. Theory Methods 3 (1) (1974) 1–27.
         """
         return sklearn.metrics.calinski_harabasz_score(X=N, labels=y)
 
@@ -735,12 +779,15 @@ class MFEClustering:
             y: np.ndarray,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> float:
-        """Normalized relative entropy.
+        """Compute the normalized relative entropy.
 
         An indicator of uniformity distributed of instances among clusters.
 
         Parameters
         ----------
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
         class_freqs : :obj:`np.ndarray`
             Absolute class frequencies. Used to exploit precomputations.
 
@@ -752,9 +799,9 @@ class MFEClustering:
         References
         ----------
         .. [1] Bruno Almeida Pimentel, André C.P.L.F. de Carvalho.
-        A new data characterization for selecting clustering algorithms
-        using meta-learning. Information Sciences, Volume 477, 2019,
-        Pages 203-219.
+           A new data characterization for selecting clustering algorithms
+           using meta-learning. Information Sciences, Volume 477, 2019,
+           Pages 203-219.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
@@ -767,17 +814,20 @@ class MFEClustering:
               size: int = 15,
               class_freqs: t.Optional[np.ndarray] = None,
               normalize: bool = False) -> int:
-        """Number of clusters with size smaller than ``size``.
+        """Compute the number of clusters with size smaller than a given size.
 
         Parameters
         ----------
-        size : :obj:`int`, optional
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        size : int, optional
             Maximum (exclusive) size of classes to be considered.
 
         class_freqs : :obj:`np.ndarray`, optional
             Class (absolute) frequencies. Used to exploit precomputations.
 
-        normalize : :obj:`bool`, optional
+        normalize : bool, optional
             If True, then the result will be the proportion of classes
             with less than ``size`` instances from the total of classes.
             (i.e., result is divided by the number of classes.)
@@ -792,9 +842,9 @@ class MFEClustering:
         References
         ----------
         .. [1] Bruno Almeida Pimentel, André C.P.L.F. de Carvalho.
-        A new data characterization for selecting clustering algorithms
-        using meta-learning. Information Sciences, Volume 477, 2019,
-        Pages 203-219.
+           A new data characterization for selecting clustering algorithms
+           using meta-learning. Information Sciences, Volume 477, 2019,
+           Pages 203-219.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
