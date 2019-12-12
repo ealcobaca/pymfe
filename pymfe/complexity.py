@@ -78,28 +78,29 @@ class MFEComplexity:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``ovo_comb`` (:obj:`list`): List of all class OVO
-                  combination, i.e., [(0,1), (0,2) ...].
-                - ``cls_inds`` (:obj:`list`): The list of boolean vectors
-                  indicating the example of each class. The array indexes
-                  represent the classes.
-                  combination, i.e., [(0,1), (0,2) ...].
+                - ``ovo_comb`` (list): List of all class OVO combination,
+                  i.e., all combinations of distinct class indices by pairs
+                  ([(0, 1), (0, 2) ...].)
+                - ``cls_inds`` (:obj:`np.ndarray`): Boolean array which
+                  indicates whether each example belongs to each class. The
+                  rows represents the distinct classes, and the instances
+                  are represented by the columns.
+                - ``classes`` (:obj:`np.ndarray`): distinct classes in the
+                  fitted target attribute.
                 - ``class_freqs`` (:obj:`np.ndarray`): The number of examples
-                  in each class. The array indexes represent the classes.
+                  in each class. The indices represent the classes.
         """
         precomp_vals = {}
 
-        if (y is not None
-                and not {"classes", "y_idx", "class_freqs"}.issubset(kwargs)):
+        if (y is not None and not {"classes", "class_freqs"}.issubset(kwargs)):
             sub_dic = MFEGeneral.precompute_general_class(y)
             precomp_vals.update(sub_dic)
 
         classes = precomp_vals["classes"]
-        y_idx = precomp_vals["y_idx"]
 
         if (y is not None
                 and ("ovo_comb" not in kwargs or "cls_inds" not in kwargs)):
-            cls_inds = MFEComplexity._compute_cls_inds(y_idx, classes)
+            cls_inds = MFEComplexity._compute_cls_inds(y, classes)
             precomp_vals["cls_inds"] = cls_inds
 
             ovo_comb = MFEComplexity._compute_ovo_comb(classes)
@@ -119,8 +120,11 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        tx_n_components : :obj:`float`, optional
-            Number of principal components to keep in the PCA.
+        tx_n_components : float, optional
+            Minimum fraction of the fitted data variance that must be
+            explained by the kept principal components after the PCA analysis.
+            Check the ``sklearn.decomposition.PCA`` documentation for more
+            detailed information about this argument.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -131,9 +135,10 @@ class MFEComplexity:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``num_attr_pca`` (:obj:`int`): Number of features after PCA
-                  with at least 0.95 fraction of variance is explained by the
-                  selected components.
+                - ``num_attr_pca`` (int): Number of features after PCA
+                  analysis with at least ``tx_n_components`` fraction of
+                  data variance explained by the selected principal
+                  components.
         """
         precomp_vals = {}
 
@@ -148,14 +153,26 @@ class MFEComplexity:
         return precomp_vals
 
     @staticmethod
-    def _compute_cls_inds(y_idx: np.ndarray,
-                          classes: np.ndarray) -> t.List[np.ndarray]:
-        """Computes the ``cls_inds`` variable."""
-        return [np.equal(y_idx, i) for i in np.arange(classes.size)]
+    def _compute_cls_inds(y: np.ndarray, classes: np.ndarray) -> np.ndarray:
+        """Computes the ``cls_inds`` variable.
+
+        The ``cls_inds`` variable is a boolean array which marks with
+        True value whether the instance belongs to each class. Each
+        distinct class is represented by a row, and each instance is
+        represented by a column.
+        """
+        cls_inds = np.array([np.equal(y, cur_cls) for cur_cls in classes],
+                            dtype=bool)
+
+        return cls_inds
 
     @staticmethod
     def _compute_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
-        """Computes the ``ovo_comb`` variable."""
+        """Computes the ``ovo_comb`` variable.
+
+        The ``ovo_comb`` value is a array with all class OVO combination,
+        i.e., all combinations of distinct class indices by pairs.
+        """
         ovo_comb = itertools.combinations(np.arange(classes.size), 2)
         return np.asarray(list(ovo_comb), dtype=int)
 
@@ -166,22 +183,20 @@ class MFEComplexity:
 
         The index i indicate the minmax of feature i.
         """
-        min_cls = np.zeros((2, N.shape[1]))
-        min_cls[0, :] = np.max(N[class1, :], axis=0)
-        min_cls[1, :] = np.max(N[class2, :], axis=0)
-        return np.min(min_cls, axis=0)
+        minmax = np.min((np.max(N[class1, :], axis=0),
+                         np.max(N[class2, :], axis=0)), axis=0)
+        return minmax
 
     @staticmethod
     def _maxmin(N: np.ndarray, class1: np.ndarray,
                 class2: np.ndarray) -> np.ndarray:
         """Computes the maximum of the minimum values per class for all feat.
 
-        The index i indicate the maxmin of feature i.
+        The index i indicate the maxmin of the ith feature.
         """
-        max_cls = np.zeros((2, N.shape[1]))
-        max_cls[0, :] = np.min(N[class1, :], axis=0)
-        max_cls[1, :] = np.min(N[class2, :], axis=0)
-        return np.max(max_cls, axis=0)
+        maxmin = np.max((np.min(N[class1, :], axis=0),
+                         np.min(N[class2, :], axis=0)), axis=0)
+        return maxmin
 
     @staticmethod
     def _compute_f3(N: np.ndarray, minmax: np.ndarray,
@@ -189,21 +204,21 @@ class MFEComplexity:
         """Compute the F3 complexit measure given minmax and maxmin."""
         # True if the example is in the overlapping region
         # Should be > and < instead of >= and <= ?
-        overlapped_region_by_feature = np.logical_and(N >= maxmin, N <= minmax)
+        feat_overlapped_region = np.logical_and(N >= maxmin, N <= minmax)
 
-        n_fi = np.sum(overlapped_region_by_feature, axis=0)
-        idx_min = np.argmin(n_fi)
+        feat_overlap_num = np.sum(feat_overlapped_region, axis=0)
+        ind_less_overlap = np.argmin(feat_overlap_num)
 
-        return idx_min, n_fi, overlapped_region_by_feature
+        return ind_less_overlap, feat_overlap_num, feat_overlapped_region
 
     @classmethod
     def ft_f3(
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            ovo_comb: np.ndarray = None,
-            cls_inds: np.ndarray = None,
-            class_freqs: np.ndarray = None,
+            ovo_comb: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Computes each feature maximum individual efficiency.
 
@@ -212,16 +227,20 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj:`np.ndarray`
-            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
 
-        cls_inds : :obj:`list`
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
 
-        class_freqs : :obj:`np.ndarray`
-            The number of examples in each class. The array indexes represent
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices represent
             the classes.
 
         Returns
@@ -246,12 +265,13 @@ class MFEComplexity:
         f3 = np.zeros(ovo_comb.shape[0], dtype=float)
 
         for ind, (idx1, idx2) in enumerate(ovo_comb):
-            idx_min, n_fi, _ = cls._compute_f3(
+            ind_less_overlap, feat_overlap_num, _ = cls._compute_f3(
                 N=N,
                 minmax=cls._minmax(N, cls_inds[idx1], cls_inds[idx2]),
                 maxmin=cls._maxmin(N, cls_inds[idx1], cls_inds[idx2]))
 
-            f3[ind] = n_fi[idx_min] / (class_freqs[idx1] + class_freqs[idx2])
+            f3[ind] = (feat_overlap_num[ind_less_overlap] /
+                       (class_freqs[idx1] + class_freqs[idx2]))
 
         # The measure is computed in the literature using the mean. However,
         # it is formulated here as a meta-feature. Therefore,
@@ -266,9 +286,9 @@ class MFEComplexity:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            ovo_comb: np.ndarray = None,
-            cls_inds: np.ndarray = None,
-            class_freqs: np.ndarray = None,
+            ovo_comb: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Computes the features collective feature efficiency.
 
@@ -277,16 +297,20 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj:`np.ndarray`
-            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
 
-        cls_inds : :obj:`list`
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
 
-        class_freqs : :obj:`np.ndarray`
-            The number of examples in each class. The array indexes represent
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices represent
             the classes.
 
         Returns
@@ -320,14 +344,14 @@ class MFEComplexity:
 
             while N_subset.size > 0:
                 # True if the example is in the overlapping region
-                idx_min, _, overlapped_region_by_feature = cls._compute_f3(
+                ind_less_overlap, _, feat_overlapped_region = cls._compute_f3(
                     N=N_subset,
                     minmax=cls._minmax(N_subset, y_class1, y_class2),
                     maxmin=cls._maxmin(N_subset, y_class1, y_class2))
 
                 # boolean that if True, this example is in the overlapping
                 # region
-                overlapped_region = overlapped_region_by_feature[:, idx_min]
+                overlapped_region = feat_overlapped_region[:, ind_less_overlap]
 
                 # removing the non overlapped features
                 N_subset = N_subset[overlapped_region, :]
@@ -335,7 +359,7 @@ class MFEComplexity:
                 y_class2 = y_class2[overlapped_region]
 
                 # removing the most efficient feature
-                N_subset = np.delete(N_subset, idx_min, axis=1)
+                N_subset = np.delete(N_subset, ind_less_overlap, axis=1)
 
             subset_size = N_subset.shape[0]
 
@@ -353,8 +377,8 @@ class MFEComplexity:
     def ft_l2(cls,
               N: np.ndarray,
               y: np.ndarray,
-              ovo_comb: np.ndarray = None,
-              cls_inds: np.ndarray = None,
+              ovo_comb: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None,
               max_iter: t.Union[int, float] = 1e5) -> np.ndarray:
         """Computes the OVO subsets error rate of linear classifier.
 
@@ -366,18 +390,22 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj:`np.ndarray`, optional
-            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
 
-        cls_inds : list, optional
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances.
 
         max_iter : float or int, optional
             Maximum number of iterations allowed for the support vector
             machine model convergence. This parameter can receive float
-            numbers to be compatible with Python scientific notation
+            numbers to be compatible with the Python scientific notation
             data type.
 
         Returns
@@ -434,17 +462,17 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj:`np.ndarray`
-            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
 
-        cls_inds : :obj:`list`
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics.
 
         Returns
         -------
-        :obj:`float`
+        float
             Fraction of borderline points measure.
 
         References
@@ -454,11 +482,11 @@ class MFEComplexity:
            A survey on measuring classification complexity (V2). (2019)
            Page 9-10.
         """
-        # 0-1 scaling
+        # 0-1 feature scaling
         N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
 
         # Compute the distance matrix and the minimum spanning tree.
-        dist_m = np.triu(distance.cdist(N, N, metric), k=1)
+        dist_m = np.triu(distance.cdist(N, N, metric=metric), k=1)
         mst = minimum_spanning_tree(dist_m)
         node_id_i, node_id_j = np.nonzero(mst)
 
@@ -494,22 +522,23 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        cls_inds : :obj:`list`, optional
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances.
 
-        metric_n4 : :obj:`str`, optional (default = "minkowski")
+        metric_n4 : str, optional (default = "minkowski")
             The distance metric used in the internal kNN classifier. See the
-            documentation of the DistanceMetric class on sklearn for a list of
-            available metrics.
+            documentation of the ``sklearn.neighbors.DistanceMetric`` class
+            for a list of available metrics.
 
-        p_n4 : :obj:`int`, optional (default = 2)
+        p_n4 : int, optional (default = 2)
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using manhattan_distance (l1), and
             euclidean_distance (l2) for p = 2. For arbitrary p,
             minkowski_distance (l_p) is used. Please, check the
-            KNeighborsClassifier documentation on sklearn for more information.
+            ``sklearn.neighbors.KNeighborsClassifier`` documentation for
+            more information.
 
         random_state : int, optional
             If given, set the random seed before computing any pseudo-random
@@ -517,7 +546,7 @@ class MFEComplexity:
 
         Returns
         -------
-        :obj:`float`
+        float
             Estimated non-linearity of the NN classifier.
 
         References
@@ -528,14 +557,10 @@ class MFEComplexity:
            Page 11.
         """
         if cls_inds is None:
-            sub_dic = MFEGeneral.precompute_general_class(y)
+            classes = np.unique(y)
+            cls_inds = MFEComplexity._compute_cls_inds(y, classes)
 
-            classes = sub_dic["classes"]
-            y_idx = sub_dic["y_idx"]
-
-            cls_inds = MFEComplexity._compute_cls_inds(y_idx, classes)
-
-        # 0-1 scaling
+        # 0-1 feature scaling
         N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
 
         if random_state is not None:
@@ -550,8 +575,8 @@ class MFEComplexity:
             N_cur_class = N[inds_cur_cls, :]
             subset_size = N_cur_class.shape[0]
 
-            # Currently it is allowed to a instance 'interpolate with itself'
-            # holding the instance itself as the result
+            # Currently it is allowed to a instance 'interpolate with itself',
+            # which holds the instance itself as result.
             A = N_cur_class[np.random.choice(subset_size, subset_size), :]
             B = N_cur_class[np.random.choice(subset_size, subset_size), :]
 
@@ -585,12 +610,12 @@ class MFEComplexity:
             Target attribute from fitted data.
 
         class_freqs : :obj:`np.ndarray`, optional
-            The number of examples in each class. The array indexes represent
+            The number of examples in each class. The indices represent
             the classes.
 
         Returns
         -------
-        :obj:`float`
+        float
             Entropy of class proportions measure.
 
         References
@@ -609,7 +634,7 @@ class MFEComplexity:
         pc_i = class_freqs / num_inst
         c1 = -np.sum(pc_i * np.log(pc_i)) / np.log(num_class)
 
-        # Shuldn't C1 be 1-C1? to match with C2?
+        # Shuldn't C1 be calculated as '1 - C1', to match with C2?
         return c1
 
     @classmethod
@@ -623,12 +648,12 @@ class MFEComplexity:
             Target attribute from fitted data.
 
         class_freqs : :obj:`np.ndarray`, optional
-            The number of examples in each class. The array indexes represent
+            The number of examples in each class. The indices represent
             the classes.
 
         Returns
         -------
-        :obj:`float`
+        float
             The imbalance ratio measure.
 
         References
@@ -662,7 +687,7 @@ class MFEComplexity:
 
         Returns
         -------
-        :obj:`float`
+        float
             Average number of features per dimension measure.
 
         References
@@ -688,13 +713,13 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        num_attr_pca : :obj:`int`, optional
+        num_attr_pca : int, optional
             Number of features after PCA where a fraction of at least 0.95
             of the data variance is explained by the selected components.
 
         Returns
         -------
-        :obj:`float`
+        float
             Average number of PCA dimensions per points measure.
 
         References
@@ -722,13 +747,13 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        num_attr_pca : :obj:`int`, optional
+        num_attr_pca : int, optional
             Number of features after PCA where a fraction of at least 0.95
             of the data variance is explained by the selected components.
 
         Returns
         -------
-        :obj:`float`
+        float
             An float with the ratio of the PCA dimension to the original
             dimension measure.
 
