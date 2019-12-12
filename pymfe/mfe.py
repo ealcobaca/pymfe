@@ -1241,37 +1241,87 @@ class MFE:
 
         return tuple(filtered_res)
 
+    @staticmethod
+    def _parse_description(docstring: str,
+                           include_references: bool = False
+                           ) -> t.Tuple[str, str]:
+        """Parse the docstring to get initial description and reference.
+
+        Parameters
+        ----------
+        docstring : str
+            An numpy docstring as ``str``.
+
+        include_references : bool
+            If True include a column with article reference.
+
+        Returns
+        -------
+        tuple of str
+            The initial docstring description in the first position and the
+            reference in the second.
+
+        """
+        initial_description = ""  # type: str
+        reference_description = ""  # type: str
+
+        # get initial description
+        split = docstring.split("\n\n")
+        if split:
+            initial_description = " ".join(split[0].split())
+
+        # get reference description
+        if include_references:
+            aux = docstring.split("References\n        ----------\n")
+            if len(aux) >= 2:
+                split = aux[1].split(f".. [")
+                if len(split) >= 2:
+                    del split[0]
+                    for spl in split:
+                        reference_description += "[" + " ".join(
+                            spl.split()) + "\n"
+
+        return (initial_description, reference_description)
+
     @classmethod
     def metafeature_description(
             cls,
             groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
-            sort: bool = False,
-            print_table: bool = True) -> t.Optional[t.List[t.List[str]]]:
+            sort_by_group: bool = False,
+            sort_by_mtf: bool = False,
+            print_table: bool = True,
+            include_references: bool = False
+    ) -> t.Optional[t.Tuple[t.List[t.List[str]], str]]:
         """Print a table with groups, metafeatures and description.
 
         Parameters
         ----------
-        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`, optional
+        groups : sequence of str or str, optional:
             Can be a string such value is a name of a specific metafeature
             group (see ``valid_groups`` method for more information) or a
             sequence of metafeature group names. It can be also None, which
             in that case all available metafeature names will be returned.
 
-        sort : :obj:`bool`, optional
-            If True sort the table by metafeature name.
+        sort_by_group: bool
+            Sort table by meta-feature group name.
 
-        print_table : :obj:`bool`, optional
+        sort_by_mtf: bool
+            Sort table by meta-feature name.
+
+        print_table : bool
             If True a table will be printed with the description, otherwise the
             table will be send by return.
 
+        print_table : bool
+            If True sort the table by metafeature name.
+
+        include_references : bool
+            If True include a column with article reference.
+
         Returns
         -------
-        If ``print_table`` is False:
-            :obj:`list` of :obj:`list`
-                A table with the metafeature descriptions.
-
-        else:
-            None.
+        list of list
+            A table with the metafeature descriptions or None.
 
         Notes
         -----
@@ -1286,8 +1336,20 @@ class MFE:
 
         deps = _internal.check_group_dependencies(groups)
 
+        if not isinstance(sort_by_group, bool):
+            raise TypeError("The parameter sort_by_group should be bool.")
+
+        if not isinstance(sort_by_mtf, bool):
+            raise TypeError("The parameter sort_by_mtf should be bool.")
+
+        if not isinstance(print_table, bool):
+            raise TypeError("The parameter print_table should be bool.")
+
         mtf_names = []  # type: t.List[str]
-        mtf_desc = [["Group", "Metafeature name", "Description"]]
+        mtf_desc = [["Group", "Meta-feature name", "Description"]]
+        if include_references:
+            mtf_desc[0].append("Reference")
+
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
@@ -1297,18 +1359,24 @@ class MFE:
                     prefix=_internal.MTF_PREFIX,
                     only_name=False,
                     prefix_removal=True))
-            for name, method in mtf_names:
-                aux = [group, name,
-                       method.__doc__.split("\n")[0]]  # type: ignore
-                mtf_desc.append(aux)
 
-        if sort:
+            for name, method in mtf_names:
+                ini_desc, ref_desc = MFE._parse_description(
+                    str(method.__doc__), include_references)
+                mtf_desc_line = [group, name, ini_desc]
+                mtf_desc.append(mtf_desc_line)
+
+                if include_references:
+                    mtf_desc_line.append(ref_desc)
+
+        if sort_by_mtf:
             mtf_desc.sort(key=lambda i: i[1])
 
-        if print_table:
-            tb = Texttable()
-            tb.add_rows(mtf_desc)
-            print(tb.draw())
-            return None
+        if sort_by_group:
+            mtf_desc.sort(key=lambda i: i[0])
 
-        return mtf_desc
+        draw = Texttable().add_rows(mtf_desc).draw()
+        if print_table:
+            print(draw)
+            return None
+        return mtf_desc, draw
