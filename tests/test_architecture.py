@@ -176,7 +176,8 @@ class TestArchitecture:
 
         desc, _ = MFE.metafeature_description(sort_by_group=True,
                                               sort_by_mtf=True,
-                                              print_table=False)
+                                              print_table=False,
+                                              include_references=True)
         mtf = [d[1] for d in desc]
         assert mtf[1][0] < mtf[-1][0]
 
