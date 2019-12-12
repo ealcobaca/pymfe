@@ -193,7 +193,7 @@ class TestArchitecture:
             MFE.metafeature_description(sort_by_mtf=1)
 
         with pytest.raises(TypeError):
-            MFE.metafeature_description(sort_by_mtf=[True])
+            MFE.metafeature_description(sort_by_group=[True])
 
     def test_default_alias_groups(self):
         model = MFE(groups="default")
