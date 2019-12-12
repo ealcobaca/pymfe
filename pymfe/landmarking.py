@@ -718,7 +718,7 @@ class MFELandmarking:
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
-        """Performance of the 1-nearest neighbor classifier.
+        """Performance of the 1-Nearest Neighbor classifier.
 
         It uses the euclidean distance of the nearest neighbor to determine
         how noisy is the data.
