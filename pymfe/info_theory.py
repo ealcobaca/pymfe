@@ -363,7 +363,7 @@ class MFEInfoTheory:
                        class_ent: t.Optional[np.ndarray] = None,
                        class_freqs: t.Optional[np.ndarray] = None,
                        mut_inf: t.Optional[np.ndarray] = None) -> float:
-        """Compute the number of attributes equivalent for a predicti/ve task.
+        """Compute the number of attributes equivalent for a predictive task.
 
         The attribute equivalence E is defined as:
 
