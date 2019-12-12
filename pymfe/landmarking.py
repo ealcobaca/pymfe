@@ -70,15 +70,15 @@ class MFELandmarking:
         N : :obj:`np.ndarray`, optional
             Attributes from fitted data.
 
-        lm_sample_frac : :obj:`float`
+        lm_sample_frac : float
             The percentage of examples subsampled. Value different from default
             will generate the subsampling-based relative landmarking
             metafeatures.
 
-        num_cv_folds : :obj:`int`
+        num_cv_folds : int
             Number of num_cv_folds to k-fold cross validation.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If RandomState instance, random_state is the random
             number generator; If None, the random number generator is the
@@ -173,7 +173,7 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        lm_sample_frac : :obj:`float`, optional
+        lm_sample_frac : float, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
@@ -182,7 +182,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -234,16 +234,16 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj:`int`, optional
+        num_cv_folds : int, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
-        shuffle_cv_folds : :obj:`bool`, optional
+        shuffle_cv_folds : bool, optional
             If True, shuffle the data before splitting into the k-fold cross
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        lm_sample_frac : :obj:`float`, optional
+        lm_sample_frac : float, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
@@ -252,7 +252,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -312,7 +312,8 @@ class MFELandmarking:
                        lm_sample_frac: float = 1.0,
                        sample_inds: t.Optional[np.ndarray] = None,
                        random_state: t.Optional[int] = None) -> np.ndarray:
-        """Single decision tree node model induced by a random attribute.
+        """Performance of the single decision tree node model induced by a
+        random attribute.
 
         Parameters
         ----------
@@ -414,9 +415,9 @@ class MFELandmarking:
             shuffle_cv_folds: bool = False,
             lm_sample_frac: float = 1.0,
             sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None,
-    ) -> np.ndarray:
-        """Single decision tree node model induced by the worst informative attribute.
+            random_state: t.Optional[int] = None) -> np.ndarray:
+        """Performance of the single decision tree node model induced by the
+        worst informative attribute.
 
         Parameters
         ----------
@@ -434,16 +435,16 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj:`int`, optional
+        num_cv_folds : int, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
-        shuffle_cv_folds : :obj:`bool`, optional
+        shuffle_cv_folds : bool, optional
             If True, shuffle the data before splitting into the k-fold cross
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        lm_sample_frac : :obj:`float`, optional
+        lm_sample_frac : float, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
@@ -452,7 +453,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -517,7 +518,7 @@ class MFELandmarking:
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
-        """Apply the Linear Discriminant classifier.
+        """Performance of the Linear Discriminant classifier.
 
         The Linear Discriminant Classifier is used to construct a linear split
         (non parallel axis) in the data to establish the linear separability.
@@ -538,16 +539,16 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj:`int`, optional
+        num_cv_folds : int, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
-        shuffle_cv_folds : :obj:`bool`, optional
+        shuffle_cv_folds : bool, optional
             If True, shuffle the data before splitting into the k-fold cross
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        lm_sample_frac : :obj:`float`, optional
+        lm_sample_frac : float, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
@@ -556,7 +557,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -617,7 +618,7 @@ class MFELandmarking:
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
-        """Evaluate the performance of the Naive Bayes classifier.
+        """Performance of the Naive Bayes classifier.
 
         It assumes that the attributes are independent and each example
         belongs to a certain class based on the Bayes probability.
@@ -638,16 +639,16 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj:`int`, optional
+        num_cv_folds : int, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
-        shuffle_cv_folds : :obj:`bool`, optional
+        shuffle_cv_folds : bool, optional
             If True, shuffle the data before splitting into the k-fold cross
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        lm_sample_frac : :obj:`float`, optional
+        lm_sample_frac : float, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
@@ -656,7 +657,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -717,7 +718,7 @@ class MFELandmarking:
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
-        """Evaluate the performance of the 1-nearest neighbor classifier.
+        """Performance of the 1-Nearest Neighbor classifier.
 
         It uses the euclidean distance of the nearest neighbor to determine
         how noisy is the data.
@@ -738,16 +739,16 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj:`int`, optional
+        num_cv_folds : int, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
-        shuffle_cv_folds : :obj:`bool`, optional
+        shuffle_cv_folds : bool, optional
             If True, shuffle the data before splitting into the k-fold cross
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        lm_sample_frac : :obj:`float`, optional
+        lm_sample_frac : float, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
@@ -756,7 +757,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
@@ -818,7 +819,7 @@ class MFELandmarking:
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
-        """Compute the Elite Nearest Neighbor score of dataset.
+        """Performance of Elite Nearest Neighbor.
 
         Elite nearest neighbor uses the most informative attribute in the
         dataset to induce the 1-nearest neighbor. With the subset of informati-
@@ -840,16 +841,16 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj:`int`, optional
+        num_cv_folds : int, optional
             Number of num_cv_folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
-        shuffle_cv_folds : :obj:`bool`, optional
+        shuffle_cv_folds : bool, optional
             If True, shuffle the data before splitting into the k-fold cross
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        lm_sample_frac : :obj:`float`, optional
+        lm_sample_frac : float, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
@@ -858,7 +859,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If None, the random number generator is the
             RandomState instance used by np.random.

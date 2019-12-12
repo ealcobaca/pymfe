@@ -69,7 +69,7 @@ class MFEModelBased:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If RandomState instance, random_state is the random
             number generator; If None, the random number generator is the
@@ -196,7 +196,7 @@ class MFEModelBased:
 
     @classmethod
     def ft_leaves(cls, dt_model: DecisionTreeClassifier) -> int:
-        """Number of leaf nodes in the DT model.
+        """Compute the number of leaf nodes in the DT model.
 
         Parameters
         ----------
@@ -220,7 +220,7 @@ class MFEModelBased:
 
     @classmethod
     def ft_tree_depth(cls, dt_nodes_depth: np.ndarray) -> np.ndarray:
-        """Calculate the depth of every node in the DT model.
+        """Compute the depth of every node in the DT model.
 
         Parameters
         ----------
@@ -276,7 +276,7 @@ class MFEModelBased:
     @classmethod
     def ft_leaves_corrob(cls, leaf_nodes: np.ndarray,
                          dt_info_table: np.ndarray) -> np.ndarray:
-        """Calculate the leaves corroboration of the DT model.
+        """Compute the leaves corroboration of the DT model.
 
         The Leaves corroboration is the proportion of examples that
         belong to each leaf of the DT model.
@@ -311,7 +311,7 @@ class MFEModelBased:
     @classmethod
     def ft_tree_shape(cls, leaf_nodes: np.ndarray,
                       dt_nodes_depth: np.ndarray) -> np.ndarray:
-        """Calculate the tree shape for every leaf node.
+        """Compute the tree shape for every leaf node.
 
         The tree shape is the probability of arrive in each leaf given a
         random walk. We call this as the ``structural shape of the DT model.``
@@ -342,7 +342,7 @@ class MFEModelBased:
     @classmethod
     def ft_leaves_homo(cls, leaf_nodes: np.ndarray, dt_nodes_depth: np.ndarray,
                        dt_model: DecisionTreeClassifier) -> np.ndarray:
-        """Calculate the DT model Homogeneity for every leaf node.
+        """Compute the DT model Homogeneity for every leaf node.
 
         The DT model homogeneity is calculated by the number of leaves
         divided by the ``structural shape`` (which is calculated by the
@@ -377,7 +377,7 @@ class MFEModelBased:
     @classmethod
     def ft_leaves_per_class(cls, dt_info_table: np.ndarray,
                             dt_model: DecisionTreeClassifier) -> np.ndarray:
-        """Computer the proportion of leaves per class in the DT model.
+        """Compute the proportion of leaves per class in DT model.
 
         This quantity is computed by the proportion of leaves of the DT model
         associated with each class.
@@ -409,7 +409,7 @@ class MFEModelBased:
 
     @classmethod
     def ft_nodes(cls, dt_model: DecisionTreeClassifier) -> int:
-        """Number of non-leaf nodes of the DT model.
+        """Compute the number of non-leaf nodes in DT model.
 
         Parameters
         ----------
@@ -433,7 +433,7 @@ class MFEModelBased:
 
     @classmethod
     def ft_nodes_per_attr(cls, dt_model: DecisionTreeClassifier) -> float:
-        """Ratio of the DT model number of nodes per number of attributes.
+        """Compute the ratio of nodes per number of attributes in DT model.
 
         Parameters
         ----------
@@ -457,7 +457,8 @@ class MFEModelBased:
 
     @classmethod
     def ft_nodes_per_inst(cls, dt_model: DecisionTreeClassifier) -> float:
-        """Ratio of the number of non-leaf nodes per the number of instances.
+        """Compute the ratio of non-leaf nodes per number of instances in DT
+        model.
 
         Parameters
         ----------
@@ -483,7 +484,7 @@ class MFEModelBased:
     @classmethod
     def ft_nodes_per_level(cls, dt_nodes_depth: np.ndarray,
                            non_leaf_nodes: np.ndarray) -> np.ndarray:
-        """Number of nodes of the DT model per tree level.
+        """Compute the ratio of number of nodes per tree level in DT model.
 
         Parameters
         ----------
@@ -515,7 +516,7 @@ class MFEModelBased:
     @classmethod
     def ft_nodes_repeated(cls, dt_info_table: np.ndarray,
                           non_leaf_nodes: np.ndarray) -> np.ndarray:
-        """Counts the number of repeated nodes.
+        """Compute the number of repeated nodes in DT model.
 
         The number of repeated nodes is the number of repeated attributes
         that appear in the DT model.
@@ -547,7 +548,8 @@ class MFEModelBased:
 
     @classmethod
     def ft_var_importance(cls, dt_model: DecisionTreeClassifier) -> np.ndarray:
-        """Get each features importance of the DT model.
+        """Compute the features importance of the DT model for each
+        attribute.
 
         It is calculated using the Gini index to estimate the amount of
         information used in the DT model.
@@ -573,7 +575,7 @@ class MFEModelBased:
     @classmethod
     def ft_tree_imbalance(cls, leaf_nodes: np.ndarray,
                           dt_nodes_depth: np.ndarray) -> np.ndarray:
-        """Calculate the Tree imbalance for each leaf node.
+        """Compute the tree imbalance for each leaf node.
 
         Parameters
         ----------
