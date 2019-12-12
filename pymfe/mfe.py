@@ -1295,10 +1295,10 @@ class MFE:
             sequence of metafeature group names. It can be also None, which
             in that case all available metafeature names will be returned.
 
-        sort_by_gropu: boll
+        sort_by_gropu: bool
             Sort table by meta-feature group name.
 
-        sort_by_mtf: boll
+        sort_by_mtf: bool
             Sort table by meta-feature name.
 
         print_table : bool
