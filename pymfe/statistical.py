@@ -1047,7 +1047,7 @@ class MFEStatistical:
                        epsilon: float = 1.0e-8,
                        abs_corr_mat: t.Optional[np.ndarray] = None
                        ) -> t.Union[int, float]:
-        """Compute the number of highly correlated pair distinct of attributes.
+        """Compute the number of distinct highly correlated pair of attributes.
 
         A pair of attributes is considered highly correlated if the
         absolute value of its covariance is equal or larger than a
