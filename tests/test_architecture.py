@@ -183,6 +183,16 @@ class TestArchitecture:
         desc = MFE.metafeature_description()
         assert desc is None
 
+    def test_metafeature_description_exceptions(self):
+        """Test metafeature description exceptions"""
+        with pytest.raises(TypeError):
+            MFE.metafeature_description(print_table='False')
+
+        with pytest.raises(TypeError):
+            MFE.metafeature_description(sort_by_mtf=1)
+
+        with pytest.raises(TypeError):
+            MFE.metafeature_description(sort_by_mtf=[True])
 
     def test_default_alias_groups(self):
         model = MFE(groups="default")
