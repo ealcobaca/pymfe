@@ -5,11 +5,8 @@ import itertools
 
 import numpy as np
 import sklearn
-from scipy.spatial import distance
-from scipy.sparse.csgraph import minimum_spanning_tree
-from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.decomposition import PCA
+import sklearn.pipeline
+import scipy.spatial
 
 from pymfe.general import MFEGeneral
 from pymfe.clustering import MFEClustering
@@ -151,7 +148,9 @@ class MFEComplexity:
         precomp_vals = {}
 
         if N is not None and "num_attr_pca" not in kwargs:
-            pca = PCA(n_components=tx_n_components, random_state=random_state)
+            pca = sklearn.decomposition.PCA(
+                n_components=tx_n_components,
+                random_state=random_state)
             pca.fit(N)
 
             num_attr_pca = pca.explained_variance_ratio_.shape[0]
@@ -444,7 +443,13 @@ class MFEComplexity:
         l2 = np.zeros(ovo_comb.shape[0], dtype=float)
 
         zscore = sklearn.preprocessing.StandardScaler()
-        svc = SVC(kernel="linear", C=1.0, tol=10e-3, max_iter=int(max_iter))
+
+        svc = sklearn.svm.SVC(
+            kernel="linear",
+            C=1.0,
+            tol=10e-3,
+            max_iter=int(max_iter))
+
         pip = sklearn.pipeline.Pipeline([("zscore", zscore), ("svc", svc)])
 
         for ind, (cls_1, cls_2) in enumerate(ovo_comb):
@@ -504,8 +509,12 @@ class MFEComplexity:
             feature_range=(0, 1)).fit_transform(N)
 
         # Compute the distance matrix and the minimum spanning tree.
-        dist_mat = np.triu(distance.cdist(N, N, metric=metric), k=1)
-        mst = minimum_spanning_tree(dist_mat, overwrite=True)
+        dist_mat = scipy.spatial.distance.cdist(N, N, metric=metric)
+
+        mst = scipy.sparse.csgraph.minimum_spanning_tree(
+            csgraph=np.triu(dist_mat, k=1),
+            overwrite=True)
+
         node_id_i, node_id_j = np.nonzero(mst)
 
         # Which edges have nodes with different class
@@ -609,7 +618,7 @@ class MFEComplexity:
             y_test[ind_cur:ind_next] = y[inds_cur_cls]
             ind_cur = ind_next
 
-        knn = KNeighborsClassifier(
+        knn = sklearn.neighbors.KNeighborsClassifier(
             n_neighbors=n_neighbors_n4, p=p_n4, metric=metric_n4).fit(N, y)
 
         y_pred = knn.predict(N_test)
