@@ -4,13 +4,10 @@ import typing as t
 import itertools
 
 import numpy as np
+import sklearn
 from scipy.spatial import distance
 from scipy.sparse.csgraph import minimum_spanning_tree
 from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.decomposition import PCA
 
@@ -188,25 +185,25 @@ class MFEComplexity:
         return np.asarray(list(ovo_comb), dtype=int)
 
     @staticmethod
-    def _calc_minmax(N: np.ndarray, class1: np.ndarray,
-                     class2: np.ndarray) -> np.ndarray:
+    def _calc_minmax(N: np.ndarray, cls_1: np.ndarray,
+                     cls_2: np.ndarray) -> np.ndarray:
         """Compute the minimum of the maximum values per class for all feat.
 
         The index i indicate the minmax of feature i.
         """
-        minmax = np.min((np.max(N[class1, :], axis=0),
-                         np.max(N[class2, :], axis=0)), axis=0)
+        minmax = np.min((np.max(N[cls_1, :], axis=0),
+                         np.max(N[cls_2, :], axis=0)), axis=0)
         return minmax
 
     @staticmethod
-    def _calc_maxmin(N: np.ndarray, class1: np.ndarray,
-                     class2: np.ndarray) -> np.ndarray:
+    def _calc_maxmin(N: np.ndarray, cls_1: np.ndarray,
+                     cls_2: np.ndarray) -> np.ndarray:
         """Compute the maximum of the minimum values per class for all feat.
 
         The index i indicate the maxmin of the ith feature.
         """
-        maxmin = np.max((np.min(N[class1, :], axis=0),
-                         np.min(N[class2, :], axis=0)), axis=0)
+        maxmin = np.max((np.min(N[cls_1, :], axis=0),
+                         np.min(N[cls_2, :], axis=0)), axis=0)
         return maxmin
 
     @staticmethod
@@ -283,21 +280,21 @@ class MFEComplexity:
 
         f3 = np.zeros(ovo_comb.shape[0], dtype=float)
 
-        for ind, (idx1, idx2) in enumerate(ovo_comb):
+        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
+            cls_1 = cls_inds[cls_id_1, :]
+            cls_2 = cls_inds[cls_id_2, :]
+
             ind_less_overlap, feat_overlap_num, _ = cls._calc_overlap(
                 N=N,
-                minmax=cls._calc_minmax(N, cls_inds[idx1], cls_inds[idx2]),
-                maxmin=cls._calc_maxmin(N, cls_inds[idx1], cls_inds[idx2]))
+                minmax=cls._calc_minmax(N=N, cls_1=cls_1, cls_2=cls_2),
+                maxmin=cls._calc_maxmin(N=N, cls_1=cls_1, cls_2=cls_2))
 
             f3[ind] = (feat_overlap_num[ind_less_overlap] /
-                       (class_freqs[idx1] + class_freqs[idx2]))
+                       (class_freqs[cls_id_1] + class_freqs[cls_id_2]))
 
-        # The measure is computed in the literature using the mean. However,
-        # it is formulated here as a meta-feature. Therefore,
-        # the post-processing should be used to get the mean and other measures
-        # as well.
-        # return np.mean(f3)
-
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
         return np.asarray(f3)
 
     @classmethod
@@ -353,12 +350,12 @@ class MFEComplexity:
 
         f4 = np.zeros(ovo_comb.shape[0], dtype=float)
 
-        for ind, (idx1, idx2) in enumerate(ovo_comb):
-            y_class1 = cls_inds[idx1]
-            y_class2 = cls_inds[idx2]
-            cls_subset_intersec = np.logical_or(y_class1, y_class2)
-            y_class1 = y_class1[cls_subset_intersec]
-            y_class2 = y_class2[cls_subset_intersec]
+        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
+            cls_subset_intersec = np.logical_or(cls_inds[cls_id_1, :],
+                                                cls_inds[cls_id_2, :])
+
+            cls_1 = cls_inds[cls_id_1, cls_subset_intersec]
+            cls_2 = cls_inds[cls_id_2, cls_subset_intersec]
             N_subset = N[cls_subset_intersec, :]
 
             while N_subset.size > 0:
@@ -366,8 +363,8 @@ class MFEComplexity:
                 ind_less_overlap, _, feat_overlapped_region = (
                     cls._calc_overlap(
                         N=N_subset,
-                        minmax=cls._calc_minmax(N_subset, y_class1, y_class2),
-                        maxmin=cls._calc_maxmin(N_subset, y_class1, y_class2)))
+                        minmax=cls._calc_minmax(N_subset, cls_1, cls_2),
+                        maxmin=cls._calc_maxmin(N_subset, cls_1, cls_2)))
 
                 # boolean that if True, this example is in the overlapping
                 # region
@@ -375,22 +372,20 @@ class MFEComplexity:
 
                 # removing the non overlapped features
                 N_subset = N_subset[overlapped_region, :]
-                y_class1 = y_class1[overlapped_region]
-                y_class2 = y_class2[overlapped_region]
+                cls_1 = cls_1[overlapped_region]
+                cls_2 = cls_2[overlapped_region]
 
                 # removing the most efficient feature
                 N_subset = np.delete(N_subset, ind_less_overlap, axis=1)
 
             subset_size = N_subset.shape[0]
 
-            f4[ind] = subset_size / (class_freqs[idx1] + class_freqs[idx2])
+            f4[ind] = subset_size / (class_freqs[cls_id_1] +
+                                     class_freqs[cls_id_2])
 
-        # The measure is computed in the literature using the mean. However,
-        # it is formulated here as a meta-feature. Therefore,
-        # the post-processing should be used to get the mean and other measures
-        # as well.
-        # return np.mean(f4)
-
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
         return np.asarray(f4)
 
     @classmethod
@@ -448,28 +443,30 @@ class MFEComplexity:
 
         l2 = np.zeros(ovo_comb.shape[0], dtype=float)
 
-        zscore = StandardScaler()
+        zscore = sklearn.preprocessing.StandardScaler()
         svc = SVC(kernel="linear", C=1.0, tol=10e-3, max_iter=int(max_iter))
-        pip = Pipeline([("zscore", zscore), ("svc", svc)])
+        pip = sklearn.pipeline.Pipeline([("zscore", zscore), ("svc", svc)])
 
-        for ind, (idx1, idx2) in enumerate(ovo_comb):
-            cls_intersec = np.logical_or(cls_inds[idx1], cls_inds[idx2])
+        for ind, (cls_1, cls_2) in enumerate(ovo_comb):
+            cls_intersec = np.logical_or(cls_inds[cls_1, :],
+                                         cls_inds[cls_2, :])
 
             N_subset = N[cls_intersec, :]
-            y_subset = cls_inds[idx1, cls_intersec]
+            y_subset = cls_inds[cls_1, cls_intersec]
 
             pip.fit(N_subset, y_subset)
             y_pred = pip.predict(N_subset)
-            error = 1 - accuracy_score(y_subset, y_pred)
+
+            error = sklearn.metrics.zero_one_loss(
+                y_true=y_subset,
+                y_pred=y_pred,
+                normalize=True)
 
             l2[ind] = error
 
-        # The measure is computed in the literature using the mean. However,
-        # it is formulated here as a meta-feature. Therefore,
-        # the post-processing should be used to get the mean and other measures
-        # as well.
-        # return np.mean(l2)
-
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
         return np.asarray(l2)
 
     @classmethod
@@ -503,7 +500,8 @@ class MFEComplexity:
            Page 9-10.
         """
         # 0-1 feature scaling
-        N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
 
         # Compute the distance matrix and the minimum spanning tree.
         dist_mat = np.triu(distance.cdist(N, N, metric=metric), k=1)
@@ -582,7 +580,8 @@ class MFEComplexity:
             cls_inds = MFEComplexity._calc_cls_inds(y, classes)
 
         # 0-1 feature scaling
-        N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
 
         if random_state is not None:
             np.random.seed(random_state)
@@ -619,7 +618,7 @@ class MFEComplexity:
         # misclassifications, in order to be summarized by the framework.
         # Should we adopt the same strategy?
         # return np.not_equal(y_test, y_pred)
-        error = 1 - accuracy_score(y_test, y_pred)
+        error = sklearn.metrics.zero_one_loss(y_test, y_pred, normalize=True)
 
         return error
 
