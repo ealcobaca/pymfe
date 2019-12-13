@@ -65,7 +65,7 @@ data = load_iris()
 y = data.target
 X = data.data
 
-# Extract all measures
+# Extract default measures
 mfe = MFE()
 mfe.fit(X, y)
 ft = mfe.extract()
@@ -81,13 +81,13 @@ print(ft)
 Several measures return more than one value. To aggregate the returned values, summarization function can be used. This method can compute `min`, `max`, `mean`, `median`, `kurtosis`, `standard deviation`, among others. The default methods are the `mean` and the `sd`. Next, it is possible to see an example of the use of this method:
 
 ```python
-## Extract all measures using min, median and max 
+## Extract default measures using min, median and max 
 mfe = MFE(summary=["min", "median", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()
 print(ft)
                           
-## Extract all measures using quantile
+## Extract default measures using quantile
 mfe = MFE(summary=["quantiles"])
 mfe.fit(X, y)
 ft = mfe.extract()
