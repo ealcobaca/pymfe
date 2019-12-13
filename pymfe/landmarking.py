@@ -60,7 +60,7 @@ class MFELandmarking:
                 lm_sample_frac: float,
                 random_state: t.Optional[int] = None,
                 **kwargs) -> t.Dict[str, t.Any]:
-        """Precompute k-fold cross validation strategy.
+        """Precompute subsampling landmarking subsample indices.
 
         Parameters
         ----------
@@ -228,7 +228,7 @@ class MFELandmarking:
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
     ) -> np.ndarray:
-        """Compute the Gini index of a decision tree.
+        """Rank the feature importances of a DT model.
 
         It is used the ``sklearn.tree.DecisionTreeClassifier``
         implementation.
@@ -258,7 +258,7 @@ class MFELandmarking:
         Returns
         -------
         :obj:`np.ndarray`
-            Return the decision tree features importance.
+            Ranking of the decision tree features importance.
         """
         N, y = MFELandmarking._sample_data(
             N=N,
