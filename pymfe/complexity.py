@@ -533,7 +533,7 @@ class MFEComplexity:
               metric_n4: str = "minkowski",
               p_n4: int = 2,
               n_neighbors_n4: int = 1,
-              random_state: t.Optional[int] = None) -> float:
+              random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute the non-linearity of the NN Classifier.
 
         Parameters
@@ -568,8 +568,9 @@ class MFEComplexity:
 
         Returns
         -------
-        float
-            Estimated non-linearity of the NN classifier.
+        :obj:`np.ndarray`
+            Misclassifications of the NN classifier in the interpolated
+            dataset.
 
         References
         ----------
@@ -617,13 +618,12 @@ class MFEComplexity:
 
         y_pred = knn.predict(N_test)
 
-        # TODO: The MFE (R version) returns an boolean array marking all
-        # misclassifications, in order to be summarized by the framework.
-        # Should we adopt the same strategy?
-        # return np.not_equal(y_test, y_pred)
-        error = sklearn.metrics.zero_one_loss(y_test, y_pred, normalize=True)
+        misclassifications = np.not_equal(y_test, y_pred).astype(int)
 
-        return error
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
+        return misclassifications
 
     @classmethod
     def ft_c1(
@@ -706,13 +706,13 @@ class MFEComplexity:
         return c2
 
     @classmethod
-    def ft_t2(cls, X: np.ndarray) -> float:
+    def ft_t2(cls, N: np.ndarray) -> float:
         """Compute the average number of features per dimension.
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`
-            Original attributes from fitted data.
+        N : :obj:`np.ndarray`
+            Numeric attributes from fitted data.
 
         Returns
         -------
@@ -726,9 +726,13 @@ class MFEComplexity:
            A survey on measuring classification complexity (V2). (2019)
            Page 15.
         """
-        # Note: calling 'ft_attr_to_inst' just to make explicity the link
-        # between this metafeature and 'T2'.
-        return MFEGeneral.ft_attr_to_inst(X=X)
+        # Note: This metafeature has a link with the 'ft_attr_to_inst',
+        # but considers the trandormed data in N instead of the original
+        # attributes 'X'. Maybe this is a aspect that may change in the
+        # future.
+        # return MFEGeneral.ft_attr_to_inst(X=X)
+
+        return N.shape[1] / N.shape[0]
 
     @classmethod
     def ft_t3(
