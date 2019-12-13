@@ -54,18 +54,17 @@ class MFELandmarking:
     """
 
     @classmethod
-    def precompute_landmarking_class(cls,
-                                     N: np.ndarray,
-                                     lm_sample_frac: float,
-                                     num_cv_folds: int,
-                                     shuffle_cv_folds: bool,
-                                     random_state: t.Optional[int] = None,
-                                     **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_landmarking_sample(
+                cls,
+                N: np.ndarray,
+                lm_sample_frac: float,
+                random_state: t.Optional[int] = None,
+                **kwargs) -> t.Dict[str, t.Any]:
         """Precompute k-fold cross validation strategy.
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`, optional
+        N : :obj:`np.ndarray`
             Attributes from fitted data.
 
         lm_sample_frac : float
@@ -73,14 +72,73 @@ class MFELandmarking:
             will generate the subsampling-based relative landmarking
             metafeatures.
 
+        random_state : int, optional
+            If int, random_state is the seed used by the random number
+            generator; If RandomState instance, random_state is the random
+            number generator; If None, the random number generator is the
+            RandomState instance used by np.random.
+
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
+                - ``sample_inds`` (:obj:`np.ndarray`): indices related to the
+                  subsampling of the original dataset. Used only if the
+                  subsampling landmarking method is used and, therefore, this
+                  value is only precomputed if ``lm_sample_frac`` is less
+                  than 1.0.
+        """
+        precomp_vals = {}
+
+        if N is not None and "sample_inds" not in kwargs:
+            if lm_sample_frac < 1.0:
+                num_inst, _ = N.shape
+
+                precomp_vals["sample_inds"] = MFELandmarking._get_sample_inds(
+                    num_inst=num_inst,
+                    lm_sample_frac=lm_sample_frac,
+                    random_state=random_state)
+
+        return precomp_vals
+
+    @classmethod
+    def precompute_landmarking_kfolds(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            num_cv_folds: int,
+            shuffle_cv_folds: t.Optional[bool] = False,
+            random_state: t.Optional[int] = None,
+            lm_sample_frac: t.Optional[float] = 1.0,
+            **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute k-fold cross validation related values.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
+
         num_cv_folds : int
             Number of num_cv_folds to k-fold cross validation.
+
+        shuffle_cv_folds : bool, optional
+            If True, shuffle the samples before splitting the k-fold cross
+            validation.
 
         random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If RandomState instance, random_state is the random
             number generator; If None, the random number generator is the
             RandomState instance used by np.random.
+
+        lm_sample_frac : float
+            The percentage of examples subsampled. Value different from default
+            will generate the subsampling-based relative landmarking
+            metafeatures. Used only if ``sample_inds`` is not precomputed and
+            if ``shuffle_cv_folds`` is False or ``random_state`` is given.
 
         kwargs:
             Additional arguments. May have previously precomputed before this
@@ -97,20 +155,32 @@ class MFELandmarking:
         """
         precomp_vals = {}
 
-        if N is not None and "sample_inds" not in kwargs:
-            if lm_sample_frac < 1.0:
-                num_inst, _ = N.shape
-
-                precomp_vals["sample_inds"] = (MFELandmarking._get_sample_inds(
-                    num_inst=num_inst,
-                    lm_sample_frac=lm_sample_frac,
-                    random_state=random_state))
-
         if "skf" not in kwargs:
             precomp_vals["skf"] = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
+
+        if not shuffle_cv_folds or random_state is not None:
+            skf = precomp_vals.get("skf", kwargs.get("skf"))
+            sample_inds = kwargs.get("sample_inds")
+
+            N, y = MFELandmarking._sample_data(
+                N=N,
+                y=y,
+                lm_sample_frac=lm_sample_frac,
+                random_state=random_state,
+                sample_inds=sample_inds)
+
+            attr_fold_imp = np.array([
+                MFELandmarking._rank_feat_importance(
+                    N=N[inds_train, :],
+                    y=y[inds_train],
+                    random_state=random_state)
+                for inds_train, inds_test in skf.split(N, y)
+            ], dtype=int)
+
+            precomp_vals["cv_folds_imp_rank"] = attr_fold_imp
 
         return precomp_vals
 
@@ -150,7 +220,7 @@ class MFELandmarking:
         return N[sample_inds, :], y[sample_inds]
 
     @classmethod
-    def _calc_importance(
+    def _rank_feat_importance(
             cls,
             N: np.ndarray,
             y: np.ndarray,
@@ -418,7 +488,9 @@ class MFELandmarking:
             shuffle_cv_folds: bool = False,
             lm_sample_frac: float = 1.0,
             sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None) -> np.ndarray:
+            random_state: t.Optional[int] = None,
+            cv_folds_imp_rank: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Performance of the single decision tree node model induced by the
         worst informative attribute.
 
@@ -461,6 +533,14 @@ class MFELandmarking:
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
 
+        cv_folds_imp_rank : :obj:`np.ndarray`, optional
+            Ranking based on the predictive attribute importance per
+            cross-validation fold. The rows correspond to each fold,
+            and the columns correspond to each predictive attribute.
+            Argument used to take advantage of precomputations. Do not
+            use it if the k-fold cross validation splitter shuffles the
+            data with no random seed fixed.
+
         Returns
         -------
         :obj:`np.ndarray`
@@ -496,11 +576,17 @@ class MFELandmarking:
         res = np.zeros(skf.n_splits, dtype=float)
 
         for ind_fold, (inds_train, inds_test) in enumerate(skf.split(N, y)):
-            importance = MFELandmarking._calc_importance(
-                N=N[inds_train, :], y=y[inds_train], random_state=random_state)
+            if cv_folds_imp_rank is not None:
+                imp_rank = cv_folds_imp_rank[ind_fold, :]
+            else:
 
-            X_train = N[inds_train, importance[0], np.newaxis]
-            X_test = N[inds_test, importance[0], np.newaxis]
+                imp_rank = MFELandmarking._rank_feat_importance(
+                    N=N[inds_train, :],
+                    y=y[inds_train],
+                    random_state=random_state)
+
+            X_train = N[inds_train, imp_rank[0], np.newaxis]
+            X_test = N[inds_test, imp_rank[0], np.newaxis]
             y_train, y_test = y[inds_train], y[inds_test]
 
             model.fit(X_train, y_train)
@@ -825,6 +911,7 @@ class MFELandmarking:
             lm_sample_frac: float = 1.0,
             sample_inds: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
+            cv_folds_imp_rank: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Performance of Elite Nearest Neighbor.
 
@@ -871,6 +958,14 @@ class MFELandmarking:
             generator; If None, the random number generator is the
             RandomState instance used by np.random.
 
+        cv_folds_imp_rank : :obj:`np.ndarray`, optional
+            Ranking based on the predictive attribute importance per
+            cross-validation fold. The rows correspond to each fold,
+            and the columns correspond to each predictive attribute.
+            Argument used to take advantage of precomputations. Do not
+            use it if the k-fold cross validation splitter shuffles the
+            data with no random seed fixed.
+
         Returns
         -------
         :obj:`np.ndarray`
@@ -901,11 +996,17 @@ class MFELandmarking:
         res = np.zeros(skf.n_splits, dtype=float)
 
         for ind_fold, (inds_train, inds_test) in enumerate(skf.split(N, y)):
-            importance = MFELandmarking._calc_importance(
-                N=N[inds_train, :], y=y[inds_train], random_state=random_state)
+            if cv_folds_imp_rank is not None:
+                imp_rank = cv_folds_imp_rank[ind_fold, :]
+            else:
 
-            X_train = N[inds_train, importance[-1], np.newaxis]
-            X_test = N[inds_test, importance[-1], np.newaxis]
+                imp_rank = MFELandmarking._rank_feat_importance(
+                    N=N[inds_train, :],
+                    y=y[inds_train],
+                    random_state=random_state)
+
+            X_train = N[inds_train, imp_rank[-1], np.newaxis]
+            X_test = N[inds_test, imp_rank[-1], np.newaxis]
             y_train, y_test = y[inds_train], y[inds_test]
 
             model.fit(X_train, y_train)
