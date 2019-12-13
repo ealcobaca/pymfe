@@ -3,8 +3,8 @@
 import typing as t
 import collections
 import shutil
-from texttable import Texttable
 
+import texttable
 import numpy as np
 
 import pymfe._internal as _internal
@@ -1375,7 +1375,7 @@ class MFE:
         if sort_by_group:
             mtf_desc.sort(key=lambda i: i[0])
 
-        draw = Texttable().add_rows(mtf_desc).draw()
+        draw = texttable.Texttable().add_rows(mtf_desc).draw()
         if print_table:
             print(draw)
             return None
