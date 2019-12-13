@@ -211,14 +211,8 @@ class MFEComplexity:
             minmax: np.ndarray,
             maxmin: np.ndarray,
     ) -> t.Tuple[int, np.ndarray, np.ndarray]:
-        """Compute the F3 complexit measure given minmax and maxmin."""
+        """Compute the instances in overlapping region by feature."""
         # True if the example is in the overlapping region
-        # Should be > and < instead of >= and <= ?
-        # TODO: the MFE (R version) implements the non-overlapping region
-        # as (N < maxmin || N > minmax) which, consequently, the contra-
-        # positive version implies that the overlapping region is
-        # (N >= maxmin && N <= minmax), just like is implemented here.
-        # The question is: is the MFE (R version) behaviour correct?
         feat_overlapped_region = np.logical_and(N >= maxmin, N <= minmax)
 
         feat_overlap_num = np.sum(feat_overlapped_region, axis=0)
