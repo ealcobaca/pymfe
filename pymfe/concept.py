@@ -3,8 +3,8 @@
 import typing as t
 
 import numpy as np
-from scipy.spatial import distance
-from sklearn.preprocessing import MinMaxScaler
+import scipy.spatial
+import sklearn
 
 
 class MFEConcept:
@@ -85,10 +85,12 @@ class MFEConcept:
 
         if N is not None and "concept_distances" not in kwargs:
             # 0-1 scaling
-            N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
+            N = sklearn.preprocessing.MinMaxScaler(
+                feature_range=(0, 1)).fit_transform(N)
 
             # distance matrix
-            concept_distances = distance.cdist(N, N, concept_dist_metric)
+            concept_distances = scipy.spatial.distance.cdist(
+                N, N, metric=concept_dist_metric)
 
             prepcomp_vals["concept_distances"] = concept_distances
 
