@@ -15,6 +15,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.decomposition import PCA
 
 from pymfe.general import MFEGeneral
+from pymfe.clustering import MFEClustering
 
 
 class MFEComplexity:
@@ -102,10 +103,10 @@ class MFEComplexity:
 
         if (y is not None
                 and ("ovo_comb" not in kwargs or "cls_inds" not in kwargs)):
-            cls_inds = MFEComplexity._compute_cls_inds(y, classes)
+            cls_inds = MFEComplexity._calc_cls_inds(y, classes)
             precomp_vals["cls_inds"] = cls_inds
 
-            ovo_comb = MFEComplexity._compute_ovo_comb(classes)
+            ovo_comb = MFEComplexity._calc_ovo_comb(classes)
             precomp_vals["ovo_comb"] = ovo_comb
 
         return precomp_vals
@@ -163,7 +164,7 @@ class MFEComplexity:
         return precomp_vals
 
     @staticmethod
-    def _compute_cls_inds(y: np.ndarray, classes: np.ndarray) -> np.ndarray:
+    def _calc_cls_inds(y: np.ndarray, classes: np.ndarray) -> np.ndarray:
         """Compute the ``cls_inds`` variable.
 
         The ``cls_inds`` variable is a boolean array which marks with
@@ -177,7 +178,7 @@ class MFEComplexity:
         return cls_inds
 
     @staticmethod
-    def _compute_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
+    def _calc_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
         """Compute the ``ovo_comb`` variable.
 
         The ``ovo_comb`` value is a array with all class OVO combination,
@@ -187,8 +188,8 @@ class MFEComplexity:
         return np.asarray(list(ovo_comb), dtype=int)
 
     @staticmethod
-    def _minmax(N: np.ndarray, class1: np.ndarray,
-                class2: np.ndarray) -> np.ndarray:
+    def _calc_minmax(N: np.ndarray, class1: np.ndarray,
+                     class2: np.ndarray) -> np.ndarray:
         """Compute the minimum of the maximum values per class for all feat.
 
         The index i indicate the minmax of feature i.
@@ -198,8 +199,8 @@ class MFEComplexity:
         return minmax
 
     @staticmethod
-    def _maxmin(N: np.ndarray, class1: np.ndarray,
-                class2: np.ndarray) -> np.ndarray:
+    def _calc_maxmin(N: np.ndarray, class1: np.ndarray,
+                     class2: np.ndarray) -> np.ndarray:
         """Compute the maximum of the minimum values per class for all feat.
 
         The index i indicate the maxmin of the ith feature.
@@ -209,8 +210,11 @@ class MFEComplexity:
         return maxmin
 
     @staticmethod
-    def _compute_f3(N: np.ndarray, minmax: np.ndarray,
-                    maxmin: np.ndarray) -> np.ndarray:
+    def _calc_overlap(
+            N: np.ndarray,
+            minmax: np.ndarray,
+            maxmin: np.ndarray,
+    ) -> np.ndarray:
         """Compute the F3 complexit measure given minmax and maxmin."""
         # True if the example is in the overlapping region
         # Should be > and < instead of >= and <= ?
@@ -280,10 +284,10 @@ class MFEComplexity:
         f3 = np.zeros(ovo_comb.shape[0], dtype=float)
 
         for ind, (idx1, idx2) in enumerate(ovo_comb):
-            ind_less_overlap, feat_overlap_num, _ = cls._compute_f3(
+            ind_less_overlap, feat_overlap_num, _ = cls._calc_overlap(
                 N=N,
-                minmax=cls._minmax(N, cls_inds[idx1], cls_inds[idx2]),
-                maxmin=cls._maxmin(N, cls_inds[idx1], cls_inds[idx2]))
+                minmax=cls._calc_minmax(N, cls_inds[idx1], cls_inds[idx2]),
+                maxmin=cls._calc_maxmin(N, cls_inds[idx1], cls_inds[idx2]))
 
             f3[ind] = (feat_overlap_num[ind_less_overlap] /
                        (class_freqs[idx1] + class_freqs[idx2]))
@@ -359,10 +363,11 @@ class MFEComplexity:
 
             while N_subset.size > 0:
                 # True if the example is in the overlapping region
-                ind_less_overlap, _, feat_overlapped_region = cls._compute_f3(
-                    N=N_subset,
-                    minmax=cls._minmax(N_subset, y_class1, y_class2),
-                    maxmin=cls._maxmin(N_subset, y_class1, y_class2))
+                ind_less_overlap, _, feat_overlapped_region = (
+                    cls._calc_overlap(
+                        N=N_subset,
+                        minmax=cls._calc_minmax(N_subset, y_class1, y_class2),
+                        maxmin=cls._calc_maxmin(N_subset, y_class1, y_class2)))
 
                 # boolean that if True, this example is in the overlapping
                 # region
@@ -470,7 +475,7 @@ class MFEComplexity:
     @classmethod
     def ft_n1(cls, N: np.ndarray, y: np.ndarray,
               metric: str = "euclidean") -> float:
-        """Compute the fraction of borderline points measure.
+        """Compute the fraction of borderline points.
 
         Parameters
         ----------
@@ -488,7 +493,7 @@ class MFEComplexity:
         Returns
         -------
         float
-            Fraction of borderline points measure.
+            Fraction of borderline points.
 
         References
         ----------
@@ -574,7 +579,7 @@ class MFEComplexity:
         """
         if cls_inds is None:
             classes = np.unique(y)
-            cls_inds = MFEComplexity._compute_cls_inds(y, classes)
+            cls_inds = MFEComplexity._calc_cls_inds(y, classes)
 
         # 0-1 feature scaling
         N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
@@ -624,7 +629,7 @@ class MFEComplexity:
             y: np.array,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> float:
-        """Compute the entropy of class proportions measure.
+        """Compute the entropy of class proportions.
 
         Parameters
         ----------
@@ -638,7 +643,7 @@ class MFEComplexity:
         Returns
         -------
         float
-            Entropy of class proportions measure.
+            Entropy of class proportions.
 
         References
         ----------
@@ -651,19 +656,18 @@ class MFEComplexity:
             _, class_freqs = np.unique(y, return_counts=True)
 
         num_class = class_freqs.size
-        num_inst = y.size
 
-        pc_i = class_freqs / num_inst
-        c1 = -np.sum(pc_i * np.log(pc_i)) / np.log(num_class)
-        # TODO: This feature seems to be a normalized version of the
-        # clustering-group feature 'ft_nre'. Should we keep both?
+        # Note: calling 'ft_nre' just to make explicity the link
+        # between this metafeature and 'C1'.
+        c1 = MFEClustering.ft_nre(
+            y=y, class_freqs=class_freqs) / np.log(num_class)
 
         return c1
 
     @classmethod
     def ft_c2(cls, y: np.ndarray,
               class_freqs: t.Optional[np.ndarray] = None) -> float:
-        """Compute the imbalance ratio measure.
+        """Compute the imbalance ratio.
 
         Parameters
         ----------
@@ -677,7 +681,7 @@ class MFEComplexity:
         Returns
         -------
         float
-            The imbalance ratio measure.
+            The imbalance ratio.
 
         References
         ----------
@@ -700,18 +704,18 @@ class MFEComplexity:
         return c2
 
     @classmethod
-    def ft_t2(cls, N: np.ndarray) -> float:
-        """Compute the average number of features per dimension measure.
+    def ft_t2(cls, X: np.ndarray) -> float:
+        """Compute the average number of features per dimension.
 
         Parameters
         ----------
-        N : :obj:`np.ndarray`
-            Attributes from fitted data.
+        X : :obj:`np.ndarray`
+            Original attributes from fitted data.
 
         Returns
         -------
         float
-            Average number of features per dimension measure.
+            Average number of features per dimension.
 
         References
         ----------
@@ -720,14 +724,9 @@ class MFEComplexity:
            A survey on measuring classification complexity (V2). (2019)
            Page 15.
         """
-        # TODO: Currently, categorical variables are ignored. Should we adjust
-        # this?
-        # TODO: If the categorical attributes are considered, this feature is
-        # just the 'ft_attr_to_inst' from the General group. Should we
-        # adjust  keep both?
-
-        num_inst, num_attr = N.shape
-        return num_attr / num_inst
+        # Note: calling 'ft_attr_to_inst' just to make explicity the link
+        # between this metafeature and 'T2'.
+        return MFEGeneral.ft_attr_to_inst(X=X)
 
     @classmethod
     def ft_t3(
@@ -736,7 +735,7 @@ class MFEComplexity:
             num_attr_pca: t.Optional[int] = None,
             random_state: t.Optional[int] = None,
     ) -> float:
-        """Compute the average number of PCA dimensions per points measure.
+        """Compute the average number of PCA dimensions per points.
 
         Parameters
         ----------
@@ -757,7 +756,8 @@ class MFEComplexity:
         Returns
         -------
         float
-            Average number of PCA dimensions per points measure.
+            Average number of PCA dimensions (explaining at least 95% of the
+            data variance) per points.
 
         References
         ----------
@@ -801,8 +801,8 @@ class MFEComplexity:
         Returns
         -------
         float
-            An float with the ratio of the PCA dimension to the original
-            dimension measure.
+            Ratio of the PCA dimension (explaining at least 95% of the data
+            variance) to the original dimension.
 
         References
         ----------
