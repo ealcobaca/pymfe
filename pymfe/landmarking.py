@@ -109,7 +109,7 @@ class MFELandmarking:
             num_cv_folds: int,
             shuffle_cv_folds: t.Optional[bool] = False,
             random_state: t.Optional[int] = None,
-            lm_sample_frac: t.Optional[float] = 1.0,
+            lm_sample_frac: float = 1.0,
             **kwargs) -> t.Dict[str, t.Any]:
         """Precompute k-fold cross validation related values.
 
@@ -134,7 +134,7 @@ class MFELandmarking:
             number generator; If None, the random number generator is the
             RandomState instance used by np.random.
 
-        lm_sample_frac : float
+        lm_sample_frac : float, optional
             The percentage of examples subsampled. Value different from default
             will generate the subsampling-based relative landmarking
             metafeatures. Used only if ``sample_inds`` is not precomputed and
