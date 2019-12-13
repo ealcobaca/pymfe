@@ -290,19 +290,18 @@ class MFELandmarking:
         model = sklearn.tree.DecisionTreeClassifier(
             max_depth=1, random_state=random_state)
 
-        result = np.zeros(skf.n_splits, dtype=float)
+        res = np.zeros(skf.n_splits, dtype=float)
 
-        for fold_ind, split_inds in enumerate(skf.split(N, y)):
-            train_inds, test_inds = split_inds
-            X_train = N[train_inds, :]
-            X_test = N[test_inds, :]
-            y_train, y_test = y[train_inds], y[test_inds]
+        for ind_fold, (inds_train, inds_test) in enumerate(skf.split(N, y)):
+            X_train = N[inds_train, :]
+            X_test = N[inds_test, :]
+            y_train, y_test = y[inds_train], y[inds_test]
 
             model.fit(X_train, y_train)
-            pred = model.predict(X_test)
-            result[fold_ind] = score(y_test, pred)
+            y_pred = model.predict(X_test)
+            res[ind_fold] = score(y_test, y_pred)
 
-        return result
+        return res
 
     @classmethod
     def ft_random_node(
@@ -390,25 +389,23 @@ class MFELandmarking:
         if random_state is not None:
             np.random.seed(random_state)
 
-        rand_attr_ind = np.random.randint(0, N.shape[1], size=1)
+        rand_ind_attr = np.random.randint(0, N.shape[1], size=1)
 
         model = sklearn.tree.DecisionTreeClassifier(
             max_depth=1, random_state=random_state)
 
-        result = np.zeros(skf.n_splits, dtype=float)
+        res = np.zeros(skf.n_splits, dtype=float)
 
-        for fold_ind, split_inds in enumerate(skf.split(N, y)):
-            train_inds, test_inds = split_inds
-
-            X_train = N[train_inds, rand_attr_ind, np.newaxis]
-            X_test = N[test_inds, rand_attr_ind, np.newaxis]
-            y_train, y_test = y[train_inds], y[test_inds]
+        for ind_fold, (inds_train, inds_test) in enumerate(skf.split(N, y)):
+            X_train = N[inds_train, rand_ind_attr, np.newaxis]
+            X_test = N[inds_test, rand_ind_attr, np.newaxis]
+            y_train, y_test = y[inds_train], y[inds_test]
 
             model.fit(X_train, y_train)
-            pred = model.predict(X_test)
-            result[fold_ind] = score(y_test, pred)
+            y_pred = model.predict(X_test)
+            res[ind_fold] = score(y_test, y_pred)
 
-        return result
+        return res
 
     @classmethod
     def ft_worst_node(
@@ -496,22 +493,21 @@ class MFELandmarking:
         model = sklearn.tree.DecisionTreeClassifier(
             max_depth=1, random_state=random_state)
 
-        result = np.zeros(skf.n_splits, dtype=float)
+        res = np.zeros(skf.n_splits, dtype=float)
 
-        for fold_ind, split_inds in enumerate(skf.split(N, y)):
-            train_inds, test_inds = split_inds
+        for ind_fold, (inds_train, inds_test) in enumerate(skf.split(N, y)):
             importance = MFELandmarking._calc_importance(
-                N=N[train_inds, :], y=y[train_inds], random_state=random_state)
+                N=N[inds_train, :], y=y[inds_train], random_state=random_state)
 
-            X_train = N[train_inds, importance[0], np.newaxis]
-            X_test = N[test_inds, importance[0], np.newaxis]
-            y_train, y_test = y[train_inds], y[test_inds]
+            X_train = N[inds_train, importance[0], np.newaxis]
+            X_test = N[inds_test, importance[0], np.newaxis]
+            y_train, y_test = y[inds_train], y[inds_test]
 
             model.fit(X_train, y_train)
-            pred = model.predict(X_test)
-            result[fold_ind] = score(y_test, pred)
+            y_pred = model.predict(X_test)
+            res[ind_fold] = score(y_test, y_pred)
 
-        return result
+        return res
 
     @classmethod
     def ft_linear_discr(
@@ -601,19 +597,18 @@ class MFELandmarking:
 
         model = sklearn.discriminant_analysis.LinearDiscriminantAnalysis()
 
-        result = np.zeros(skf.n_splits, dtype=float)
+        res = np.zeros(skf.n_splits, dtype=float)
 
-        for fold_ind, split_inds in enumerate(skf.split(N, y)):
-            train_inds, test_inds = split_inds
-            X_train = N[train_inds, :]
-            X_test = N[test_inds, :]
-            y_train, y_test = y[train_inds], y[test_inds]
+        for ind_fold, (inds_train, inds_test) in enumerate(skf.split(N, y)):
+            X_train = N[inds_train, :]
+            X_test = N[inds_test, :]
+            y_train, y_test = y[inds_train], y[inds_test]
 
             model.fit(X_train, y_train)
-            pred = model.predict(X_test)
-            result[fold_ind] = score(y_test, pred)
+            y_pred = model.predict(X_test)
+            res[ind_fold] = score(y_test, y_pred)
 
-        return result
+        return res
 
     @classmethod
     def ft_naive_bayes(
@@ -703,19 +698,18 @@ class MFELandmarking:
 
         model = sklearn.naive_bayes.GaussianNB()
 
-        result = np.zeros(skf.n_splits, dtype=float)
+        res = np.zeros(skf.n_splits, dtype=float)
 
-        for fold_ind, split_inds in enumerate(skf.split(N, y)):
-            train_inds, test_inds = split_inds
-            X_train = N[train_inds, :]
-            X_test = N[test_inds, :]
-            y_train, y_test = y[train_inds], y[test_inds]
+        for ind_fold, (inds_train, inds_test) in enumerate(skf.split(N, y)):
+            X_train = N[inds_train, :]
+            X_test = N[inds_test, :]
+            y_train, y_test = y[inds_train], y[inds_test]
 
             model.fit(X_train, y_train)
-            pred = model.predict(X_test)
-            result[fold_ind] = score(y_test, pred)
+            y_pred = model.predict(X_test)
+            res[ind_fold] = score(y_test, y_pred)
 
-        return result
+        return res
 
     @classmethod
     def ft_one_nn(
@@ -740,7 +734,7 @@ class MFELandmarking:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y :obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
         score : :obj:`callable`
@@ -806,19 +800,18 @@ class MFELandmarking:
             p=2,
             metric="minkowski")
 
-        result = np.zeros(skf.n_splits, dtype=float)
+        res = np.zeros(skf.n_splits, dtype=float)
 
-        for fold_ind, split_inds in enumerate(skf.split(N, y)):
-            train_inds, test_inds = split_inds
-            X_train = N[train_inds, :]
-            X_test = N[test_inds, :]
-            y_train, y_test = y[train_inds], y[test_inds]
+        for ind_fold, (inds_train, inds_test) in enumerate(skf.split(N, y)):
+            X_train = N[inds_train, :]
+            X_test = N[inds_test, :]
+            y_train, y_test = y[inds_train], y[inds_test]
 
             model.fit(X_train, y_train)
-            pred = model.predict(X_test)
-            result[fold_ind] = score(y_test, pred)
+            y_pred = model.predict(X_test)
+            res[ind_fold] = score(y_test, y_pred)
 
-        return result
+        return res
 
     @classmethod
     def ft_elite_nn(
@@ -905,19 +898,18 @@ class MFELandmarking:
 
         model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=1)
 
-        result = np.zeros(skf.n_splits, dtype=float)
+        res = np.zeros(skf.n_splits, dtype=float)
 
-        for fold_ind, split_inds in enumerate(skf.split(N, y)):
-            train_inds, test_inds = split_inds
+        for ind_fold, (inds_train, inds_test) in enumerate(skf.split(N, y)):
             importance = MFELandmarking._calc_importance(
-                N=N[train_inds, :], y=y[train_inds], random_state=random_state)
+                N=N[inds_train, :], y=y[inds_train], random_state=random_state)
 
-            X_train = N[train_inds, importance[-1], np.newaxis]
-            X_test = N[test_inds, importance[-1], np.newaxis]
-            y_train, y_test = y[train_inds], y[test_inds]
+            X_train = N[inds_train, importance[-1], np.newaxis]
+            X_test = N[inds_test, importance[-1], np.newaxis]
+            y_train, y_test = y[inds_train], y[inds_test]
 
             model.fit(X_train, y_train)
-            pred = model.predict(X_test)
-            result[fold_ind] = score(y_test, pred)
+            y_pred = model.predict(X_test)
+            res[ind_fold] = score(y_test, y_pred)
 
-        return result
+        return res
