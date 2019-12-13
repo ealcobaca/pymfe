@@ -145,7 +145,7 @@ class MFEStatistical:
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            eig_vals, eig_vecs = MFEStatistical._linear_disc_mat_eig(
+            eig_vals, eig_vecs = MFEStatistical._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
 
             _, num_attr = N.shape
@@ -216,7 +216,7 @@ class MFEStatistical:
         return precomp_vals
 
     @classmethod
-    def _linear_disc_mat_eig(
+    def _calc_linear_disc_mat_eig(
             cls,
             N: np.ndarray,
             y: np.ndarray,
@@ -464,7 +464,7 @@ class MFEStatistical:
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            eig_vals, _ = MFEStatistical._linear_disc_mat_eig(
+            eig_vals, _ = MFEStatistical._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
 
             _, num_attr = N.shape
@@ -1697,7 +1697,7 @@ class MFEStatistical:
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            eig_vals, _ = MFEStatistical._linear_disc_mat_eig(
+            eig_vals, _ = MFEStatistical._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
 
             _, num_attr = N.shape

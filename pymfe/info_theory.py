@@ -136,7 +136,10 @@ class MFEInfoTheory:
         if y is not None and C is not None and C.size:
             if "joint_ent" not in kwargs:
                 precomp_vals["joint_ent"] = np.apply_along_axis(
-                    func1d=MFEInfoTheory._joint_ent, axis=0, arr=C, vec_y=y)
+                    func1d=MFEInfoTheory._calc_joint_ent,
+                    axis=0,
+                    arr=C,
+                    vec_y=y)
 
             if "mut_inf" not in kwargs:
                 precomp_vals["mut_inf"] = MFEInfoTheory.ft_mut_inf(
@@ -149,9 +152,9 @@ class MFEInfoTheory:
         return precomp_vals
 
     @classmethod
-    def _entropy(cls,
-                 values: t.Union[np.ndarray, t.List],
-                 value_freqs: t.Optional[np.ndarray] = None) -> float:
+    def _calc_entropy(cls,
+                      values: t.Union[np.ndarray, t.List],
+                      value_freqs: t.Optional[np.ndarray] = None) -> float:
         """Calculate Shannon's entropy within array ``values``.
 
         Check ``ft_attr_ent`` and ``ft_class_ent`` methods for more informa-
@@ -169,10 +172,10 @@ class MFEInfoTheory:
         return scipy.stats.entropy(value_freqs, base=2)
 
     @classmethod
-    def _joint_ent(cls,
-                   vec_x: np.ndarray,
-                   vec_y: np.ndarray,
-                   epsilon: float = 1.0e-10) -> float:
+    def _calc_joint_ent(cls,
+                        vec_x: np.ndarray,
+                        vec_y: np.ndarray,
+                        epsilon: float = 1.0e-10) -> float:
         """Compute joint entropy between vectorx ``x`` and ``y``."""
         joint_prob_mat = pd.crosstab(
             vec_y, vec_x, normalize=True).values + epsilon
@@ -183,10 +186,10 @@ class MFEInfoTheory:
         return -1.0 * joint_ent
 
     @classmethod
-    def _conc(cls,
-              vec_x: np.ndarray,
-              vec_y: np.ndarray,
-              epsilon: float = 1.0e-10) -> float:
+    def _calc_conc(cls,
+                   vec_x: np.ndarray,
+                   vec_y: np.ndarray,
+                   epsilon: float = 1.0e-10) -> float:
         """Concentration coefficient between two arrays ``vec_x`` and ``vec_y``.
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
@@ -232,7 +235,7 @@ class MFEInfoTheory:
         col_permutations = itertools.permutations(range(num_col), 2)
 
         attr_conc = np.array([
-            MFEInfoTheory._conc(C[:, col_a], C[:, col_b])
+            MFEInfoTheory._calc_conc(C[:, col_a], C[:, col_b])
             for col_a, col_b in col_permutations
         ])
 
@@ -277,7 +280,7 @@ class MFEInfoTheory:
 
         try:
             return np.apply_along_axis(
-                func1d=MFEInfoTheory._entropy, axis=0, arr=C)
+                func1d=MFEInfoTheory._calc_entropy, axis=0, arr=C)
 
         except ValueError:
             return np.array([np.nan])
@@ -307,7 +310,7 @@ class MFEInfoTheory:
            on Artificial Intelligence Tools, 10(4):525–554, 2001.
         """
         return np.apply_along_axis(
-            func1d=MFEInfoTheory._conc, axis=0, arr=C, vec_y=y)
+            func1d=MFEInfoTheory._calc_conc, axis=0, arr=C, vec_y=y)
 
     @classmethod
     def ft_class_ent(cls,
@@ -353,7 +356,7 @@ class MFEInfoTheory:
         if class_ent is not None:
             return class_ent
 
-        return MFEInfoTheory._entropy(y, value_freqs=class_freqs)
+        return MFEInfoTheory._calc_entropy(y, value_freqs=class_freqs)
 
     @classmethod
     def ft_eq_num_attr(cls,
@@ -469,7 +472,7 @@ class MFEInfoTheory:
         """
         if joint_ent is None:
             joint_ent = np.apply_along_axis(
-                func1d=MFEInfoTheory._joint_ent, axis=0, arr=C, vec_y=y)
+                func1d=MFEInfoTheory._calc_joint_ent, axis=0, arr=C, vec_y=y)
 
         return joint_ent
 
