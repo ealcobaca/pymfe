@@ -3,11 +3,9 @@
 import typing as t
 
 import numpy as np
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import StratifiedKFold
-from sklearn.naive_bayes import GaussianNB
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+import sklearn.model_selection
+import sklearn.discriminant_analysis
+import sklearn.naive_bayes
 
 
 class MFELandmarking:
@@ -93,9 +91,9 @@ class MFELandmarking:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``skf`` (:obj:`StratifiedKFold`): Stratified K-Folds
-                  cross-validator. Provides train/test indices to split data in
-                  train/test sets.
+                - ``skf`` (:obj:`sklearn.model_selection.StratifiedKFold`):
+                  Stratified K-Folds cross-validator. Provides train/test
+                  indices to split data in train/test sets.
         """
         precomp_vals = {}
 
@@ -109,7 +107,7 @@ class MFELandmarking:
                     random_state=random_state))
 
         if "skf" not in kwargs:
-            precomp_vals["skf"] = StratifiedKFold(
+            precomp_vals["skf"] = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
@@ -162,8 +160,8 @@ class MFELandmarking:
     ) -> np.ndarray:
         """Compute the Gini index of a decision tree.
 
-        It is used the ``DecisionTreeClassifier`` implementation
-        from ``sklearn`` package.
+        It is used the ``sklearn.tree.DecisionTreeClassifier``
+        implementation.
 
         Parameters
         ----------
@@ -199,20 +197,23 @@ class MFELandmarking:
             random_state=random_state,
             sample_inds=sample_inds)
 
-        clf = DecisionTreeClassifier(random_state=random_state).fit(N, y)
+        clf = sklearn.tree.DecisionTreeClassifier(
+            random_state=random_state).fit(N, y)
+
         return np.argsort(clf.feature_importances_)
 
     @classmethod
-    def ft_best_node(cls,
-                     N: np.ndarray,
-                     y: np.ndarray,
-                     score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                     skf: t.Optional[StratifiedKFold] = None,
-                     num_cv_folds: int = 10,
-                     shuffle_cv_folds: bool = False,
-                     lm_sample_frac: float = 1.0,
-                     sample_inds: t.Optional[np.ndarray] = None,
-                     random_state: t.Optional[int] = None) -> np.ndarray:
+    def ft_best_node(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
+            num_cv_folds: int = 10,
+            shuffle_cv_folds: bool = False,
+            lm_sample_frac: float = 1.0,
+            sample_inds: t.Optional[np.ndarray] = None,
+            random_state: t.Optional[int] = None) -> np.ndarray:
         """Performance of a the best single decision tree node.
 
         Construct a single decision tree node model induced by the most
@@ -230,7 +231,7 @@ class MFELandmarking:
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        skf : :obj:`StratifiedKFold`, optional
+        skf : :obj:`sklearn.model_selection.StratifiedKFold`, optional
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
@@ -281,16 +282,18 @@ class MFELandmarking:
             sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(
+            skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
 
+        model = sklearn.tree.DecisionTreeClassifier(
+            max_depth=1, random_state=random_state)
+
         result = np.zeros(skf.n_splits, dtype=float)
+
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
             train_inds, test_inds = split_inds
-            model = DecisionTreeClassifier(
-                max_depth=1, random_state=random_state)
             X_train = N[train_inds, :]
             X_test = N[test_inds, :]
             y_train, y_test = y[train_inds], y[test_inds]
@@ -302,16 +305,17 @@ class MFELandmarking:
         return result
 
     @classmethod
-    def ft_random_node(cls,
-                       N: np.ndarray,
-                       y: np.ndarray,
-                       score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-                       skf: t.Optional[StratifiedKFold] = None,
-                       num_cv_folds: int = 10,
-                       shuffle_cv_folds: bool = False,
-                       lm_sample_frac: float = 1.0,
-                       sample_inds: t.Optional[np.ndarray] = None,
-                       random_state: t.Optional[int] = None) -> np.ndarray:
+    def ft_random_node(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
+            num_cv_folds: int = 10,
+            shuffle_cv_folds: bool = False,
+            lm_sample_frac: float = 1.0,
+            sample_inds: t.Optional[np.ndarray] = None,
+            random_state: t.Optional[int] = None) -> np.ndarray:
         """Performance of the single decision tree node model induced by a
         random attribute.
 
@@ -327,7 +331,7 @@ class MFELandmarking:
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        skf : :obj:`StratifiedKFold`, optional
+        skf : :obj:`sklearn.model_selection.StratifiedKFold`, optional
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
@@ -378,7 +382,7 @@ class MFELandmarking:
             sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(
+            skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
@@ -388,14 +392,16 @@ class MFELandmarking:
 
         rand_attr_ind = np.random.randint(0, N.shape[1], size=1)
 
+        model = sklearn.tree.DecisionTreeClassifier(
+            max_depth=1, random_state=random_state)
+
         result = np.zeros(skf.n_splits, dtype=float)
+
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
             train_inds, test_inds = split_inds
 
-            model = DecisionTreeClassifier(
-                max_depth=1, random_state=random_state)
-            X_train = N[train_inds, :][:, rand_attr_ind]
-            X_test = N[test_inds, :][:, rand_attr_ind]
+            X_train = N[train_inds, rand_attr_ind, np.newaxis]
+            X_test = N[test_inds, rand_attr_ind, np.newaxis]
             y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
@@ -410,7 +416,7 @@ class MFELandmarking:
             N: np.ndarray,
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[StratifiedKFold] = None,
+            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
             lm_sample_frac: float = 1.0,
@@ -431,7 +437,7 @@ class MFELandmarking:
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        skf : :obj:`StratifiedKFold`, optional
+        skf : :obj:`sklearn.model_selection.StratifiedKFold`, optional
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
@@ -482,21 +488,23 @@ class MFELandmarking:
             sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(
+            skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
 
+        model = sklearn.tree.DecisionTreeClassifier(
+            max_depth=1, random_state=random_state)
+
         result = np.zeros(skf.n_splits, dtype=float)
+
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
             train_inds, test_inds = split_inds
             importance = MFELandmarking._calc_importance(
-                N=N[train_inds], y=y[train_inds], random_state=random_state)
+                N=N[train_inds, :], y=y[train_inds], random_state=random_state)
 
-            model = DecisionTreeClassifier(
-                max_depth=1, random_state=random_state)
-            X_train = N[train_inds, :][:, [importance[0]]]
-            X_test = N[test_inds, :][:, [importance[0]]]
+            X_train = N[train_inds, importance[0], np.newaxis]
+            X_test = N[test_inds, importance[0], np.newaxis]
             y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
@@ -511,7 +519,7 @@ class MFELandmarking:
             N: np.ndarray,
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[StratifiedKFold] = None,
+            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
             lm_sample_frac: float = 1.0,
@@ -535,7 +543,7 @@ class MFELandmarking:
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        skf : :obj:`StratifiedKFold`, optional
+        skf : :obj:`sklearn.model_selection.StratifiedKFold`, optional
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
@@ -586,15 +594,17 @@ class MFELandmarking:
             sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(
+            skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
 
+        model = sklearn.discriminant_analysis.LinearDiscriminantAnalysis()
+
         result = np.zeros(skf.n_splits, dtype=float)
+
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
             train_inds, test_inds = split_inds
-            model = LinearDiscriminantAnalysis()
             X_train = N[train_inds, :]
             X_test = N[test_inds, :]
             y_train, y_test = y[train_inds], y[test_inds]
@@ -611,7 +621,7 @@ class MFELandmarking:
             N: np.ndarray,
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[StratifiedKFold] = None,
+            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
             lm_sample_frac: float = 1.0,
@@ -635,7 +645,7 @@ class MFELandmarking:
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        skf : :obj:`StratifiedKFold`, optional
+        skf : :obj:`sklearn.model_selection.StratifiedKFold`, optional
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
@@ -686,15 +696,17 @@ class MFELandmarking:
             sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(
+            skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
 
+        model = sklearn.naive_bayes.GaussianNB()
+
         result = np.zeros(skf.n_splits, dtype=float)
+
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
             train_inds, test_inds = split_inds
-            model = GaussianNB()
             X_train = N[train_inds, :]
             X_test = N[test_inds, :]
             y_train, y_test = y[train_inds], y[test_inds]
@@ -711,7 +723,7 @@ class MFELandmarking:
             N: np.ndarray,
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[StratifiedKFold] = None,
+            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
             lm_sample_frac: float = 1.0,
@@ -735,7 +747,7 @@ class MFELandmarking:
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        skf : :obj:`StratifiedKFold`, optional
+        skf : :obj:`sklearn.model_selection.StratifiedKFold`, optional
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
@@ -782,20 +794,22 @@ class MFELandmarking:
             sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(
+            skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
 
+        model = sklearn.neighbors.KNeighborsClassifier(
+            n_neighbors=1,
+            algorithm="auto",
+            weights="uniform",
+            p=2,
+            metric="minkowski")
+
         result = np.zeros(skf.n_splits, dtype=float)
+
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
             train_inds, test_inds = split_inds
-            model = KNeighborsClassifier(
-                n_neighbors=1,
-                algorithm="auto",
-                weights="uniform",
-                p=2,
-                metric="minkowski")
             X_train = N[train_inds, :]
             X_test = N[test_inds, :]
             y_train, y_test = y[train_inds], y[test_inds]
@@ -812,7 +826,7 @@ class MFELandmarking:
             N: np.ndarray,
             y: np.ndarray,
             score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[StratifiedKFold] = None,
+            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
             num_cv_folds: int = 10,
             shuffle_cv_folds: bool = False,
             lm_sample_frac: float = 1.0,
@@ -837,7 +851,7 @@ class MFELandmarking:
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
-        skf : :obj:`StratifiedKFold`, optional
+        skf : :obj:`sklearn.model_selection.StratifiedKFold`, optional
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
@@ -884,20 +898,22 @@ class MFELandmarking:
             sample_inds=sample_inds)
 
         if skf is None:
-            skf = StratifiedKFold(
+            skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
                 random_state=random_state if shuffle_cv_folds else None)
 
+        model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=1)
+
         result = np.zeros(skf.n_splits, dtype=float)
+
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
             train_inds, test_inds = split_inds
             importance = MFELandmarking._calc_importance(
-                N=N[train_inds], y=y[train_inds], random_state=random_state)
+                N=N[train_inds, :], y=y[train_inds], random_state=random_state)
 
-            model = KNeighborsClassifier(n_neighbors=1)
-            X_train = N[train_inds, :][:, [importance[-1]]]
-            X_test = N[test_inds, :][:, [importance[-1]]]
+            X_train = N[train_inds, importance[-1], np.newaxis]
+            X_test = N[test_inds, importance[-1], np.newaxis]
             y_train, y_test = y[train_inds], y[test_inds]
 
             model.fit(X_train, y_train)
