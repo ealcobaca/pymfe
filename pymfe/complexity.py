@@ -93,7 +93,7 @@ class MFEComplexity:
                 - ``class_freqs`` (:obj:`np.ndarray`): The number of examples
                   in each class. The indices represent the classes.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if (y is not None and not {"classes", "class_freqs"}.issubset(kwargs)):
             sub_dic = MFEGeneral.precompute_general_class(y)
@@ -214,7 +214,7 @@ class MFEComplexity:
             N: np.ndarray,
             minmax: np.ndarray,
             maxmin: np.ndarray,
-    ) -> np.ndarray:
+    ) -> t.Tuple[int, np.ndarray, np.ndarray]:
         """Compute the F3 complexit measure given minmax and maxmin."""
         # True if the example is in the overlapping region
         # Should be > and < instead of >= and <= ?
