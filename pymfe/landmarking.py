@@ -152,7 +152,7 @@ class MFELandmarking:
         return N[sample_inds, :], y[sample_inds]
 
     @classmethod
-    def _importance(
+    def _calc_importance(
             cls,
             N: np.ndarray,
             y: np.ndarray,
@@ -490,7 +490,7 @@ class MFELandmarking:
         result = np.zeros(skf.n_splits, dtype=float)
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
             train_inds, test_inds = split_inds
-            importance = MFELandmarking._importance(
+            importance = MFELandmarking._calc_importance(
                 N=N[train_inds], y=y[train_inds], random_state=random_state)
 
             model = DecisionTreeClassifier(
@@ -892,7 +892,7 @@ class MFELandmarking:
         result = np.zeros(skf.n_splits, dtype=float)
         for fold_ind, split_inds in enumerate(skf.split(N, y)):
             train_inds, test_inds = split_inds
-            importance = MFELandmarking._importance(
+            importance = MFELandmarking._calc_importance(
                 N=N[train_inds], y=y[train_inds], random_state=random_state)
 
             model = KNeighborsClassifier(n_neighbors=1)
