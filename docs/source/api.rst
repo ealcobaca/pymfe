@@ -126,23 +126,6 @@ This is the full API documentation of the `pymfe` toolbox.
 
 .. _clustering_ref:
 
-:mod:`pymfe.clustering`: Clustering Meta-features
-=================================================
-
-.. automodule:: pymfe.clustering
-   :no-members:
-   :no-inherited-members:
-
-.. currentmodule:: pymfe
-
-.. autosummary::
-   :toctree: generated/
-
-   clustering.MFEClustering
-
-
-.. _concept_ref:
-
 :mod:`pymfe.concept`: Concept Meta-features
 ===================================================
 
