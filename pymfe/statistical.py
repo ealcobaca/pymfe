@@ -117,11 +117,11 @@ class MFEStatistical:
         -------
             :obj:`dict`
                 With following precomputed items:
-                    - ``eig_vals`` (:obj:`np.ndarray`): array with filtered
+                    - ``lda_eig_vals`` (:obj:`np.ndarray`): array with filtered
                       eigenvalues of Fisher's Linear Discriminant Analysis
                       Matrix.
 
-                    - ``eig_vecs`` (:obj:`np.ndarray`): array with filtered
+                    - ``lda_eig_vecs`` (:obj:`np.ndarray`): array with filtered
                       eigenvectors of Fisher's Linear Discriminant Analysis
                       Matrix.
 
@@ -138,26 +138,26 @@ class MFEStatistical:
         precomp_vals = {}
 
         if (y is not None and N is not None and N.size
-                and not {"eig_vals", "eig_vecs"}.issubset(kwargs)):
+                and not {"lda_eig_vals", "lda_eig_vecs"}.issubset(kwargs)):
             classes = kwargs.get("classes")
             class_freqs = kwargs.get("class_freqs")
 
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            eig_vals, eig_vecs = MFEStatistical._calc_linear_disc_mat_eig(
+            lda_eig_vals, lda_eig_vecs = MFEStatistical._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
 
             _, num_attr = N.shape
 
-            eig_vals, eig_vecs = MFEStatistical._filter_eig_vals(
+            lda_eig_vals, lda_eig_vecs = MFEStatistical._filter_lda_eig_vals(
                 num_attr=num_attr,
                 num_classes=classes.size,
-                eig_vals=eig_vals,
-                eig_vecs=eig_vecs)
+                lda_eig_vals=lda_eig_vals,
+                lda_eig_vecs=lda_eig_vecs)
 
-            precomp_vals["eig_vals"] = eig_vals
-            precomp_vals["eig_vecs"] = eig_vecs
+            precomp_vals["lda_eig_vals"] = lda_eig_vals
+            precomp_vals["lda_eig_vecs"] = lda_eig_vecs
             precomp_vals["classes"] = classes
             precomp_vals["class_freqs"] = class_freqs
 
@@ -250,66 +250,63 @@ class MFEStatistical:
             Discriminant Analysis Matrix.
         """
 
-        def compute_scatter_within(
-                N: np.ndarray,
-                y: np.ndarray,
-                class_val_freq: t.Tuple[np.ndarray, np.ndarray],
-                ddof: int = 1) -> np.ndarray:
+        def compute_scatter_within(N: np.ndarray,
+                                   inst_by_class: np.ndarray,
+                                   class_freqs: np.ndarray,
+                                   ddof: int = 1) -> np.ndarray:
             """Compute Scatter Within matrix. Check doc above for more info."""
             scatter_within = np.array(
-                [(cl_frq - 1.0) * np.cov(
-                    N[y == cl_val, :], rowvar=False, ddof=ddof)
-                 for cl_val, cl_frq in zip(*class_val_freq)]).sum(axis=0)
+                [(cl_frq - ddof) * np.cov(
+                    N[inst_by_class[cl_id], :], rowvar=False, ddof=ddof)
+                 for cl_id, cl_frq in enumerate(class_freqs)],
+                dtype=float).sum(axis=0)
 
             return scatter_within
 
-        def compute_scatter_between(
-                N: np.ndarray, y: np.ndarray,
-                class_val_freq: t.Tuple[np.ndarray, np.ndarray]) -> np.ndarray:
+        def compute_scatter_between(N: np.ndarray, inst_by_class: np.ndarray,
+                                    class_freqs: np.ndarray) -> np.ndarray:
             """Compute Scatter Between matrix. The doc above has more info."""
-            class_vals, class_freqs = class_val_freq
-
             class_means = np.array(
-                [N[y == cl_val, :].mean(axis=0) for cl_val in class_vals])
+                [N[cl_insts, :].mean(axis=0) for cl_insts in inst_by_class],
+                dtype=float)
 
             relative_centers = class_means - N.mean(axis=0)
 
             scatter_between = np.array([
                 cl_frq * np.outer(rc, rc)
                 for cl_frq, rc in zip(class_freqs, relative_centers)
-            ]).sum(axis=0)
+            ], dtype=float).sum(axis=0)
 
             return scatter_between
 
         if classes is None or class_freqs is None:
-            class_val_freq = np.unique(y, return_counts=True)
-
-        else:
-            class_val_freq = (classes, class_freqs)
+            classes, class_freqs = np.unique(y, return_counts=True)
 
         if N.dtype != float:
             N = N.astype(float)
 
+        inst_by_class = np.array([y == cl_val for cl_val in classes],
+                                 dtype=bool)
+
         scatter_within = compute_scatter_within(
-            N, y, class_val_freq, ddof=ddof)
-        scatter_between = compute_scatter_between(N, y, class_val_freq)
+            N, inst_by_class, class_freqs, ddof=ddof)
+        scatter_between = compute_scatter_between(N, inst_by_class,
+                                                  class_freqs)
 
         try:
-            scatter_within_inv = np.linalg.inv(scatter_within)
-
-            return np.linalg.eig(
-                np.matmul(scatter_within_inv, scatter_between))
+            mat = np.linalg.solve(scatter_within, scatter_between)
+            return np.linalg.eig(mat)
 
         except (np.linalg.LinAlgError, ValueError):
             return np.array([np.nan]), np.array([np.nan])
 
     @classmethod
-    def _filter_eig_vals(
+    def _filter_lda_eig_vals(
             cls,
-            eig_vals: np.ndarray,
+            lda_eig_vals: np.ndarray,
             num_attr: int,
             num_classes: int,
-            eig_vecs: t.Optional[np.ndarray] = None,
+            lda_eig_vecs: t.Optional[np.ndarray] = None,
             filter_imaginary: bool = True,
             filter_less_relevant: float = True,
             epsilon: float = 1.0e-8,
@@ -322,7 +319,7 @@ class MFEStatistical:
 
         Parameters
         ----------
-        eig_vals : :obj:`np.ndarray`
+        lda_eig_vals : :obj:`np.ndarray`
             Eigenvalues to be filtered.
 
         num_attr : int
@@ -331,7 +328,7 @@ class MFEStatistical:
         num_classes : int
             Number of distinct classes in fitted data.
 
-        eig_vecs : :obj:`np.ndarray`, optional
+        lda_eig_vecs : :obj:`np.ndarray`, optional
             Eigenvectors to filter alongside eigenvalues.
 
         filter_imaginary : bool, optional
@@ -346,52 +343,42 @@ class MFEStatistical:
         """
         max_valid_eig = min(num_attr, num_classes)
 
-        if eig_vals.size <= max_valid_eig:
-            if eig_vecs is not None:
-                return eig_vals, eig_vecs
+        ret = (lda_eig_vals, lda_eig_vecs) if lda_eig_vecs else lda_eig_vals
 
-            return eig_vals
+        if lda_eig_vals.size <= max_valid_eig:
+            return ret
 
-        if eig_vecs is None:
-            eig_vals = np.array(
-                sorted(eig_vals, key=abs, reverse=True)[:max_valid_eig])
-        else:
-            eig_vals, eig_vecs = zip(
-                *sorted(
-                    zip(eig_vals, eig_vecs),
-                    key=lambda item: abs(item[0]),
-                    reverse=True)[:max_valid_eig])
+        inds_sort_evals = np.argsort(np.abs(lda_eig_vals))
 
-            eig_vals = np.array(eig_vals)
-            eig_vecs = np.array(eig_vecs)
+        lda_eig_vals = lda_eig_vals[inds_sort_evals]
+
+        if lda_eig_vecs is not None:
+            lda_eig_vecs = lda_eig_vecs[:, inds_sort_evals]
 
         if not filter_imaginary and not filter_less_relevant:
-            if eig_vecs is not None:
-                return eig_vals, eig_vecs
+            return ret
 
-            return eig_vals
-
-        indexes_to_keep = np.ones(eig_vals.size, dtype=bool)
+        indexes_to_keep = np.ones(lda_eig_vals.size, dtype=bool)
 
         if filter_imaginary:
             indexes_to_keep = np.logical_and(
-                np.isreal(eig_vals), indexes_to_keep)
+                np.isreal(lda_eig_vals), indexes_to_keep)
 
         if filter_less_relevant:
             indexes_to_keep = np.logical_and(
-                np.abs(eig_vals) > epsilon, indexes_to_keep)
+                np.abs(lda_eig_vals) > epsilon, indexes_to_keep)
 
-        eig_vals = eig_vals[indexes_to_keep]
+        lda_eig_vals = lda_eig_vals[indexes_to_keep]
 
         if filter_imaginary:
-            eig_vals = eig_vals.real
+            lda_eig_vals = lda_eig_vals.real
 
-        if eig_vecs is not None:
-            eig_vecs = eig_vecs[indexes_to_keep, :]
+        if lda_eig_vecs is not None:
+            lda_eig_vecs = lda_eig_vecs[:, indexes_to_keep]
 
-            return eig_vals, eig_vecs
+        ret = (lda_eig_vals, lda_eig_vecs) if lda_eig_vecs else lda_eig_vals
 
-        return eig_vals
+        return ret
 
     @classmethod
     def ft_can_cor(cls,
@@ -399,7 +386,7 @@ class MFEStatistical:
                    y: np.ndarray,
                    epsilon: float = 1.0e-10,
                    ddof: int = 1,
-                   eig_vals: t.Optional[np.ndarray] = None,
+                   lda_eig_vals: t.Optional[np.ndarray] = None,
                    classes: t.Optional[np.ndarray] = None,
                    class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute canonical correlations of data.
@@ -434,13 +421,10 @@ class MFEStatistical:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        epsilon : float, optional
-            A tiny value to prevent division by zero.
-
         ddof : int, optional
             Degrees of freedom of covariance matrix calculated during LDA.
 
-        eig_vals : :obj:`np.ndarray`, optional
+        lda_eig_vals : :obj:`np.ndarray`, optional
             Eigenvalues of LDA Matrix ``S``, defined above.
 
         classes : :obj:`np.ndarray`, optional
@@ -461,22 +445,21 @@ class MFEStatistical:
         .. [1] Alexandros Kalousis. Algorithm Selection via Meta-Learning.
            PhD thesis, Faculty of Science of the University of Geneva, 2002.
         """
-        if eig_vals is None:
+        if lda_eig_vals is None:
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            eig_vals, _ = MFEStatistical._calc_linear_disc_mat_eig(
+            lda_eig_vals, _ = MFEStatistical._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
 
             _, num_attr = N.shape
 
-            eig_vals = MFEStatistical._filter_eig_vals(
-                eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
+            lda_eig_vals = MFEStatistical._filter_lda_eig_vals(
+                lda_eig_vals=lda_eig_vals,
+                num_attr=num_attr,
+                num_classes=classes.size)
 
-        if not isinstance(eig_vals, np.ndarray):
-            eig_vals = np.asarray(eig_vals)
-
-        return np.sqrt(eig_vals / (epsilon + 1.0 + eig_vals))
+        return np.sqrt(lda_eig_vals / (1.0 + lda_eig_vals))
 
     @classmethod
     def ft_gravity(cls,
@@ -557,8 +540,7 @@ class MFEStatistical:
         center_cls_maj = N[y == class_maj, :].mean(axis=0)
         center_cls_min = N[y == class_min, :].mean(axis=0)
 
-        return np.linalg.norm(
-            center_cls_maj - center_cls_min, ord=norm_ord)
+        return np.linalg.norm(center_cls_maj - center_cls_min, ord=norm_ord)
 
     @classmethod
     def ft_cor(cls, N: np.ndarray,
@@ -657,7 +639,7 @@ class MFEStatistical:
             N: np.ndarray,
             y: np.ndarray,
             epsilon: float = 1.0e-10,
-            eig_vals: t.Optional[np.ndarray] = None,
+            lda_eig_vals: t.Optional[np.ndarray] = None,
             classes: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> t.Union[int, float]:
@@ -679,7 +661,7 @@ class MFEStatistical:
         epsilon : float, optional
             A tiny value to prevent division by zero.
 
-        eig_vals : :obj:`np.ndarray`, optional
+        lda_eig_vals : :obj:`np.ndarray`, optional
             Eigenvalues of LDA Matrix ``S``, defined above.
 
         classes : :obj:`np.ndarray`, optional
@@ -708,7 +690,7 @@ class MFEStatistical:
             N=N,
             y=y,
             epsilon=epsilon,
-            eig_vals=eig_vals,
+            lda_eig_vals=lda_eig_vals,
             classes=classes,
             class_freqs=class_freqs)
 
@@ -1646,7 +1628,7 @@ class MFEStatistical:
                     N: np.ndarray,
                     y: np.ndarray,
                     ddof: int = 1,
-                    eig_vals: t.Optional[np.ndarray] = None,
+                    lda_eig_vals: t.Optional[np.ndarray] = None,
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute the Wilks' Lambda value.
@@ -1671,7 +1653,7 @@ class MFEStatistical:
         ddof : int, optional
             Degrees of freedom of covariance matrix calculated during LDA.
 
-        eig_vals : :obj:`np.ndarray`, optional
+        lda_eig_vals : :obj:`np.ndarray`, optional
             Eigenvalues of LDA matrix. This argument is used to exploit
             precomputations.
 
@@ -1696,22 +1678,23 @@ class MFEStatistical:
            Principles of Data Mining and Knowledge Discovery (PKDD),
            pages 418 – 423, 1999.
         """
-        if eig_vals is None:
+        if lda_eig_vals is None:
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            eig_vals, _ = MFEStatistical._calc_linear_disc_mat_eig(
+            lda_eig_vals, _ = MFEStatistical._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
 
             _, num_attr = N.shape
 
-            eig_vals = MFEStatistical._filter_eig_vals(
-                eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
+            lda_eig_vals = MFEStatistical._filter_lda_eig_vals(
+                lda_eig_vals=lda_eig_vals,
+                num_attr=num_attr,
+                num_classes=classes.size)
 
-        if not isinstance(eig_vals, np.ndarray):
-            eig_vals = np.asarray(eig_vals)
-
-        if eig_vals.size == 0:
+        if lda_eig_vals.size == 0:
             return np.nan
 
-        return np.prod(1.0 / (1.0 + eig_vals))
+        # Note: numeric stable manner for calculating
+        # np.prod(1 / (1 + eigvals))
+        return np.exp(-np.sum(np.log1p(lda_eig_vals)))
