@@ -101,4 +101,4 @@ class TestSystem:
         value = mfe.extract()[1]
 
         assert np.allclose(
-            value, exp_value, equal_nan=True, rtol=0.05, atol=0.001)
+            value, exp_value, equal_nan=True, rtol=0.01, atol=0.001)
