@@ -7,7 +7,7 @@ from tests.utils import load_xy
 GNAME = "mfe-output-details"
 
 
-class TestErrorsWarnings:
+class TestOutput:
     """TestClass dedicated to test MFE output details."""
 
     def test_output_lengths_1(self):
