@@ -145,8 +145,9 @@ class MFEStatistical:
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            lda_eig_vals, lda_eig_vecs = MFEStatistical._calc_linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
+            lda_eig_vals, lda_eig_vecs = (
+                MFEStatistical._calc_linear_disc_mat_eig(
+                    N, y, classes=classes, class_freqs=class_freqs, ddof=ddof))
 
             _, num_attr = N.shape
 
@@ -384,7 +385,6 @@ class MFEStatistical:
     def ft_can_cor(cls,
                    N: np.ndarray,
                    y: np.ndarray,
-                   epsilon: float = 1.0e-10,
                    ddof: int = 1,
                    lda_eig_vals: t.Optional[np.ndarray] = None,
                    classes: t.Optional[np.ndarray] = None,
@@ -459,7 +459,7 @@ class MFEStatistical:
                 num_attr=num_attr,
                 num_classes=classes.size)
 
-        return np.sqrt(lda_eig_vals / (1.0 + lda_eig_vals))
+        return np.sqrt(lda_eig_vals / (1.0 + lda_eig_vals))  # type: ignore
 
     @classmethod
     def ft_gravity(cls,
@@ -638,7 +638,6 @@ class MFEStatistical:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            epsilon: float = 1.0e-10,
             lda_eig_vals: t.Optional[np.ndarray] = None,
             classes: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
@@ -657,9 +656,6 @@ class MFEStatistical:
 
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
-
-        epsilon : float, optional
-            A tiny value to prevent division by zero.
 
         lda_eig_vals : :obj:`np.ndarray`, optional
             Eigenvalues of LDA Matrix ``S``, defined above.
@@ -689,7 +685,6 @@ class MFEStatistical:
         can_cor = MFEStatistical.ft_can_cor(
             N=N,
             y=y,
-            epsilon=epsilon,
             lda_eig_vals=lda_eig_vals,
             classes=classes,
             class_freqs=class_freqs)
@@ -1692,7 +1687,7 @@ class MFEStatistical:
                 num_attr=num_attr,
                 num_classes=classes.size)
 
-        if lda_eig_vals.size == 0:
+        if not len(lda_eig_vals):
             return np.nan
 
         # Note: numeric stable manner for calculating
