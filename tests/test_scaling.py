@@ -47,10 +47,8 @@ class TestDataScaling:
     def test_scaling_error_1(self):
         with pytest.raises(ValueError):
             X, y = load_xy(0)
-            MFE().fit(X=X.values,
-                      y=y.values,
-                      rescale="invalid",
-                      transform_cat=False)
+            MFE().fit(
+                X=X.values, y=y.values, rescale="invalid", transform_cat=False)
 
     def test_scaling_error_2(self):
         with pytest.raises(TypeError):

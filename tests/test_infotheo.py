@@ -1,4 +1,4 @@
-"""Test module for General class metafeatures."""
+"""Test module for information theory class metafeatures."""
 import pytest
 
 from pymfe.mfe import MFE
@@ -8,8 +8,8 @@ import numpy as np
 GNAME = "info-theory"
 
 
-class TestInfoTheo():
-    """TestClass dedicated to test Information Theory metafeatures."""
+class TestInfoTheo:
+    """TestClass dedicated to test information theory metafeatures."""
 
     @pytest.mark.parametrize(
         "dt_id, ft_name, exp_value, precompute",
@@ -72,13 +72,13 @@ class TestInfoTheo():
             (2, 'mut_inf', [0.84198804, 0.42518056], True),
             (2, 'ns_ratio', 1.70670169, True),
         ])
-    def test_ft_methods_general(self, dt_id, ft_name, exp_value, precompute):
+    def test_ft_methods_infotheo(self, dt_id, ft_name, exp_value, precompute):
         """Function to test each meta-feature belongs to info-theory group.
         """
-        precomp_group = "info-theory" if precompute else None
+        precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
         mfe = MFE(
-            groups=["info-theory"], features=[ft_name]).fit(
+            groups=[GNAME], features=[ft_name]).fit(
                 X.values, y.values, precomp_groups=precomp_group)
         value = mfe.extract()[1]
 
@@ -86,5 +86,54 @@ class TestInfoTheo():
             assert value[0] is exp_value
 
         else:
-            assert np.allclose(value, exp_value, atol=0.001,
-                               rtol=0.05, equal_nan=True)
+            assert np.allclose(
+                value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
+
+    @pytest.mark.parametrize(
+        "dt_id, exp_value, precompute",
+        [
+            ###################
+            # Mixed data
+            ###################
+            (0, [
+                2.098425e-01, 1.953155e+00, 7.803121e-03, 1, 8.894722e+01,
+                2.941912e+00, 1.124262e-02, 1.727277e+02
+            ], False),
+            (0, [
+                2.098425e-01, 1.953155e+00, 7.803121e-03, 1, 8.894722e+01,
+                2.941912e+00, 1.124262e-02, 1.727277e+02
+            ], True),
+            ###################
+            # Categorical data
+            ###################
+            (1, [
+                0.01682327, 0.59014829, 0.02313025, 0.99857554, 52.14040170,
+                1.56957216, 0.01915167, 29.81446298
+            ], False),
+            (1, [
+                0.01682327, 0.59014829, 0.02313025, 0.99857554, 52.14040170,
+                1.56957216, 0.01915167, 29.81446298
+            ], True),
+            ###################
+            # Numerical data
+            ###################
+            (2, [
+                0.20922253, 2.27901045, 0.27232600, 1.58496250, 1.88240501,
+                3.02198491, 0.84198804, 1.70670169
+            ], False),
+            (2, [
+                0.20922253, 2.27901045, 0.27232600, 1.58496250, 1.88240501,
+                3.02198491, 0.84198804, 1.70670169
+            ], True),
+        ])
+    def test_integration_infotheo(self, dt_id, exp_value, precompute):
+        """Function to test all info-theory meta-features.
+        """
+        precomp_group = GNAME if precompute else None
+        X, y = load_xy(dt_id)
+        mfe = MFE(
+            groups=[GNAME], summary="mean").fit(
+                X.values, y.values, precomp_groups=precomp_group)
+        value = mfe.extract()[1]
+
+        np.allclose(value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)

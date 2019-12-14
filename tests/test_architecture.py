@@ -20,19 +20,15 @@ class MFETestClass:
         return None
 
     @classmethod
-    def postprocess_return_new_feature(
-            cls,
-            number_of_lists: int = 3,
-            **kwargs
-            ) -> t.Tuple[t.List, t.List, t.List]:
+    def postprocess_return_new_feature(cls, number_of_lists: int = 3, **kwargs
+                                       ) -> t.Tuple[t.List, t.List, t.List]:
         """Postprocess: return Tuple of lists."""
         return tuple(["test_value"] for _ in range(number_of_lists))
 
     @classmethod
-    def postprocess_raise_exception(
-            cls,
-            raise_exception: bool = False,
-            **kwargs) -> None:
+    def postprocess_raise_exception(cls,
+                                    raise_exception: bool = False,
+                                    **kwargs) -> None:
         """Posprocess: raise exception."""
         if raise_exception:
             raise ValueError("Expected exception (postprocess).")
@@ -59,10 +55,9 @@ class MFETestClass:
         return precomp_vals
 
     @classmethod
-    def precompute_raise_exception(
-            cls,
-            raise_exception: bool = False,
-            **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_raise_exception(cls,
+                                   raise_exception: bool = False,
+                                   **kwargs) -> t.Dict[str, t.Any]:
         """Precompute: raise exception."""
         precomp_vals = {}
 
@@ -72,27 +67,18 @@ class MFETestClass:
         return precomp_vals
 
     @classmethod
-    def ft_valid_number(
-            cls,
-            X: np.ndarray,
-            y: np.ndarray) -> float:
+    def ft_valid_number(cls, X: np.ndarray, y: np.ndarray) -> float:
         """Metafeature: float type."""
         return 0.0
 
     @classmethod
-    def ft_valid_array(
-            cls,
-            X: np.ndarray,
-            y: np.ndarray) -> np.ndarray:
+    def ft_valid_array(cls, X: np.ndarray, y: np.ndarray) -> np.ndarray:
         """Metafeature: float type."""
         return np.zeros(5)
 
     @classmethod
-    def ft_raise_expection(
-            cls,
-            X: np.ndarray,
-            y: np.ndarray,
-            raise_exception: False) -> float:
+    def ft_raise_expection(cls, X: np.ndarray, y: np.ndarray,
+                           raise_exception: False) -> float:
         """Metafeature: float type."""
         if raise_exception:
             raise ValueError("Expected exception (feature).")
@@ -102,14 +88,13 @@ class MFETestClass:
 
 class TestArchitecture:
     """Tests for the framework architecture."""
+
     def test_postprocessing_valid(self):
         """Test valid postprocessing and its automatic detection."""
         results = [], [], []
 
         _internal.post_processing(
-            results=results,
-            groups=tuple(),
-            custom_class_=MFETestClass)
+            results=results, groups=tuple(), custom_class_=MFETestClass)
 
         assert all(map(lambda l: len(l) > 0, results))
 
@@ -138,9 +123,7 @@ class TestArchitecture:
     def test_preprocessing_valid(self):
         """Test valid precomputation and its automatic detection."""
         precomp_args = _internal.process_precomp_groups(
-            precomp_groups=tuple(),
-            groups=tuple(),
-            custom_class_=MFETestClass)
+            precomp_groups=tuple(), groups=tuple(), custom_class_=MFETestClass)
 
         assert len(precomp_args) > 0
 
@@ -174,10 +157,11 @@ class TestArchitecture:
         groups = [d[0] for d in desc]
         assert len(set(groups)) == len(_internal.VALID_GROUPS)
 
-        desc, _ = MFE.metafeature_description(sort_by_group=True,
-                                              sort_by_mtf=True,
-                                              print_table=False,
-                                              include_references=True)
+        desc, _ = MFE.metafeature_description(
+            sort_by_group=True,
+            sort_by_mtf=True,
+            print_table=False,
+            include_references=True)
         mtf = [d[1] for d in desc]
         assert mtf[1][0] < mtf[-1][0]
 
@@ -211,29 +195,24 @@ class TestArchitecture:
         assert (len(res) == len(_internal.VALID_GROUPS)
                 and not set(res).symmetric_difference(_internal.VALID_GROUPS))
 
-    @pytest.mark.parametrize(
-        "groups",
-        [
-            "statistical",
-            "general",
-            "landmarking",
-            "relative",
-            "model-based",
-            "info-theory",
-            ("statistical", "landmarking"),
-            ("landmarking", "relative"),
-            ("general", "model-based", "statistical"),
-            ("statistical", "statistical"),
-        ])
+    @pytest.mark.parametrize("groups", [
+        "statistical",
+        "general",
+        "landmarking",
+        "relative",
+        "model-based",
+        "info-theory",
+        ("statistical", "landmarking"),
+        ("landmarking", "relative"),
+        ("general", "model-based", "statistical"),
+        ("statistical", "statistical"),
+    ])
     def test_parse_valid_metafeatures(self, groups):
         """Check the length of valid metafeatures per group."""
         X, y = load_xy(0)
 
         mfe = MFE(
-            groups="all",
-            summary=None,
-            lm_sample_frac=0.5,
-            random_state=1234)
+            groups="all", summary=None, lm_sample_frac=0.5, random_state=1234)
 
         mfe.fit(X.values, y.values)
 

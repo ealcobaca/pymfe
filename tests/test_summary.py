@@ -8,8 +8,8 @@ import numpy as np
 
 
 def test_get_summary():
-    assert (not set(pymfe.mfe.MFE.valid_summary())
-                .symmetric_difference(pymfe._internal.VALID_SUMMARY))
+    assert (not set(pymfe.mfe.MFE.valid_summary()).symmetric_difference(
+        pymfe._internal.VALID_SUMMARY))
 
 
 def test_sum_histogram():
