@@ -205,7 +205,7 @@ class MFEStatistical:
                 precomp_vals["cov_mat"] = np.cov(N, rowvar=False, ddof=ddof)
 
             if "abs_corr_mat" not in kwargs:
-                abs_corr_mat = abs(np.corrcoef(N, rowvar=False))
+                abs_corr_mat = np.abs(np.corrcoef(N, rowvar=False))
 
                 if (not isinstance(abs_corr_mat, np.ndarray)
                         and np.isnan(abs_corr_mat)):
@@ -287,7 +287,8 @@ class MFEStatistical:
         else:
             class_val_freq = (classes, class_freqs)
 
-        N = N.astype(float)
+        if N.dtype != float:
+            N = N.astype(float)
 
         scatter_within = compute_scatter_within(
             N, y, class_val_freq, ddof=ddof)
@@ -370,7 +371,7 @@ class MFEStatistical:
 
             return eig_vals
 
-        indexes_to_keep = np.array(eig_vals.size * [True])
+        indexes_to_keep = np.ones(eig_vals.size, dtype=bool)
 
         if filter_imaginary:
             indexes_to_keep = np.logical_and(
@@ -378,7 +379,7 @@ class MFEStatistical:
 
         if filter_less_relevant:
             indexes_to_keep = np.logical_and(
-                abs(eig_vals) > epsilon, indexes_to_keep)
+                np.abs(eig_vals) > epsilon, indexes_to_keep)
 
         eig_vals = eig_vals[indexes_to_keep]
 
@@ -473,9 +474,9 @@ class MFEStatistical:
                 eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
 
         if not isinstance(eig_vals, np.ndarray):
-            eig_vals = np.array(eig_vals)
+            eig_vals = np.asarray(eig_vals)
 
-        return (eig_vals / (epsilon + 1.0 + eig_vals))**0.5
+        return np.sqrt(eig_vals / (epsilon + 1.0 + eig_vals))
 
     @classmethod
     def ft_gravity(cls,
@@ -509,8 +510,11 @@ class MFEStatistical:
             |norm_ord   | Distance name             |
             +-----------+---------------------------+
             |-> -inf    | Min value                 |
+            +-----------+---------------------------+
             |1.0        | Manhattan/City Block      |
+            +-----------+---------------------------+
             |2.0        | Euclidean                 |
+            +-----------+---------------------------+
             |-> +inf    | Max value (infinite norm) |
             +-----------+---------------------------+
 
@@ -541,21 +545,20 @@ class MFEStatistical:
         if classes is None or class_freqs is None:
             classes, class_freqs = np.unique(y, return_counts=True)
 
-        class_freq_most, _ = max(zip(classes, class_freqs), key=lambda x: x[1])
+        ind_cls_maj = np.argmax(class_freqs)
+        class_maj = classes[ind_cls_maj]
 
-        class_freq_most_ind = np.where(class_freq_most == classes)[0]
+        classes = np.delete(classes, ind_cls_maj)
+        class_freqs = np.delete(class_freqs, ind_cls_maj)
 
-        classes = np.delete(classes, class_freq_most_ind)
-        class_freqs = np.delete(class_freqs, class_freq_most_ind)
+        ind_cls_min = np.argmin(class_freqs)
+        class_min = classes[ind_cls_min]
 
-        class_freq_least, _ = min(
-            zip(classes, class_freqs), key=lambda x: x[1])
-
-        center_freq_class_most = N[y == class_freq_most, :].mean(axis=0)
-        center_freq_class_least = N[y == class_freq_least, :].mean(axis=0)
+        center_cls_maj = N[y == class_maj, :].mean(axis=0)
+        center_cls_min = N[y == class_min, :].mean(axis=0)
 
         return np.linalg.norm(
-            center_freq_class_most - center_freq_class_least, ord=norm_ord)
+            center_cls_maj - center_cls_min, ord=norm_ord)
 
     @classmethod
     def ft_cor(cls, N: np.ndarray,
@@ -591,7 +594,7 @@ class MFEStatistical:
            Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if abs_corr_mat is None:
-            abs_corr_mat = abs(np.corrcoef(N, rowvar=False))
+            abs_corr_mat = np.abs(np.corrcoef(N, rowvar=False))
 
         if not isinstance(abs_corr_mat, np.ndarray) and np.isnan(abs_corr_mat):
             return np.array([np.nan])
@@ -600,7 +603,7 @@ class MFEStatistical:
 
         inf_triang_vals = abs_corr_mat[np.tril_indices(res_num_rows, k=-1)]
 
-        return abs(inf_triang_vals)
+        return np.abs(inf_triang_vals)
 
     @classmethod
     def ft_cov(cls,
@@ -646,7 +649,7 @@ class MFEStatistical:
 
         inf_triang_vals = cov_mat[np.tril_indices(res_num_rows, k=-1)]
 
-        return abs(inf_triang_vals)
+        return np.abs(inf_triang_vals)
 
     @classmethod
     def ft_nr_disc(
@@ -793,7 +796,7 @@ class MFEStatistical:
 
         if allow_zeros:
             cols_invalid = min_values < 0.0
-            cols_zero = 0.0 <= abs(min_values) < epsilon
+            cols_zero = 0.0 <= np.abs(min_values) < epsilon
             cols_valid = np.logical_not(np.logical_or(cols_invalid, cols_zero))
 
         else:
@@ -944,7 +947,7 @@ class MFEStatistical:
            selection for classification. Applied Soft Computing,
            6(2):119 – 138, 2006.
         """
-        median_dev = abs(N - np.median(N, axis=0))
+        median_dev = np.abs(N - np.median(N, axis=0))
         return np.median(median_dev, axis=0) * factor
 
     @classmethod
@@ -1706,7 +1709,7 @@ class MFEStatistical:
                 eig_vals=eig_vals, num_attr=num_attr, num_classes=classes.size)
 
         if not isinstance(eig_vals, np.ndarray):
-            eig_vals = np.array(eig_vals)
+            eig_vals = np.asarray(eig_vals)
 
         if eig_vals.size == 0:
             return np.nan
