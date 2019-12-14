@@ -103,7 +103,7 @@ class MFEConcept:
             conceptvar_alpha: float = 2.0,
             concept_dist_metric: str = "euclidean",
             concept_minimum: float = 10e-10,
-            concept_distances: np.ndarray = None,
+            concept_distances: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the concept variation that estimates the variability of
         class labels among examples.
@@ -177,7 +177,7 @@ class MFEConcept:
             wg_dist_alpha: float = 2.0,
             concept_dist_metric: str = "euclidean",
             concept_minimum: float = 10e-10,
-            concept_distances: np.ndarray = None,
+            concept_distances: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the weighted distance, that captures how dense or sparse
         is the example distribution.
@@ -243,7 +243,7 @@ class MFEConcept:
             y: np.ndarray,
             impconceptvar_alpha: float = 1.0,
             concept_dist_metric: str = "euclidean",
-            concept_distances: np.ndarray = None,
+            concept_distances: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the improved concept variation that estimates the
         variability of class labels among examples.
@@ -308,7 +308,7 @@ class MFEConcept:
             N: np.ndarray,
             cohesiveness_alpha: float = 1.0,
             concept_dist_metric: str = "euclidean",
-            concept_distances: np.ndarray = None,
+            concept_distances: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the improved version of the weighted distance, that
         captures how dense or sparse is the example distribution.
