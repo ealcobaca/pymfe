@@ -1,4 +1,4 @@
-"""Test module for General class metafeatures."""
+"""Test module for general class metafeatures."""
 import pytest
 
 from pymfe.mfe import MFE
@@ -8,8 +8,8 @@ import numpy as np
 GNAME = "general"
 
 
-class TestGeneral():
-    """TestClass dedicated to test General metafeatures."""
+class TestGeneral:
+    """TestClass dedicated to test general metafeatures."""
 
     @pytest.mark.parametrize(
         "dt_id, ft_name, exp_value, precompute",
@@ -93,10 +93,10 @@ class TestGeneral():
     def test_ft_methods_general(self, dt_id, ft_name, exp_value, precompute):
         """Function to test each meta-feature belongs to general group.
         """
-        precomp_group = "general" if precompute else None
+        precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
         mfe = MFE(
-            groups=["general"], features=[ft_name]).fit(
+            groups=[GNAME], features=[ft_name]).fit(
                 X.values, y.values, precomp_groups=precomp_group)
         value = mfe.extract()[1]
 
@@ -105,3 +105,38 @@ class TestGeneral():
 
         else:
             assert np.allclose(value, exp_value)
+
+    @pytest.mark.parametrize(
+        "dt_id, exp_value, precompute",
+        [
+            ###################
+            # Mixed data
+            ###################
+            (0, [0.08, 1, 0.50, 12.50, 4, 0, 2, 2, 50, 2, 1.0], False),
+            (0, [0.08, 1, 0.50, 12.50, 4, 0, 2, 2, 50, 2, 1.0], True),
+            ###################
+            # Categorical data
+            ###################
+            (1, [36 / 3196, np.nan, 0.5, 88.77778, 36, 35, 36, 2, 3196, 0, 0],
+             False),
+            (1, [36 / 3196, np.nan, 0.5, 88.77778, 36, 35, 36, 2, 3196, 0, 0],
+             True),
+            ###################
+            # Numerical data
+            ###################
+            (2, [
+                0.02666667, 0.0, 0.33333333, 37.50, 4, 0, 0, 3, 150, 4, np.nan
+            ], False),
+            (2, [
+                0.02666667, 0.0, 0.33333333, 37.50, 4, 0, 0, 3, 150, 4, np.nan
+            ], True),
+        ])
+    def test_integration_general(self, dt_id, exp_value, precompute):
+        precomp_group = GNAME if precompute else None
+        X, y = load_xy(dt_id)
+        mfe = MFE(
+            groups=[GNAME], summary="mean").fit(
+                X.values, y.values, precomp_groups=precomp_group)
+        value = mfe.extract()[1]
+
+        assert np.allclose(value, exp_value, equal_nan=True)

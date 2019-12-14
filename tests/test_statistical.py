@@ -1,4 +1,4 @@
-"""Test module for General class metafeatures."""
+"""Test module for statistical class metafeatures."""
 import pytest
 
 from pymfe.mfe import MFE
@@ -8,8 +8,8 @@ import numpy as np
 GNAME = "statistical"
 
 
-class TestStatistical():
-    """TestClass dedicated to test Statistical metafeatures."""
+class TestStatistical:
+    """TestClass dedicated to test statistical metafeatures."""
 
     @pytest.mark.parametrize(
         "dt_id, ft_name, exp_value, precompute",
@@ -128,12 +128,11 @@ class TestStatistical():
             # Numerical data
             ###################
             (2, "can_cor", [0.72548576, 0.36680730], True),
-            (2, "gravity", 3.20517457, True),
             (2, "cor", [0.58981572, 0.34191469], True),
             (2, "cov", [0.59432267, 0.56030719], True),
-            (2, "nr_disc", 2, True),
             (2, "eigenvalues", [1.14232282, 2.05710822], True),
             (2, "g_mean", [3.22172156, 2.02456808], True),
+            (2, "gravity", 3.20517457, True),
             (2, "h_mean", [2.97629003, 2.14893747], True),
             (2, "iq_range", [1.70000000, 1.27540843], True),
             (2, "kurtosis", [-0.79537400, 0.75835782], True),
@@ -143,6 +142,7 @@ class TestStatistical():
             (2, "median", [3.61250000, 1.91936404], True),
             (2, "min", [1.85000000, 1.80831413], True),
             (2, "nr_cor_attr", 0.5, True),
+            (2, "nr_disc", 2, True),
             (2, "nr_norm", 1, True),
             (2, "nr_outliers", 1, True),
             (2, "range", [3.57500000, 1.65000000], True),
@@ -154,12 +154,12 @@ class TestStatistical():
             (2, "var", [1.14232282, 1.33129110], True),
             (2, "w_lambda", 0.02352545, True),
             (2, "can_cor", [0.72548576, 0.36680730], False),
-            (2, "gravity", 3.20517457, False),
             (2, "cor", [0.58981572, 0.34191469], False),
             (2, "cov", [0.59432267, 0.56030719], False),
             (2, "nr_disc", 2, False),
             (2, "eigenvalues", [1.14232282, 2.05710822], False),
             (2, "g_mean", [3.22172156, 2.02456808], False),
+            (2, "gravity", 3.20517457, False),
             (2, "h_mean", [2.97629003, 2.14893747], False),
             (2, "iq_range", [1.70000000, 1.27540843], False),
             (2, "kurtosis", [-0.79537400, 0.75835782], False),
@@ -180,13 +180,14 @@ class TestStatistical():
             (2, "var", [1.14232282, 1.33129110], False),
             (2, "w_lambda", 0.02352545, False),
         ])
-    def test_ft_methods_general(self, dt_id, ft_name, exp_value, precompute):
+    def test_ft_methods_statistical(self, dt_id, ft_name, exp_value,
+                                    precompute):
         """Function to test each meta-feature belongs to statistical group.
         """
-        precomp_group = "statistical" if precompute else None
+        precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
         mfe = MFE(
-            groups=["statistical"], features=[ft_name]).fit(
+            groups=[GNAME], features=[ft_name]).fit(
                 X.values, y.values, precomp_groups=precomp_group)
         value = mfe.extract()[1]
 
@@ -194,55 +195,49 @@ class TestStatistical():
             assert value[0] is exp_value
 
         else:
-            assert np.allclose(value, exp_value, atol=0.001,
-                               rtol=0.05, equal_nan=True)
+            assert np.allclose(
+                value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
 
-    @pytest.mark.parametrize(
-        "dt_id, exp_value, precompute, test, failure",
-        [
-            (0, 0, False, "shapiro-wilk", "soft"),
-            (1, 0, False, "shapiro-wilk", "soft"),
-            (2, 1, False, "shapiro-wilk", "soft"),
-            (0, 0, True, "shapiro-wilk", "soft"),
-            (1, 0, True, "shapiro-wilk", "soft"),
-            (2, 1, True, "shapiro-wilk", "soft"),
-            (0, 0, False, "dagostino-pearson", "soft"),
-            (1, 0, False, "dagostino-pearson", "soft"),
-            (2, 2, False, "dagostino-pearson", "soft"),
-            (0, 0, True, "dagostino-pearson", "soft"),
-            (1, 0, True, "dagostino-pearson", "soft"),
-            (2, 2, True, "dagostino-pearson", "soft"),
-            (0, 0, False, "anderson-darling", "soft"),
-            (1, 0, False, "anderson-darling", "soft"),
-            (2, 2, False, "anderson-darling", "soft"),
-            (0, 0, True, "anderson-darling", "soft"),
-            (1, 0, True, "anderson-darling", "soft"),
-            (2, 2, True, "anderson-darling", "soft"),
-            (0, 0, False, "all", "soft"),
-            (1, 0, False, "all", "soft"),
-            (2, 2, False, "all", "soft"),
-            (0, 0, True, "all", "soft"),
-            (1, 0, True, "all", "soft"),
-            (2, 2, True, "all", "soft"),
-            (0, 0, False, "all", "hard"),
-            (1, 0, False, "all", "hard"),
-            (2, 1, False, "all", "hard"),
-            (0, 0, True, "all", "hard"),
-            (1, 0, True, "all", "hard"),
-            (2, 1, True, "all", "hard"),
-        ])
-    def test_normality_tests(self,
-                             dt_id,
-                             exp_value,
-                             precompute,
-                             test,
+    @pytest.mark.parametrize("dt_id, exp_value, precompute, test, failure", [
+        (0, 0, False, "shapiro-wilk", "soft"),
+        (1, 0, False, "shapiro-wilk", "soft"),
+        (2, 1, False, "shapiro-wilk", "soft"),
+        (0, 0, True, "shapiro-wilk", "soft"),
+        (1, 0, True, "shapiro-wilk", "soft"),
+        (2, 1, True, "shapiro-wilk", "soft"),
+        (0, 0, False, "dagostino-pearson", "soft"),
+        (1, 0, False, "dagostino-pearson", "soft"),
+        (2, 2, False, "dagostino-pearson", "soft"),
+        (0, 0, True, "dagostino-pearson", "soft"),
+        (1, 0, True, "dagostino-pearson", "soft"),
+        (2, 2, True, "dagostino-pearson", "soft"),
+        (0, 0, False, "anderson-darling", "soft"),
+        (1, 0, False, "anderson-darling", "soft"),
+        (2, 2, False, "anderson-darling", "soft"),
+        (0, 0, True, "anderson-darling", "soft"),
+        (1, 0, True, "anderson-darling", "soft"),
+        (2, 2, True, "anderson-darling", "soft"),
+        (0, 0, False, "all", "soft"),
+        (1, 0, False, "all", "soft"),
+        (2, 2, False, "all", "soft"),
+        (0, 0, True, "all", "soft"),
+        (1, 0, True, "all", "soft"),
+        (2, 2, True, "all", "soft"),
+        (0, 0, False, "all", "hard"),
+        (1, 0, False, "all", "hard"),
+        (2, 1, False, "all", "hard"),
+        (0, 0, True, "all", "hard"),
+        (1, 0, True, "all", "hard"),
+        (2, 1, True, "all", "hard"),
+    ])
+    def test_normality_tests(self, dt_id, exp_value, precompute, test,
                              failure):
         """Test normality tests included in ``nr_norm`` statistical method.
         """
-        precomp_group = "statistical" if precompute else None
+        precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
         mfe = MFE(
-            groups=["statistical"], features="nr_norm").fit(
+            groups=[GNAME], features="nr_norm").fit(
                 X.values, y.values, precomp_groups=precomp_group)
         value = mfe.extract(nr_norm={"failure": failure, "method": test})[1]
 
@@ -250,21 +245,48 @@ class TestStatistical():
             assert value[0] is exp_value
 
         else:
-            assert np.allclose(value, exp_value, atol=0.001,
-                               rtol=0.05, equal_nan=True)
+            assert np.allclose(
+                value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
 
-    @pytest.mark.parametrize(
-        "test, failure",
-        [
-            ("invalid", "soft"),
-            ("anderson-darling", "invalid"),
-            ("invalid", "invalid"),
-            (None, "soft"),
-            ("all", None),
-        ])
+    @pytest.mark.parametrize("test, failure", [
+        ("invalid", "soft"),
+        ("anderson-darling", "invalid"),
+        ("invalid", "invalid"),
+        (None, "soft"),
+        ("all", None),
+    ])
     def test_error_normality_tests(self, test, failure):
         with pytest.warns(RuntimeWarning):
             X, y = load_xy(0)
-            mfe = MFE(groups=["statistical"], features="nr_norm")
+            mfe = MFE(groups=[GNAME], features="nr_norm")
             mfe.fit(X.values, y.values, precomp_groups=None)
             mfe.extract(nr_norm={"failure": failure, "method": test})
+
+    @pytest.mark.parametrize("dt_id, exp_value, precompute", [
+        (2, [
+            0.72548576, 0.58981572, 0.59432267, 1.14232282, 3.22172156,
+            3.20517457, 2.97629003, 1.70000000, -0.79537400, 1.07488500,
+            5.42500000, 3.46366667, 3.61250000, 1.85000000, 0.5, 2, 1, 1,
+            3.57500000, 0.94731040, 1.27345134, 0.06603418, 0.02871478,
+            3.46972222, 1.14232282, 0.02352545
+        ], False),
+        (2, [
+            0.72548576, 0.58981572, 0.59432267, 1.14232282, 3.22172156,
+            3.20517457, 2.97629003, 1.70000000, -0.79537400, 1.07488500,
+            5.42500000, 3.46366667, 3.61250000, 1.85000000, 0.5, 2, 1, 1,
+            3.57500000, 0.94731040, 1.27345134, 0.06603418, 0.02871478,
+            3.46972222, 1.14232282, 0.02352545
+        ], True),
+    ])
+    def test_integration_statistical(self, dt_id, exp_value, precompute):
+        """Function to test all statistical meta-features simultaneously.
+        """
+        precomp_group = GNAME if precompute else None
+        X, y = load_xy(dt_id)
+        mfe = MFE(
+            groups=[GNAME], summary="mean").fit(
+                X.values, y.values, precomp_groups=precomp_group)
+        value = mfe.extract()[1]
+
+        assert np.allclose(
+            value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)

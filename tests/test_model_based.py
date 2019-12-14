@@ -1,15 +1,15 @@
-"""Test module for ModelBased class metafeatures."""
+"""Test module for model-based class metafeatures."""
 import pytest
 
 from pymfe.mfe import MFE
 from tests.utils import load_xy
 import numpy as np
 
-GNAME = "model_based"
+GNAME = "model-based"
 
 
-class TestModelBased():
-    """TestClass dedicated to test ModelBased metafeatures."""
+class TestModelBased:
+    """TestClass dedicated to test model-based metafeatures."""
 
     @pytest.mark.parametrize(
         "dt_id, ft_name, exp_value, precompute",
@@ -110,13 +110,12 @@ class TestModelBased():
         ])
     def test_ft_methods_model_based_01(self, dt_id, ft_name, exp_value,
                                        precompute):
-        """Function to test each meta-feature belongs to model_based group.
+        """Function to test each meta-feature belongs to model-based group.
         """
-        precomp_group = "model-based" if precompute else None
+        precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
-        mfe = MFE(
-            groups=["model-based"], features=[ft_name], random_state=1234)
+        mfe = MFE(groups=[GNAME], features=[ft_name], random_state=1234)
 
         mfe.fit(X.values, y.values, precomp_groups=precomp_group)
 
@@ -227,13 +226,13 @@ class TestModelBased():
         ])
     def test_ft_methods_model_based_02(self, dt_id, ft_name, exp_value,
                                        precompute):
-        """Function to test each meta-feature belongs to model_based group.
+        """Function to test each meta-feature belongs to model-based group.
         """
-        precomp_group = "model-based" if precompute else None
+        precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
         mfe = MFE(
-            groups=["model-based"],
+            groups=[GNAME],
             features=[ft_name],
             hypparam_model_dt={
                 "max_depth": 5,
@@ -251,3 +250,60 @@ class TestModelBased():
 
         else:
             assert np.allclose(value, exp_value)
+
+    @pytest.mark.parametrize(
+        "dt_id, exp_value, precompute",
+        [
+            ###################
+            # Mixed data
+            ###################
+            (0, [
+                13, 4.6153846, 0.07692308, 84.933334, 0.5, 12,
+                1.0909090909090908, 0.24, 2.0, 3.0, 3.84, 0.16146065,
+                0.20192307, 0.09090909
+            ], False),
+            (0, [
+                13, 4.6153846, 0.07692308, 84.933334, 0.5, 12,
+                1.0909090909090908, 0.24, 2.0, 3.0, 3.84, 0.16146065,
+                0.20192307, 0.09090909
+            ], True),
+            ###################
+            # Categorical data
+            ###################
+            (1, [
+                57, 9.140351, 0.01754386, 18342.629, 0.5, 56,
+                1.4736842105263157, 0.017521902377972465, 3.5, 1.6969697,
+                8.230088, 0.05483275, 0.052245557, 0.02631579
+            ], False),
+            (1, [
+                57, 9.140351, 0.01754386, 18342.629, 0.5, 56,
+                1.4736842105263157, 0.017521902377972465, 3.5, 1.6969697,
+                8.230088, 0.05483275, 0.052245557, 0.02631579
+            ], True),
+            ###################
+            # Numerical data
+            ###################
+            (2, [
+                9, 3.7777777, 0.11111111, 37.466667, 0.33333334, 8, 2.0,
+                0.05333333333333334, 1.6, 2.0, 3.0588236, 0.19491705,
+                0.27083334, 0.24999999
+            ], False),
+            (2, [
+                9, 3.7777777, 0.11111111, 37.466667, 0.33333334, 8, 2.0,
+                0.05333333333333334, 1.6, 2.0, 3.0588236, 0.19491705,
+                0.27083334, 0.24999999
+            ], True),
+        ])
+    def test_integration_model_based(self, dt_id, exp_value, precompute):
+        """Function to test all model-based meta-features.
+        """
+        precomp_group = GNAME if precompute else None
+
+        X, y = load_xy(dt_id)
+        mfe = MFE(groups=[GNAME], summary="mean", random_state=1234)
+
+        mfe.fit(X.values, y.values, precomp_groups=precomp_group)
+
+        value = mfe.extract()[1]
+
+        assert np.allclose(value, exp_value, equal_nan=True)
