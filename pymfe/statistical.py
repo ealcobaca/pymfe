@@ -296,7 +296,7 @@ class MFEStatistical:
 
         try:
             mat = np.linalg.solve(scatter_within, scatter_between)
-            return np.linalg.eig(mat)
+            return scipy.linalg.eig(mat, overwrite_a=True, check_finite=False)
 
         except (np.linalg.LinAlgError, ValueError):
             return np.array([np.nan]), np.array([np.nan])
@@ -344,19 +344,11 @@ class MFEStatistical:
         """
         max_valid_eig = min(num_attr, num_classes)
 
-        ret = (lda_eig_vals, lda_eig_vecs) if lda_eig_vecs else lda_eig_vals
+        ret = ((lda_eig_vals, lda_eig_vecs)
+               if lda_eig_vecs is not None
+               else lda_eig_vals)
 
         if lda_eig_vals.size <= max_valid_eig:
-            return ret
-
-        inds_sort_evals = np.argsort(np.abs(lda_eig_vals))
-
-        lda_eig_vals = lda_eig_vals[inds_sort_evals]
-
-        if lda_eig_vecs is not None:
-            lda_eig_vecs = lda_eig_vecs[:, inds_sort_evals]
-
-        if not filter_imaginary and not filter_less_relevant:
             return ret
 
         indexes_to_keep = np.ones(lda_eig_vals.size, dtype=bool)
@@ -377,7 +369,18 @@ class MFEStatistical:
         if lda_eig_vecs is not None:
             lda_eig_vecs = lda_eig_vecs[:, indexes_to_keep]
 
-        ret = (lda_eig_vals, lda_eig_vecs) if lda_eig_vecs else lda_eig_vals
+        if lda_eig_vals.size > max_valid_eig:
+            inds_sort_evals = np.argsort(np.abs(lda_eig_vals))
+            lda_eig_vals = lda_eig_vals[inds_sort_evals]
+            lda_eig_vals = lda_eig_vals[:-max_valid_eig]
+
+            if lda_eig_vecs is not None:
+                lda_eig_vecs = lda_eig_vecs[:, inds_sort_evals]
+                lda_eig_vecs = lda_eig_vecs[:, :-max_valid_eig]
+
+        ret = ((lda_eig_vals, lda_eig_vecs)
+               if lda_eig_vecs is not None
+               else lda_eig_vals)
 
         return ret
 
