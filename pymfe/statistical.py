@@ -1687,7 +1687,7 @@ class MFEStatistical:
                 num_attr=num_attr,
                 num_classes=classes.size)
 
-        if not lda_eig_vals:
+        if lda_eig_vals.size == 0:  # type: ignore
             return np.nan
 
         # Note: numeric stable manner for calculating
