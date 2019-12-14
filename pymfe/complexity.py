@@ -788,6 +788,9 @@ class MFEComplexity:
               random_state: t.Optional[int] = None) -> float:
         """Compute the ratio of the PCA dimension to the original dimension.
 
+        The components kept in the PCA dimension explains at least 95% of
+        the data variance.
+
         Parameters
         ----------
         N : :obj:`np.ndarray`
