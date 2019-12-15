@@ -1248,12 +1248,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        sd_array = N.std(axis=0, ddof=ddof)
-
-        sd_array = np.array(
-            [np.nan if np.isinf(val) else val for val in sd_array])
-
-        return sd_array
+        return N.std(axis=0, ddof=ddof)
 
     @classmethod
     def ft_sd_ratio(cls,
@@ -1263,6 +1258,12 @@ class MFEStatistical:
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute a statistical test for homogeneity of covariances.
+
+        The test applied is the Box's M Test for equivalence of
+        covariances.
+
+        The null hypothesis of this test states that the covariance
+        matrices of the instances of every class are equal.
 
         Parameters
         ----------
@@ -1288,7 +1289,7 @@ class MFEStatistical:
         Returns
         -------
         :obj:`float`
-            Homogeneity of covariances test results.
+            Homogeneity of covariances test result.
 
         Notes
         -----
@@ -1314,7 +1315,7 @@ class MFEStatistical:
                 for cl in classes
             ])
 
-            return np.flip(np.flip(sample_cov_matrices, 0), 1)
+            return np.flip(m=sample_cov_matrices, axis=(0, 1))
 
         def calc_pooled_cov_mat(sample_cov_matrices: np.ndarray,
                                 vec_weight: np.ndarray, num_inst: int,
@@ -1371,7 +1372,7 @@ class MFEStatistical:
             m_factor = calc_m_factor(sample_cov_matrices, pooled_cov_mat,
                                      num_inst, num_classes, gamma, vec_weight)
 
-        except np.linalg.LinAlgError:
+        except (ValueError, np.linalg.LinAlgError):
             return np.nan
 
         return np.exp(m_factor / (num_col * (num_inst - num_classes)))
@@ -1532,12 +1533,7 @@ class MFEStatistical:
            In 2nd International Conference on Modeling Decisions for
            Artificial Intelligence (MDAI), pages 457–468, 2005.
         """
-        var_array = N.var(axis=0, ddof=ddof)
-
-        var_array = np.array(
-            [np.nan if np.isinf(val) else val for val in var_array])
-
-        return var_array
+        return N.var(axis=0, ddof=ddof)
 
     @classmethod
     def ft_w_lambda(cls,
