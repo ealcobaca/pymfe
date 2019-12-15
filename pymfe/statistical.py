@@ -136,18 +136,8 @@ class MFEStatistical:
             classes = kwargs.get("classes")
             class_freqs = kwargs.get("class_freqs")
 
-            if classes is None or class_freqs is None:
-                classes, class_freqs = np.unique(y, return_counts=True)
-
             lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs)
-
-            _, num_attr = N.shape
-
-            lda_eig_vals = MFEStatistical._filter_lda_eig_vals(
-                num_attr=num_attr,
-                num_classes=classes.size,
-                lda_eig_vals=lda_eig_vals)
+                N, y, classes=classes, class_freqs=class_freqs, filter_=True)
 
             precomp_vals["lda_eig_vals"] = lda_eig_vals
             precomp_vals["classes"] = classes
@@ -212,6 +202,7 @@ class MFEStatistical:
             cls,
             N: np.ndarray,
             y: np.ndarray,
+            filter_: bool = True,
             classes: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
@@ -225,6 +216,10 @@ class MFEStatistical:
 
         Parameters
         ----------
+        filter_ : bool, optional
+            If True, remove zero-valued eigenvalues, and keeps only the
+            real part of each eigenvalue.
+
         classes : :obj:`np.ndarray`, optional
             Distinct classes of ``y``.
 
@@ -236,19 +231,21 @@ class MFEStatistical:
         :obj:`np.ndarray`
             Eigenvalues of Linear Discriminant Analysis Matrix.
         """
+
         # pylint: disable=E1123
         # Disable false positives about scipy's keywords arguments
 
-        def compute_scatter_within(N: np.ndarray,
-                                   inst_by_class: np.ndarray,
-                                   class_freqs: np.ndarray,
-                                   ) -> np.ndarray:
+        def compute_scatter_within(
+                N: np.ndarray,
+                inst_by_class: np.ndarray,
+                class_freqs: np.ndarray,
+        ) -> np.ndarray:
             """Compute Scatter Within matrix. Check doc above for more info."""
-            scatter_within = np.array(
-                [cl_frq * np.cov(
+            scatter_within = np.array([
+                cl_frq * np.cov(
                     N[inst_by_class[cl_id], :], rowvar=False, ddof=0)
-                 for cl_id, cl_frq in enumerate(class_freqs)],
-                dtype=float).sum(axis=0)
+                for cl_id, cl_frq in enumerate(class_freqs)
+            ], dtype=float).sum(axis=0)
 
             return scatter_within
 
@@ -280,11 +277,10 @@ class MFEStatistical:
         inst_by_class = np.array([y == cl_val for cl_val in classes],
                                  dtype=bool)
 
-        scatter_within = compute_scatter_within(
-            N, inst_by_class, class_freqs)
+        scatter_within = compute_scatter_within(N, inst_by_class, class_freqs)
 
-        scatter_between = compute_scatter_between(
-            N, inst_by_class, class_freqs)
+        scatter_between = compute_scatter_between(N, inst_by_class,
+                                                  class_freqs)
 
         try:
             mat = scipy.linalg.solve(
@@ -294,13 +290,19 @@ class MFEStatistical:
                 overwrite_b=True,
                 check_finite=False).real
 
-            eig_vals = scipy.linalg.eigvals(
+            lda_eig_vals = scipy.linalg.eigvals(
                 a=mat, overwrite_a=True, check_finite=False)
-
-            return eig_vals
 
         except (np.linalg.LinAlgError, ValueError):
             return np.array([np.nan])
+
+        if filter_:
+            lda_eig_vals = cls._filter_lda_eig_vals(
+                lda_eig_vals=lda_eig_vals,
+                num_attr=N.shape[1],
+                num_classes=classes.size)
+
+        return lda_eig_vals
 
     @classmethod
     def _filter_lda_eig_vals(
@@ -309,14 +311,12 @@ class MFEStatistical:
             num_attr: int,
             num_classes: int,
             filter_imaginary: bool = True,
-            filter_less_relevant: float = True,
-            epsilon: float = 1.0e-8,
+            filter_zeros: float = True,
     ) -> np.ndarray:
         """Get most expressive eigenvalues (higher absolute value).
 
-        This function returns N eigenvalues, such that:
-
-            N <= min(num_class, num_attr)
+        This function returns N eigenvalues, such that N is defined as
+        N = min(num_class, num_attr, len(lda_eig_vals)).
 
         Parameters
         ----------
@@ -330,39 +330,30 @@ class MFEStatistical:
             Number of distinct classes in fitted data.
 
         filter_imaginary : bool, optional
-            If True, remove imaginary valued eigenvalues and its correspondent
-            eigenvectors.
+            If True, remove imaginary parts of eigenvalues.
 
-        filter_less_relevant : bool, optional
-            If True, remove eigenvalues smaller than ``epsilon``.
+        filter_zeros : bool, optional
+            If True, remove null eigenvalues.
 
-        epsilon : float, optional
-            A tiny value used to determine ``less relevant`` eigenvalues.
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Filtered eigenvalues.
         """
-        max_valid_eig = min(num_attr, num_classes)
-
-        if lda_eig_vals.size <= max_valid_eig:
-            return lda_eig_vals
-
-        indexes_to_keep = np.ones(lda_eig_vals.size, dtype=bool)
-
-        if filter_imaginary:
-            indexes_to_keep = np.logical_and(
-                np.isreal(lda_eig_vals), indexes_to_keep)
-
-        if filter_less_relevant:
-            indexes_to_keep = np.logical_and(
-                np.abs(lda_eig_vals) > epsilon, indexes_to_keep)
-
-        lda_eig_vals = lda_eig_vals[indexes_to_keep]
-
         if filter_imaginary:
             lda_eig_vals = lda_eig_vals.real
 
-        if lda_eig_vals.size > max_valid_eig:
-            inds_sort_evals = np.argsort(np.abs(lda_eig_vals))
-            lda_eig_vals = lda_eig_vals[inds_sort_evals]
-            lda_eig_vals = lda_eig_vals[:-max_valid_eig]
+        if filter_zeros:
+            lda_eig_vals = lda_eig_vals[~np.isclose(lda_eig_vals, 0.0)]
+
+        max_eigval_num = min(num_attr, num_classes)
+
+        if lda_eig_vals.size <= max_eigval_num:
+            return lda_eig_vals
+
+        inds_sort_evals = np.argsort(np.abs(lda_eig_vals))
+        lda_eig_vals = lda_eig_vals[inds_sort_evals]
+        lda_eig_vals = lda_eig_vals[:-max_eigval_num]
 
         return lda_eig_vals
 
@@ -427,18 +418,8 @@ class MFEStatistical:
            PhD thesis, Faculty of Science of the University of Geneva, 2002.
         """
         if lda_eig_vals is None:
-            if classes is None or class_freqs is None:
-                classes, class_freqs = np.unique(y, return_counts=True)
-
             lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs)
-
-            _, num_attr = N.shape
-
-            lda_eig_vals = MFEStatistical._filter_lda_eig_vals(
-                lda_eig_vals=lda_eig_vals,
-                num_attr=num_attr,
-                num_classes=classes.size)
+                N, y, classes=classes, class_freqs=class_freqs, filter_=True)
 
         return np.sqrt(lda_eig_vals / (1.0 + lda_eig_vals))
 
@@ -1005,7 +986,6 @@ class MFEStatistical:
                        N: np.ndarray,
                        threshold: float = 0.5,
                        normalize: bool = True,
-                       epsilon: float = 1.0e-8,
                        abs_corr_mat: t.Optional[np.ndarray] = None
                        ) -> t.Union[int, float]:
         """Compute the number of distinct highly correlated pair of attributes.
@@ -1026,9 +1006,6 @@ class MFEStatistical:
         normalize : bool, optional
             If True, the result is normalized by a factor of 2/(d*(d-1)), where
             ``d`` is number of attributes (columns) in ``N``.
-
-        epsilon : float, optional
-            A tiny value to prevent division by zero.
 
         abs_corr_mat : :obj:`np.ndarray`, optional
             Absolute correlation matrix of ``N``. Argument used to exploit
@@ -1054,7 +1031,7 @@ class MFEStatistical:
         norm_factor = 1
 
         if normalize:
-            norm_factor = 2.0 / (epsilon + num_attr * (num_attr - 1.0))
+            norm_factor = 2.0 / (num_attr * (num_attr - 1.0))
 
         return np.sum(abs_corr_vals >= threshold) * norm_factor
 
@@ -1307,7 +1284,6 @@ class MFEStatistical:
     def ft_sd_ratio(cls,
                     N: np.ndarray,
                     y: np.ndarray,
-                    epsilon: float = 1.0e-8,
                     ddof: int = 1,
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
@@ -1320,9 +1296,6 @@ class MFEStatistical:
 
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
-
-        epsilon : float, optional
-            A tiny value to prevent division by zero.
 
         ddof : int, optional
             Degrees of freedom for covariance matrix, calculated during this
@@ -1359,10 +1332,10 @@ class MFEStatistical:
 
         """
 
-        def calc_sample_cov_mat(N, y, epsilon, ddof):
+        def calc_sample_cov_mat(N, y, ddof):
             """Calculate the Sample Covariance Matrix for each class."""
             sample_cov_matrices = np.array([
-                np.cov(N[y == cl, :] + epsilon, rowvar=False, ddof=ddof)
+                np.cov(N[y == cl, :], rowvar=False, ddof=ddof)
                 for cl in classes
             ])
 
@@ -1379,13 +1352,13 @@ class MFEStatistical:
 
             return pooled_cov_mat
 
-        def calc_gamma_factor(num_col, num_classes, num_inst, epsilon):
+        def calc_gamma_factor(num_col, num_classes, num_inst):
             """Calculate the gamma factor which adjust the output."""
             gamma = 1.0 - (
                 (2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
-                (epsilon + 6.0 * (num_col + 1.0) *
+                (6.0 * (num_col + 1.0) *
                  (num_classes - 1.0))) * (np.sum(1.0 / vec_weight) - 1.0 /
-                                          (epsilon + num_inst - num_classes))
+                                          (num_inst - num_classes))
             return gamma
 
         def calc_m_factor(sample_cov_matrices: np.ndarray,
@@ -1394,8 +1367,7 @@ class MFEStatistical:
                           vec_weight: np.ndarray) -> float:
             """Calculate the M factor."""
             vec_logdet = [
-                np.math.log(epsilon + np.linalg.det(S_i))
-                for S_i in sample_cov_matrices
+                np.math.log(np.linalg.det(S_i)) for S_i in sample_cov_matrices
             ]
 
             m_factor = (gamma * ((num_inst - num_classes) * np.math.log(
@@ -1411,14 +1383,14 @@ class MFEStatistical:
 
         num_classes = classes.size
 
-        sample_cov_matrices = calc_sample_cov_mat(N, y, epsilon, ddof)
+        sample_cov_matrices = calc_sample_cov_mat(N, y, ddof)
 
-        vec_weight = class_freqs - 1.0 + epsilon
+        vec_weight = class_freqs - 1.0
 
         pooled_cov_mat = calc_pooled_cov_mat(sample_cov_matrices, vec_weight,
                                              num_inst, num_classes)
 
-        gamma = calc_gamma_factor(num_col, num_classes, num_inst, epsilon)
+        gamma = calc_gamma_factor(num_col, num_classes, num_inst)
 
         try:
             m_factor = calc_m_factor(sample_cov_matrices, pooled_cov_mat,
@@ -1427,8 +1399,7 @@ class MFEStatistical:
         except np.linalg.LinAlgError:
             return np.nan
 
-        return np.exp(
-            m_factor / (epsilon + num_col * (num_inst - num_classes)))
+        return np.exp(m_factor / (num_col * (num_inst - num_classes)))
 
     @classmethod
     def ft_skewness(cls, N: np.ndarray, method: int = 3,
@@ -1487,10 +1458,7 @@ class MFEStatistical:
         return skew_arr
 
     @classmethod
-    def ft_sparsity(cls,
-                    X: np.ndarray,
-                    normalize: bool = True,
-                    epsilon: float = 1.0e-8) -> np.ndarray:
+    def ft_sparsity(cls, X: np.ndarray, normalize: bool = True) -> np.ndarray:
         """Compute (possibly normalized) sparsity metric for each attribute.
 
         Sparsity ``S`` of a vector ``v`` of numeric values is defined as
@@ -1511,9 +1479,6 @@ class MFEStatistical:
             the output is not be multiplied by the ``(1.0 / (n - 1.0))`` factor
             (i.e. new output is defined as S'(v) = ((n / phi(v)) - 1.0)).
 
-        epsilon : float, optional
-            A small value to prevent division by zero.
-
         Returns
         -------
         :obj:`np.ndarray`
@@ -1531,7 +1496,7 @@ class MFEStatistical:
 
         norm_factor = 1.0
         if normalize:
-            norm_factor = 1.0 / (epsilon + num_inst - 1.0)
+            norm_factor = 1.0 / (num_inst - 1.0)
 
         return (ans - 1.0) * norm_factor
 
@@ -1651,18 +1616,8 @@ class MFEStatistical:
            pages 418 – 423, 1999.
         """
         if lda_eig_vals is None:
-            if classes is None or class_freqs is None:
-                classes, class_freqs = np.unique(y, return_counts=True)
-
             lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs)
-
-            _, num_attr = N.shape
-
-            lda_eig_vals = MFEStatistical._filter_lda_eig_vals(
-                lda_eig_vals=lda_eig_vals,
-                num_attr=num_attr,
-                num_classes=classes.size)
+                N, y, classes=classes, class_freqs=class_freqs, filter_=True)
 
         if lda_eig_vals.size == 0:
             return np.nan
