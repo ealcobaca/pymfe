@@ -186,37 +186,43 @@ class MFEInfoTheory:
         return -1.0 * joint_ent
 
     @classmethod
-    def _calc_conc(cls,
-                   vec_x: np.ndarray,
-                   vec_y: np.ndarray,
-                   epsilon: float = 1.0e-10) -> float:
+    def _calc_conc(cls, vec_x: np.ndarray, vec_y: np.ndarray) -> float:
         """Concentration coefficient between two arrays ``vec_x`` and ``vec_y``.
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
-
-        Parameters
-        ----------
-        epsilon : :obj:`float`, optional
-            Tiny numeric value to avoid division by zero.
         """
-        pij = pd.crosstab(vec_x, vec_y, normalize=True).values + epsilon
+        pij = pd.crosstab(vec_x, vec_y, normalize=True).values
 
         isum = pij.sum(axis=0)
-        jsum2 = np.sum(pij.sum(axis=1)**2.0)
+        jsum2 = np.sum(pij.sum(axis=1)**2)
 
-        conc = ((
-            (pij**2.0 / isum).sum().sum() - jsum2) / (1.0 - jsum2 + epsilon))
+        conc = ((np.sum(pij**2 / isum) - jsum2) / (1.0 - jsum2))
 
         return conc
 
     @classmethod
-    def ft_attr_conc(cls, C: np.ndarray) -> np.ndarray:
+    def ft_attr_conc(cls,
+                     C: np.ndarray,
+                     threshold: t.Optional[int] = None,
+                     random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute concentration coef. of each pair of distinct attributes.
 
         Parameters
         ----------
         C : :obj:`np.ndarray`
             Categorical attributes from fitted data.
+
+        threshold : int, optional
+            Maximum number of attributes considered. If ``C`` has more
+            attributes than this threshold, ``threshold`` random
+            attributes will be sampled. If None, then all attributes
+            are considered. Note that this method cost is exponential
+            to the number of attributes considered.
+
+        random_state : int, optional
+            Used only if ``threshold`` is given and ``C`` has more
+            attributes than it. This random seed is set before sampling
+            ``C`` attributes.
 
         Returns
         -------
@@ -232,11 +238,20 @@ class MFEInfoTheory:
         """
         _, num_col = C.shape
 
-        col_permutations = itertools.permutations(range(num_col), 2)
+        col_inds = np.arange(num_col)
+
+        if threshold is not None and num_col > threshold:
+            if random_state is not None:
+                np.random.seed(random_state)
+
+            col_inds = np.random.choice(
+                col_inds, size=threshold, replace=False)
+
+        col_permutations = itertools.permutations(col_inds, 2)
 
         attr_conc = np.array([
-            MFEInfoTheory._calc_conc(C[:, col_a], C[:, col_b])
-            for col_a, col_b in col_permutations
+            MFEInfoTheory._calc_conc(C[:, ind_attr_a], C[:, ind_attr_b])
+            for ind_attr_a, ind_attr_b in col_permutations
         ])
 
         return attr_conc
