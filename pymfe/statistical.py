@@ -206,6 +206,7 @@ class MFEStatistical:
             filter_: bool = True,
             classes: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute eigenvalues of the Linear Discriminant Analysis Matrix.
 
@@ -227,6 +228,12 @@ class MFEStatistical:
         class_freqs : :obj:`np.ndarray`, optional
             Absolute class frequencies of ``y``.
 
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances. Used to take advantage of
+            precomputations.
+
         Returns
         -------
         :obj:`np.ndarray`
@@ -238,23 +245,22 @@ class MFEStatistical:
 
         def compute_scatter_within(
                 N: np.ndarray,
-                inst_by_class: np.ndarray,
+                cls_inds: np.ndarray,
                 class_freqs: np.ndarray,
         ) -> np.ndarray:
             """Compute Scatter Within matrix. Check doc above for more info."""
             scatter_within = np.array([
-                cl_frq * np.cov(
-                    N[inst_by_class[cl_id], :], rowvar=False, ddof=0)
+                cl_frq * np.cov(N[cls_inds[cl_id], :], rowvar=False, ddof=0)
                 for cl_id, cl_frq in enumerate(class_freqs)
             ], dtype=float).sum(axis=0)
 
             return scatter_within
 
-        def compute_scatter_between(N: np.ndarray, inst_by_class: np.ndarray,
+        def compute_scatter_between(N: np.ndarray, cls_inds: np.ndarray,
                                     class_freqs: np.ndarray) -> np.ndarray:
             """Compute Scatter Between matrix. The doc above has more info."""
             class_means = np.array(
-                [N[cl_insts, :].mean(axis=0) for cl_insts in inst_by_class],
+                [N[cl_insts, :].mean(axis=0) for cl_insts in cls_inds],
                 dtype=float)
 
             relative_centers = class_means - N.mean(axis=0)
@@ -272,13 +278,13 @@ class MFEStatistical:
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
 
-        inst_by_class = np.array([y == cl_val for cl_val in classes],
-                                 dtype=bool)
+        if cls_inds is None:
+            cls_inds = np.array([np.equal(y, cl_val) for cl_val in classes],
+                                dtype=bool)
 
-        scatter_within = compute_scatter_within(N, inst_by_class, class_freqs)
+        scatter_within = compute_scatter_within(N, cls_inds, class_freqs)
 
-        scatter_between = compute_scatter_between(N, inst_by_class,
-                                                  class_freqs)
+        scatter_between = compute_scatter_between(N, cls_inds, class_freqs)
 
         try:
             mat = scipy.linalg.solve(
@@ -404,7 +410,8 @@ class MFEStatistical:
                    y: np.ndarray,
                    norm_ord: t.Union[int, float] = 2,
                    classes: t.Optional[np.ndarray] = None,
-                   class_freqs: t.Optional[np.ndarray] = None) -> float:
+                   class_freqs: t.Optional[np.ndarray] = None,
+                   cls_inds: t.Optional[np.ndarray] = None) -> float:
         """Compute the distance between minority and majority classes center
         of mass.
 
@@ -446,6 +453,12 @@ class MFEStatistical:
             ``y`` or ``classes``. If ``classes`` is given, then this argument
             must be paired with it by index.
 
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances. Used to take advantage of
+            precomputations.
+
         Returns
         -------
         :obj:`float`
@@ -472,12 +485,21 @@ class MFEStatistical:
         class_freqs = np.delete(class_freqs, ind_cls_maj)
 
         ind_cls_min = np.argmin(class_freqs)
-        class_min = classes[ind_cls_min]
 
-        center_cls_maj = N[y == class_maj, :].mean(axis=0)
-        center_cls_min = N[y == class_min, :].mean(axis=0)
+        if cls_inds is not None:
+            insts_cls_maj = N[cls_inds[ind_cls_maj, :], :]
+            insts_cls_min = N[cls_inds[ind_cls_min, :], :]
 
-        return np.linalg.norm(center_cls_maj - center_cls_min, ord=norm_ord)
+        else:
+            class_min = classes[ind_cls_min]
+            insts_cls_maj = N[y == class_maj, :]
+            insts_cls_min = N[y == class_min, :]
+
+        gravity = np.linalg.norm(
+            insts_cls_maj.mean(axis=0) - insts_cls_min.mean(axis=0),
+            ord=norm_ord)
+
+        return gravity
 
     @classmethod
     def ft_cor(cls, N: np.ndarray,
