@@ -184,8 +184,6 @@ class MFEStatistical:
         precomp_vals = {}
 
         if N is not None and N.size:
-            N = N.astype(float)
-
             if "cov_mat" not in kwargs:
                 precomp_vals["cov_mat"] = np.cov(N, rowvar=False, ddof=ddof)
 
@@ -271,9 +269,6 @@ class MFEStatistical:
         if classes is None or class_freqs is None:
             classes, class_freqs = np.unique(y, return_counts=True)
 
-        if N.dtype != float:
-            N = N.astype(float)
-
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
 
@@ -300,10 +295,7 @@ class MFEStatistical:
             return np.array([np.nan])
 
         if filter_:
-            lda_eig_vals = cls._filter_lda_eig_vals(
-                lda_eig_vals=lda_eig_vals,
-                num_attr=N.shape[1],
-                num_classes=classes.size)
+            lda_eig_vals = cls._filter_lda_eig_vals(lda_eig_vals)
 
         return lda_eig_vals
 
@@ -311,26 +303,15 @@ class MFEStatistical:
     def _filter_lda_eig_vals(
             cls,
             lda_eig_vals: np.ndarray,
-            num_attr: int,
-            num_classes: int,
             filter_imaginary: bool = True,
             filter_zeros: float = True,
     ) -> np.ndarray:
-        """Get most expressive eigenvalues (higher absolute value).
-
-        This function returns N eigenvalues, such that N is defined as
-        N = min(num_class, num_attr, len(lda_eig_vals)).
+        """Filter imaginary parts and null eigenvalues.
 
         Parameters
         ----------
         lda_eig_vals : :obj:`np.ndarray`
             Eigenvalues to be filtered.
-
-        num_attr : int
-            Number of attributes (columns) in data.
-
-        num_classes : int
-            Number of distinct classes in fitted data.
 
         filter_imaginary : bool, optional
             If True, remove imaginary parts of eigenvalues.
@@ -348,15 +329,6 @@ class MFEStatistical:
 
         if filter_zeros:
             lda_eig_vals = lda_eig_vals[~np.isclose(lda_eig_vals, 0.0)]
-
-        max_eigval_num = min(num_attr, num_classes)
-
-        if lda_eig_vals.size <= max_eigval_num:
-            return lda_eig_vals
-
-        inds_sort_evals = np.argsort(np.abs(lda_eig_vals))
-        lda_eig_vals = lda_eig_vals[inds_sort_evals]
-        lda_eig_vals = lda_eig_vals[:-max_eigval_num]
 
         return lda_eig_vals
 
