@@ -675,7 +675,7 @@ class MFEStatistical:
     @classmethod
     def ft_g_mean(cls,
                   N: np.ndarray,
-                  allow_zeros: bool = False,
+                  allow_zeros: bool = True,
                   epsilon: float = 1.0e-10) -> np.ndarray:
         """Compute the geometric mean of each attribute.
 
@@ -690,7 +690,7 @@ class MFEStatistical:
 
         epsilon : :obj:`float`
             A small value which all values with absolute value lesser than it
-            is considered zero-valued.
+            is considered zero-valued. Used only if ``allow_zeros`` is False.
 
         Returns
         -------
@@ -710,7 +710,7 @@ class MFEStatistical:
 
         if allow_zeros:
             cols_invalid = min_values < 0.0
-            cols_zero = 0.0 <= np.abs(min_values) < epsilon
+            cols_zero = np.logical_and(0.0 <= min_values, min_values < epsilon)
             cols_valid = np.logical_not(np.logical_or(cols_invalid, cols_zero))
 
         else:
@@ -718,12 +718,15 @@ class MFEStatistical:
             cols_valid = np.logical_not(cols_invalid)
 
         _, num_col = N.shape
-        g_mean = np.zeros(num_col)
+        g_mean = np.zeros(num_col, dtype=float)
 
         g_mean[cols_valid] = scipy.stats.gmean(N[:, cols_valid], axis=0)
 
         g_mean[cols_invalid] = np.nan
 
+        # Note: the R MFE version can favours infinities over real values,
+        # which is summarized as 'nan'. This version always try to pick
+        # a real value whenever it is available.
         return g_mean
 
     @classmethod
