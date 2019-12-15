@@ -3,6 +3,8 @@ import typing as t
 
 import numpy as np
 import scipy
+import scipy.linalg
+import sklearn.preprocessing
 
 import pymfe._summary as _summary
 
@@ -93,7 +95,6 @@ class MFEStatistical:
     def precompute_statistical_eigen(cls,
                                      N: t.Optional[np.ndarray] = None,
                                      y: t.Optional[np.ndarray] = None,
-                                     ddof: int = 1,
                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute eigenvalues and eigenvectors of LDA Matrix.
 
@@ -104,9 +105,6 @@ class MFEStatistical:
 
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
-
-        ddof : int, optional
-            Degrees of freedom of covariance matrix calculated during LDA.
 
         kwargs:
             Additional arguments. May have previously precomputed before this
@@ -119,10 +117,6 @@ class MFEStatistical:
                 With following precomputed items:
                     - ``lda_eig_vals`` (:obj:`np.ndarray`): array with filtered
                       eigenvalues of Fisher's Linear Discriminant Analysis
-                      Matrix.
-
-                    - ``lda_eig_vecs`` (:obj:`np.ndarray`): array with filtered
-                      eigenvectors of Fisher's Linear Discriminant Analysis
                       Matrix.
 
                 The following items are used by this method, so they must be
@@ -138,27 +132,24 @@ class MFEStatistical:
         precomp_vals = {}
 
         if (y is not None and N is not None and N.size
-                and not {"lda_eig_vals", "lda_eig_vecs"}.issubset(kwargs)):
+                and not "lda_eig_vals" not in kwargs):
             classes = kwargs.get("classes")
             class_freqs = kwargs.get("class_freqs")
 
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            lda_eig_vals, lda_eig_vecs = (
-                MFEStatistical._calc_linear_disc_mat_eig(
-                    N, y, classes=classes, class_freqs=class_freqs, ddof=ddof))
+            lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
+                N, y, classes=classes, class_freqs=class_freqs)
 
             _, num_attr = N.shape
 
-            lda_eig_vals, lda_eig_vecs = MFEStatistical._filter_lda_eig_vals(
+            lda_eig_vals = MFEStatistical._filter_lda_eig_vals(
                 num_attr=num_attr,
                 num_classes=classes.size,
-                lda_eig_vals=lda_eig_vals,
-                lda_eig_vecs=lda_eig_vecs)
+                lda_eig_vals=lda_eig_vals)
 
             precomp_vals["lda_eig_vals"] = lda_eig_vals
-            precomp_vals["lda_eig_vecs"] = lda_eig_vecs
             precomp_vals["classes"] = classes
             precomp_vals["class_freqs"] = class_freqs
 
@@ -221,11 +212,10 @@ class MFEStatistical:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            ddof: int = 1,
             classes: t.Optional[np.ndarray] = None,
             class_freqs: t.Optional[np.ndarray] = None,
-    ) -> t.Tuple[np.ndarray, np.ndarray]:
-        """Compute eigenvalues/vecs of the Linear Discriminant Analysis Matrix.
+    ) -> np.ndarray:
+        """Compute eigenvalues of the Linear Discriminant Analysis Matrix.
 
         More specifically, the eigenvalues and eigenvectors are calculated from
         matrix S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat).
@@ -235,9 +225,6 @@ class MFEStatistical:
 
         Parameters
         ----------
-        ddof : int, optional
-            Degrees of freedom of covariance matrix calculated during LDA.
-
         classes : :obj:`np.ndarray`, optional
             Distinct classes of ``y``.
 
@@ -246,19 +233,20 @@ class MFEStatistical:
 
         Returns
         -------
-        :obj:`tuple` (:obj:`np.ndarray`, :obj:`np.ndarray`)
-            Eigenvalues and eigenvectors (in this order) of Linear
-            Discriminant Analysis Matrix.
+        :obj:`np.ndarray`
+            Eigenvalues of Linear Discriminant Analysis Matrix.
         """
+        # pylint: disable=E1123
+        # Disable false positives about scipy's keywords arguments
 
         def compute_scatter_within(N: np.ndarray,
                                    inst_by_class: np.ndarray,
                                    class_freqs: np.ndarray,
-                                   ddof: int = 1) -> np.ndarray:
+                                   ) -> np.ndarray:
             """Compute Scatter Within matrix. Check doc above for more info."""
             scatter_within = np.array(
-                [(cl_frq - ddof) * np.cov(
-                    N[inst_by_class[cl_id], :], rowvar=False, ddof=ddof)
+                [cl_frq * np.cov(
+                    N[inst_by_class[cl_id], :], rowvar=False, ddof=0)
                  for cl_id, cl_frq in enumerate(class_freqs)],
                 dtype=float).sum(axis=0)
 
@@ -286,20 +274,33 @@ class MFEStatistical:
         if N.dtype != float:
             N = N.astype(float)
 
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
+
         inst_by_class = np.array([y == cl_val for cl_val in classes],
                                  dtype=bool)
 
         scatter_within = compute_scatter_within(
-            N, inst_by_class, class_freqs, ddof=ddof)
-        scatter_between = compute_scatter_between(N, inst_by_class,
-                                                  class_freqs)
+            N, inst_by_class, class_freqs)
+
+        scatter_between = compute_scatter_between(
+            N, inst_by_class, class_freqs)
 
         try:
-            mat = np.linalg.solve(scatter_within, scatter_between)
-            return scipy.linalg.eig(mat, overwrite_a=True, check_finite=False)
+            mat = scipy.linalg.solve(
+                a=scatter_within,
+                b=scatter_between,
+                overwrite_a=True,
+                overwrite_b=True,
+                check_finite=False).real
+
+            eig_vals = scipy.linalg.eigvals(
+                a=mat, overwrite_a=True, check_finite=False)
+
+            return eig_vals
 
         except (np.linalg.LinAlgError, ValueError):
-            return np.array([np.nan]), np.array([np.nan])
+            return np.array([np.nan])
 
     @classmethod
     def _filter_lda_eig_vals(
@@ -307,11 +308,10 @@ class MFEStatistical:
             lda_eig_vals: np.ndarray,
             num_attr: int,
             num_classes: int,
-            lda_eig_vecs: t.Optional[np.ndarray] = None,
             filter_imaginary: bool = True,
             filter_less_relevant: float = True,
             epsilon: float = 1.0e-8,
-    ) -> t.Union[t.Tuple[np.ndarray, np.ndarray], np.ndarray]:
+    ) -> np.ndarray:
         """Get most expressive eigenvalues (higher absolute value).
 
         This function returns N eigenvalues, such that:
@@ -329,9 +329,6 @@ class MFEStatistical:
         num_classes : int
             Number of distinct classes in fitted data.
 
-        lda_eig_vecs : :obj:`np.ndarray`, optional
-            Eigenvectors to filter alongside eigenvalues.
-
         filter_imaginary : bool, optional
             If True, remove imaginary valued eigenvalues and its correspondent
             eigenvectors.
@@ -344,12 +341,8 @@ class MFEStatistical:
         """
         max_valid_eig = min(num_attr, num_classes)
 
-        ret = ((lda_eig_vals, lda_eig_vecs)
-               if lda_eig_vecs is not None
-               else lda_eig_vals)
-
         if lda_eig_vals.size <= max_valid_eig:
-            return ret
+            return lda_eig_vals
 
         indexes_to_keep = np.ones(lda_eig_vals.size, dtype=bool)
 
@@ -366,29 +359,17 @@ class MFEStatistical:
         if filter_imaginary:
             lda_eig_vals = lda_eig_vals.real
 
-        if lda_eig_vecs is not None:
-            lda_eig_vecs = lda_eig_vecs[:, indexes_to_keep]
-
         if lda_eig_vals.size > max_valid_eig:
             inds_sort_evals = np.argsort(np.abs(lda_eig_vals))
             lda_eig_vals = lda_eig_vals[inds_sort_evals]
             lda_eig_vals = lda_eig_vals[:-max_valid_eig]
 
-            if lda_eig_vecs is not None:
-                lda_eig_vecs = lda_eig_vecs[:, inds_sort_evals]
-                lda_eig_vecs = lda_eig_vecs[:, :-max_valid_eig]
-
-        ret = ((lda_eig_vals, lda_eig_vecs)
-               if lda_eig_vecs is not None
-               else lda_eig_vals)
-
-        return ret
+        return lda_eig_vals
 
     @classmethod
     def ft_can_cor(cls,
                    N: np.ndarray,
                    y: np.ndarray,
-                   ddof: int = 1,
                    lda_eig_vals: t.Optional[np.ndarray] = None,
                    classes: t.Optional[np.ndarray] = None,
                    class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
@@ -424,9 +405,6 @@ class MFEStatistical:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        ddof : int, optional
-            Degrees of freedom of covariance matrix calculated during LDA.
-
         lda_eig_vals : :obj:`np.ndarray`, optional
             Eigenvalues of LDA Matrix ``S``, defined above.
 
@@ -452,8 +430,8 @@ class MFEStatistical:
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            lda_eig_vals, _ = MFEStatistical._calc_linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
+            lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
+                N, y, classes=classes, class_freqs=class_freqs)
 
             _, num_attr = N.shape
 
@@ -462,7 +440,7 @@ class MFEStatistical:
                 num_attr=num_attr,
                 num_classes=classes.size)
 
-        return np.sqrt(lda_eig_vals / (1.0 + lda_eig_vals))  # type: ignore
+        return np.sqrt(lda_eig_vals / (1.0 + lda_eig_vals))
 
     @classmethod
     def ft_gravity(cls,
@@ -1625,7 +1603,6 @@ class MFEStatistical:
     def ft_w_lambda(cls,
                     N: np.ndarray,
                     y: np.ndarray,
-                    ddof: int = 1,
                     lda_eig_vals: t.Optional[np.ndarray] = None,
                     classes: t.Optional[np.ndarray] = None,
                     class_freqs: t.Optional[np.ndarray] = None) -> float:
@@ -1647,9 +1624,6 @@ class MFEStatistical:
 
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
-
-        ddof : int, optional
-            Degrees of freedom of covariance matrix calculated during LDA.
 
         lda_eig_vals : :obj:`np.ndarray`, optional
             Eigenvalues of LDA matrix. This argument is used to exploit
@@ -1680,8 +1654,8 @@ class MFEStatistical:
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            lda_eig_vals, _ = MFEStatistical._calc_linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs, ddof=ddof)
+            lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
+                N, y, classes=classes, class_freqs=class_freqs)
 
             _, num_attr = N.shape
 
@@ -1690,7 +1664,7 @@ class MFEStatistical:
                 num_attr=num_attr,
                 num_classes=classes.size)
 
-        if lda_eig_vals.size == 0:  # type: ignore
+        if lda_eig_vals.size == 0:
             return np.nan
 
         # Note: numeric stable manner for calculating
