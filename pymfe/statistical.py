@@ -132,7 +132,7 @@ class MFEStatistical:
         precomp_vals = {}
 
         if (y is not None and N is not None and N.size
-                and not "lda_eig_vals" not in kwargs):
+                and "lda_eig_vals" not in kwargs):
             classes = kwargs.get("classes")
             class_freqs = kwargs.get("class_freqs")
 
@@ -703,9 +703,6 @@ class MFEStatistical:
            to automatic kernel selection for support vector machines.
            Neurocomputing, 70(1):173 – 186, 2006.
         """
-        if N.size == 0:
-            return np.array([np.nan])
-
         min_values = N.min(axis=0)
 
         if allow_zeros:
