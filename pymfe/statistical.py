@@ -710,7 +710,7 @@ class MFEStatistical:
 
         if allow_zeros:
             cols_invalid = min_values < 0.0
-            cols_zero = np.logical_and(0.0 <= min_values, min_values < epsilon)
+            cols_zero = np.logical_and(min_values >= 0.0, min_values < epsilon)
             cols_valid = np.logical_not(np.logical_or(cols_invalid, cols_zero))
 
         else:
