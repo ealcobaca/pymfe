@@ -95,11 +95,11 @@ class MFEComplexity:
 
         classes = kwargs.get("classes", precomp_vals.get("classes"))
 
-        if (y is not None
-                and ("ovo_comb" not in kwargs or "cls_inds" not in kwargs)):
+        if y is not None and "cls_inds" not in kwargs:
             cls_inds = MFEComplexity._calc_cls_inds(y, classes)
             precomp_vals["cls_inds"] = cls_inds
 
+        if y is not None and "ovo_comb" not in kwargs:
             ovo_comb = MFEComplexity._calc_ovo_comb(classes)
             precomp_vals["ovo_comb"] = ovo_comb
 

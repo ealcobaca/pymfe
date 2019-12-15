@@ -79,6 +79,10 @@ class MFEClustering:
                   ``y``, if ``y`` is not :obj:`NoneType`.
                 * ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
                   ``y``, if ``y`` is not :obj:`NoneType`.
+                * ``cls_inds`` (:obj:`np.ndarray`): Boolean array which
+                  indicates whether each example belongs to each class. The
+                  rows represents the distinct classes, and the instances
+                  are represented by the columns.
         """
         precomp_vals = {}
 
@@ -87,6 +91,12 @@ class MFEClustering:
 
             precomp_vals["classes"] = classes
             precomp_vals["class_freqs"] = class_freqs
+
+        classes = kwargs.get("classes", precomp_vals.get("classes"))
+
+        if y is not None and "cls_inds" not in kwargs:
+            cls_inds = cls._calc_cls_inds(y, classes)
+            precomp_vals["cls_inds"] = cls_inds
 
         return precomp_vals
 
@@ -127,14 +137,22 @@ class MFEClustering:
                 * ``pairwise_norm_interclass_dist`` (:obj:`np.ndarray`):
                   normalized distance between each distinct pair of
                   instances of different classes.
-
                 * ``pairwise_intraclass_dists`` (:obj:`np.ndarray`):
                   distance between each distinct pair of instances of
                   the same class.
-
                 * ``intraclass_dists`` (:obj:`np.ndarray`): the distance
                   between the fartest pair of instances of the same class.
 
+            The following precomputed items are necessary and, if they are
+            still not precomputed, they are also are returned:
+                * ``classes`` (:obj:`np.ndarray`):  distinct classes of
+                  ``y``, if ``y`` is not :obj:`NoneType`.
+                * ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
+                  ``y``, if ``y`` is not :obj:`NoneType`.
+                * ``cls_inds`` (:obj:`np.ndarray`): Boolean array which
+                  indicates whether each example belongs to each class. The
+                  rows represents the distinct classes, and the instances
+                  are represented by the columns.
         Notes
         -----
             .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
@@ -146,15 +164,28 @@ class MFEClustering:
                 "pairwise_norm_interclass_dist", "pairwise_intraclass_dists",
                 "intraclass_dists"
         }.issubset(kwargs):
+            cls_inds = kwargs.get("cls_inds")
+
+            if cls_inds is None:
+                new_vals = cls.precompute_clustering_class(**kwargs)
+                cls_inds = new_vals["cls_inds"]
+                classes = new_vals["classes"]
+                precomp_vals.update(new_vals)
+
             precomp_vals["pairwise_norm_interclass_dist"] = (
                 MFEClustering._calc_pairwise_norm_interclass_dist(
-                    N=N, y=y, dist_metric=dist_metric, classes=classes))
+                    N=N,
+                    y=y,
+                    dist_metric=dist_metric,
+                    classes=classes,
+                    cls_inds=cls_inds))
 
             precomp_vals["pairwise_intraclass_dists"] = (
                 MFEClustering._calc_all_intraclass_dists(
                     N=N,
                     y=y,
                     dist_metric=dist_metric,
+                    cls_inds=cls_inds,
                     classes=classes,
                     get_max_dist=False))
 
@@ -306,6 +337,20 @@ class MFEClustering:
 
         return precomp_vals
 
+    @staticmethod
+    def _calc_cls_inds(y: np.ndarray, classes: np.ndarray) -> np.ndarray:
+        """Compute the ``cls_inds`` variable.
+
+        The ``cls_inds`` variable is a boolean array which marks with
+        True value whether the instance belongs to each class. Each
+        distinct class is represented by a row, and each instance is
+        represented by a column.
+        """
+        cls_inds = np.array([np.equal(y, cur_cls) for cur_cls in classes],
+                            dtype=bool)
+
+        return cls_inds
+
     @classmethod
     def _calc_normalized_interclass_dist(
             cls,
@@ -329,17 +374,22 @@ class MFEClustering:
             N: np.ndarray,
             y: np.ndarray,
             dist_metric: str = "euclidean",
-            classes: t.Optional[np.ndarray] = None) -> np.ndarray:
+            classes: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Calculate all pairwise normalized interclass distances."""
-        if classes is None:
-            classes = np.unique(y)
+        if cls_inds is None:
+            if classes is None:
+                classes = np.unique(y)
+
+            cls_inds = cls._calc_cls_inds(y=y, classes=classes)
 
         interclass_dists = np.array([
             MFEClustering._calc_normalized_interclass_dist(
-                N[y == class_a, :],
-                N[y == class_b, :],
+                N[cls_inds[id_cls_a, :], :],
+                N[cls_inds[id_cls_b, :], :],
                 dist_metric=dist_metric)
-            for class_a, class_b in itertools.combinations(classes, 2)
+            for id_cls_a, id_cls_b in itertools.combinations(
+                np.arange(cls_inds.shape[0]), 2)
         ])
 
         return interclass_dists
@@ -361,21 +411,27 @@ class MFEClustering:
         return intraclass_dists.max() if get_max_dist else intraclass_dists
 
     @classmethod
-    def _calc_all_intraclass_dists(cls,
-                                   N: np.ndarray,
-                                   y: np.ndarray,
-                                   dist_metric: str = "euclidean",
-                                   classes: t.Optional[np.ndarray] = None,
-                                   get_max_dist: bool = True) -> np.ndarray:
+    def _calc_all_intraclass_dists(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            dist_metric: str = "euclidean",
+            get_max_dist: bool = True,
+            cls_inds: t.Optional[np.ndarray] = None,
+            classes: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Calculate all intraclass (internal to a class) distances."""
-        if classes is None:
-            classes = np.unique(y)
+        if cls_inds is None:
+            if classes is None:
+                classes = np.unique(y)
+
+            cls_inds = cls._calc_cls_inds(y=y, classes=classes)
 
         intraclass_dists = np.array([
             MFEClustering._calc_intraclass_dists(
-                N[y == cur_class, :],
+                N[cur_class, :],
                 dist_metric=dist_metric,
-                get_max_dist=get_max_dist) for cur_class in classes
+                get_max_dist=get_max_dist) for cur_class in cls_inds
         ])
 
         return intraclass_dists
@@ -403,6 +459,7 @@ class MFEClustering:
             N: np.ndarray,
             y: np.ndarray,
             representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
+            cls_inds: t.Optional[np.ndarray] = None,
             classes: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Get a representative instance for each distinct class.
 
@@ -429,9 +486,12 @@ class MFEClustering:
                 raise ValueError("'representative' must be 'mean' or "
                                  "'median'. Got '{}'.".format(representative))
 
+            if cls_inds is None:
+                cls_inds = cls._calc_cls_inds(y=y, classes=classes)
+
             representative = [
-                center_method(N[y == cur_class, :], axis=0)
-                for cur_class in classes
+                center_method(N[cur_class, :], axis=0)
+                for cur_class in cls_inds
             ]
 
         elif not isinstance(representative,
@@ -463,10 +523,10 @@ class MFEClustering:
             N: np.ndarray,
             y: np.ndarray,
             dist_metric: str = "euclidean",
+            cls_inds: t.Optional[np.ndarray] = None,
             classes: t.Optional[np.ndarray] = None,
             intraclass_dists: t.Optional[np.ndarray] = None,
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
-            epsilon: float = 1.0e-8,
     ) -> float:
         """Compute the Dunn Index.
 
@@ -486,6 +546,12 @@ class MFEClustering:
             metrics. If precomputation in clustering metafeatures is
             enabled, then this parameter takes no effect.
 
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances. Used to take advantage of
+            precomputations.
+
         classes : :obj:`np.ndarray`, optional
             Distinct classes in ``y``. Used to exploit precomputations.
 
@@ -496,9 +562,6 @@ class MFEClustering:
         pairwise_norm_interclass_dists : :obj:`np.ndarray`, optional
             Normalized pairwise distances between instances of different
             classes.
-
-        epsilon : float, optional
-            A tiny value used to prevent division by zero.
 
         Returns
         -------
@@ -518,14 +581,21 @@ class MFEClustering:
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
                 MFEClustering._calc_pairwise_norm_interclass_dist(
-                    N=N, y=y, dist_metric=dist_metric, classes=classes))
+                    N=N,
+                    y=y,
+                    dist_metric=dist_metric,
+                    classes=classes,
+                    cls_inds=cls_inds))
 
         if intraclass_dists is None:
             intraclass_dists = MFEClustering._calc_all_intraclass_dists(
-                N=N, y=y, dist_metric=dist_metric, classes=classes).max()
+                N=N,
+                y=y,
+                dist_metric=dist_metric,
+                classes=classes,
+                cls_inds=cls_inds).max()
 
-        vdu = (pairwise_norm_interclass_dist.min() /
-               (intraclass_dists.max() + epsilon))
+        vdu = pairwise_norm_interclass_dist.min() / intraclass_dists.max()
 
         return vdu
 
@@ -563,6 +633,7 @@ class MFEClustering:
             N: np.ndarray,
             y: np.ndarray,
             dist_metric: str = "euclidean",
+            cls_inds: t.Optional[np.ndarray] = None,
             classes: t.Optional[np.ndarray] = None,
             pairwise_norm_interclass_dist: t.Optional[np.ndarray] = None,
     ) -> float:
@@ -583,6 +654,12 @@ class MFEClustering:
             instances. Check `scipydoc`_ for a full list of valid distance
             metrics. If precomputation in clustering metafeatures is
             enabled, then this parameter takes no effect.
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances. Used to take advantage of
+            precomputations.
 
         classes : :obj:`np.ndarray`, optional
             Distinct classes in ``y``. Used to exploit precomputations.
@@ -618,7 +695,11 @@ class MFEClustering:
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
                 MFEClustering._calc_pairwise_norm_interclass_dist(
-                    N=N, y=y, dist_metric=dist_metric, classes=classes))
+                    N=N,
+                    y=y,
+                    dist_metric=dist_metric,
+                    classes=classes,
+                    cls_inds=cls_inds))
 
         norm_factor = 2.0 / (class_num * (class_num - 1.0))
 
