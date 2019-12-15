@@ -136,6 +136,9 @@ class MFEStatistical:
             classes = kwargs.get("classes")
             class_freqs = kwargs.get("class_freqs")
 
+            if classes is None or class_freqs is None:
+                classes, class_freqs = np.unique(y, return_counts=True)
+
             lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, filter_=True)
 
