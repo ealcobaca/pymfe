@@ -89,8 +89,8 @@ class MFEItemset:
             res[:, i] = array == val
         return res
 
-    @staticmethod
-    def _matrix_to_binary(C: np.array) -> t.List[np.ndarray]:
+    @classmethod
+    def _matrix_to_binary(cls, C: np.array) -> t.List[np.ndarray]:
         """Convert an matrix to its binary representation."""
         return [cls._array_to_binary(col) for col in C.T]
 

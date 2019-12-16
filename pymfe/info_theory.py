@@ -214,10 +214,10 @@ class MFEInfoTheory:
 
         max_attr_num : int, optional
             Maximum number of attributes considered. If ``C`` has more
-            attributes than this max_attr_num, ``max_attr_num`` random
-            attributes will be sampled. If None, then all attributes
-            are considered. Note that this method cost is superlinear
-            to the number of attributes considered.
+            attributes than this value, this feature will be calculated
+            in a sample of ``max_attr_num`` random attributes. If None,
+            then all attributes are considered. Note that this method cost
+            is combinatorial to the number of attributes considered.
 
         random_state : int, optional
             Used only if ``max_attr_num`` is given and ``C`` has more
