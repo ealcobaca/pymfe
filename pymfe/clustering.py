@@ -254,9 +254,8 @@ class MFEClustering:
             if n_neighbors is None:
                 n_neighbors = int(np.sqrt(class_freqs.min()))
 
-            precomp_vals["nearest_neighbors"] = (
-                cls._get_nearest_neighbors(
-                    N=N, n_neighbors=n_neighbors, dist_metric=dist_metric))
+            precomp_vals["nearest_neighbors"] = cls._get_nearest_neighbors(
+                N=N, n_neighbors=n_neighbors, dist_metric=dist_metric)
 
         return precomp_vals
 
@@ -331,9 +330,8 @@ class MFEClustering:
         precomp_vals = {}
 
         if not {"representative"}.issubset(kwargs):
-            precomp_vals["representative"] = (
-                cls._get_class_representatives(
-                    N=N, y=y, representative=representative, classes=classes))
+            precomp_vals["representative"] = cls._get_class_representatives(
+                N=N, y=y, representative=representative, classes=classes)
 
         return precomp_vals
 

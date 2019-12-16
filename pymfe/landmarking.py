@@ -54,12 +54,11 @@ class MFELandmarking:
     """
 
     @classmethod
-    def precompute_landmarking_sample(
-                cls,
-                N: np.ndarray,
-                lm_sample_frac: float,
-                random_state: t.Optional[int] = None,
-                **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_landmarking_sample(cls,
+                                      N: np.ndarray,
+                                      lm_sample_frac: float,
+                                      random_state: t.Optional[int] = None,
+                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute subsampling landmarking subsample indices.
 
         Parameters

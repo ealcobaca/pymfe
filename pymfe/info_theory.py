@@ -136,10 +136,7 @@ class MFEInfoTheory:
         if y is not None and C is not None and C.size:
             if "joint_ent" not in kwargs:
                 precomp_vals["joint_ent"] = np.apply_along_axis(
-                    func1d=cls._calc_joint_ent,
-                    axis=0,
-                    arr=C,
-                    vec_y=y)
+                    func1d=cls._calc_joint_ent, axis=0, arr=C, vec_y=y)
 
             if "mut_inf" not in kwargs:
                 precomp_vals["mut_inf"] = cls.ft_mut_inf(
@@ -294,8 +291,7 @@ class MFEInfoTheory:
             return attr_ent
 
         try:
-            return np.apply_along_axis(
-                func1d=cls._calc_entropy, axis=0, arr=C)
+            return np.apply_along_axis(func1d=cls._calc_entropy, axis=0, arr=C)
 
         except ValueError:
             return np.array([np.nan])

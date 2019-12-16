@@ -146,8 +146,7 @@ class MFEConcept:
            work (pp. 3-9).
         """
         if concept_distances is None:
-            sub_dic = cls.precompute_concept_dist(
-                N, concept_dist_metric)
+            sub_dic = cls.precompute_concept_dist(N, concept_dist_metric)
             concept_distances = sub_dic["concept_distances"]
 
         n_col = N.shape[1]
@@ -217,8 +216,7 @@ class MFEConcept:
            work (pp. 3-9).
         """
         if concept_distances is None:
-            sub_dic = cls.precompute_concept_dist(
-                N, concept_dist_metric)
+            sub_dic = cls.precompute_concept_dist(N, concept_dist_metric)
             concept_distances = sub_dic["concept_distances"]
 
         n_col = N.shape[1]
@@ -281,8 +279,7 @@ class MFEConcept:
            Conference on Machine Learning and Applications (pp. 133-138).
         """
         if concept_distances is None:
-            sub_dic = cls.precompute_concept_dist(
-                N, concept_dist_metric)
+            sub_dic = cls.precompute_concept_dist(N, concept_dist_metric)
             concept_distances = sub_dic["concept_distances"]
 
         radius = np.ceil(concept_distances).astype(int)
@@ -343,8 +340,7 @@ class MFEConcept:
            Conference on Machine Learning and Applications (pp. 133-138).
         """
         if concept_distances is None:
-            sub_dic = cls.precompute_concept_dist(
-                N, concept_dist_metric)
+            sub_dic = cls.precompute_concept_dist(N, concept_dist_metric)
             concept_distances = sub_dic["concept_distances"]
 
         radius = np.ceil(concept_distances).astype(int)
