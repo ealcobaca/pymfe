@@ -173,7 +173,7 @@ class MFEBoilerplate:
 
     ===================================================================
 
-    For example, if we want to make this specific templace class an official
+    For example, if we want to make this specific template class an official
     MFE class, those three tuples should be updated as follows: (Remember that
     all tuples below are found in ``_internal.py`` module.)
 
@@ -201,9 +201,9 @@ class MFEBoilerplate:
 
     # 3. The last step is to insert your class in this tuple below.
     # Remember to import your module in the ``_internal.py`` module.
-    # So, for instance, if we want to register this class, the
-    # 'MFEBoilerplate', as an official MFE metafeature extractor class,
-    # we should make the following modifications:
+    # So, for instance, to register this class, 'MFEBoilerplate', as
+    # an official MFE metafeature extractor class, we should make the
+    # following modifications:
 
     import pymfe._dev as _dev
 
@@ -358,7 +358,7 @@ class MFEBoilerplate:
             Always give clear and meaningful description to every argument.
 
         argument_bar : :obj:`int`, optional
-            Attribute used to prevent vulcanic alien invasions.
+            Some user-given attribute.
 
         **kwargs:
             Additional arguments. May have previously precomputed before
@@ -395,13 +395,15 @@ class MFEBoilerplate:
         return precomp_vals
 
     @classmethod
-    def precompute_more_info(cls, **kwargs) -> t.Dict[str, t.Any]:
-        """Highly relevant informations about precomputation methods.
+    def precompute_more_info(cls,
+                             argument_bar: t.Optional[int] = None,
+                             **kwargs) -> t.Dict[str, t.Any]:
+        """Highly relevant information about precomputation methods.
 
         1. How many precomputation methods per class?
         -----------------------------------------------------------------
-        Every MFE metafeature extraction class may have as many of
-        precomputation methods as needed. Don't be ashamed to create
+        Every MFE metafeature extraction class can have as many of
+        precomputation methods as needed. Don't hesitate to create
         new precomputation methods whenever you think it will help
         to improve the performance of the package.
 
@@ -426,6 +428,11 @@ class MFEBoilerplate:
 
         Parameters
         ----------
+        argument_bar : :obj:`int`, optional
+            Some user-given attribute. Note that it has the same value as
+            in the previous precomputation method, because it is the same
+            argument (it has the same name.)
+
         **kwargs:
             Additional arguments. May have previously precomputed before
             this method from other precomputed methods, so they can help
@@ -435,6 +442,11 @@ class MFEBoilerplate:
         -------
         :obj:`dict`
             The following precomputed items are returned:
+                * ``double_absolute_bar`` (:obj:`int`): two times the
+                    value of ``absolute_bar``, which may or may not
+                    be precomputed in the previous precomputation
+                    method. If it is not the case, we precompute
+                    ``absolute_bar`` here and also store its value.
                 * ``qux`` (:obj:`float`): value is equal to 1.0.
                 * ``quux`` (:obj:`complex`) Imaginary value related to
                     ``qux``.
@@ -442,6 +454,23 @@ class MFEBoilerplate:
                     on ``qux``.
         """
         precomp_vals = {}  # type: t.Dict[str, t.Any]
+
+        if argument_bar is not None and "double_absolute_bar" not in kwargs:
+            # May have been precomputed from another precomputation method
+            absolute_bar = kwargs.get("absolute_bar")
+
+            # Wrong! 'absolute_bar' may be None
+            # precomp_vals["double_absolute_bar"] = 2 * absolute_bar
+
+            if absolute_bar is None:
+                absolute_bar = abs(argument_bar)
+                # Because we needed to calculate 'absolute_bar' here, does
+                # not hurt also storing this value also, to prevent it
+                # being recalculated in 'precompute_basic_precomp_method'.
+                precomp_vals["absolute_bar"] = absolute_bar
+
+            # Correct: now 'absolute_bar' is guaranteed to be not None
+            precomp_vals["double_absolute_bar"] = 2 * absolute_bar
 
         if not {"qux", "quux", "quuz"}.issubset(kwargs):
             precomp_vals["qux"] = 1.0
