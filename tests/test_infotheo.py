@@ -143,6 +143,6 @@ class TestInfoTheo:
         mfe = MFE(features="attr_conc", random_state=1234).fit(
                 X.values, y.values, precomp_groups=False)
 
-        value = mfe.extract(attr_conc={"threshold": 25})[1]
+        value = mfe.extract(attr_conc={"max_attr_num": 25})[1]
 
         assert np.allclose(value, [0.01682327, 0.04715381], rtol=0.2)

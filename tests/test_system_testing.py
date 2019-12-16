@@ -88,7 +88,7 @@ class TestSystem:
             0.46218988, 0.6, 1.0
         ], True),
     ])
-    def test_integration_general(self, dt_id, exp_value, precompute):
+    def test_system_testing(self, dt_id, exp_value, precompute):
         precomp_group = "all" if precompute else None
         X, y = load_xy(dt_id)
         mfe = MFE(
@@ -98,7 +98,13 @@ class TestSystem:
             summary="mean",
             random_state=1234).fit(
                 X.values, y.values, precomp_groups=precomp_group)
-        value = mfe.extract()[1]
+        names, value = mfe.extract()
+
+        aux = ~np.allclose(value, exp_value, equal_nan=True, rtol=0.05, atol=0.001)
+        inds = np.flatnonzero(aux)
+        print(inds)
+        print(np.array(names)[inds])
+        print(np.array(exp_value)[inds])
 
         assert np.allclose(
             value, exp_value, equal_nan=True, rtol=0.05, atol=0.001)
