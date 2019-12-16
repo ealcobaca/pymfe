@@ -488,6 +488,8 @@ class MFEStatistical:
 
         if cls_inds is not None:
             insts_cls_maj = N[cls_inds[ind_cls_maj, :], :]
+            # Adjusting minoritary class index due to 'delete' operation
+            ind_cls_min += ind_cls_min >= ind_cls_maj
             insts_cls_min = N[cls_inds[ind_cls_min, :], :]
 
         else:
