@@ -114,7 +114,7 @@ class MFERelativeLandmarking:
         mtf_rel_time = []  # type: t.List[float]
 
         mtf_by_summ, mtf_orig_indexes = (
-            MFERelativeLandmarking.group_mtf_by_summary(
+            cls.group_mtf_by_summary(
                 mtf_names=mtf_names,
                 mtf_vals=mtf_vals,
                 class_indexes=class_indexes))
@@ -132,7 +132,7 @@ class MFERelativeLandmarking:
                     / (len(mtf_by_summ) if mtf_by_summ else 1.0))
 
         mtf_rel_vals, original_indexes = (
-            MFERelativeLandmarking._flatten_dictionaries(
+            cls._flatten_dictionaries(
                 mtf_by_summ,
                 mtf_orig_indexes))
 

@@ -173,7 +173,7 @@ class MFEClustering:
                 precomp_vals.update(new_vals)
 
             precomp_vals["pairwise_norm_interclass_dist"] = (
-                MFEClustering._calc_pairwise_norm_interclass_dist(
+                cls._calc_pairwise_norm_interclass_dist(
                     N=N,
                     y=y,
                     dist_metric=dist_metric,
@@ -181,7 +181,7 @@ class MFEClustering:
                     cls_inds=cls_inds))
 
             precomp_vals["pairwise_intraclass_dists"] = (
-                MFEClustering._calc_all_intraclass_dists(
+                cls._calc_all_intraclass_dists(
                     N=N,
                     y=y,
                     dist_metric=dist_metric,
@@ -255,7 +255,7 @@ class MFEClustering:
                 n_neighbors = int(np.sqrt(class_freqs.min()))
 
             precomp_vals["nearest_neighbors"] = (
-                MFEClustering._get_nearest_neighbors(
+                cls._get_nearest_neighbors(
                     N=N, n_neighbors=n_neighbors, dist_metric=dist_metric))
 
         return precomp_vals
@@ -332,7 +332,7 @@ class MFEClustering:
 
         if not {"representative"}.issubset(kwargs):
             precomp_vals["representative"] = (
-                MFEClustering._get_class_representatives(
+                cls._get_class_representatives(
                     N=N, y=y, representative=representative, classes=classes))
 
         return precomp_vals
@@ -384,7 +384,7 @@ class MFEClustering:
             cls_inds = cls._calc_cls_inds(y=y, classes=classes)
 
         interclass_dists = np.array([
-            MFEClustering._calc_normalized_interclass_dist(
+            cls._calc_normalized_interclass_dist(
                 N[cls_inds[id_cls_a, :], :],
                 N[cls_inds[id_cls_b, :], :],
                 dist_metric=dist_metric)
@@ -428,7 +428,7 @@ class MFEClustering:
             cls_inds = cls._calc_cls_inds(y=y, classes=classes)
 
         intraclass_dists = np.array([
-            MFEClustering._calc_intraclass_dists(
+            cls._calc_intraclass_dists(
                 N[cur_class, :],
                 dist_metric=dist_metric,
                 get_max_dist=get_max_dist) for cur_class in cls_inds
@@ -580,7 +580,7 @@ class MFEClustering:
         """
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
-                MFEClustering._calc_pairwise_norm_interclass_dist(
+                cls._calc_pairwise_norm_interclass_dist(
                     N=N,
                     y=y,
                     dist_metric=dist_metric,
@@ -588,7 +588,7 @@ class MFEClustering:
                     cls_inds=cls_inds))
 
         if intraclass_dists is None:
-            intraclass_dists = MFEClustering._calc_all_intraclass_dists(
+            intraclass_dists = cls._calc_all_intraclass_dists(
                 N=N,
                 y=y,
                 dist_metric=dist_metric,
@@ -694,7 +694,7 @@ class MFEClustering:
 
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
-                MFEClustering._calc_pairwise_norm_interclass_dist(
+                cls._calc_pairwise_norm_interclass_dist(
                     N=N,
                     y=y,
                     dist_metric=dist_metric,
