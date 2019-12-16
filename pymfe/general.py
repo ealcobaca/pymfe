@@ -68,7 +68,6 @@ class MFEGeneral:
         Returns
         -------
         :obj:`dict`
-
             The following precomputed items are returned:
                 * ``classes`` (:obj:`np.ndarray`):  distinct classes of
                   ``y``, if ``y`` is not :obj:`NoneType`.

@@ -237,7 +237,7 @@ class TestErrorsWarnings:
     def test_error_transform_num(self):
         X, y = load_xy(0)
         with pytest.raises(TypeError):
-            _internal.transform_num(X, num_bins='')
+            _internal.transform_num(X, num_bins="")
 
         with pytest.raises(ValueError):
             _internal.transform_num(X, num_bins=-1)
@@ -248,7 +248,7 @@ class TestErrorsWarnings:
     def test_error_check_data(self):
         X, y = load_xy(0)
         with pytest.raises(TypeError):
-            _internal.check_data(X, y='')
+            _internal.check_data(X, y="")
 
     def test_errors__fill_col_ind_by_type(self):
         X, y = load_xy(0)
@@ -256,7 +256,7 @@ class TestErrorsWarnings:
             mfe = MFE()
             mfe._fill_col_ind_by_type()
 
-        X = [[1, 2, 'a', 'b']] * 10 + [[3, 4, 'c', 'd']] * 10
+        X = [[1, 2, "a", "b"]] * 10 + [[3, 4, "c", "d"]] * 10
         y = [0] * 10 + [1] * 10
 
         mfe = MFE()

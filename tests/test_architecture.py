@@ -171,7 +171,7 @@ class TestArchitecture:
     def test_metafeature_description_exceptions(self):
         """Test metafeature description exceptions"""
         with pytest.raises(TypeError):
-            MFE.metafeature_description(print_table='False')
+            MFE.metafeature_description(print_table="False")
 
         with pytest.raises(TypeError):
             MFE.metafeature_description(sort_by_mtf=1)
