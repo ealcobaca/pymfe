@@ -139,7 +139,7 @@ class MFEStatistical:
             if classes is None or class_freqs is None:
                 classes, class_freqs = np.unique(y, return_counts=True)
 
-            lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
+            lda_eig_vals = cls._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, filter_=True)
 
             precomp_vals["lda_eig_vals"] = lda_eig_vals
@@ -399,7 +399,7 @@ class MFEStatistical:
            PhD thesis, Faculty of Science of the University of Geneva, 2002.
         """
         if lda_eig_vals is None:
-            lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
+            lda_eig_vals = cls._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, filter_=True)
 
         return np.sqrt(lda_eig_vals / (1.0 + lda_eig_vals))
@@ -643,7 +643,7 @@ class MFEStatistical:
            Principles of Data Mining and Knowledge Discovery (PKDD),
            pages 418 – 423, 1999.
         """
-        can_cor = MFEStatistical.ft_can_cor(
+        can_cor = cls.ft_can_cor(
             N=N,
             y=y,
             lda_eig_vals=lda_eig_vals,
@@ -1023,7 +1023,7 @@ class MFEStatistical:
            Employment of neural network and rough set in meta-learning.
            Memetic Computing, 5(3):165 – 177, 2013.
         """
-        abs_corr_vals = MFEStatistical.ft_cor(N, abs_corr_mat=abs_corr_mat)
+        abs_corr_vals = cls.ft_cor(N, abs_corr_mat=abs_corr_mat)
 
         _, num_attr = N.shape
 
@@ -1611,7 +1611,7 @@ class MFEStatistical:
            pages 418 – 423, 1999.
         """
         if lda_eig_vals is None:
-            lda_eig_vals = MFEStatistical._calc_linear_disc_mat_eig(
+            lda_eig_vals = cls._calc_linear_disc_mat_eig(
                 N, y, classes=classes, class_freqs=class_freqs, filter_=True)
 
         if lda_eig_vals.size == 0:

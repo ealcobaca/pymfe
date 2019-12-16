@@ -96,11 +96,11 @@ class MFEComplexity:
         classes = kwargs.get("classes", precomp_vals.get("classes"))
 
         if y is not None and "cls_inds" not in kwargs:
-            cls_inds = MFEComplexity._calc_cls_inds(y, classes)
+            cls_inds = cls._calc_cls_inds(y, classes)
             precomp_vals["cls_inds"] = cls_inds
 
         if y is not None and "ovo_comb" not in kwargs:
-            ovo_comb = MFEComplexity._calc_ovo_comb(classes)
+            ovo_comb = cls._calc_ovo_comb(classes)
             precomp_vals["ovo_comb"] = ovo_comb
 
         return precomp_vals
@@ -266,7 +266,7 @@ class MFEComplexity:
            Page 6.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
-            sub_dic = MFEComplexity.precompute_fx(y=y)
+            sub_dic = cls.precompute_fx(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
@@ -336,7 +336,7 @@ class MFEComplexity:
            Page 7.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
-            sub_dic = MFEComplexity.precompute_fx(y=y)
+            sub_dic = cls.precompute_fx(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
@@ -430,7 +430,7 @@ class MFEComplexity:
            Page 9.
         """
         if ovo_comb is None or cls_inds is None:
-            sub_dic = MFEComplexity.precompute_fx(y=y)
+            sub_dic = cls.precompute_fx(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
@@ -581,7 +581,7 @@ class MFEComplexity:
         """
         if cls_inds is None:
             classes = np.unique(y)
-            cls_inds = MFEComplexity._calc_cls_inds(y, classes)
+            cls_inds = cls._calc_cls_inds(y, classes)
 
         # 0-1 feature scaling
         N = sklearn.preprocessing.MinMaxScaler(
@@ -773,7 +773,7 @@ class MFEComplexity:
            Page 15.
         """
         if num_attr_pca is None:
-            sub_dic = MFEComplexity.precompute_pca_tx(
+            sub_dic = cls.precompute_pca_tx(
                 N=N, random_state=random_state)
             num_attr_pca = sub_dic["num_attr_pca"]
 
@@ -821,7 +821,7 @@ class MFEComplexity:
            Page 15.
         """
         if num_attr_pca is None:
-            sub_dic = MFEComplexity.precompute_pca_tx(
+            sub_dic = cls.precompute_pca_tx(
                 N=N, random_state=random_state)
             num_attr_pca = sub_dic["num_attr_pca"]
 
