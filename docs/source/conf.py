@@ -27,7 +27,7 @@ author = "E. Alcobaça, F. Siqueira and L. P. F. Garcia"
 
 # The full version, including alpha/beta/rc tags.
 from pymfe import __version__
-release = __version__
+version = release = __version__
 
 
 # -- General configuration ---------------------------------------------------
