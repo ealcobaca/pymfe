@@ -20,13 +20,13 @@ def test_sum_histogram():
 
 def test_sum_quantiles():
     mf = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-    aux = pymfe._summary.sum_quantiles(mf, package='numpy')
+    aux = pymfe._summary.sum_quantiles(mf, package="numpy")
     assert np.allclose(np.array([1.0, 3.25, 5.5, 7.75, 10.0]), aux)
 
     with pytest.raises(ValueError):
-        pymfe._summary.sum_quantiles(mf, package='asd')
+        pymfe._summary.sum_quantiles(mf, package="asd")
 
-    aux = pymfe._summary.sum_quantiles(mf, package='scipy')
+    aux = pymfe._summary.sum_quantiles(mf, package="scipy")
     assert np.allclose(np.array([1.0, 2.95, 5.5, 8.05, 10.0]), aux)
 
 
