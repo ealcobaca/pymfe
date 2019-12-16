@@ -172,23 +172,26 @@ class MFEInfoTheory:
     def _calc_joint_ent(cls,
                         vec_x: np.ndarray,
                         vec_y: np.ndarray,
-                        epsilon: float = 1.0e-10) -> float:
+                        epsilon: float = 1.0e-8) -> float:
         """Compute joint entropy between vectorx ``x`` and ``y``."""
         joint_prob_mat = pd.crosstab(
             vec_y, vec_x, normalize=True).values + epsilon
 
-        joint_ent = np.multiply(joint_prob_mat,
-                                np.log2(joint_prob_mat)).sum().sum()
+        joint_ent = np.sum(
+            np.multiply(joint_prob_mat, np.log2(joint_prob_mat)))
 
         return -1.0 * joint_ent
 
     @classmethod
-    def _calc_conc(cls, vec_x: np.ndarray, vec_y: np.ndarray) -> float:
+    def _calc_conc(cls,
+                   vec_x: np.ndarray,
+                   vec_y: np.ndarray,
+                   epsilon: float = 1.0e-8) -> float:
         """Concentration coefficient between two arrays ``vec_x`` and ``vec_y``.
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
         """
-        pij = pd.crosstab(vec_x, vec_y, normalize=True).values
+        pij = pd.crosstab(vec_x, vec_y, normalize=True).values + epsilon
 
         isum = pij.sum(axis=0)
         jsum2 = np.sum(pij.sum(axis=1)**2)
@@ -373,7 +376,6 @@ class MFEInfoTheory:
     def ft_eq_num_attr(cls,
                        C: np.ndarray,
                        y: np.ndarray,
-                       epsilon: float = 1.0e-10,
                        class_ent: t.Optional[np.ndarray] = None,
                        class_freqs: t.Optional[np.ndarray] = None,
                        mut_inf: t.Optional[np.ndarray] = None) -> float:
@@ -394,9 +396,6 @@ class MFEInfoTheory:
 
         y : :obj:`np.ndarray`
             The target attribute vector.
-
-        epsilon : float, optional
-            Tiny numeric value to avoid division by zero.
 
         class_ent : float, optional
             Entropy of the target attribute ``y``. Used to explot
@@ -434,7 +433,7 @@ class MFEInfoTheory:
 
         _, num_col = C.shape
 
-        return num_col * (class_ent / (epsilon + np.sum(mut_inf)))
+        return num_col * class_ent / np.sum(mut_inf)
 
     @classmethod
     def ft_joint_ent(cls,
@@ -569,7 +568,6 @@ class MFEInfoTheory:
     def ft_ns_ratio(cls,
                     C: np.ndarray,
                     y: np.ndarray,
-                    epsilon: float = 1.0e-10,
                     attr_ent: t.Optional[np.ndarray] = None,
                     mut_inf: t.Optional[np.ndarray] = None) -> float:
         """Compute the noisiness of attributes.
@@ -585,8 +583,11 @@ class MFEInfoTheory:
 
         Parameters
         ----------
-        epsilon : float, optional
-            Tiny numeric value to avoid division by zero.
+        C : :obj:`np.ndarray`
+            Categorical attributes from fitted data.
+
+        y : :obj:`np.ndarray`
+            The target attribute vector.
 
         attr_ent : :obj:`np.ndarray`, optional
             Values of each attribute entropy in ``N``. This argument purpose is
@@ -621,4 +622,4 @@ class MFEInfoTheory:
         ent_attr = np.sum(attr_ent)
         mut_inf = np.sum(mut_inf)
 
-        return (ent_attr - mut_inf) / (epsilon + mut_inf)
+        return (ent_attr - mut_inf) / mut_inf
