@@ -191,12 +191,12 @@ class MFEInfoTheory:
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
         """
-        pij = pd.crosstab(vec_x, vec_y, normalize=True).values 
+        pij = pd.crosstab(vec_x, vec_y, normalize=True).values
 
         isum = pij.sum(axis=0)
         jsum2 = np.sum(pij.sum(axis=1)**2)
 
-        conc = ((np.sum(pij**2 / isum) - jsum2) / (1.0 - jsum2))
+        conc = (np.sum(pij**2 / isum) - jsum2) / (1.0 - jsum2)
 
         return conc
 
