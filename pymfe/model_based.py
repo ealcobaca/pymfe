@@ -371,8 +371,8 @@ class MFEModelBased:
         """
         num_leaves = cls.ft_leaves(dt_model)
 
-        tree_shape = cls.ft_tree_shape(
-            leaf_nodes, dt_nodes_depth)  # type: np.ndarray
+        tree_shape = cls.ft_tree_shape(leaf_nodes,
+                                       dt_nodes_depth)  # type: np.ndarray
 
         return num_leaves / tree_shape
 

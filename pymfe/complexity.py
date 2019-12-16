@@ -149,8 +149,7 @@ class MFEComplexity:
 
         if N is not None and "num_attr_pca" not in kwargs:
             pca = sklearn.decomposition.PCA(
-                n_components=tx_n_components,
-                random_state=random_state)
+                n_components=tx_n_components, random_state=random_state)
             pca.fit(N)
 
             num_attr_pca = pca.explained_variance_ratio_.shape[0]
@@ -190,8 +189,8 @@ class MFEComplexity:
 
         The index i indicate the minmax of feature i.
         """
-        minmax = np.min((np.max(N[cls_1, :], axis=0),
-                         np.max(N[cls_2, :], axis=0)), axis=0)
+        minmax = np.min(
+            (np.max(N[cls_1, :], axis=0), np.max(N[cls_2, :], axis=0)), axis=0)
         return minmax
 
     @staticmethod
@@ -201,8 +200,8 @@ class MFEComplexity:
 
         The index i indicate the maxmin of the ith feature.
         """
-        maxmin = np.max((np.min(N[cls_1, :], axis=0),
-                         np.min(N[cls_2, :], axis=0)), axis=0)
+        maxmin = np.max(
+            (np.min(N[cls_1, :], axis=0), np.min(N[cls_2, :], axis=0)), axis=0)
         return maxmin
 
     @staticmethod
@@ -373,8 +372,8 @@ class MFEComplexity:
 
             subset_size = N_subset.shape[0]
 
-            f4[ind] = subset_size / (class_freqs[cls_id_1] +
-                                     class_freqs[cls_id_2])
+            f4[ind] = subset_size / (
+                class_freqs[cls_id_1] + class_freqs[cls_id_2])
 
         # The measure is computed in the literature using the mean. However, it
         # is formulated here as a meta-feature. Therefore, the post-processing
@@ -439,10 +438,7 @@ class MFEComplexity:
         zscore = sklearn.preprocessing.StandardScaler()
 
         svc = sklearn.svm.SVC(
-            kernel="linear",
-            C=1.0,
-            tol=10e-3,
-            max_iter=int(max_iter))
+            kernel="linear", C=1.0, tol=10e-3, max_iter=int(max_iter))
 
         pip = sklearn.pipeline.Pipeline([("zscore", zscore), ("svc", svc)])
 
@@ -457,9 +453,7 @@ class MFEComplexity:
             y_pred = pip.predict(N_subset)
 
             error = sklearn.metrics.zero_one_loss(
-                y_true=y_subset,
-                y_pred=y_pred,
-                normalize=True)
+                y_true=y_subset, y_pred=y_pred, normalize=True)
 
             l2[ind] = error
 
@@ -506,8 +500,7 @@ class MFEComplexity:
         dist_mat = scipy.spatial.distance.cdist(N, N, metric=metric)
 
         mst = scipy.sparse.csgraph.minimum_spanning_tree(
-            csgraph=np.triu(dist_mat, k=1),
-            overwrite=True)
+            csgraph=np.triu(dist_mat, k=1), overwrite=True)
 
         node_id_i, node_id_j = np.nonzero(mst)
 
@@ -773,8 +766,7 @@ class MFEComplexity:
            Page 15.
         """
         if num_attr_pca is None:
-            sub_dic = cls.precompute_pca_tx(
-                N=N, random_state=random_state)
+            sub_dic = cls.precompute_pca_tx(N=N, random_state=random_state)
             num_attr_pca = sub_dic["num_attr_pca"]
 
         num_inst = N.shape[0]
@@ -821,8 +813,7 @@ class MFEComplexity:
            Page 15.
         """
         if num_attr_pca is None:
-            sub_dic = cls.precompute_pca_tx(
-                N=N, random_state=random_state)
+            sub_dic = cls.precompute_pca_tx(N=N, random_state=random_state)
             num_attr_pca = sub_dic["num_attr_pca"]
 
         num_attr = N.shape[1]
