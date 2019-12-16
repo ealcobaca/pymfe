@@ -553,9 +553,9 @@ def get_feat_value(
     except (TypeError, ValueError, ZeroDivisionError) as type_e:
         if not suppress_warnings:
             warnings.warn(
-                "Error extracting {0}: \n{1}.\nWill set it "
-                "as 'np.nan' for all summary functions.".format(
-                    mtd_name, repr(type_e)), RuntimeWarning)
+                "Can't extract feature '{0}'.\n Exception message: {1}.\n"
+                " Will set it as 'np.nan' for all summary functions."
+                .format(mtd_name, repr(type_e)), RuntimeWarning)
 
         features = np.nan
 
@@ -628,7 +628,7 @@ def build_mtd_kwargs(mtd_name: str,
 
         for unknown_arg in unknown_arg_set:
             warnings.warn(
-                'Unknown argument "{0}" for method "{1}".'.format(
+                "Unknown argument '{0}' for method '{1}'.".format(
                     unknown_arg, mtd_name), UserWarning)
 
     return callable_args
@@ -653,20 +653,21 @@ def check_summary_warnings(value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
 
     if any(np.isnan(value)):
         warnings.warn(
-            "Failed to summarize {0} with {1}. "
-            "(generated NaN).".format(name_feature, name_summary),
+            "Can't summarize feature '{0}' with summary '{1}'. "
+            "Will set it as 'np.nan'.".format(name_feature, name_summary),
             RuntimeWarning)
 
 
 def convert_alias(groups_alias: t.Iterable[t.Iterable],
                   values: t.Optional[t.Union[t.Iterable[str], str]] = None
                   ) -> t.List[str]:
-    """Change the values of the alias to the groups.
-    """
+    """Change the values of the alias to the groups."""
     if not values:
         values = []
+
     elif isinstance(values, str):
         values = [values]
+
     else:
         values = list(values)
 
@@ -788,7 +789,7 @@ def solve_group_dependencies(
         ) -> t.Tuple[t.Tuple[str, ...], t.FrozenSet[str]]:
     """Solve dependencies between groups.
 
-    Those dependencies must be registered in ``GROUP_PREFEQUISITES`` tuple.
+    Those dependencies must be registered in ``GROUP_PREREQUISITES`` tuple.
     """
     inserted_dependencies = set()
     cur_dependencies = None  # type: t.Optional[t.Union[t.Set[str], str]]
@@ -903,7 +904,7 @@ def process_summary(
         wildcard=wildcard)
 
     if not_in_group:
-        raise ValueError("Unknown summary: {0}. "
+        raise ValueError("Unknown summary function '{0}'. "
                          "Please select values in {1}.".format(
                              not_in_group, VALID_SUMMARY))
 
@@ -915,7 +916,8 @@ def process_summary(
 
         if not summary_mtd_callable:
             warnings.warn("Missing summary function "
-                          "{0} at _summary module.".format(summary_func),
+                          "'{0}' at _summary module.".format(
+                              summary_func),
                           RuntimeWarning)
         else:
             try:
@@ -1037,8 +1039,10 @@ def process_features(
 
     if not suppress_warnings:
         for unknown_ft in processed_ft:
-            warnings.warn('Unknown feature "{}"'.format(unknown_ft),
-                          UserWarning)
+            warnings.warn("Unknown feature '{}'. You can check available "
+                          "feature names with either 'valid_metafeatures()'"
+                          " or 'metafeature_description()' methods."
+                          .format(unknown_ft), UserWarning)
 
     return tuple(available_feat_names), tuple(ft_mtd_processed), groups
 
@@ -1120,8 +1124,9 @@ def process_precomp_groups(
 
             for unknown_precomp in unknown_groups:
                 warnings.warn(
-                    'Unknown precomp_groups "{0}"'.format(unknown_precomp),
-                    UserWarning)
+                    "Unknown precomp_groups '{0}'. You can check available "
+                    "metafeature groups using 'valid_groups()' method."
+                    .format(unknown_precomp), UserWarning)
 
         processed_precomp_groups = tuple(
             set(processed_precomp_groups).intersection(groups))
@@ -1150,7 +1155,7 @@ def process_precomp_groups(
 
             if not suppress_warnings:
                 warnings.warn("Something went wrong while "
-                              'precomputing "{0}". Will ignore '
+                              "precomputing '{0}'. Will ignore "
                               "this method. Error message:\n"
                               "{1}.".format(precomp_mtd_name, repr(type_err)))
 
@@ -1248,8 +1253,8 @@ def isnumeric(
             ject.
 
     Returns:
-        bool: True if `value` is a numeric type object or a collection of nume-
-            ric-only elements. False otherwise.
+        bool: True if `value` is a numeric type object or a collection of
+            numeric-only elements. False otherwise.
     """
     if (check_subtype
             and isinstance(value, (collections.Iterable, np.ndarray))
@@ -1441,8 +1446,8 @@ def rescale_data(data: np.ndarray,
         scaler model is also raised by this function.
     """
     if option not in VALID_RESCALE:
-        raise ValueError('Unknown option "{0}". Please choose one '
-                         "between {1}".format(option, VALID_RESCALE))
+        raise ValueError("Unknown data rescaling option '{0}'. Please choose "
+                         "one value among {1}".format(option, VALID_RESCALE))
 
     if not args:
         args = {}
@@ -1630,7 +1635,7 @@ def post_processing(
         except (AttributeError, TypeError, ValueError) as type_err:
             if not suppress_warnings:
                 warnings.warn("Something went wrong while "
-                              'postprocessing "{0}". Will ignore '
+                              "postprocessing '{0}'. Will ignore "
                               "this method. Error message:\n"
                               "{1}.".format(postprocess_mtd_name,
                                             repr(type_err)))
