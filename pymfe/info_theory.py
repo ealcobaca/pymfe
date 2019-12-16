@@ -127,22 +127,22 @@ class MFEInfoTheory:
         precomp_vals = {}
 
         if y is not None and "class_ent" not in kwargs:
-            precomp_vals["class_ent"] = MFEInfoTheory.ft_class_ent(
+            precomp_vals["class_ent"] = cls.ft_class_ent(
                 y, class_freqs=class_freqs)
 
         if C is not None and C.size and "attr_ent" not in kwargs:
-            precomp_vals["attr_ent"] = MFEInfoTheory.ft_attr_ent(C)
+            precomp_vals["attr_ent"] = cls.ft_attr_ent(C)
 
         if y is not None and C is not None and C.size:
             if "joint_ent" not in kwargs:
                 precomp_vals["joint_ent"] = np.apply_along_axis(
-                    func1d=MFEInfoTheory._calc_joint_ent,
+                    func1d=cls._calc_joint_ent,
                     axis=0,
                     arr=C,
                     vec_y=y)
 
             if "mut_inf" not in kwargs:
-                precomp_vals["mut_inf"] = MFEInfoTheory.ft_mut_inf(
+                precomp_vals["mut_inf"] = cls.ft_mut_inf(
                     C=C,
                     y=y,
                     attr_ent=precomp_vals.get("attr_ent"),
@@ -191,7 +191,7 @@ class MFEInfoTheory:
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
         """
-        pij = pd.crosstab(vec_x, vec_y, normalize=True).values
+        pij = pd.crosstab(vec_x, vec_y, normalize=True).values 
 
         isum = pij.sum(axis=0)
         jsum2 = np.sum(pij.sum(axis=1)**2)
@@ -203,7 +203,7 @@ class MFEInfoTheory:
     @classmethod
     def ft_attr_conc(cls,
                      C: np.ndarray,
-                     threshold: t.Optional[int] = None,
+                     max_attr_num: t.Optional[int] = None,
                      random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute concentration coef. of each pair of distinct attributes.
 
@@ -212,15 +212,15 @@ class MFEInfoTheory:
         C : :obj:`np.ndarray`
             Categorical attributes from fitted data.
 
-        threshold : int, optional
+        max_attr_num : int, optional
             Maximum number of attributes considered. If ``C`` has more
-            attributes than this threshold, ``threshold`` random
+            attributes than this max_attr_num, ``max_attr_num`` random
             attributes will be sampled. If None, then all attributes
-            are considered. Note that this method cost is exponential
+            are considered. Note that this method cost is superlinear
             to the number of attributes considered.
 
         random_state : int, optional
-            Used only if ``threshold`` is given and ``C`` has more
+            Used only if ``max_attr_num`` is given and ``C`` has more
             attributes than it. This random seed is set before sampling
             ``C`` attributes.
 
@@ -240,17 +240,17 @@ class MFEInfoTheory:
 
         col_inds = np.arange(num_col)
 
-        if threshold is not None and num_col > threshold:
+        if max_attr_num is not None and num_col > max_attr_num:
             if random_state is not None:
                 np.random.seed(random_state)
 
             col_inds = np.random.choice(
-                col_inds, size=threshold, replace=False)
+                col_inds, size=max_attr_num, replace=False)
 
         col_permutations = itertools.permutations(col_inds, 2)
 
         attr_conc = np.array([
-            MFEInfoTheory._calc_conc(C[:, ind_attr_a], C[:, ind_attr_b])
+            cls._calc_conc(C[:, ind_attr_a], C[:, ind_attr_b])
             for ind_attr_a, ind_attr_b in col_permutations
         ])
 
@@ -295,7 +295,7 @@ class MFEInfoTheory:
 
         try:
             return np.apply_along_axis(
-                func1d=MFEInfoTheory._calc_entropy, axis=0, arr=C)
+                func1d=cls._calc_entropy, axis=0, arr=C)
 
         except ValueError:
             return np.array([np.nan])
@@ -325,7 +325,7 @@ class MFEInfoTheory:
            on Artificial Intelligence Tools, 10(4):525–554, 2001.
         """
         return np.apply_along_axis(
-            func1d=MFEInfoTheory._calc_conc, axis=0, arr=C, vec_y=y)
+            func1d=cls._calc_conc, axis=0, arr=C, vec_y=y)
 
     @classmethod
     def ft_class_ent(cls,
@@ -371,7 +371,7 @@ class MFEInfoTheory:
         if class_ent is not None:
             return class_ent
 
-        return MFEInfoTheory._calc_entropy(y, value_freqs=class_freqs)
+        return cls._calc_entropy(y, value_freqs=class_freqs)
 
     @classmethod
     def ft_eq_num_attr(cls,
@@ -431,10 +431,10 @@ class MFEInfoTheory:
            Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if class_ent is None:
-            class_ent = MFEInfoTheory.ft_class_ent(y, class_freqs=class_freqs)
+            class_ent = cls.ft_class_ent(y, class_freqs=class_freqs)
 
         if mut_inf is None:
-            mut_inf = MFEInfoTheory.ft_mut_inf(C, y)
+            mut_inf = cls.ft_mut_inf(C, y)
 
         _, num_col = C.shape
 
@@ -487,7 +487,7 @@ class MFEInfoTheory:
         """
         if joint_ent is None:
             joint_ent = np.apply_along_axis(
-                func1d=MFEInfoTheory._calc_joint_ent, axis=0, arr=C, vec_y=y)
+                func1d=cls._calc_joint_ent, axis=0, arr=C, vec_y=y)
 
         return joint_ent
 
@@ -559,13 +559,13 @@ class MFEInfoTheory:
             return mut_inf
 
         if class_ent is None:
-            class_ent = MFEInfoTheory.ft_class_ent(y, class_freqs=class_freqs)
+            class_ent = cls.ft_class_ent(y, class_freqs=class_freqs)
 
         if attr_ent is None:
-            attr_ent = MFEInfoTheory.ft_attr_ent(C)
+            attr_ent = cls.ft_attr_ent(C)
 
         if joint_ent is None:
-            joint_ent = MFEInfoTheory.ft_joint_ent(C, y)
+            joint_ent = cls.ft_joint_ent(C, y)
 
         return attr_ent + class_ent - joint_ent
 
@@ -617,10 +617,10 @@ class MFEInfoTheory:
            Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if attr_ent is None:
-            attr_ent = MFEInfoTheory.ft_attr_ent(C)
+            attr_ent = cls.ft_attr_ent(C)
 
         if mut_inf is None:
-            mut_inf = MFEInfoTheory.ft_mut_inf(C, y)
+            mut_inf = cls.ft_mut_inf(C, y)
 
         ent_attr = np.sum(attr_ent)
         mut_inf = np.sum(mut_inf)
