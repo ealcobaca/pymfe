@@ -60,7 +60,7 @@ A set of examples illustrating the use of pymfe package. You will learn in this
 section how pymfe works, patter, tips, and more. 
 
 
-`What's new ?<new.html>`_
+`What's new ? <new.html>`_
 ------------------------------
 Log of the pymfe history.
 
