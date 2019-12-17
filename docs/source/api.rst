@@ -24,8 +24,8 @@ This is the full API documentation of the `pymfe` toolbox.
 
 .. _general_ref:
 
-:mod:`pymfe.general`: Geneal Meta-features
-==========================================
+:mod:`pymfe.general`: General Meta-features
+===========================================
 
 .. automodule:: pymfe.general
    :no-members:

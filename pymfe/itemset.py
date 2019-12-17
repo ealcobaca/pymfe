@@ -1,6 +1,7 @@
 """Module dedicated to extraction of itemset metafeatures."""
 
 import typing as t
+
 import numpy as np
 
 

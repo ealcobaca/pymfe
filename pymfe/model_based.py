@@ -3,7 +3,7 @@
 import typing as t
 
 import numpy as np
-from sklearn.tree import DecisionTreeClassifier
+import sklearn.tree
 
 
 class MFEModelBased:
@@ -84,8 +84,8 @@ class MFEModelBased:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``dt_model`` (:obj:`DecisionTreeClassifier`): decision tree
-                  classifier.
+                - ``dt_model`` (:obj:`sklearn.tree.DecisionTreeClassifier`):
+                  decision tree classifier.
                 - ``dt_info_table`` (:obj:`np.ndarray`): some tree properties
                   table.
                 - ``dt_nodes_depth`` (:obj:`np.ndarray`): the depth of each
@@ -123,19 +123,20 @@ class MFEModelBased:
                       N: np.ndarray,
                       y: np.ndarray,
                       random_state: t.Optional[int] = None,
-                      **kwargs) -> DecisionTreeClassifier:
+                      **kwargs) -> sklearn.tree.DecisionTreeClassifier:
         """Build a Decision Tree Classifier model."""
-        dt_model = DecisionTreeClassifier(random_state=random_state, **kwargs)
+        dt_model = sklearn.tree.DecisionTreeClassifier(
+            random_state=random_state, **kwargs)
         return dt_model.fit(X=N, y=y)
 
     @classmethod
-    def _extract_table(cls, dt_model: DecisionTreeClassifier,
+    def _extract_table(cls, dt_model: sklearn.tree.DecisionTreeClassifier,
                        leaf_nodes: np.ndarray) -> np.ndarray:
         """Bookkeep some information table from the ``dt_model`` into an array.
 
         Parameters
         ----------
-        dt_model : :obj:`DecisionTreeClassifier`
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
             The DT model.
 
         Returns
@@ -162,13 +163,13 @@ class MFEModelBased:
         return dt_info_table
 
     @classmethod
-    def _calc_dt_node_depths(cls,
-                             dt_model: DecisionTreeClassifier) -> np.ndarray:
+    def _calc_dt_node_depths(
+            cls, dt_model: sklearn.tree.DecisionTreeClassifier) -> np.ndarray:
         """Compute the depth of each node in the DT model.
 
         Parameters
         ----------
-        dt_model : :obj:`DecisionTreeClassifier`
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
             The DT model.
 
         Returns
@@ -195,12 +196,12 @@ class MFEModelBased:
         return depths
 
     @classmethod
-    def ft_leaves(cls, dt_model: DecisionTreeClassifier) -> int:
+    def ft_leaves(cls, dt_model: sklearn.tree.DecisionTreeClassifier) -> int:
         """Compute the number of leaf nodes in the DT model.
 
         Parameters
         ----------
-        dt_model : :obj:`DecisionTreeClassifier`
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
             The DT model.
 
         Returns
@@ -340,8 +341,9 @@ class MFEModelBased:
         return -prob_random_arrival * np.log2(prob_random_arrival)
 
     @classmethod
-    def ft_leaves_homo(cls, leaf_nodes: np.ndarray, dt_nodes_depth: np.ndarray,
-                       dt_model: DecisionTreeClassifier) -> np.ndarray:
+    def ft_leaves_homo(
+            cls, leaf_nodes: np.ndarray, dt_nodes_depth: np.ndarray,
+            dt_model: sklearn.tree.DecisionTreeClassifier) -> np.ndarray:
         """Compute the DT model Homogeneity for every leaf node.
 
         The DT model homogeneity is calculated by the number of leaves
@@ -375,8 +377,9 @@ class MFEModelBased:
         return num_leaves / tree_shape
 
     @classmethod
-    def ft_leaves_per_class(cls, dt_info_table: np.ndarray,
-                            dt_model: DecisionTreeClassifier) -> np.ndarray:
+    def ft_leaves_per_class(
+            cls, dt_info_table: np.ndarray,
+            dt_model: sklearn.tree.DecisionTreeClassifier) -> np.ndarray:
         """Compute the proportion of leaves per class in DT model.
 
         This quantity is computed by the proportion of leaves of the DT model
@@ -408,12 +411,12 @@ class MFEModelBased:
         return class_id_freqs[1:] / MFEModelBased.ft_leaves(dt_model)
 
     @classmethod
-    def ft_nodes(cls, dt_model: DecisionTreeClassifier) -> int:
+    def ft_nodes(cls, dt_model: sklearn.tree.DecisionTreeClassifier) -> int:
         """Compute the number of non-leaf nodes in DT model.
 
         Parameters
         ----------
-        dt_model : :obj:`DecisionTreeClassifier`
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
             The DT model.
 
         Returns
@@ -432,12 +435,13 @@ class MFEModelBased:
         return dt_model.tree_.node_count - dt_model.tree_.n_leaves
 
     @classmethod
-    def ft_nodes_per_attr(cls, dt_model: DecisionTreeClassifier) -> float:
+    def ft_nodes_per_attr(
+            cls, dt_model: sklearn.tree.DecisionTreeClassifier) -> float:
         """Compute the ratio of nodes per number of attributes in DT model.
 
         Parameters
         ----------
-        dt_model : :obj:`DecisionTreeClassifier`
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
             The DT model.
 
         Returns
@@ -456,13 +460,14 @@ class MFEModelBased:
         return num_non_leaf_nodes / dt_model.tree_.n_features
 
     @classmethod
-    def ft_nodes_per_inst(cls, dt_model: DecisionTreeClassifier) -> float:
+    def ft_nodes_per_inst(
+            cls, dt_model: sklearn.tree.DecisionTreeClassifier) -> float:
         """Compute the ratio of non-leaf nodes per number of instances in DT
         model.
 
         Parameters
         ----------
-        dt_model : :obj:`DecisionTreeClassifier`
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
             The DT model.
 
         Returns
@@ -547,7 +552,8 @@ class MFEModelBased:
         return attr_counts
 
     @classmethod
-    def ft_var_importance(cls, dt_model: DecisionTreeClassifier) -> np.ndarray:
+    def ft_var_importance(
+            cls, dt_model: sklearn.tree.DecisionTreeClassifier) -> np.ndarray:
         """Compute the features importance of the DT model for each
         attribute.
 
@@ -556,7 +562,7 @@ class MFEModelBased:
 
         Parameters
         ----------
-        dt_model : :obj:`DecisionTreeClassifier`
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
             The DT model.
 
         Returns
