@@ -17,3 +17,8 @@ If you use pymfe in a scientific publication, we would appreciate
 citations to the following paper::
 
   None
+
+Extra information
+-----------------
+See the `README <https://github.com/ealcobaca/pymfe/blob/master/README.md>`_
+file from GitHub for extra information.
