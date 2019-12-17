@@ -119,10 +119,9 @@ class MFEComplexity:
             Attributes from fitted data.
 
         tx_n_components : float, optional
-            Minimum fraction of the fitted data variance that must be
-            explained by the kept principal components after the PCA analysis.
-            Check the ``sklearn.decomposition.PCA`` documentation for more
-            detailed information about this argument.
+            Specifies the number of components such that the amount of variance
+            that needs to be explained is greater than the percentage specified
+            by ``tx_n_components``. The PCA is computed using ``N``.
 
         random_state : int, optional
             If the fitted data is huge and the number of principal components
@@ -263,7 +262,8 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 6.
+           (Cited on page 6). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
             sub_dic = MFEComplexity.precompute_fx(y=y)
@@ -333,7 +333,8 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 7.
+           (Cited on page 7). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
             sub_dic = MFEComplexity.precompute_fx(y=y)
@@ -427,7 +428,8 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 9.
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None:
             sub_dic = MFEComplexity.precompute_fx(y=y)
@@ -496,14 +498,19 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 9-10.
+           (Cited on page 9-10). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         # 0-1 feature scaling
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
 
-        # Compute the distance matrix and the minimum spanning tree.
+        # Compute the distance matrix and the minimum spanning tree
+        # using Kruskal's Minimum Spanning Tree algorithm.
         dist_mat = scipy.spatial.distance.cdist(N, N, metric=metric)
+        # Note: in the paper, the authors used Prim's algorithm.
+        # Our implementation may change it in a future version due to
+        # time complexity advantages of Prim's algorithm in this context.
 
         mst = scipy.sparse.csgraph.minimum_spanning_tree(
             csgraph=np.triu(dist_mat, k=1),
@@ -577,7 +584,8 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 11.
+           (Cited on page 9-11). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if cls_inds is None:
             classes = np.unique(y)
@@ -652,7 +660,8 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 15.
+           (Cited on page 15). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
@@ -690,7 +699,8 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 16.
+           (Cited on page 16). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
@@ -724,7 +734,8 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 15.
+           (Cited on page 15). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         # Note: This metafeature has a link with the 'ft_attr_to_inst',
         # but considers the trandormed data in N instead of the original
@@ -770,7 +781,8 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 15.
+           (Cited on page 15). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if num_attr_pca is None:
             sub_dic = MFEComplexity.precompute_pca_tx(
@@ -818,7 +830,8 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 15.
+           (Cited on page 15). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if num_attr_pca is None:
             sub_dic = MFEComplexity.precompute_pca_tx(
