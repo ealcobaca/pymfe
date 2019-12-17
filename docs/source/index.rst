@@ -17,7 +17,7 @@ Welcome to pymfe's documentation!
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Documentation
+   :caption: API Documentation
 
    auto_pages/meta_features_description
    api
@@ -25,7 +25,7 @@ Welcome to pymfe's documentation!
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Tutorial - Examples
+   :caption: Tutorial and Examples
 
    auto_examples/index
 
@@ -60,7 +60,7 @@ A set of examples illustrating the use of pymfe package. You will learn in this
 section how pymfe works, patter, tips, and more. 
 
 
-`What's new <new.html>`_
+`What's new ?<new.html>`_
 ------------------------------
 Log of the pymfe history.
 
