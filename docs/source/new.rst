@@ -1,6 +1,7 @@
 What is new on pymfe package?
 #############################
 
+
 Version 0.1.1
 -------------
 * Bugs solved
@@ -19,8 +20,8 @@ Version 0.1.1
   current percentage of progress done so far.
 
 
-Version 0.1.0
--------------
+Version 0.1.0 (Available on PyPI)
+---------------------------------
 * Meta-feature groups available
 
    * Relative landmarking
@@ -53,8 +54,8 @@ Version 0.1.0
 
    * Several new tests added
 
-Version 0.0.3
--------------
+Version 0.0.3 (Available on PyPI)
+---------------------------------
 * Documentation improvement
   
 * Setup improvement
