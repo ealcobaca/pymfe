@@ -143,8 +143,8 @@ class MFEClustering:
                 * ``intraclass_dists`` (:obj:`np.ndarray`): the distance
                   between the fartest pair of instances of the same class.
 
-            The following precomputed items are necessary and, if they are
-            still not precomputed, they are also are returned:
+            The following precomputed items are necessary and are also
+            returned, if still not previously precomputed:
                 * ``classes`` (:obj:`np.ndarray`):  distinct classes of
                   ``y``, if ``y`` is not :obj:`NoneType`.
                 * ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
