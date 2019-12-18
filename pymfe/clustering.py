@@ -147,11 +147,11 @@ class MFEClustering:
                 "intraclass_dists"
         }.issubset(kwargs):
             precomp_vals["pairwise_norm_interclass_dist"] = (
-                MFEClustering._pairwise_norm_interclass_dist(
+                MFEClustering._calc_pairwise_norm_interclass_dist(
                     N=N, y=y, dist_metric=dist_metric, classes=classes))
 
             precomp_vals["pairwise_intraclass_dists"] = (
-                MFEClustering._all_intraclass_dists(
+                MFEClustering._calc_all_intraclass_dists(
                     N=N,
                     y=y,
                     dist_metric=dist_metric,
@@ -307,7 +307,7 @@ class MFEClustering:
         return precomp_vals
 
     @classmethod
-    def _normalized_interclass_dist(
+    def _calc_normalized_interclass_dist(
             cls,
             group_inst_a: np.ndarray,
             group_inst_b: np.ndarray,
@@ -324,7 +324,7 @@ class MFEClustering:
         return norm_interclass_dist / norm_interclass_dist.size
 
     @classmethod
-    def _pairwise_norm_interclass_dist(
+    def _calc_pairwise_norm_interclass_dist(
             cls,
             N: np.ndarray,
             y: np.ndarray,
@@ -335,7 +335,7 @@ class MFEClustering:
             classes = np.unique(y)
 
         interclass_dists = np.array([
-            MFEClustering._normalized_interclass_dist(
+            MFEClustering._calc_normalized_interclass_dist(
                 N[y == class_a, :],
                 N[y == class_b, :],
                 dist_metric=dist_metric)
@@ -345,10 +345,10 @@ class MFEClustering:
         return interclass_dists
 
     @classmethod
-    def _intraclass_dists(cls,
-                          instances: np.ndarray,
-                          dist_metric: str = "euclidean",
-                          get_max_dist: bool = True) -> float:
+    def _calc_intraclass_dists(cls,
+                               instances: np.ndarray,
+                               dist_metric: str = "euclidean",
+                               get_max_dist: bool = True) -> float:
         """Calculate the intraclass distance of the given instances.
 
         The intraclass is the maximum distance between two distinct
@@ -361,18 +361,18 @@ class MFEClustering:
         return intraclass_dists.max() if get_max_dist else intraclass_dists
 
     @classmethod
-    def _all_intraclass_dists(cls,
-                              N: np.ndarray,
-                              y: np.ndarray,
-                              dist_metric: str = "euclidean",
-                              classes: t.Optional[np.ndarray] = None,
-                              get_max_dist: bool = True) -> np.ndarray:
+    def _calc_all_intraclass_dists(cls,
+                                   N: np.ndarray,
+                                   y: np.ndarray,
+                                   dist_metric: str = "euclidean",
+                                   classes: t.Optional[np.ndarray] = None,
+                                   get_max_dist: bool = True) -> np.ndarray:
         """Calculate all intraclass (internal to a class) distances."""
         if classes is None:
             classes = np.unique(y)
 
         intraclass_dists = np.array([
-            MFEClustering._intraclass_dists(
+            MFEClustering._calc_intraclass_dists(
                 N[y == cur_class, :],
                 dist_metric=dist_metric,
                 get_max_dist=get_max_dist) for cur_class in classes
@@ -517,11 +517,11 @@ class MFEClustering:
         """
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
-                MFEClustering._pairwise_norm_interclass_dist(
+                MFEClustering._calc_pairwise_norm_interclass_dist(
                     N=N, y=y, dist_metric=dist_metric, classes=classes))
 
         if intraclass_dists is None:
-            intraclass_dists = MFEClustering._all_intraclass_dists(
+            intraclass_dists = MFEClustering._calc_all_intraclass_dists(
                 N=N, y=y, dist_metric=dist_metric, classes=classes).max()
 
         vdu = (pairwise_norm_interclass_dist.min() /
@@ -617,7 +617,7 @@ class MFEClustering:
 
         if pairwise_norm_interclass_dist is None:
             pairwise_norm_interclass_dist = (
-                MFEClustering._pairwise_norm_interclass_dist(
+                MFEClustering._calc_pairwise_norm_interclass_dist(
                     N=N, y=y, dist_metric=dist_metric, classes=classes))
 
         norm_factor = 2.0 / (class_num * (class_num - 1.0))
@@ -806,7 +806,9 @@ class MFEClustering:
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
 
-        return scipy.stats.entropy(class_freqs / y.size)
+        num_inst = y.size
+
+        return scipy.stats.entropy(class_freqs / num_inst)
 
     @classmethod
     def ft_sc(cls,

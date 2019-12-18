@@ -3,8 +3,8 @@
 import typing as t
 import collections
 import shutil
-from texttable import Texttable
 
+import texttable
 import numpy as np
 
 import pymfe._internal as _internal
@@ -40,7 +40,7 @@ class MFE:
     groups_alias = [('default', _internal.DEFAULT_GROUP)]
 
     def __init__(self,
-                 groups: t.Union[str, t.Iterable[str]] = "all",
+                 groups: t.Union[str, t.Iterable[str]] = "default",
                  features: t.Union[str, t.Iterable[str]] = "all",
                  summary: t.Union[str, t.Iterable[str]] = ("mean", "sd"),
                  measure_time: t.Optional[str] = None,
@@ -64,6 +64,12 @@ class MFE:
             A collection or a single metafeature group name representing the
             desired group of metafeatures for extraction. Use the method
             ``valid_groups`` to get a list of all available groups.
+
+            Setting with ``all`` enables all available groups.
+
+            Setting with ``default`` enables ``general``, ``info-theory``,
+            ``statistical``, ``model-based`` and ``landmarking``. It is the
+            default value.
 
             The value provided by the argument ``wildcard`` can be used to
             select all metafeature groups rapidly.
@@ -1375,7 +1381,7 @@ class MFE:
         if sort_by_group:
             mtf_desc.sort(key=lambda i: i[0])
 
-        draw = Texttable().add_rows(mtf_desc).draw()
+        draw = texttable.Texttable().add_rows(mtf_desc).draw()
         if print_table:
             print(draw)
             return None

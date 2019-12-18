@@ -12,7 +12,8 @@ This example show how to extract meta-features using standard configuration.
 #
 # The standard way to extract meta-features is using the MFE class.
 # The parameters are the dataset and the group of measures to be extracted.
-# By default, the method extract all the measures. For instance:
+# By default, the method extracts general, info-theory, statistical,
+# model-based and landmarking measures. For instance:
 
 from sklearn.datasets import load_iris
 from pymfe.mfe import MFE
@@ -23,7 +24,7 @@ y = data.target
 X = data.data
 
 ###############################################################################
-# Extracting all measures
+# Extracting default measures
 mfe = MFE()
 mfe.fit(X, y)
 ft = mfe.extract()
@@ -38,6 +39,13 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 
 ###############################################################################
+# Extracting all measures
+mfe = MFE(groups="all")
+mfe.fit(X, y)
+ft = mfe.extract()
+print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+
+###############################################################################
 # Changing summarization function
 # -------------------------------
 #
@@ -48,14 +56,14 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 #
 
 ###############################################################################
-# Compute all measures using min, median and max
+# Compute default measures using min, median and max
 mfe = MFE(summary=["min", "median", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
-# Compute all measures using quantile
+# Compute default measures using quantile
 mfe = MFE(summary=["quantiles"])
 mfe.fit(X, y)
 ft = mfe.extract()

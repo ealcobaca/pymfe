@@ -77,14 +77,11 @@ class MFEGeneral:
         """
         precomp_vals = {}
 
-        if y is not None and not {"classes", "class_freqs", "return_inverse"
-                                  }.issubset(kwargs):
-            classes, y_idx, class_freqs = np.unique(
-                y, return_inverse=True, return_counts=True)
+        if y is not None and not {"classes", "class_freqs"}.issubset(kwargs):
+            classes, class_freqs = np.unique(y, return_counts=True)
 
             precomp_vals["classes"] = classes
             precomp_vals["class_freqs"] = class_freqs
-            precomp_vals["y_idx"] = y_idx
 
         return precomp_vals
 
