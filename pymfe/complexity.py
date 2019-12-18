@@ -10,6 +10,7 @@ import scipy.spatial
 
 from pymfe.general import MFEGeneral
 from pymfe.clustering import MFEClustering
+from pymfe import _utils
 
 
 class MFEComplexity:
@@ -96,7 +97,7 @@ class MFEComplexity:
         classes = kwargs.get("classes", precomp_vals.get("classes"))
 
         if y is not None and "cls_inds" not in kwargs:
-            cls_inds = cls._calc_cls_inds(y, classes)
+            cls_inds = _utils.calc_cls_inds(y, classes)
             precomp_vals["cls_inds"] = cls_inds
 
         if y is not None and "ovo_comb" not in kwargs:
@@ -156,20 +157,6 @@ class MFEComplexity:
             precomp_vals["num_attr_pca"] = num_attr_pca
 
         return precomp_vals
-
-    @staticmethod
-    def _calc_cls_inds(y: np.ndarray, classes: np.ndarray) -> np.ndarray:
-        """Compute the ``cls_inds`` variable.
-
-        The ``cls_inds`` variable is a boolean array which marks with
-        True value whether the instance belongs to each class. Each
-        distinct class is represented by a row, and each instance is
-        represented by a column.
-        """
-        cls_inds = np.array([np.equal(y, cur_cls) for cur_cls in classes],
-                            dtype=bool)
-
-        return cls_inds
 
     @staticmethod
     def _calc_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
@@ -582,7 +569,7 @@ class MFEComplexity:
         """
         if cls_inds is None:
             classes = np.unique(y)
-            cls_inds = cls._calc_cls_inds(y, classes)
+            cls_inds = _utils.calc_cls_inds(y, classes)
 
         # 0-1 feature scaling
         N = sklearn.preprocessing.MinMaxScaler(

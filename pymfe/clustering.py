@@ -9,6 +9,8 @@ import scipy.spatial.distance
 import sklearn.metrics
 import sklearn.neighbors
 
+from pymfe import _utils
+
 
 class MFEClustering:
     """Keep methods for metafeatures of ``Clustering`` group.
@@ -95,7 +97,7 @@ class MFEClustering:
         classes = kwargs.get("classes", precomp_vals.get("classes"))
 
         if y is not None and "cls_inds" not in kwargs:
-            cls_inds = cls._calc_cls_inds(y, classes)
+            cls_inds = _utils.calc_cls_inds(y, classes)
             precomp_vals["cls_inds"] = cls_inds
 
         return precomp_vals
@@ -335,20 +337,6 @@ class MFEClustering:
 
         return precomp_vals
 
-    @staticmethod
-    def _calc_cls_inds(y: np.ndarray, classes: np.ndarray) -> np.ndarray:
-        """Compute the ``cls_inds`` variable.
-
-        The ``cls_inds`` variable is a boolean array which marks with
-        True value whether the instance belongs to each class. Each
-        distinct class is represented by a row, and each instance is
-        represented by a column.
-        """
-        cls_inds = np.array([np.equal(y, cur_cls) for cur_cls in classes],
-                            dtype=bool)
-
-        return cls_inds
-
     @classmethod
     def _calc_normalized_interclass_dist(
             cls,
@@ -379,7 +367,7 @@ class MFEClustering:
             if classes is None:
                 classes = np.unique(y)
 
-            cls_inds = cls._calc_cls_inds(y=y, classes=classes)
+            cls_inds = _utils.calc_cls_inds(y=y, classes=classes)
 
         interclass_dists = np.array([
             cls._calc_normalized_interclass_dist(
@@ -423,7 +411,7 @@ class MFEClustering:
             if classes is None:
                 classes = np.unique(y)
 
-            cls_inds = cls._calc_cls_inds(y=y, classes=classes)
+            cls_inds = _utils.calc_cls_inds(y=y, classes=classes)
 
         intraclass_dists = np.array([
             cls._calc_intraclass_dists(
@@ -485,7 +473,7 @@ class MFEClustering:
                                  "'median'. Got '{}'.".format(representative))
 
             if cls_inds is None:
-                cls_inds = cls._calc_cls_inds(y=y, classes=classes)
+                cls_inds = _utils.calc_cls_inds(y=y, classes=classes)
 
             representative = [
                 center_method(N[cur_class, :], axis=0)
