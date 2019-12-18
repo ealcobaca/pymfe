@@ -10,14 +10,20 @@ Extracts meta-features from datasets to support the design of recommendation sys
 
 ## Measures
 
-In MtL, meta-features are designed to extract general properties able to characterize datasets. The meta-feature values should provide relevant evidences about the performance of algorithms, allowing the design of MtL-based recommendation systems. Thus, these measures must be able to predict, with a low computational cost, the performance of the  algorithms under evaluation. In this package, the meta-feature measures are divided into six groups:
+In MtL, meta-features are designed to extract general properties able to characterize datasets. The meta-feature values should provide relevant evidences about the performance of algorithms, allowing the design of MtL-based recommendation systems. Thus, these measures must be able to predict, with a low computational cost, the performance of the  algorithms under evaluation. In this package, the meta-feature measures are divided into 11 groups:
 
-* **General**: General information related to the dataset, also known as simple measures, such as number of instances, attributes and classes.
-* **Statistical**: Standard statistical measures to describe the numerical properties of a distribution of data.
-* **Information-theoretic**: Particularly appropriate to describe discrete (categorical) attributes and their relationship with the classes.
-* **Model-based**: Measures designed to extract characteristics like the depth, the shape and size of a Decision Tree (DT) model induced from a dataset.
-* **Landmarking**: Represents the performance of simple and efficient learning algorithms. Include the subsampling and relative strategies to decrease the computation cost and enrich the relations between these meta-features (relative and subsampling landmarking are also available).
-* **Clustering:** Clustering measures extract information about dataset based on external validation indexes.
+
+- **General**: General information related to the dataset, also known as simple measures, such as the number of instances, attributes and classes.
+- **Statistical**: Standard statistical measures to describe the numerical properties of data distribution.
+- **Information-theoretic**: Particularly appropriate to describe discrete (categorical) attributes and their relationship with the classes.
+- **Model-based**: Measures designed to extract characteristics from simple machine learning models.
+- **Landmarking**: Performance of simple and efficient learning algorithms.
+- **Relative Landmarking**: Relative performance of simple and efficient learning algorithms.
+- **Subsampling Landmarking**: Performance of simple and efficient learning algorithms from a subsample of the dataset.
+- **Clustering**: Clustering measures extract information about dataset based on external validation indexes.
+- **Concept**: Estimate the variability of class labels among examples and the examples density.
+- **Itemset**: Compute the correlation between binary attributes.
+- **Complexity**: Estimate the difficulty in separating the data points into their expected classes.
 
 ## Dependencies
 
@@ -59,7 +65,7 @@ data = load_iris()
 y = data.target
 X = data.data
 
-# Extract all measures
+# Extract default measures
 mfe = MFE()
 mfe.fit(X, y)
 ft = mfe.extract()
@@ -75,13 +81,13 @@ print(ft)
 Several measures return more than one value. To aggregate the returned values, summarization function can be used. This method can compute `min`, `max`, `mean`, `median`, `kurtosis`, `standard deviation`, among others. The default methods are the `mean` and the `sd`. Next, it is possible to see an example of the use of this method:
 
 ```python
-## Extract all measures using min, median and max 
+## Extract default measures using min, median and max 
 mfe = MFE(summary=["min", "median", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()
 print(ft)
                           
-## Extract all measures using quantile
+## Extract default measures using quantile
 mfe = MFE(summary=["quantiles"])
 mfe.fit(X, y)
 ft = mfe.extract()
