@@ -117,7 +117,7 @@ class MFEStatistical:
             :obj:`dict`
                 With following precomputed items:
                     - ``can_cors`` (:obj:`np.ndarray`): canonical correlations
-                      between ``N`` and the One Hot Encoded version of ``y``.
+                      between ``N`` and the one-hot encoded version of ``y``.
                     - ``can_cor_eigvals`` (:obj:`np.ndarray`): eigenvalues
                       related to the canonical correlations.
         """
@@ -255,7 +255,7 @@ class MFEStatistical:
         """Compute canonical correlations of data.
 
         The canonical correlations are calculated between the attributes
-        in ``N`` and the binarized (One Hot Encoded) version of ``y``.
+        in ``N`` and the binarized (one-hot encoded) version of ``y``.
 
         Parameters
         ----------
@@ -1441,7 +1441,7 @@ class MFEStatistical:
 
         Where ``can_cor_eig_i`` is the ith eigenvalue related to the ith
         canonical correlation ``can_cor_i`` between the attributes in ``N``
-        and the binarized (One Hot Encoded) version of ``y``.
+        and the binarized (one-hot encoded) version of ``y``.
 
         The relationship between ``can_cor_eig_i`` and ``can_cor_i`` is
         given by:
