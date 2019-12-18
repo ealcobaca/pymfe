@@ -101,14 +101,14 @@ class MFEModelBased:
             if hypparam_model_dt is None:
                 hypparam_model_dt = {}
 
-            dt_model = MFEModelBased._fit_dt_model(
+            dt_model = cls._fit_dt_model(
                 N=N, y=y, random_state=random_state, **hypparam_model_dt)
 
             leaf_nodes = dt_model.tree_.feature < 0
 
-            dt_info_table = MFEModelBased._extract_table(
+            dt_info_table = cls._extract_table(
                 dt_model=dt_model, leaf_nodes=leaf_nodes)
-            dt_nodes_depth = MFEModelBased._calc_dt_node_depths(dt_model)
+            dt_nodes_depth = cls._calc_dt_node_depths(dt_model)
 
             precomp_vals["leaf_nodes"] = np.flatnonzero(leaf_nodes)
             precomp_vals["non_leaf_nodes"] = np.flatnonzero(~leaf_nodes)
@@ -369,10 +369,10 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
-        num_leaves = MFEModelBased.ft_leaves(dt_model)
+        num_leaves = cls.ft_leaves(dt_model)
 
-        tree_shape = MFEModelBased.ft_tree_shape(
-            leaf_nodes, dt_nodes_depth)  # type: np.ndarray
+        tree_shape = cls.ft_tree_shape(leaf_nodes,
+                                       dt_nodes_depth)  # type: np.ndarray
 
         return num_leaves / tree_shape
 
@@ -408,7 +408,7 @@ class MFEModelBased:
         _, class_id_freqs = np.unique(node_class_ids, return_counts=True)
 
         # Note: the id == 0 is not associated to any class.
-        return class_id_freqs[1:] / MFEModelBased.ft_leaves(dt_model)
+        return class_id_freqs[1:] / cls.ft_leaves(dt_model)
 
     @classmethod
     def ft_nodes(cls, dt_model: sklearn.tree.DecisionTreeClassifier) -> int:
@@ -455,7 +455,7 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
-        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)
+        num_non_leaf_nodes = cls.ft_nodes(dt_model)
 
         return num_non_leaf_nodes / dt_model.tree_.n_features
 
@@ -481,7 +481,7 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
-        num_non_leaf_nodes = MFEModelBased.ft_nodes(dt_model)
+        num_non_leaf_nodes = cls.ft_nodes(dt_model)
         num_inst = dt_model.tree_.n_node_samples[0]
 
         return num_non_leaf_nodes / num_inst

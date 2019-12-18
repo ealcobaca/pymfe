@@ -127,22 +127,19 @@ class MFEInfoTheory:
         precomp_vals = {}
 
         if y is not None and "class_ent" not in kwargs:
-            precomp_vals["class_ent"] = MFEInfoTheory.ft_class_ent(
+            precomp_vals["class_ent"] = cls.ft_class_ent(
                 y, class_freqs=class_freqs)
 
         if C is not None and C.size and "attr_ent" not in kwargs:
-            precomp_vals["attr_ent"] = MFEInfoTheory.ft_attr_ent(C)
+            precomp_vals["attr_ent"] = cls.ft_attr_ent(C)
 
         if y is not None and C is not None and C.size:
             if "joint_ent" not in kwargs:
                 precomp_vals["joint_ent"] = np.apply_along_axis(
-                    func1d=MFEInfoTheory._calc_joint_ent,
-                    axis=0,
-                    arr=C,
-                    vec_y=y)
+                    func1d=cls._calc_joint_ent, axis=0, arr=C, vec_y=y)
 
             if "mut_inf" not in kwargs:
-                precomp_vals["mut_inf"] = MFEInfoTheory.ft_mut_inf(
+                precomp_vals["mut_inf"] = cls.ft_mut_inf(
                     C=C,
                     y=y,
                     attr_ent=precomp_vals.get("attr_ent"),
@@ -175,13 +172,13 @@ class MFEInfoTheory:
     def _calc_joint_ent(cls,
                         vec_x: np.ndarray,
                         vec_y: np.ndarray,
-                        epsilon: float = 1.0e-10) -> float:
+                        epsilon: float = 1.0e-8) -> float:
         """Compute joint entropy between vectorx ``x`` and ``y``."""
         joint_prob_mat = pd.crosstab(
             vec_y, vec_x, normalize=True).values + epsilon
 
-        joint_ent = np.multiply(joint_prob_mat,
-                                np.log2(joint_prob_mat)).sum().sum()
+        joint_ent = np.sum(
+            np.multiply(joint_prob_mat, np.log2(joint_prob_mat)))
 
         return -1.0 * joint_ent
 
@@ -189,34 +186,43 @@ class MFEInfoTheory:
     def _calc_conc(cls,
                    vec_x: np.ndarray,
                    vec_y: np.ndarray,
-                   epsilon: float = 1.0e-10) -> float:
+                   epsilon: float = 1.0e-8) -> float:
         """Concentration coefficient between two arrays ``vec_x`` and ``vec_y``.
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
-
-        Parameters
-        ----------
-        epsilon : :obj:`float`, optional
-            Tiny numeric value to avoid division by zero.
         """
         pij = pd.crosstab(vec_x, vec_y, normalize=True).values + epsilon
 
         isum = pij.sum(axis=0)
-        jsum2 = np.sum(pij.sum(axis=1)**2.0)
+        jsum2 = np.sum(pij.sum(axis=1)**2)
 
-        conc = ((
-            (pij**2.0 / isum).sum().sum() - jsum2) / (1.0 - jsum2 + epsilon))
+        conc = (np.sum(pij**2 / isum) - jsum2) / (1.0 - jsum2)
 
         return conc
 
     @classmethod
-    def ft_attr_conc(cls, C: np.ndarray) -> np.ndarray:
+    def ft_attr_conc(cls,
+                     C: np.ndarray,
+                     max_attr_num: t.Optional[int] = None,
+                     random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute concentration coef. of each pair of distinct attributes.
 
         Parameters
         ----------
         C : :obj:`np.ndarray`
             Categorical attributes from fitted data.
+
+        max_attr_num : int, optional
+            Maximum number of attributes considered. If ``C`` has more
+            attributes than this value, this feature will be calculated
+            in a sample of ``max_attr_num`` random attributes. If None,
+            then all attributes are considered. Note that this method cost
+            is combinatorial to the number of attributes considered.
+
+        random_state : int, optional
+            Used only if ``max_attr_num`` is given and ``C`` has more
+            attributes than it. This random seed is set before sampling
+            ``C`` attributes.
 
         Returns
         -------
@@ -232,11 +238,20 @@ class MFEInfoTheory:
         """
         _, num_col = C.shape
 
-        col_permutations = itertools.permutations(range(num_col), 2)
+        col_inds = np.arange(num_col)
+
+        if max_attr_num is not None and num_col > max_attr_num:
+            if random_state is not None:
+                np.random.seed(random_state)
+
+            col_inds = np.random.choice(
+                col_inds, size=max_attr_num, replace=False)
+
+        col_permutations = itertools.permutations(col_inds, 2)
 
         attr_conc = np.array([
-            MFEInfoTheory._calc_conc(C[:, col_a], C[:, col_b])
-            for col_a, col_b in col_permutations
+            cls._calc_conc(C[:, ind_attr_a], C[:, ind_attr_b])
+            for ind_attr_a, ind_attr_b in col_permutations
         ])
 
         return attr_conc
@@ -279,8 +294,7 @@ class MFEInfoTheory:
             return attr_ent
 
         try:
-            return np.apply_along_axis(
-                func1d=MFEInfoTheory._calc_entropy, axis=0, arr=C)
+            return np.apply_along_axis(func1d=cls._calc_entropy, axis=0, arr=C)
 
         except ValueError:
             return np.array([np.nan])
@@ -310,7 +324,7 @@ class MFEInfoTheory:
            on Artificial Intelligence Tools, 10(4):525–554, 2001.
         """
         return np.apply_along_axis(
-            func1d=MFEInfoTheory._calc_conc, axis=0, arr=C, vec_y=y)
+            func1d=cls._calc_conc, axis=0, arr=C, vec_y=y)
 
     @classmethod
     def ft_class_ent(cls,
@@ -356,13 +370,12 @@ class MFEInfoTheory:
         if class_ent is not None:
             return class_ent
 
-        return MFEInfoTheory._calc_entropy(y, value_freqs=class_freqs)
+        return cls._calc_entropy(y, value_freqs=class_freqs)
 
     @classmethod
     def ft_eq_num_attr(cls,
                        C: np.ndarray,
                        y: np.ndarray,
-                       epsilon: float = 1.0e-10,
                        class_ent: t.Optional[np.ndarray] = None,
                        class_freqs: t.Optional[np.ndarray] = None,
                        mut_inf: t.Optional[np.ndarray] = None) -> float:
@@ -383,9 +396,6 @@ class MFEInfoTheory:
 
         y : :obj:`np.ndarray`
             The target attribute vector.
-
-        epsilon : float, optional
-            Tiny numeric value to avoid division by zero.
 
         class_ent : float, optional
             Entropy of the target attribute ``y``. Used to explot
@@ -416,14 +426,14 @@ class MFEInfoTheory:
            Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if class_ent is None:
-            class_ent = MFEInfoTheory.ft_class_ent(y, class_freqs=class_freqs)
+            class_ent = cls.ft_class_ent(y, class_freqs=class_freqs)
 
         if mut_inf is None:
-            mut_inf = MFEInfoTheory.ft_mut_inf(C, y)
+            mut_inf = cls.ft_mut_inf(C, y)
 
         _, num_col = C.shape
 
-        return num_col * (class_ent / (epsilon + np.sum(mut_inf)))
+        return num_col * class_ent / np.sum(mut_inf)
 
     @classmethod
     def ft_joint_ent(cls,
@@ -472,7 +482,7 @@ class MFEInfoTheory:
         """
         if joint_ent is None:
             joint_ent = np.apply_along_axis(
-                func1d=MFEInfoTheory._calc_joint_ent, axis=0, arr=C, vec_y=y)
+                func1d=cls._calc_joint_ent, axis=0, arr=C, vec_y=y)
 
         return joint_ent
 
@@ -544,13 +554,13 @@ class MFEInfoTheory:
             return mut_inf
 
         if class_ent is None:
-            class_ent = MFEInfoTheory.ft_class_ent(y, class_freqs=class_freqs)
+            class_ent = cls.ft_class_ent(y, class_freqs=class_freqs)
 
         if attr_ent is None:
-            attr_ent = MFEInfoTheory.ft_attr_ent(C)
+            attr_ent = cls.ft_attr_ent(C)
 
         if joint_ent is None:
-            joint_ent = MFEInfoTheory.ft_joint_ent(C, y)
+            joint_ent = cls.ft_joint_ent(C, y)
 
         return attr_ent + class_ent - joint_ent
 
@@ -558,7 +568,6 @@ class MFEInfoTheory:
     def ft_ns_ratio(cls,
                     C: np.ndarray,
                     y: np.ndarray,
-                    epsilon: float = 1.0e-10,
                     attr_ent: t.Optional[np.ndarray] = None,
                     mut_inf: t.Optional[np.ndarray] = None) -> float:
         """Compute the noisiness of attributes.
@@ -574,8 +583,11 @@ class MFEInfoTheory:
 
         Parameters
         ----------
-        epsilon : float, optional
-            Tiny numeric value to avoid division by zero.
+        C : :obj:`np.ndarray`
+            Categorical attributes from fitted data.
+
+        y : :obj:`np.ndarray`
+            The target attribute vector.
 
         attr_ent : :obj:`np.ndarray`, optional
             Values of each attribute entropy in ``N``. This argument purpose is
@@ -602,12 +614,12 @@ class MFEInfoTheory:
            Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         if attr_ent is None:
-            attr_ent = MFEInfoTheory.ft_attr_ent(C)
+            attr_ent = cls.ft_attr_ent(C)
 
         if mut_inf is None:
-            mut_inf = MFEInfoTheory.ft_mut_inf(C, y)
+            mut_inf = cls.ft_mut_inf(C, y)
 
         ent_attr = np.sum(attr_ent)
         mut_inf = np.sum(mut_inf)
 
-        return (ent_attr - mut_inf) / (epsilon + mut_inf)
+        return (ent_attr - mut_inf) / mut_inf
