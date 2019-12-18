@@ -231,25 +231,25 @@ class MFEBoilerplate:
     this guide is:
 
     1. Precomputation methods (prefixed with ``precompute_``)
-    Related methods about this subject:
+    Methods related to this subject:
         1.1 precompute_basic_precomp_method
         1.2 precompute_more_info
         1.3 precompute_random_values
 
     2. Feature extraction methods (prefixed with ``ft_``)
-    Related methods about this subject:
+    Methods related to this subject:
         2.1 ft_metafeature_name
         2.2 ft_fitted_data_arguments
         2.3 ft_using_precomputed_values
         2.4 ft_about_return_values
 
     3. Regular/auxiliary methods (non-prefixed )
-    Related methods about this subject:
+    Methods related to this subject:
         3.1 _protected_methods
         3.2 non_protected_methods_without_any_prefixes
 
     4. Postprocessing methods (prefixed with ``postprocess_``)
-    Related methods about this subject:
+    Methods related to this subject:
         4.1 postprocess_groupName1_groupName2
 
     So, we shall start looking at a example of a precomputation
@@ -932,7 +932,7 @@ class MFEBoilerplate:
         """Don't use non-protected regular methods.
 
         The main reason to avoid this type of methods is because
-        it will show in the package documentation despite the
+        it will be shown in the package documentation despite the
         fact that it is not of the user's interest.
         """
         raise NotImplementedError(
@@ -949,25 +949,26 @@ class MFEBoilerplate:
 
         1. What is a post-processing method?
         -----------------------------------------------------------------
-        The post-processing methods are used to modify in-place previously
-        generated metafeatures or to generate new results from the extracted
+        The post-processing methods can be used to either modify in-place
+        previously generated metafeatures (not necessarily from the same
+        group) or to generate new metafeatures using previously extracted
         metafeatures just before outputting the results to the user. The
         popularity of this type of method is not even close to the
         preprocessing ones, but they may be useful in some specific cases
-        (mainly related to somehow merge the dependencies data with the
+        (mainly related to `somehow` merge the dependencies data with the
         generated data from the dependent class.)
 
         For instance, the 'Relative Landmarking' metafeature group is
-        all based on post-processing methods: that group needs every
-        'Landmarking' metafeature results and, therefore, it can be
-        computed only after all metafeature extraction process (because
-        we have no guarantees of the metafeature extraction order.)
+        entirely based on post-processing methods: that specific group needs
+        every 'Landmarking' metafeature results and, therefore, it can be
+        computed only after the metafeature extraction process finishes
+        (because we have no guarantees of the metafeature extraction order.)
 
         So, if your MFE class does not have any external dependencies, nor it
         is supposed to somehow merge two or more metafeature values, you
         don't need to read this section, and you are already good to go
         and develop your own MFE class. If it is not your case, then stay
-        with us for a couple of extra minutes.
+        with us for a couple of extra minutes more.
 
         2. Structure of a post-processing method
         -----------------------------------------------------------------
