@@ -64,7 +64,7 @@ class MFEConcept:
         N : :obj:`np.ndarray`, optional
             Attributes from fitted data.
 
-        concept_dist_metric : :obj:`str`
+        concept_dist_metric : str
             Metric used to compute distance between each pair of examples. See
             cdist from scipy for more options.
 
@@ -116,16 +116,16 @@ class MFEConcept:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        conceptvar_alpha : :obj:`float`, optional
+        conceptvar_alpha : float, optional
             The alpha value to adjust the weight. The higher the alpha less
             is the effect of the weight in the computation.
 
-        concept_dist_metric : :obj:`str`, optional
+        concept_dist_metric : str, optional
             Metric used to compute distance between each pair of examples. See
             cdist from scipy for more options. Used only if the argument
             ``concept_distances`` is None.
 
-        concept_minimum: :obj:`float`, optional
+        concept_minimum: float, optional
             This variable is the minimum value considered in the computation.
             It will be sum when necessary to avoid division by zero.
 
@@ -186,16 +186,16 @@ class MFEConcept:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        wg_dist_alpha : :obj:`float`, optional
+        wg_dist_alpha : float, optional
             The alpha value to adjust the weight. The higher the alpha less
             is the effect of the weight in the computation.
 
-        concept_dist_metric : :obj:`str`, optional
+        concept_dist_metric : str, optional
             Metric used to compute distance between each pair of examples. See
             cdist from scipy for more options. Used only if the argument
             ``concept_distances`` is None.
 
-        concept_minimum : :obj:`float`, optional
+        concept_minimum : float, optional
             This variable is the minimum value considered in the computation.
             It will be sum when necessary to avoid division by zero.
 
@@ -254,17 +254,17 @@ class MFEConcept:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        impconceptvar_alpha : :obj:`float`, optional
+        impconceptvar_alpha : float, optional
             The alpha value to adjust the weight. The higher the alpha less
             is the effect of the weight in the computation.
 
-        concept_dist_metric : :obj:`str`, optional
+        concept_dist_metric : str, optional
             Metric used to compute distance between each pair of examples. See
             cdist from scipy for more options. Used only if the argument
             ``concept_distances`` is None.
 
         concept_distances : :obj:`np.ndarray`, optional
-            Distance matrix of examples from N. Argument used to take
+            Distance matrix of examples from ``N``. Argument used to take
             advantage of precomputations.
 
         Returns
@@ -315,17 +315,17 @@ class MFEConcept:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        cohesiveness_alpha : :obj:`float`, optional
+        cohesiveness_alpha : float, optional
             The alpha value to adjust the weight. The higher the alpha less
             is the effect of the weight in the computation.
 
-        concept_dist_metric : :obj:`str`, optional
+        concept_dist_metric : str, optional
             Metric used to compute distance between each pair of examples. See
             cdist from scipy for more options. Used only if the argument
             ``concept_distances`` is None.
 
         concept_distances : :obj:`np.ndarray`, optional
-            Distance matrix of examples from N. Argument used to take
+            Distance matrix of examples from ``N``. Argument used to take
             advantage of precomputations.
 
         Returns
