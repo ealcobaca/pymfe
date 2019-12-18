@@ -152,7 +152,7 @@ class MFEBoilerplate:
             groups in the prerequisites will also be extracted also (even if
             the user doesn't ask explicity for these groups). Note that the
             possible consequences this may imply must be solved within this
-            class postprocessing methods (these methods will be explained
+            class post-processing methods (these methods will be explained
             later in this same guide.)
 
             The values of this tuple can be strings (which means one single
@@ -248,7 +248,7 @@ class MFEBoilerplate:
         3.1 _protected_methods
         3.2 non_protected_methods_without_any_prefixes
 
-    4. Postprocessing methods (prefixed with ``postprocessing_``)
+    4. Postprocessing methods (prefixed with ``postprocess_``)
     Related methods about this subject:
         4.1 postprocess_groupName1_groupName2
 
@@ -407,11 +407,14 @@ class MFEBoilerplate:
         new precomputation methods whenever you think it will help
         to improve the performance of the package.
 
-        2. How many return values per precomputation method?
+        2. How many precomputed values per precomputation method?
         -----------------------------------------------------------------
-        Try to keep every precomputation method precompute only related
-        values to avoid confusion. Prefer to calculate non-associated
-        values in different precomputation methods.
+        There is no limit of how many values can be precomputed within
+        a single precomputation method.
+
+        However, try to keep every precomputation method precompute only
+        related values to avoid confusion. Prefer to calculate dissociated
+        values in distinct precomputation methods.
 
         3. Using other precomputed values in a precomputation method
         -----------------------------------------------------------------
@@ -491,7 +494,7 @@ class MFEBoilerplate:
         If you are using anything with pseudo-random properties, you shall
         always get the pymfe framework global random seed using the
         ``random_state`` argument. This seed is user defined. You can get
-        it for any precomputation, metafeature extraction or postprocessing
+        it for any precomputation, metafeature extraction or post-processing
         methods.
 
         2. Important aspects related to pseudo-random behaviour
@@ -555,7 +558,7 @@ class MFEBoilerplate:
         As mentioned in the documentation of the very first precomputation
         method, the pymfe framework is responsible to provide to every
         precomputation (those prefixed with ``precompute_``, metafeature
-        extraction (those prefixed with ``ft_``) and postprocessing (we
+        extraction (those prefixed with ``ft_``) and post-processing (we
         will see those later) methods its arguments. 'How?', you may ask.
         The short answer is dictionary unpacking: the MFE class holds some
         dictionaries that are unpacked while calling those prefixed methods.
@@ -580,7 +583,7 @@ class MFEBoilerplate:
         in there if (and only if) they are needed. Note that it is highly
         unlikely.
 
-        2. Mandatory and optional arguments of mtf. extraction methods
+        2. Mandatory & optional arguments of metafeature extraction methods
         -----------------------------------------------------------------
         The only arguments allowed to be mandatory (i.e., arguments without
         any default value) are the ones registered inside the MFE attribute
@@ -723,7 +726,7 @@ class MFEBoilerplate:
     def ft_using_precomputed_values(
             cls,
             y: np.ndarray,
-            # y_unique: t.Optional[np.ndarray],  # Wrong! Need an default value.
+            # y_unique: np.ndarray,  # Wrong! Need an default value.
             y_unique: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Metafeature extraction method using precomputed values.
 
@@ -928,11 +931,11 @@ class MFEBoilerplate:
             groups: t.Tuple[str, ...], inserted_group_dep: t.FrozenSet[str],
             **kwargs
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
-        """Introduction to postprocessing methods.
+        """Introduction to post-processing methods.
 
-        1. What is a postprocessing method
+        1. What is a post-processing method?
         -----------------------------------------------------------------
-        The postprocessing methods are used to modify in-place previously
+        The post-processing methods are used to modify in-place previously
         generated metafeatures or to generate new results from the extracted
         metafeatures just before outputting the results to the user. The
         popularity of this type of method is not even close to the
@@ -941,7 +944,7 @@ class MFEBoilerplate:
         generated data from the dependent class.)
 
         For instance, the 'Relative Landmarking' metafeature group is
-        all based on postprocessing methods: that group needs every
+        all based on post-processing methods: that group needs every
         'Landmarking' metafeature results and, therefore, it can be
         computed only after all metafeature extraction process (because
         we have no guarantees of the metafeature extraction order.)
@@ -952,47 +955,48 @@ class MFEBoilerplate:
         and develop your own MFE class. If it is not your case, then stay
         with us for a couple of extra minutes.
 
-        2. Structure of a postprocessing method
+        2. Structure of a post-processing method
         -----------------------------------------------------------------
-        All postprocessing methods receive all previously extracted
+        All post-processing methods receive all previously extracted
         metafeatures from every MFE class. It will not receive just the
         metafeatures related to the metafeature extraction methods of this
         class. It is very import to keep this in mind.
 
-        There's a very important trick with the naming of these postprocessing
+        There's a very important trick with the naming of these post-processing
         methods, other than just prefixing they with ``postprocess_``.
         You can put names of metafeature groups of interest separated by
         underscores. All metafeature indexes related to any of the selected
         groups will arrive in the ``class_indexes`` argument automatically.
 
-        For example, suppose a postprocessing method named like:
+        For example, suppose a post-processing method named like:
 
             postprocess_infotheory_statistical(...)
 
-        The indexes of both information theory and statistical metafeatures
-        will arrive inside the ``class_indexes`` sequence. Using this
-        feature, one can easily work with these metafeatures without
-        needing to separate them by hand. Of course, you can give as
-        many metafeature group names as needed. If you need them
-        all, then simply don't put any metafeature group name, as every
-        metafeature is an metafeature of interest in this case.
+        This implies that the indices of both `information theory` and
+        `statistical` metafeature groups will arrive inside the
+        ``class_indexes`` sequence. Using this feature, one can easily
+        work with these metafeatures without needing to separate them by
+        hand. Of course, you can give as many metafeature group names as
+        needed. If you need them all, then simply don't put any metafeature
+        group name, as every metafeature is an metafeature of interest in
+        this case.
 
         There were various arguments that are automatically filled for
         this type of methods (as you can see just above in this method
         signature). Check the ``arguments`` section for more details
         about each one.
 
-        3. How many postprocessing methods are necessary?
+        3. How many post-processing methods are necessary?
         -----------------------------------------------------------------
         Just like the preprocessing and metafeature extraction methods,
-        an MFE class may have any number postprocessing methods, including
-        none. In fact, no postprocessing method is by far the common case.
+        an MFE class may have any number post-processing methods, including
+        none. In fact, no post-processing method is by far the common case.
 
-        4. Return value of postprocessing methods
+        4. Return value of post-processing methods
         -----------------------------------------------------------------
-        The return value of postprocessing methods must be either None,
+        The return value of post-processing methods must be either None,
         or a tuple with exactly three lists. In the first case (returning
-        None), the postprocessing method is probably supposed to modify
+        None), the post-processing method is probably supposed to modify
         the received metafeature values in-place (which is perfectly
         fine). In the second case (returning three lists), these lists
         will be considered new metafeatures and will be appended to the
@@ -1003,8 +1007,10 @@ class MFEBoilerplate:
             2. New metafeature values
             3. Time elapsed to extract every new metafeature
 
-        Now, let's take a quick look at the common postprocessing method
-        arguments.
+        Now, let's take a quick look at the common post-processing method
+        arguments. Note that all the arguments listed below are actual
+        arguments from the pymfe framework, and you can use they in your
+        post-processing methods.
 
         Arguments
         ---------
@@ -1029,11 +1035,11 @@ class MFEBoilerplate:
             in this method are all the metafeatures extracted in every MFE
             classes, not just the ones related to this class. Then, this
             argument can be used as reference to target only the metafeatures
-            effectively used in this postprocessing method.
+            effectively used in this post-processing method.
 
             If you need every single metafeature extracted for your
-            postprocessing method, then this argument does not matter (nor
-            your postprocessing method name, as long as it is correctly
+            post-processing method, then this argument does not matter (nor
+            your post-processing method name, as long as it is correctly
             prefixed with ``postprocess_``) as every metafeature is of your
             particular interest, and there is no need for an auxiliary
             list to split the metafeatures.
@@ -1041,15 +1047,15 @@ class MFEBoilerplate:
         groups : :obj:`tuple` of :obj:`str`
             Extracted metafeature groups (including metafeature groups
             inserted due to group dependencies). Can be used as reference
-            inside the postprocessing method.
+            inside the post-processing method.
 
         inserted_group_dep : :obj:`tuple` of :obj:`str
-            Extracted metafeature groups due to class dependencies.
-            Also can be used as reference inside the postprocessing method.
+            Extracted metafeature groups due to class dependencies. Can be
+            used as a reference inside the post-processing method.
 
         **kwargs:
             Just like the preprocessing methods, the kwargs is also
-            mandatory in postprocessing methods. It can be used to
+            mandatory in post-processing methods. It can be used to
             retrieve additional arguments using the ``get`` method.
 
         Returns
@@ -1071,7 +1077,7 @@ class MFEBoilerplate:
         new_mtf_vals = []  # type: t.List[float]
         new_mtf_time = []  # type: t.List[float]
 
-        # In this example, this postprocessing method returns
+        # In this example, this post-processing method returns
         # new metafeatures conditionally. Note that this variable
         # ``change_in_place`` is fabricated for this example; it
         # is not a true feature of the Pymfe framework!!! The
@@ -1082,7 +1088,7 @@ class MFEBoilerplate:
         if change_in_place:
             # Make changes in-place using the ``class_indexes`` as
             # reference. Note that these indexes are collected using
-            # this postprocessing method name as reference (check the
+            # this post-processing method name as reference (check the
             # documentation of this method for a clear explanation.)
             for index in class_indexes:
                 time_start = time.time()
@@ -1104,7 +1110,7 @@ class MFEBoilerplate:
         # Create new metafeatures (in this case, the user will receive
         # twice as many values as separated metafeatures.) Note that the
         # number of new metafeatures also is context dependent: your
-        # postprocessing method may return as many as new metafeatures it
+        # post-processing method may return as many as new metafeatures it
         # is supposed to return.
         for index in class_indexes:
             time_start = time.time()
@@ -1114,6 +1120,6 @@ class MFEBoilerplate:
 
         # Finally:
         # Return new metafeatures produced in this method. Pay attention to the
-        # order of these lists, as it must be preserved for any postprocessing
+        # order of these lists, as it must be preserved for any post-processing
         # method.
         return new_mtf_names, new_mtf_vals, new_mtf_time
