@@ -51,15 +51,12 @@ class MFERelativeLandmarking:
     computed in module ``statistical`` can freely be used for any
     precomputation or feature extraction method of module ``landmarking``).
     """
+
     @classmethod
     def postprocess_landmarking_relative(
-            cls,
-            mtf_names: t.List[str],
-            mtf_vals: t.List[float],
-            mtf_time: t.List[float],
-            class_indexes: t.Sequence[int],
-            groups: t.Tuple[str, ...],
-            inserted_group_dep: t.FrozenSet[str],
+            cls, mtf_names: t.List[str], mtf_vals: t.List[float],
+            mtf_time: t.List[float], class_indexes: t.Sequence[int],
+            groups: t.Tuple[str, ...], inserted_group_dep: t.FrozenSet[str],
             **kwargs
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
         """Generate Relative Landmarking from Landmarking metafeatures.
@@ -113,32 +110,28 @@ class MFERelativeLandmarking:
         mtf_rel_vals = []  # type: t.List[float]
         mtf_rel_time = []  # type: t.List[float]
 
-        mtf_by_summ, mtf_orig_indexes = (
-            MFERelativeLandmarking.group_mtf_by_summary(
-                mtf_names=mtf_names,
-                mtf_vals=mtf_vals,
-                class_indexes=class_indexes))
+        mtf_by_summ, mtf_orig_indexes = cls.group_mtf_by_summary(
+            mtf_names=mtf_names,
+            mtf_vals=mtf_vals,
+            class_indexes=class_indexes)
 
         avg_time = time.time()
 
         mtf_by_summ = {
             summary: scipy.stats.rankdata(
-                a=mtf_by_summ[summary],
-                method="average")
+                a=mtf_by_summ[summary], method="average")
             for summary in mtf_by_summ
         }
 
-        avg_time = ((time.time() - avg_time)
-                    / (len(mtf_by_summ) if mtf_by_summ else 1.0))
+        avg_time = ((time.time() - avg_time) /
+                    (len(mtf_by_summ) if mtf_by_summ else 1.0))
 
-        mtf_rel_vals, original_indexes = (
-            MFERelativeLandmarking._flatten_dictionaries(
-                mtf_by_summ,
-                mtf_orig_indexes))
+        mtf_rel_vals, original_indexes = cls._flatten_dictionaries(
+            mtf_by_summ, mtf_orig_indexes)
 
         for cur_orig_index in original_indexes:
-            mtf_rel_names.append("{}.relative"
-                                 .format(mtf_names[cur_orig_index]))
+            mtf_rel_names.append("{}.relative".format(
+                mtf_names[cur_orig_index]))
             mtf_rel_time.append(mtf_time[cur_orig_index] + avg_time)
 
         change_in_place = ("landmarking" not in groups
@@ -160,8 +153,7 @@ class MFERelativeLandmarking:
             mtf_names: t.List[str],
             mtf_vals: t.List[float],
             class_indexes: t.Sequence[int],
-    ) -> t.Tuple[t.Dict[str, t.List[float]],
-                 t.Dict[str, t.List[int]]]:
+    ) -> t.Tuple[t.Dict[str, t.List[float]], t.Dict[str, t.List[int]]]:
         """Group metafeatures by its correspondent summary method.
 
         It is assumed that every distinct suffix after the first

@@ -54,12 +54,11 @@ class MFELandmarking:
     """
 
     @classmethod
-    def precompute_landmarking_sample(
-                cls,
-                N: np.ndarray,
-                lm_sample_frac: float,
-                random_state: t.Optional[int] = None,
-                **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_landmarking_sample(cls,
+                                      N: np.ndarray,
+                                      lm_sample_frac: float,
+                                      random_state: t.Optional[int] = None,
+                                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute subsampling landmarking subsample indices.
 
         Parameters
@@ -94,7 +93,7 @@ class MFELandmarking:
             if lm_sample_frac < 1.0:
                 num_inst, _ = N.shape
 
-                precomp_vals["sample_inds"] = MFELandmarking._get_sample_inds(
+                precomp_vals["sample_inds"] = cls._get_sample_inds(
                     num_inst=num_inst,
                     lm_sample_frac=lm_sample_frac,
                     random_state=random_state)
@@ -165,7 +164,7 @@ class MFELandmarking:
             skf = precomp_vals.get("skf", kwargs.get("skf"))
             sample_inds = kwargs.get("sample_inds")
 
-            N, y = MFELandmarking._sample_data(
+            N, y = cls._sample_data(
                 N=N,
                 y=y,
                 lm_sample_frac=lm_sample_frac,
@@ -173,7 +172,7 @@ class MFELandmarking:
                 sample_inds=sample_inds)
 
             attr_fold_imp = np.array([
-                MFELandmarking._rank_feat_importance(
+                cls._rank_feat_importance(
                     N=N[inds_train, :],
                     y=y[inds_train],
                     random_state=random_state)
@@ -212,7 +211,7 @@ class MFELandmarking:
         if sample_inds is None:
             num_inst = y.size
 
-            sample_inds = MFELandmarking._get_sample_inds(
+            sample_inds = cls._get_sample_inds(
                 num_inst=num_inst,
                 lm_sample_frac=lm_sample_frac,
                 random_state=random_state)
@@ -260,7 +259,7 @@ class MFELandmarking:
         :obj:`np.ndarray`
             Ranking of the decision tree features importance.
         """
-        N, y = MFELandmarking._sample_data(
+        N, y = cls._sample_data(
             N=N,
             y=y,
             lm_sample_frac=lm_sample_frac,
@@ -344,7 +343,7 @@ class MFELandmarking:
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
-        N, y = MFELandmarking._sample_data(
+        N, y = cls._sample_data(
             N=N,
             y=y,
             lm_sample_frac=lm_sample_frac,
@@ -443,7 +442,7 @@ class MFELandmarking:
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
-        N, y = MFELandmarking._sample_data(
+        N, y = cls._sample_data(
             N=N,
             y=y,
             lm_sample_frac=lm_sample_frac,
@@ -557,7 +556,7 @@ class MFELandmarking:
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
-        N, y = MFELandmarking._sample_data(
+        N, y = cls._sample_data(
             N=N,
             y=y,
             lm_sample_frac=lm_sample_frac,
@@ -580,7 +579,7 @@ class MFELandmarking:
                 imp_rank = cv_folds_imp_rank[ind_fold, :]
             else:
 
-                imp_rank = MFELandmarking._rank_feat_importance(
+                imp_rank = cls._rank_feat_importance(
                     N=N[inds_train, :],
                     y=y[inds_train],
                     random_state=random_state)
@@ -668,7 +667,7 @@ class MFELandmarking:
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
-        N, y = MFELandmarking._sample_data(
+        N, y = cls._sample_data(
             N=N,
             y=y,
             lm_sample_frac=lm_sample_frac,
@@ -769,7 +768,7 @@ class MFELandmarking:
            on Integration and Collaboration Aspects of Data Mining,
            Decision Support and Meta-Learning (IDDM), pages 57 – 68, 2001.
         """
-        N, y = MFELandmarking._sample_data(
+        N, y = cls._sample_data(
             N=N,
             y=y,
             lm_sample_frac=lm_sample_frac,
@@ -866,7 +865,7 @@ class MFELandmarking:
            European Conference on Principles of Data Mining and Knowledge
            Discovery (PKDD), pages 325 – 330, 2000.
         """
-        N, y = MFELandmarking._sample_data(
+        N, y = cls._sample_data(
             N=N,
             y=y,
             lm_sample_frac=lm_sample_frac,
@@ -978,7 +977,7 @@ class MFELandmarking:
            European Conference on Principles of Data Mining and Knowledge
            Discovery (PKDD), pages 325 – 330, 2000.
         """
-        N, y = MFELandmarking._sample_data(
+        N, y = cls._sample_data(
             N=N,
             y=y,
             lm_sample_frac=lm_sample_frac,
@@ -1000,7 +999,7 @@ class MFELandmarking:
                 imp_rank = cv_folds_imp_rank[ind_fold, :]
             else:
 
-                imp_rank = MFELandmarking._rank_feat_importance(
+                imp_rank = cls._rank_feat_importance(
                     N=N[inds_train, :],
                     y=y[inds_train],
                     random_state=random_state)

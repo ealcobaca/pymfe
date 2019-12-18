@@ -75,7 +75,7 @@ class MFEItemset:
         precomp_vals = {}
 
         if C is not None and "itemset_binary_matrix" not in kwargs:
-            itemset_binary_matrix = MFEItemset._matrix_to_binary(C)
+            itemset_binary_matrix = cls._matrix_to_binary(C)
             precomp_vals["itemset_binary_matrix"] = itemset_binary_matrix
 
         return precomp_vals
@@ -89,10 +89,10 @@ class MFEItemset:
             res[:, i] = array == val
         return res
 
-    @staticmethod
-    def _matrix_to_binary(C: np.array) -> t.List[np.ndarray]:
+    @classmethod
+    def _matrix_to_binary(cls, C: np.array) -> t.List[np.ndarray]:
         """Convert an matrix to its binary representation."""
-        return [MFEItemset._array_to_binary(col) for col in C.T]
+        return [cls._array_to_binary(col) for col in C.T]
 
     @classmethod
     def ft_two_itemset(
@@ -127,7 +127,7 @@ class MFEItemset:
            Pattern recognition, 45(7), 2672-2689.
         """
         if itemset_binary_matrix is None:
-            sub_dic = MFEItemset.precompute_binary_matrix(C)
+            sub_dic = cls.precompute_binary_matrix(C)
             itemset_binary_matrix = sub_dic["itemset_binary_matrix"]
 
         B = itemset_binary_matrix
@@ -177,7 +177,7 @@ class MFEItemset:
            Pattern recognition, 45(7), 2672-2689.
         """
         if itemset_binary_matrix is None:
-            sub_dic = MFEItemset.precompute_binary_matrix(C)
+            sub_dic = cls.precompute_binary_matrix(C)
             itemset_binary_matrix = sub_dic["itemset_binary_matrix"]
 
         B = itemset_binary_matrix

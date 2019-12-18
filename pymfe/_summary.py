@@ -224,10 +224,26 @@ def sum_kurtosis(values: TypeValList, method: int = 3,
     return kurt_val
 
 
+def sum_std(values: TypeValList, ddof: int = 1) -> TypeValList:
+    """Standard deviation summary function."""
+    if len(values) <= ddof:
+        return np.nan
+
+    return np.std(values, ddof=ddof)
+
+
+def sum_var(values: TypeValList, ddof: int = 1) -> TypeValList:
+    """Standard deviation summary function."""
+    if len(values) <= ddof:
+        return np.nan
+
+    return np.var(values, ddof=ddof)
+
+
 SUMMARY_METHODS = collections.OrderedDict((
     ("mean", np.mean),
-    ("sd", np.std),
-    ("var", np.var),
+    ("sd", sum_std),
+    ("var", sum_var),
     ("count", len),
     ("histogram", sum_histogram),
     ("iq_range", scipy.stats.iqr),
