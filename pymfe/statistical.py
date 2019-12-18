@@ -93,11 +93,11 @@ class MFEStatistical:
         return precomp_vals
 
     @classmethod
-    def precompute_statistical_eigen(cls,
-                                     N: t.Optional[np.ndarray] = None,
-                                     y: t.Optional[np.ndarray] = None,
-                                     **kwargs) -> t.Dict[str, t.Any]:
-        """Precompute eigenvalues and eigenvectors of LDA Matrix.
+    def precompute_can_cors(cls,
+                            N: t.Optional[np.ndarray] = None,
+                            y: t.Optional[np.ndarray] = None,
+                            **kwargs) -> t.Dict[str, t.Any]:
+        """Precompute canonical correlations and its eigenvalues.
 
         Parameters
         ----------
@@ -517,7 +517,7 @@ class MFEStatistical:
            pages 418 – 423, 1999.
         """
         if can_cors is None:
-            can_cors = cls.ft_can_cor(N=N, y=y, can_cors=can_cors)
+            can_cors = cls.ft_can_cor(N=N, y=y)
 
         return can_cors.size
 
@@ -751,8 +751,7 @@ class MFEStatistical:
            selection for classification. Applied Soft Computing,
            6(2):119 – 138, 2006.
         """
-        median_dev = np.abs(N - np.median(N, axis=0))
-        return np.median(median_dev, axis=0) * factor
+        return scipy.stats.median_absolute_deviation(x=N, axis=0, scale=factor)
 
     @classmethod
     def ft_max(cls, N: np.ndarray) -> np.ndarray:
