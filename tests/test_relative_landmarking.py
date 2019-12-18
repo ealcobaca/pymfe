@@ -94,7 +94,7 @@ class TestRelativeLandmarking():
         """Test if the metafeatures postprocessed by rel. land. are correct."""
         X, y = load_xy(dt_id)
         mfe = MFE(
-            groups="all",
+            groups=["general", "relative", "landmarking"],
             summary=summary,
             lm_sample_frac=0.5,
             random_state=1234)

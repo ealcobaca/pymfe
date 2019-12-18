@@ -2,17 +2,14 @@
 
 import typing as t
 import itertools
+
 import numpy as np
-from scipy.spatial import distance
-from scipy.sparse.csgraph import minimum_spanning_tree
-from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.decomposition import PCA
+import sklearn
+import sklearn.pipeline
+import scipy.spatial
+
 from pymfe.general import MFEGeneral
+from pymfe.clustering import MFEClustering
 
 
 class MFEComplexity:
@@ -78,34 +75,32 @@ class MFEComplexity:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``ovo_comb`` (:obj:`list`): List of all class OVO
-                  combination, i.e., [(0,1), (0,2) ...].
-                - ``cls_index`` (:obj:`list`): The list of boolean vectors
-                  indicating the example of each class. The array indexes
-                  represent the classes.
-                  combination, i.e., [(0,1), (0,2) ...].
-                - ``cls_n_ex`` (:obj:`np.ndarray`): The number of examples in
-                  each class. The array indexes represent the classes.
+                - ``ovo_comb`` (list): List of all class OVO combination,
+                  i.e., all combinations of distinct class indices by pairs
+                  ([(0, 1), (0, 2) ...].)
+                - ``cls_inds`` (:obj:`np.ndarray`): Boolean array which
+                  indicates whether each example belongs to each class. The
+                  rows represents the distinct classes, and the instances
+                  are represented by the columns.
+                - ``classes`` (:obj:`np.ndarray`): distinct classes in the
+                  fitted target attribute.
+                - ``class_freqs`` (:obj:`np.ndarray`): The number of examples
+                  in each class. The indices represent the classes.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
-        if (y is not None
-                and ("ovo_comb" not in kwargs or "cls_index" not in kwargs
-                     or "cls_n_ex" not in kwargs)):
-
+        if (y is not None and not {"classes", "class_freqs"}.issubset(kwargs)):
             sub_dic = MFEGeneral.precompute_general_class(y)
             precomp_vals.update(sub_dic)
 
-            classes = sub_dic["classes"]
-            y_idx = sub_dic["y_idx"]
+        classes = kwargs.get("classes", precomp_vals.get("classes"))
 
-            cls_index = MFEComplexity._compute_cls_index(y_idx, classes)
-            precomp_vals["cls_index"] = cls_index
+        if (y is not None
+                and ("ovo_comb" not in kwargs or "cls_inds" not in kwargs)):
+            cls_inds = MFEComplexity._calc_cls_inds(y, classes)
+            precomp_vals["cls_inds"] = cls_inds
 
-            cls_n_ex = MFEComplexity._compute_cls_n_index(cls_index)
-            precomp_vals["cls_n_ex"] = cls_n_ex
-
-            ovo_comb = MFEComplexity._compute_ovo_comb(classes)
+            ovo_comb = MFEComplexity._calc_ovo_comb(classes)
             precomp_vals["ovo_comb"] = ovo_comb
 
         return precomp_vals
@@ -114,6 +109,7 @@ class MFEComplexity:
     def precompute_pca_tx(cls,
                           N: np.ndarray,
                           tx_n_components: float = 0.95,
+                          random_state: t.Optional[int] = None,
                           **kwargs) -> t.Dict[str, int]:
         """Precompute PCA to support dimensionality measures.
 
@@ -123,7 +119,16 @@ class MFEComplexity:
             Attributes from fitted data.
 
         tx_n_components : float, optional
-            Number of principal components to keep in the PCA.
+            Specifies the number of components such that the amount of variance
+            that needs to be explained is greater than the percentage specified
+            by ``tx_n_components``. The PCA is computed using ``N``.
+
+        random_state : int, optional
+            If the fitted data is huge and the number of principal components
+            to be kept is low, then the PCA analysis is done using a randomized
+            strategy for efficiency. This random seed keeps the results
+            replicable. Check ``sklearn.decomposition.PCA`` documentation for
+            more information.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -134,96 +139,94 @@ class MFEComplexity:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``m`` (:obj:`int`): Number of features.
-                - ``m_`` (:obj:`int`):  Number of features after PCA with 0.95.
-                - ``n`` (:obj:`int`): Number of examples.
+                - ``num_attr_pca`` (int): Number of features after PCA
+                  analysis with at least ``tx_n_components`` fraction of
+                  data variance explained by the selected principal
+                  components.
         """
         precomp_vals = {}
 
-        if (N is not None and "m" not in kwargs and "m_" not in kwargs
-                and "n" not in kwargs):
-
-            pca = PCA(n_components=tx_n_components)
+        if N is not None and "num_attr_pca" not in kwargs:
+            pca = sklearn.decomposition.PCA(
+                n_components=tx_n_components,
+                random_state=random_state)
             pca.fit(N)
 
-            m_ = pca.explained_variance_ratio_.shape[0]
-            n, m = MFEComplexity._compute_n_m(N=N)
+            num_attr_pca = pca.explained_variance_ratio_.shape[0]
 
-            precomp_vals["m_"] = m_
-            precomp_vals["m"] = m
-            precomp_vals["n"] = n
+            precomp_vals["num_attr_pca"] = num_attr_pca
 
         return precomp_vals
 
     @staticmethod
-    def _compute_cls_index(y_idx: np.ndarray,
-                           classes: np.ndarray) -> t.List[np.ndarray]:
-        """Computes the ``cls_index`` variable."""
-        return [np.equal(y_idx, i) for i in np.arange(classes.shape[0])]
+    def _calc_cls_inds(y: np.ndarray, classes: np.ndarray) -> np.ndarray:
+        """Compute the ``cls_inds`` variable.
+
+        The ``cls_inds`` variable is a boolean array which marks with
+        True value whether the instance belongs to each class. Each
+        distinct class is represented by a row, and each instance is
+        represented by a column.
+        """
+        cls_inds = np.array([np.equal(y, cur_cls) for cur_cls in classes],
+                            dtype=bool)
+
+        return cls_inds
 
     @staticmethod
-    def _compute_cls_n_index(cls_index: t.List[np.ndarray]) -> np.ndarray:
-        """Computes the ``cls_n_ex`` variable."""
-        return np.array([np.sum(aux) for aux in cls_index])
+    def _calc_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
+        """Compute the ``ovo_comb`` variable.
+
+        The ``ovo_comb`` value is a array with all class OVO combination,
+        i.e., all combinations of distinct class indices by pairs.
+        """
+        ovo_comb = itertools.combinations(np.arange(classes.size), 2)
+        return np.asarray(list(ovo_comb), dtype=int)
 
     @staticmethod
-    def _compute_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
-        """Computes the ``ovo_comb`` variable."""
-        return list(itertools.combinations(np.arange(classes.shape[0]), 2))
-
-    @staticmethod
-    def _compute_n_m(N: np.ndarray) -> t.Tuple[int, int]:
-        """Computes the ``n`` and ``m`` variables."""
-        return N.shape
-
-    @staticmethod
-    def _minmax(N: np.ndarray, class1: np.ndarray,
-                class2: np.ndarray) -> np.ndarray:
-        """Computes the minimum of the maximum values per class for all feat.
+    def _calc_minmax(N: np.ndarray, cls_1: np.ndarray,
+                     cls_2: np.ndarray) -> np.ndarray:
+        """Compute the minimum of the maximum values per class for all feat.
 
         The index i indicate the minmax of feature i.
         """
-        min_cls = np.zeros((2, N.shape[1]))
-        min_cls[0, :] = np.max(N[class1], axis=0)
-        min_cls[1, :] = np.max(N[class2], axis=0)
-        aux = np.min(min_cls, axis=0)
-        return aux
+        minmax = np.min((np.max(N[cls_1, :], axis=0),
+                         np.max(N[cls_2, :], axis=0)), axis=0)
+        return minmax
 
     @staticmethod
-    def _maxmin(N: np.ndarray, class1: np.ndarray,
-                class2: np.ndarray) -> np.ndarray:
-        """Computes the maximum of the minimum values per class for all feat.
+    def _calc_maxmin(N: np.ndarray, cls_1: np.ndarray,
+                     cls_2: np.ndarray) -> np.ndarray:
+        """Compute the maximum of the minimum values per class for all feat.
 
-        The index i indicate the maxmin of feature i.
+        The index i indicate the maxmin of the ith feature.
         """
-        max_cls = np.zeros((2, N.shape[1]))
-        max_cls[0, :] = np.min(N[class1], axis=0)
-        max_cls[1, :] = np.min(N[class2], axis=0)
-        aux = np.max(max_cls, axis=0)
-        return aux
+        maxmin = np.max((np.min(N[cls_1, :], axis=0),
+                         np.min(N[cls_2, :], axis=0)), axis=0)
+        return maxmin
 
     @staticmethod
-    def _compute_f3(N_: np.ndarray, minmax_: np.ndarray,
-                    maxmin_: np.ndarray) -> np.ndarray:
-        """Compute the F3 complexit measure given minmax and maxmin."""
+    def _calc_overlap(
+            N: np.ndarray,
+            minmax: np.ndarray,
+            maxmin: np.ndarray,
+    ) -> t.Tuple[int, np.ndarray, np.ndarray]:
+        """Compute the instances in overlapping region by feature."""
         # True if the example is in the overlapping region
-        # Should be > and < instead of >= and <= ?
-        overlapped_region_by_feature = np.logical_and(N_ >= maxmin_,
-                                                      N_ <= minmax_)
+        feat_overlapped_region = np.logical_and(N >= maxmin, N <= minmax)
 
-        n_fi = np.sum(overlapped_region_by_feature, axis=0)
-        idx_min = np.argmin(n_fi)
+        feat_overlap_num = np.sum(feat_overlapped_region, axis=0)
+        ind_less_overlap = np.argmin(feat_overlap_num)
 
-        return idx_min, n_fi, overlapped_region_by_feature
+        return ind_less_overlap, feat_overlap_num, feat_overlapped_region
 
     @classmethod
     def ft_f3(
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            ovo_comb: np.ndarray = None,
-            cls_index: np.ndarray = None,
-            cls_n_ex: np.ndarray = None,
+            ovo_comb: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute feature maximum individual efficiency.
 
@@ -232,16 +235,20 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj:`np.ndarray`
-            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
 
-        cls_index : list
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
 
-        cls_n_ex : :obj:`np.ndarray`
-            The number of examples in each class. The array indexes represent
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices represent
             the classes.
 
         Returns
@@ -255,27 +262,32 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 6.
+           (Cited on page 6). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if ovo_comb is None or cls_index is None or cls_n_ex is None:
+        if ovo_comb is None or cls_inds is None or class_freqs is None:
             sub_dic = MFEComplexity.precompute_fx(y=y)
             ovo_comb = sub_dic["ovo_comb"]
-            cls_index = sub_dic["cls_index"]
-            cls_n_ex = sub_dic["cls_n_ex"]
+            cls_inds = sub_dic["cls_inds"]
+            class_freqs = sub_dic["class_freqs"]
 
-        f3 = []
-        for idx1, idx2 in ovo_comb:
-            idx_min, n_fi, _ = cls._compute_f3(
-                N, cls._minmax(N, cls_index[idx1], cls_index[idx2]),
-                cls._maxmin(N, cls_index[idx1], cls_index[idx2]))
-            f3.append(n_fi[idx_min] / (cls_n_ex[idx1] + cls_n_ex[idx2]))
+        f3 = np.zeros(ovo_comb.shape[0], dtype=float)
 
-        # The measure is computed in the literature using the mean. However,
-        # it is formulated here as a meta-feature. Therefore,
-        # the post-processing should be used to get the mean and other measures
-        # as well.
-        # return np.mean(f3)
+        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
+            cls_1 = cls_inds[cls_id_1, :]
+            cls_2 = cls_inds[cls_id_2, :]
 
+            ind_less_overlap, feat_overlap_num, _ = cls._calc_overlap(
+                N=N,
+                minmax=cls._calc_minmax(N=N, cls_1=cls_1, cls_2=cls_2),
+                maxmin=cls._calc_maxmin(N=N, cls_1=cls_1, cls_2=cls_2))
+
+            f3[ind] = (feat_overlap_num[ind_less_overlap] /
+                       (class_freqs[cls_id_1] + class_freqs[cls_id_2]))
+
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
         return np.asarray(f3)
 
     @classmethod
@@ -283,9 +295,9 @@ class MFEComplexity:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            ovo_comb: np.ndarray = None,
-            cls_index: np.ndarray = None,
-            cls_n_ex: np.ndarray = None,
+            ovo_comb: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the collective feature efficiency.
 
@@ -294,16 +306,20 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj:`np.ndarray`
-            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
 
-        cls_index : list
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
 
-        cls_n_ex : :obj:`np.ndarray`
-            The number of examples in each class. The array indexes represent
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices represent
             the classes.
 
         Returns
@@ -317,84 +333,94 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 7.
+           (Cited on page 7). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if ovo_comb is None or cls_index is None or cls_n_ex is None:
+        if ovo_comb is None or cls_inds is None or class_freqs is None:
             sub_dic = MFEComplexity.precompute_fx(y=y)
             ovo_comb = sub_dic["ovo_comb"]
-            cls_index = sub_dic["cls_index"]
-            cls_n_ex = sub_dic["cls_n_ex"]
+            cls_inds = sub_dic["cls_inds"]
+            class_freqs = sub_dic["class_freqs"]
 
-        f4 = []
-        for idx1, idx2 in ovo_comb:
-            aux = 0
+        f4 = np.zeros(ovo_comb.shape[0], dtype=float)
 
-            y_class1 = cls_index[idx1]
-            y_class2 = cls_index[idx2]
-            sub_set = np.logical_or(y_class1, y_class2)
-            y_class1 = y_class1[sub_set]
-            y_class2 = y_class2[sub_set]
-            N_ = N[sub_set, :]
-            # N_ = N[np.logical_or(y_class1, y_class2),:]
+        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
+            cls_subset_intersec = np.logical_or(cls_inds[cls_id_1, :],
+                                                cls_inds[cls_id_2, :])
 
-            while N_.shape[1] > 0 and N_.shape[0] > 0:
+            cls_1 = cls_inds[cls_id_1, cls_subset_intersec]
+            cls_2 = cls_inds[cls_id_2, cls_subset_intersec]
+            N_subset = N[cls_subset_intersec, :]
+
+            while N_subset.size > 0:
                 # True if the example is in the overlapping region
-                idx_min, _, overlapped_region_by_feature = cls._compute_f3(
-                    N_, cls._minmax(N_, y_class1, y_class2),
-                    cls._maxmin(N_, y_class1, y_class2))
+                ind_less_overlap, _, feat_overlapped_region = (
+                    cls._calc_overlap(
+                        N=N_subset,
+                        minmax=cls._calc_minmax(N_subset, cls_1, cls_2),
+                        maxmin=cls._calc_maxmin(N_subset, cls_1, cls_2)))
 
                 # boolean that if True, this example is in the overlapping
                 # region
-                overlapped_region = overlapped_region_by_feature[:, idx_min]
+                overlapped_region = feat_overlapped_region[:, ind_less_overlap]
 
                 # removing the non overlapped features
-                N_ = N_[overlapped_region, :]
-                y_class1 = y_class1[overlapped_region]
-                y_class2 = y_class2[overlapped_region]
-
-                if N_.shape[0] > 0:
-                    aux = N_.shape[0]
-                else:
-                    aux = 0
+                N_subset = N_subset[overlapped_region, :]
+                cls_1 = cls_1[overlapped_region]
+                cls_2 = cls_2[overlapped_region]
 
                 # removing the most efficient feature
-                N_ = np.delete(N_, idx_min, axis=1)
+                N_subset = np.delete(N_subset, ind_less_overlap, axis=1)
 
-            f4.append(aux / (cls_n_ex[idx1] + cls_n_ex[idx2]))
+            subset_size = N_subset.shape[0]
 
-        # The measure is computed in the literature using the mean. However,
-        # it is formulated here as a meta-feature. Therefore,
-        # the post-processing should be used to get the mean and other measures
-        # as well.
-        # return np.mean(f4)
+            f4[ind] = subset_size / (class_freqs[cls_id_1] +
+                                     class_freqs[cls_id_2])
 
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
         return np.asarray(f4)
 
     @classmethod
     def ft_l2(cls,
               N: np.ndarray,
               y: np.ndarray,
-              ovo_comb: np.ndarray = None,
-              cls_index: np.ndarray = None) -> np.ndarray:
+              ovo_comb: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None,
+              max_iter: t.Union[int, float] = 1e5) -> np.ndarray:
         """Compute the OVO subsets error rate of linear classifier.
+
+        The linear model used is induced by the Support Vector
+        Machine algorithm.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj:`np.ndarray`
-            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
 
-        cls_index : list
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances.
+
+        max_iter : float or int, optional
+            Maximum number of iterations allowed for the support vector
+            machine model convergence. This parameter can receive float
+            numbers to be compatible with the Python scientific notation
+            data type.
 
         Returns
         -------
         :obj:`np.ndarray`
-            An array with the collective  error rate of linear classifier
+            An array with the collective error rate of linear classifier
             measure for each OVO subset.
 
         References
@@ -402,97 +428,119 @@ class MFEComplexity:
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 9.
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if ovo_comb is None or cls_index is None:
+        if ovo_comb is None or cls_inds is None:
             sub_dic = MFEComplexity.precompute_fx(y=y)
             ovo_comb = sub_dic["ovo_comb"]
-            cls_index = sub_dic["cls_index"]
+            cls_inds = sub_dic["cls_inds"]
 
-        l2 = []
-        for idx1, idx2 in ovo_comb:
-            y_ = np.logical_or(cls_index[idx1], cls_index[idx2])
-            N_ = N[y_, :]
-            y_ = cls_index[idx1][y_]
+        l2 = np.zeros(ovo_comb.shape[0], dtype=float)
 
-            zscore = StandardScaler()
-            svc = SVC(kernel='linear', C=1.0, tol=10e-3, max_iter=10e4)
-            pip = Pipeline([('zscore', zscore), ('svc', svc)])
-            pip.fit(N_, y_)
-            y_pred = pip.predict(N_)
-            error = 1 - accuracy_score(y_, y_pred)
+        zscore = sklearn.preprocessing.StandardScaler()
 
-            l2.append(error)
+        svc = sklearn.svm.SVC(
+            kernel="linear",
+            C=1.0,
+            tol=10e-3,
+            max_iter=int(max_iter))
 
-        # The measure is computed in the literature using the mean. However,
-        # it is formulated here as a meta-feature. Therefore,
-        # the post-processing should be used to get the mean and other measures
-        # as well.
-        # return np.mean(l2)
+        pip = sklearn.pipeline.Pipeline([("zscore", zscore), ("svc", svc)])
 
+        for ind, (cls_1, cls_2) in enumerate(ovo_comb):
+            cls_intersec = np.logical_or(cls_inds[cls_1, :],
+                                         cls_inds[cls_2, :])
+
+            N_subset = N[cls_intersec, :]
+            y_subset = cls_inds[cls_1, cls_intersec]
+
+            pip.fit(N_subset, y_subset)
+            y_pred = pip.predict(N_subset)
+
+            error = sklearn.metrics.zero_one_loss(
+                y_true=y_subset,
+                y_pred=y_pred,
+                normalize=True)
+
+            l2[ind] = error
+
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
         return np.asarray(l2)
 
     @classmethod
     def ft_n1(cls, N: np.ndarray, y: np.ndarray,
               metric: str = "euclidean") -> float:
-        """Compute the fraction of borderline points measure.
+        """Compute the fraction of borderline points.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        ovo_comb : :obj:`np.ndarray`
-            List of all class OVO combination, i.e., [(0,1), (0,2) ...].
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
 
-        cls_index : list
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics.
 
         Returns
         -------
-        :obj:`float`
-            Fraction of borderline points measure.
+        float
+            Fraction of borderline points.
 
         References
         ----------
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 9-10.
+           (Cited on page 9-10). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        # 0-1 scaling
-        N_ = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
+        # 0-1 feature scaling
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
 
-        # compute the distance matrix and the minimum spanning tree.
-        dist_m = np.triu(distance.cdist(N_, N_, metric), k=1)
-        mst = minimum_spanning_tree(dist_m)
-        node_i, node_j = np.where(mst.toarray() > 0)
+        # Compute the distance matrix and the minimum spanning tree
+        # using Kruskal's Minimum Spanning Tree algorithm.
+        dist_mat = scipy.spatial.distance.cdist(N, N, metric=metric)
+        # Note: in the paper, the authors used Prim's algorithm.
+        # Our implementation may change it in a future version due to
+        # time complexity advantages of Prim's algorithm in this context.
 
-        # which edges have nodes with different class
-        which_have_diff_cls = y[node_i] != y[node_j]
+        mst = scipy.sparse.csgraph.minimum_spanning_tree(
+            csgraph=np.triu(dist_mat, k=1),
+            overwrite=True)
 
-        # I have doubts on how to compute it
-        # 1) number of edges
-        # aux = np.sum(which_have_diff_cls)
+        node_id_i, node_id_j = np.nonzero(mst)
 
-        # 2) number of different vertices connected
-        aux = np.unique(
-            np.concatenate(
-                [node_i[which_have_diff_cls],
-                 node_j[which_have_diff_cls]])).shape[0]
+        # Which edges have nodes with different class
+        which_have_diff_cls = y[node_id_i] != y[node_id_j]
 
-        return float(aux / N.shape[0])
+        # Number of vertices connected with different classes
+        borderline_inst_num = np.unique(
+            np.concatenate([
+                node_id_i[which_have_diff_cls],
+                node_id_j[which_have_diff_cls],
+            ])).size
+
+        inst_num = N.shape[0]
+
+        return borderline_inst_num / inst_num
 
     @classmethod
     def ft_n4(cls,
               N: np.ndarray,
               y: np.ndarray,
-              cls_index: np.ndarray = None,
-              metric_n4: str = 'minkowski',
+              cls_inds: t.Optional[np.ndarray] = None,
+              metric_n4: str = "minkowski",
               p_n4: int = 2,
-              n_neighbors_n4: int = 1) -> float:
+              n_neighbors_n4: int = 1,
+              random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute the non-linearity of the NN Classifier.
 
         Parameters
@@ -500,270 +548,296 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        cls_index : list
-            The list of boolean vectors indicating the example of each class.
-            The array indexes represent the classes combination, i.e.,
-            [(0,1), (0,2) ...].
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows represents each distinct class, and the columns
+            represents the instances.
 
-        metric_n4 : str, optional (default='minkowski')
+        metric_n4 : str, optional (default = "minkowski")
             The distance metric used in the internal kNN classifier. See the
-            documentation of the DistanceMetric class on sklearn for a list of
-            available metrics.
+            documentation of the ``sklearn.neighbors.DistanceMetric`` class
+            for a list of available metrics.
 
         p_n4 : int, optional (default = 2)
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using manhattan_distance (l1), and
             euclidean_distance (l2) for p = 2. For arbitrary p,
             minkowski_distance (l_p) is used. Please, check the
-            KNeighborsClassifier documentation on sklearn for more information.
+            ``sklearn.neighbors.KNeighborsClassifier`` documentation for
+            more information.
+
+        random_state : int, optional
+            If given, set the random seed before computing the randomized
+            data interpolation.
 
         Returns
         -------
-        :obj:`float`
-            Estimated non-linearity of the NN classifier.
+        :obj:`np.ndarray`
+            Misclassifications of the NN classifier in the interpolated
+            dataset.
 
         References
         ----------
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 11.
+           (Cited on page 9-11). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if cls_index is None:
-            sub_dic = MFEGeneral.precompute_general_class(y)
+        if cls_inds is None:
+            classes = np.unique(y)
+            cls_inds = MFEComplexity._calc_cls_inds(y, classes)
 
-            classes = sub_dic["classes"]
-            y_idx = sub_dic["y_idx"]
+        # 0-1 feature scaling
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
 
-            cls_index = MFEComplexity._compute_cls_index(y_idx, classes)
+        if random_state is not None:
+            np.random.seed(random_state)
 
-        interp_N = []
-        interp_y = []
+        N_test = np.zeros(N.shape, dtype=N.dtype)
+        y_test = np.zeros(y.shape, dtype=y.dtype)
 
-        # 0-1 scaling
-        N = MinMaxScaler(feature_range=(0, 1)).fit_transform(N)
+        ind_cur = 0
 
-        for idx in cls_index:
-            N_ = N[idx]
+        for inds_cur_cls in cls_inds:
+            N_cur_cls = N[inds_cur_cls, :]
+            subset_size = N_cur_cls.shape[0]
 
-            A = np.random.choice(N_.shape[0], N_.shape[0])
-            A = N_[A]
-            B = np.random.choice(N_.shape[0], N_.shape[0])
-            B = N_[B]
-            delta = np.random.ranf(N_.shape)
+            # Currently it is allowed to a instance 'interpolate with itself',
+            # which holds the instance itself as result.
+            sample_a = N_cur_cls[np.random.choice(subset_size, subset_size), :]
+            sample_b = N_cur_cls[np.random.choice(subset_size, subset_size), :]
 
-            interp_N_ = A + ((B - A) * delta)
-            interp_y_ = y[idx]
+            rand_delta = np.random.ranf(N_cur_cls.shape)
 
-            interp_N.append(interp_N_)
-            interp_y.append(interp_y_)
+            N_subset_interp = sample_a + (sample_b - sample_a) * rand_delta
 
-        # join the datasets
-        N_test = np.concatenate(interp_N)
-        y_test = np.concatenate(interp_y)
+            ind_next = ind_cur + subset_size
+            N_test[ind_cur:ind_next, :] = N_subset_interp
+            y_test[ind_cur:ind_next] = y[inds_cur_cls]
+            ind_cur = ind_next
 
-        knn = KNeighborsClassifier(
+        knn = sklearn.neighbors.KNeighborsClassifier(
             n_neighbors=n_neighbors_n4, p=p_n4, metric=metric_n4).fit(N, y)
-        y_pred = knn.predict(N_test)
-        error = 1 - accuracy_score(y_test, y_pred)
 
-        return float(error)
+        y_pred = knn.predict(N_test)
+
+        misclassifications = np.not_equal(y_test, y_pred).astype(int)
+
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
+        return misclassifications
 
     @classmethod
     def ft_c1(
             cls,
             y: np.array,
-            cls_n_ex: np.ndarray = None,
+            class_freqs: t.Optional[np.ndarray] = None,
     ) -> float:
-        """Compute the entropy of class proportions measure.
+        """Compute the entropy of class proportions.
 
         Parameters
         ----------
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        cls_n_ex : :obj:`np.ndarray`
-            The number of examples in each class. The array indexes represent
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices represent
             the classes.
 
         Returns
         -------
-        :obj:`float`
-            Entropy of class proportions measure.
+        float
+            Entropy of class proportions.
 
         References
         ----------
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 15.
+           (Cited on page 15). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if cls_n_ex is None:
-            sub_dic = MFEGeneral.precompute_general_class(y)
+        if class_freqs is None:
+            _, class_freqs = np.unique(y, return_counts=True)
 
-            classes = sub_dic["classes"]
-            y_idx = sub_dic["y_idx"]
+        num_class = class_freqs.size
 
-            cls_index = MFEComplexity._compute_cls_index(y_idx, classes)
+        # Note: calling 'ft_nre' just to make explicity the link
+        # between this metafeature and 'C1'.
+        c1 = MFEClustering.ft_nre(
+            y=y, class_freqs=class_freqs) / np.log(num_class)
 
-            cls_n_ex = MFEComplexity._compute_cls_n_index(cls_index)
-
-        nc = cls_n_ex.shape[0]
-        pc_i = cls_n_ex / np.sum(cls_n_ex)
-        c1 = -(1.0 / np.log(nc)) * np.sum(pc_i * np.log(pc_i))
-
-        # Shuldn't C1 be 1-C1? to match with C2?
-        return float(c1)
+        return c1
 
     @classmethod
-    def ft_c2(cls, y: np.ndarray, cls_n_ex: np.ndarray = None) -> float:
-        """Compute the imbalance ratio measure.
+    def ft_c2(cls, y: np.ndarray,
+              class_freqs: t.Optional[np.ndarray] = None) -> float:
+        """Compute the imbalance ratio.
 
         Parameters
         ----------
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        cls_n_ex : :obj:`np.ndarray`
-            The number of examples in each class. The array indexes represent
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices represent
             the classes.
 
         Returns
         -------
-        :obj:`float`
-            The imbalance ratio measure.
+        float
+            The imbalance ratio.
 
         References
         ----------
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 16.
+           (Cited on page 16). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if cls_n_ex is None:
-            sub_dic = MFEGeneral.precompute_general_class(y)
+        if class_freqs is None:
+            _, class_freqs = np.unique(y, return_counts=True)
 
-            classes = sub_dic["classes"]
-            y_idx = sub_dic["y_idx"]
+        num_inst = y.size
+        num_class = class_freqs.size
 
-            cls_index = MFEComplexity._compute_cls_index(y_idx, classes)
+        aux = (num_class - 1) / num_class
+        imbalance_ratio = aux * np.sum(class_freqs / (num_inst - class_freqs))
 
-            cls_n_ex = MFEComplexity._compute_cls_n_index(cls_index)
-
-        n = np.sum(cls_n_ex)
-        nc = cls_n_ex.shape[0]
-        nc_i = cls_n_ex
-        IR = ((nc - 1) / nc) * np.sum(nc_i / (n - (nc_i)))
-        c2 = 1 - (1 / IR)
+        c2 = 1 - 1 / imbalance_ratio
 
         return c2
 
     @classmethod
-    def ft_t2(cls,
-              N: np.ndarray,
-              m: t.Union[int, None] = None,
-              n: t.Union[int, None] = None) -> float:
-        """Compute the average number of features per dimension measure.
+    def ft_t2(cls, N: np.ndarray) -> float:
+        """Compute the average number of features per dimension.
 
         Parameters
         ----------
-        m : int
-            Number of features.
-
-        n : int
-            Number of examples.
+        N : :obj:`np.ndarray`
+            Numeric attributes from fitted data.
 
         Returns
         -------
-        :obj:`float`
-            Average number of features per dimension measure.
+        float
+            Average number of features per dimension.
 
         References
         ----------
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 15.
+           (Cited on page 15). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if n is None or m is None:
-            n, m = MFEComplexity._compute_n_m(N=N)
+        # Note: This metafeature has a link with the 'ft_attr_to_inst',
+        # but considers the trandormed data in N instead of the original
+        # attributes 'X'. Maybe this is a aspect that may change in the
+        # future.
+        # return MFEGeneral.ft_attr_to_inst(X=X)
 
-        return m / n
+        return N.shape[1] / N.shape[0]
 
     @classmethod
-    def ft_t3(cls,
-              N: np.ndarray,
-              m_: t.Union[int, None] = None,
-              n: t.Union[int, None] = None) -> float:
-        """Compute the average number of PCA dimensions per points measure.
+    def ft_t3(
+            cls,
+            N: np.ndarray,
+            num_attr_pca: t.Optional[int] = None,
+            random_state: t.Optional[int] = None,
+    ) -> float:
+        """Compute the average number of PCA dimensions per points.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        m_ : int
-            Number of features after PCA with 0.95.
+        num_attr_pca : int, optional
+            Number of features after PCA where a fraction of at least 0.95
+            of the data variance is explained by the selected components.
 
-        n : int
-            Number of examples.
+        random_state : int, optional
+            If the fitted data is huge and the number of principal components
+            to be kept is low, then the PCA analysis is done using a randomized
+            strategy for efficiency. This random seed keeps the results
+            replicable. Check ``sklearn.decomposition.PCA`` documentation for
+            more information.
 
         Returns
         -------
-        :obj:`float`
-            Average number of PCA dimensions per points measure.
+        float
+            Average number of PCA dimensions (explaining at least 95% of the
+            data variance) per points.
 
         References
         ----------
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 15.
+           (Cited on page 15). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if n is None or m_ is None:
-            sub_dic = MFEComplexity.precompute_pca_tx(N=N)
-            m_ = sub_dic["m_"]
-            n = sub_dic["n"]
+        if num_attr_pca is None:
+            sub_dic = MFEComplexity.precompute_pca_tx(
+                N=N, random_state=random_state)
+            num_attr_pca = sub_dic["num_attr_pca"]
 
-        return m_ / n
+        num_inst = N.shape[0]
+
+        return num_attr_pca / num_inst
 
     @classmethod
     def ft_t4(cls,
               N: np.ndarray,
-              m: t.Union[int, None] = None,
-              m_: t.Union[int, None] = None) -> float:
+              num_attr_pca: t.Optional[int] = None,
+              random_state: t.Optional[int] = None) -> float:
         """Compute the ratio of the PCA dimension to the original dimension.
+
+        The components kept in the PCA dimension explains at least 95% of
+        the data variance.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        m : int
-            Number of features.
+        num_attr_pca : int, optional
+            Number of features after PCA where a fraction of at least 0.95
+            of the data variance is explained by the selected components.
 
-        m_ : int
-            Number of features after PCA with 0.95.
+        random_state : int, optional
+            If the fitted data is huge and the number of principal components
+            to be kept is low, then the PCA analysis is done using a randomized
+            strategy for efficiency. This random seed keeps the results
+            replicable. Check ``sklearn.decomposition.PCA`` documentation for
+            more information.
 
         Returns
         -------
-        :obj:`float`
-            An float with the ratio of the PCA dimension to the original
-            dimension measure.
+        float
+            Ratio of the PCA dimension (explaining at least 95% of the data
+            variance) to the original dimension.
 
         References
         ----------
         .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
            Souto, and Tin K. Ho. How Complex is your classification problem?
            A survey on measuring classification complexity (V2). (2019)
-           Page 15.
+           (Cited on page 15). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if m is None or m_ is None:
-            sub_dic = MFEComplexity.precompute_pca_tx(N=N)
-            m = sub_dic["m"]
-            m_ = sub_dic["m_"]
+        if num_attr_pca is None:
+            sub_dic = MFEComplexity.precompute_pca_tx(
+                N=N, random_state=random_state)
+            num_attr_pca = sub_dic["num_attr_pca"]
 
-        return m_ / m
+        num_attr = N.shape[1]
+
+        return num_attr_pca / num_attr
