@@ -72,11 +72,11 @@ class TestStatistical:
             ###################
             # Categorical data
             ###################
-            # (1, "can_cor", [0.79982271, np.nan], True),
+            (1, "can_cor", [0.79982271, np.nan], True),
             (1, "gravity", 0.76488534, True),
             (1, "cor", [0.08564411, 0.10816678], True),
             (1, "cov", [0.01065760, 0.01849074], True),
-            # (1, "nr_disc", 1, True),
+            (1, "nr_disc", 1, True),
             (1, "eigenvalues", [0.12702470, 0.15885051], True),
             (1, "g_mean", [0, 0], True),
             (1, "h_mean", [0, 0], True),
@@ -98,11 +98,11 @@ class TestStatistical:
             (1, "t_mean", [0.2248093, 0.3337982], True),
             (1, "var", [0.12702470, 0.08652912], True),
             # (1, "w_lambda", np.nan, True),
-            # (1, "can_cor", [0.79982271, np.nan], False),
+            (1, "can_cor", [0.79982271, np.nan], False),
             (1, "gravity", 0.76488534, False),
             (1, "cor", [0.08564411, 0.10816678], False),
             (1, "cov", [0.01065760, 0.01849074], False),
-            # (1, "nr_disc", 1, False),
+            (1, "nr_disc", 1, False),
             (1, "eigenvalues", [0.12702470, 0.15885051], False),
             (1, "g_mean", [0, 0], False),
             (1, "h_mean", [0, 0], False),
