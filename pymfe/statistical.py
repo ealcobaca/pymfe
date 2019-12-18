@@ -3,8 +3,8 @@ import typing as t
 
 import numpy as np
 import scipy
-import scipy.linalg
 import sklearn.preprocessing
+import sklearn.cross_decomposition
 
 import pymfe._summary as _summary
 
@@ -115,36 +115,21 @@ class MFEStatistical:
         -------
             :obj:`dict`
                 With following precomputed items:
-                    - ``lda_eig_vals`` (:obj:`np.ndarray`): array with filtered
-                      eigenvalues of Fisher's Linear Discriminant Analysis
-                      Matrix.
-
-                The following items are used by this method, so they must be
-                precomputed too (and, therefore, are also in this return dict):
-
-                    - ``classes`` (:obj:`np.ndarray`): distinct classes of
-                      ``y``, ``y``, if both ``N`` and ``y`` are not
-                      :obj:`NoneType`.
-
-                    - ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
-                      ``y``, if both ``N`` and ``y`` are not :obj:`NoneType`.
+                    - ``can_cors`` (:obj:`np.ndarray`): canonical correlations
+                      between ``N`` and the One Hot Encoded version of ``y``.
+                    - ``can_cor_eigvals`` (:obj:`np.ndarray`): eigenvalues
+                      related to the canonical correlations.
         """
         precomp_vals = {}
 
         if (y is not None and N is not None and N.size
-                and "lda_eig_vals" not in kwargs):
-            classes = kwargs.get("classes")
-            class_freqs = kwargs.get("class_freqs")
+                and not {"can_cors", "can_cor_eigvals"}.issubset(kwargs)):
 
-            if classes is None or class_freqs is None:
-                classes, class_freqs = np.unique(y, return_counts=True)
+            can_cors, can_cor_eigvals = cls._calc_can_cors(
+                N, y, return_can_cors=True, return_eigenvalues=True)
 
-            lda_eig_vals = cls._calc_linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs, filter_=True)
-
-            precomp_vals["lda_eig_vals"] = lda_eig_vals
-            precomp_vals["classes"] = classes
-            precomp_vals["class_freqs"] = class_freqs
+            precomp_vals["can_cors"] = can_cors
+            precomp_vals["can_cors_eigvals"] = can_cor_eigvals
 
         return precomp_vals
 
@@ -199,175 +184,56 @@ class MFEStatistical:
         return precomp_vals
 
     @classmethod
-    def _calc_linear_disc_mat_eig(
+    def _calc_can_cors(
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            filter_: bool = True,
-            classes: t.Optional[np.ndarray] = None,
-            class_freqs: t.Optional[np.ndarray] = None,
-            cls_inds: t.Optional[np.ndarray] = None,
+            return_can_cors: bool = True,
+            return_eigenvalues: bool = False,
     ) -> np.ndarray:
-        """Compute eigenvalues of the Linear Discriminant Analysis Matrix.
+        """."""
+        y_bin = sklearn.preprocessing.OneHotEncoder().fit_transform(
+            y.reshape(-1, 1)).todense()
 
-        More specifically, the eigenvalues and eigenvectors are calculated from
-        matrix S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat).
+        num_classes, num_attr = y_bin.shape[1], N.shape[1]
 
-        Check ``ft_can_cor`` documentation for more in-depth information about
-        this matrix.
+        n_components = min(num_classes, num_attr)
 
-        Parameters
-        ----------
-        filter_ : bool, optional
-            If True, remove zero-valued eigenvalues, and keeps only the
-            real part of each eigenvalue.
+        N_tf, y_tf = sklearn.cross_decomposition.CCA(
+            n_components=n_components).fit_transform(N, y_bin)
 
-        classes : :obj:`np.ndarray`, optional
-            Distinct classes of ``y``.
+        ind = 0
+        can_cors = np.zeros(n_components, dtype=float)
 
-        class_freqs : :obj:`np.ndarray`, optional
-            Absolute class frequencies of ``y``.
+        while ind < n_components and np.any(np.flatnonzero(N_tf[:, ind])):
+            can_cors[ind] = np.corrcoef(N_tf[:, ind], y_tf[:, ind])[0, 1]
+            ind += 1
 
-        cls_inds : :obj:`np.ndarray`, optional
-            Boolean array which indicates the examples of each class.
-            The rows represents each distinct class, and the columns
-            represents the instances. Used to take advantage of
-            precomputations.
+        can_cors = can_cors[:ind]
 
-        Returns
-        -------
-        :obj:`np.ndarray`
-            Eigenvalues of Linear Discriminant Analysis Matrix.
-        """
+        res = []
 
-        # pylint: disable=E1123
-        # Disable false positives about scipy's keywords arguments
+        if return_can_cors:
+            res.append(can_cors)
 
-        def compute_scatter_within(
-                N: np.ndarray,
-                cls_inds: np.ndarray,
-                class_freqs: np.ndarray,
-        ) -> np.ndarray:
-            """Compute Scatter Within matrix. Check doc above for more info."""
-            scatter_within = np.array([
-                cl_frq * np.cov(N[cls_inds[cl_id], :], rowvar=False, ddof=0)
-                for cl_id, cl_frq in enumerate(class_freqs)
-            ], dtype=float).sum(axis=0)
+        if return_eigenvalues:
+            sqr_can_cors = np.square(can_cors)
+            can_cor_eig_vals = sqr_can_cors / (1 - sqr_can_cors)
+            res.append(can_cor_eig_vals)
 
-            return scatter_within
-
-        def compute_scatter_between(N: np.ndarray, cls_inds: np.ndarray,
-                                    class_freqs: np.ndarray) -> np.ndarray:
-            """Compute Scatter Between matrix. The doc above has more info."""
-            class_means = np.array(
-                [N[cl_insts, :].mean(axis=0) for cl_insts in cls_inds],
-                dtype=float)
-
-            relative_centers = class_means - N.mean(axis=0)
-
-            scatter_between = np.array([
-                cl_frq * np.outer(rc, rc)
-                for cl_frq, rc in zip(class_freqs, relative_centers)
-            ], dtype=float).sum(axis=0)
-
-            return scatter_between
-
-        if classes is None or class_freqs is None:
-            classes, class_freqs = np.unique(y, return_counts=True)
-
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
-
-        if cls_inds is None:
-            cls_inds = np.array([np.equal(y, cl_val) for cl_val in classes],
-                                dtype=bool)
-
-        scatter_within = compute_scatter_within(N, cls_inds, class_freqs)
-
-        scatter_between = compute_scatter_between(N, cls_inds, class_freqs)
-
-        try:
-            mat = scipy.linalg.solve(
-                a=scatter_within,
-                b=scatter_between,
-                overwrite_a=True,
-                overwrite_b=True,
-                check_finite=False).real
-
-            lda_eig_vals = scipy.linalg.eigvals(
-                a=mat, overwrite_a=True, check_finite=False)
-
-        except (np.linalg.LinAlgError, ValueError):
-            return np.array([np.nan])
-
-        if filter_:
-            lda_eig_vals = cls._filter_lda_eig_vals(lda_eig_vals)
-
-        return lda_eig_vals
+        return res[0] if len(res) == 1 else tuple(res)
 
     @classmethod
-    def _filter_lda_eig_vals(
+    def ft_can_cor(
             cls,
-            lda_eig_vals: np.ndarray,
-            filter_imaginary: bool = True,
-            filter_zeros: float = True,
+            N: np.ndarray,
+            y: np.ndarray,
+            can_cors: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
-        """Filter imaginary parts and null eigenvalues.
-
-        Parameters
-        ----------
-        lda_eig_vals : :obj:`np.ndarray`
-            Eigenvalues to be filtered.
-
-        filter_imaginary : bool, optional
-            If True, remove imaginary parts of eigenvalues.
-
-        filter_zeros : bool, optional
-            If True, remove null eigenvalues.
-
-        Returns
-        -------
-        :obj:`np.ndarray`
-            Filtered eigenvalues.
-        """
-        if filter_imaginary:
-            lda_eig_vals = lda_eig_vals.real
-
-        if filter_zeros:
-            lda_eig_vals = lda_eig_vals[~np.isclose(lda_eig_vals, 0.0)]
-
-        return lda_eig_vals
-
-    @classmethod
-    def ft_can_cor(cls,
-                   N: np.ndarray,
-                   y: np.ndarray,
-                   lda_eig_vals: t.Optional[np.ndarray] = None,
-                   classes: t.Optional[np.ndarray] = None,
-                   class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute canonical correlations of data.
 
-        The canonical correlations p are defined as shown below:
-
-            p_i = sqrt(lda_eig_i / (1.0 + lda_eig_i))
-
-        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the
-        generalized eigenvalue problem of Linear Discriminant Analysis Scatter
-        Matrix S defined as:
-
-            S = (Scatter_Within_Mat)^(-1) * (Scatter_Between_Mat),
-
-        where
-            Scatter_Within_Mat = sum((N_c - 1.0) * Covariance(X_c)), ``N_c``
-            is the number of instances of class c and X_c are the instances of
-            class ``c``. Effectively, this is exactly just the summation of
-            all Covariance matrices between instances of the same class without
-            dividing then by the number of instances.
-
-            Scatter_Between_Mat = sum(N_c * (U_c - U) * (U_c - U)^T), `'N_c``
-            is the number of instances of class c, U_c is the mean coordinates
-            of instances of class ``c``, and ``U`` is the mean value of
-            coordinates of all instances in the dataset.
+        The canonical correlations are calculated between the attributes
+        in ``N`` and the binarized (One Hot Encoded) version of ``y``.
 
         Parameters
         ----------
@@ -377,16 +243,10 @@ class MFEStatistical:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        lda_eig_vals : :obj:`np.ndarray`, optional
-            Eigenvalues of LDA Matrix ``S``, defined above.
-
-        classes : :obj:`np.ndarray`, optional
-            Distinct classes of ``y``.
-
-        class_freqs : :obj:`np.ndarray`, optional
-            Absolute frequencies of each distinct class in target attribute
-            ``y`` or ``classes``. If ``classes`` is given, then this argument
-            must be paired with it by index.
+        can_cors: :obj:`np.ndarray`, optional
+            Canonical correlations between ``N`` and the one-hot encoded
+            version of ``y``. Argument used to take advantage of
+            precomputations.
 
         Returns
         -------
@@ -398,11 +258,11 @@ class MFEStatistical:
         .. [1] Alexandros Kalousis. Algorithm Selection via Meta-Learning.
            PhD thesis, Faculty of Science of the University of Geneva, 2002.
         """
-        if lda_eig_vals is None:
-            lda_eig_vals = cls._calc_linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs, filter_=True)
+        if can_cors is None:
+            can_cors = cls._calc_can_cors(
+                N, y, return_can_cors=True, return_eigenvalues=False)
 
-        return np.sqrt(lda_eig_vals / (1.0 + lda_eig_vals))
+        return can_cors
 
     @classmethod
     def ft_gravity(cls,
@@ -599,9 +459,7 @@ class MFEStatistical:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            lda_eig_vals: t.Optional[np.ndarray] = None,
-            classes: t.Optional[np.ndarray] = None,
-            class_freqs: t.Optional[np.ndarray] = None,
+            can_cors: t.Optional[np.ndarray] = None,
     ) -> t.Union[int, float]:
         """Compute the number of canonical correlation between each attribute
         and class.
@@ -618,16 +476,10 @@ class MFEStatistical:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        lda_eig_vals : :obj:`np.ndarray`, optional
-            Eigenvalues of LDA Matrix ``S``, defined above.
-
-        classes : :obj:`np.ndarray`, optional
-            Distinct classes of ``y``.
-
-        class_freqs : :obj:`np.ndarray`, optional
-            Absolute frequencies of each distinct class in target attribute
-            ``y`` or ``classes``. If ``classes`` is given, then this argument
-            must be paired with it by index.
+        can_cors : :obj:`np.ndarray`, optional
+            Canonical correlations between ``N`` and the one-hot encoded
+            version of ``y``. Argument used to take advantage of
+            precomputations.
 
         Returns
         -------
@@ -643,17 +495,10 @@ class MFEStatistical:
            Principles of Data Mining and Knowledge Discovery (PKDD),
            pages 418 – 423, 1999.
         """
-        can_cor = cls.ft_can_cor(
-            N=N,
-            y=y,
-            lda_eig_vals=lda_eig_vals,
-            classes=classes,
-            class_freqs=class_freqs)
+        if can_cors is None:
+            can_cors = cls.ft_can_cor(N=N, y=y, can_cors=can_cors)
 
-        if isinstance(can_cor, np.ndarray):
-            return can_cor.size
-
-        return np.nan
+        return can_cors.size
 
     @classmethod
     def ft_eigenvalues(cls,
@@ -745,8 +590,8 @@ class MFEStatistical:
 
         g_mean[cols_invalid] = np.nan
 
-        # Note: the R MFE version can favours infinities over real values,
-        # which is summarized as 'nan'. This version always try to pick
+        # Note: the R MFE version can favors infinities over real values,
+        # which is summarized as 'nan'. This version always tries to pick
         # a real value whenever it is available.
         return g_mean
 
@@ -1560,22 +1405,30 @@ class MFEStatistical:
         return N.var(axis=0, ddof=ddof)
 
     @classmethod
-    def ft_w_lambda(cls,
-                    N: np.ndarray,
-                    y: np.ndarray,
-                    lda_eig_vals: t.Optional[np.ndarray] = None,
-                    classes: t.Optional[np.ndarray] = None,
-                    class_freqs: t.Optional[np.ndarray] = None) -> float:
+    def ft_w_lambda(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            can_cor_eigvals: t.Optional[np.ndarray] = None,
+    ) -> float:
         """Compute the Wilks' Lambda value.
 
         The Wilk's Lambda L is calculated as:
 
-            L = prod(1.0 / (1.0 + lda_eig_i))
+            L = prod(1.0 / (1.0 + can_cor_eig_i))
 
-        Where ``lda_eig_i`` is the ith eigenvalue obtained when solving the
-        generalized eigenvalue problem of Linear Discriminant Analysis Scatter
-        Matrix. Check ``ft_can_cor`` documentation for more in-depth
-        information about this value.
+        Where ``can_cor_eig_i`` is the ith eigenvalue related to the ith
+        canonical correlation ``can_cor_i`` between the attributes in ``N``
+        and the binarized (One Hot Encoded) version of ``y``.
+
+        The relationship between ``can_cor_eig_i`` and ``can_cor_i`` is
+        given by:
+
+            can_cor_i = sqrt(can_cor_eig_i / (1 + can_cor_eig_i))
+
+        Or, equivalently:
+
+            can_cor_eig_i = can_cor_i**2 / (1 - can_cor_i**2)
 
         Parameters
         ----------
@@ -1585,18 +1438,9 @@ class MFEStatistical:
         y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
-        lda_eig_vals : :obj:`np.ndarray`, optional
+        can_cor_eigvals : :obj:`np.ndarray`, optional
             Eigenvalues of LDA matrix. This argument is used to exploit
             precomputations.
-
-        classes : :obj:`np.ndarray`, optional
-            All distinct classes in target attribute ``y``. Used to exploit
-            precomputations.
-
-        class_freqs : :obj:`np.ndarray`, optional
-            Absolute frequencies of each distinct class in target attribute
-            ``y`` or ``classes``. If ``classes`` is given, then this argument
-            must be paired with it by index.
 
         Returns
         -------
@@ -1610,13 +1454,11 @@ class MFEStatistical:
            Principles of Data Mining and Knowledge Discovery (PKDD),
            pages 418 – 423, 1999.
         """
-        if lda_eig_vals is None:
-            lda_eig_vals = cls._calc_linear_disc_mat_eig(
-                N, y, classes=classes, class_freqs=class_freqs, filter_=True)
+        if can_cor_eigvals is None:
+            can_cor_eigvals = cls._calc_can_cors(
+                N, y, return_can_cors=False, return_eigenvalues=True)
 
-        if lda_eig_vals.size == 0:
+        if can_cor_eigvals.size == 0:
             return np.nan
 
-        # Note: numeric stable manner for calculating
-        # np.prod(1 / (1 + eigvals))
-        return np.exp(-np.sum(np.log1p(lda_eig_vals)))
+        return np.prod(1 / (1 + can_cor_eigvals))
