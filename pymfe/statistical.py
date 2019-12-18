@@ -1,5 +1,6 @@
 """A module dedicated to the extraction of statistical metafeatures."""
 import typing as t
+import warnings
 
 import numpy as np
 import scipy
@@ -124,12 +125,10 @@ class MFEStatistical:
 
         if (y is not None and N is not None and N.size
                 and not {"can_cors", "can_cor_eigvals"}.issubset(kwargs)):
-
-            can_cors, can_cor_eigvals = cls._calc_can_cors(
-                N, y, return_can_cors=True, return_eigenvalues=True)
+            can_cors = cls._calc_can_cors(N=N, y=y)
 
             precomp_vals["can_cors"] = can_cors
-            precomp_vals["can_cors_eigvals"] = can_cor_eigvals
+            precomp_vals["can_cors_eigvals"] = cls._can_cor_to_eigval(can_cors)
 
         return precomp_vals
 
@@ -183,24 +182,57 @@ class MFEStatistical:
 
         return precomp_vals
 
+    @staticmethod
+    def _can_cor_to_eigval(can_cors: np.ndarray) -> np.ndarray:
+        """Transform canonical correlations into corresponding eigenvalues.
+
+        The transformation uses the following relationship:
+
+            can_cor_i = sqrt(can_cor_eigval_i / (1 + can_cor_eigval_i))
+
+        Or, equivalently:
+
+            can_cor_eigval_i = can_cor_i**2 / (1 - can_cor_i**2)
+
+        So, the option to return the eigenvalues is meant to simplify
+        code that uses those values, not to generate extra inforation.
+        """
+        sqr_can_cors = np.square(can_cors)
+        can_cor_eig_vals = sqr_can_cors / (1 - sqr_can_cors)
+        return can_cor_eig_vals
+
     @classmethod
     def _calc_can_cors(
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            return_can_cors: bool = True,
-            return_eigenvalues: bool = False,
-    ) -> np.ndarray:
-        """."""
+    ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, np.ndarray]]:
+        """Calculate the Canonical Correlations between ``N`` and ``y.``
+
+        Note that the canonical correlations are calculated using the
+        one-hot encoded version of ``y.``
+
+        At most min(num_classes, num_attr) canonical correlations are
+        kept.
+        """
         y_bin = sklearn.preprocessing.OneHotEncoder().fit_transform(
             y.reshape(-1, 1)).todense()
 
         num_classes, num_attr = y_bin.shape[1], N.shape[1]
-
+        # Note: 'n_components' is a theoretical upper bound, so it is not
+        # guaranteed that exactly 'n_components' will be returned.
         n_components = min(num_classes, num_attr)
+
+        # Note: 'sklearn.cross_decomposition.CCA' issues UserWarnings
+        # whenever less than 'n_components' are got. However, this is
+        # already taken into account in this function, so no need for
+        # those warnings.
+        warnings.filterwarnings("ignore", category=UserWarning)
 
         N_tf, y_tf = sklearn.cross_decomposition.CCA(
             n_components=n_components).fit_transform(N, y_bin)
+
+        warnings.filterwarnings("default", category=UserWarning)
 
         ind = 0
         can_cors = np.zeros(n_components, dtype=float)
@@ -211,17 +243,7 @@ class MFEStatistical:
 
         can_cors = can_cors[:ind]
 
-        res = []
-
-        if return_can_cors:
-            res.append(can_cors)
-
-        if return_eigenvalues:
-            sqr_can_cors = np.square(can_cors)
-            can_cor_eig_vals = sqr_can_cors / (1 - sqr_can_cors)
-            res.append(can_cor_eig_vals)
-
-        return res[0] if len(res) == 1 else tuple(res)
+        return can_cors
 
     @classmethod
     def ft_can_cor(
@@ -259,8 +281,7 @@ class MFEStatistical:
            PhD thesis, Faculty of Science of the University of Geneva, 2002.
         """
         if can_cors is None:
-            can_cors = cls._calc_can_cors(
-                N, y, return_can_cors=True, return_eigenvalues=False)
+            can_cors = cls._calc_can_cors(N=N, y=y)
 
         return can_cors
 
@@ -1410,6 +1431,7 @@ class MFEStatistical:
             N: np.ndarray,
             y: np.ndarray,
             can_cor_eigvals: t.Optional[np.ndarray] = None,
+            can_cors: t.Optional[np.ndarray] = None,
     ) -> float:
         """Compute the Wilks' Lambda value.
 
@@ -1439,8 +1461,21 @@ class MFEStatistical:
             Target attribute from fitted data.
 
         can_cor_eigvals : :obj:`np.ndarray`, optional
-            Eigenvalues of LDA matrix. This argument is used to exploit
-            precomputations.
+            Eigenvalues associated with the canonical correlations of
+            ``N`` and one-hot encoded ``y``. This argument is used to
+            exploit precomputations. The relationship between the ith
+            canonical correlation ``can_cor_i`` and its eigenvalue is:
+
+                can_cor_i = sqrt(can_cor_eigval_i / (1 + can_cor_eigval_i))
+
+            Or, equivalently:
+
+                can_cor_eigval_i = can_cor_i**2 / (1 - can_cor_i**2)
+
+        can_cors : :obj:`np.ndarray`, optional
+            Canonical correlations between ``N`` and the one-hot encoded
+            version of ``y``. Argument used to take advantage of
+            precomputations. Used only if ``can_cor_eigvals`` is None.
 
         Returns
         -------
@@ -1455,8 +1490,10 @@ class MFEStatistical:
            pages 418 – 423, 1999.
         """
         if can_cor_eigvals is None:
-            can_cor_eigvals = cls._calc_can_cors(
-                N, y, return_can_cors=False, return_eigenvalues=True)
+            if can_cors is None:
+                can_cors = cls._calc_can_cors(N=N, y=y)
+
+            can_cor_eigvals = cls._can_cor_to_eigval(can_cors)
 
         if can_cor_eigvals.size == 0:
             return np.nan
