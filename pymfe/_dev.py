@@ -138,14 +138,14 @@ class MFEBoilerplate:
     Three tuples at module level in ``_internal.py`` module must be updated
     to your new class be detected correctly:
 
-        1. VALID_GROUPS: :obj:`str`
+        1. VALID_GROUPS: str
             Here you should write the name of your metafeature group. (e.g.,
             ``statistical`` or ``general``. This name is the value that will
             be given by the user in the ``groups`` MFE parameter to extract
             the all the metafeatures programmed here. Please select a
             sufficiently representative name for your metafeature group.
 
-        2. GROUP_PREREQUISITES : :obj:`str` or :obj:`tuple` of :obj:`str`
+        2. GROUP_PREREQUISITES : str or :obj:`tuple` of str
             Use this tuple to register other MFE metafeature group classes
             as dependencies of your class. This means that, if the user ask
             to extract the metafeatures of your class, then all metafeature
@@ -357,7 +357,7 @@ class MFEBoilerplate:
         y : :obj:`np.ndarray`, optional
             Always give clear and meaningful description to every argument.
 
-        argument_bar : :obj:`int`, optional
+        argument_bar : int, optional
             Some user-given attribute.
 
         **kwargs:
@@ -371,7 +371,7 @@ class MFEBoilerplate:
             The following precomputed items are returned:
                 * ``y_unique`` (:obj:`np.ndarray`): unique values from
                     ``y``, if it is not None.
-                * ``absolute_bar`` (:obj:`float`): absolute value of
+                * ``absolute_bar`` (float): absolute value of
                     ``argument_bar``, if it is not None.
         """
         precomp_vals = {}  # type: t.Dict[str, t.Any]
@@ -431,7 +431,7 @@ class MFEBoilerplate:
 
         Parameters
         ----------
-        argument_bar : :obj:`int`, optional
+        argument_bar : int, optional
             Some user-given attribute. Note that it has the same value as
             in the previous precomputation method, because it is the same
             argument (it has the same name.)
@@ -445,12 +445,12 @@ class MFEBoilerplate:
         -------
         :obj:`dict`
             The following precomputed items are returned:
-                * ``double_absolute_bar`` (:obj:`int`): two times the
+                * ``double_absolute_bar`` (int): two times the
                     value of ``absolute_bar``, which may or may not
                     be precomputed in the previous precomputation
                     method. If it is not the case, we precompute
                     ``absolute_bar`` here and also store its value.
-                * ``qux`` (:obj:`float`): value is equal to 1.0.
+                * ``qux`` (float): value is equal to 1.0.
                 * ``quux`` (:obj:`complex`) Imaginary value related to
                     ``qux``.
                 * ``quuz`` (:obj:`np.ndarray`): an sequence based
@@ -508,6 +508,10 @@ class MFEBoilerplate:
 
         Parameters
         ----------
+        random_state : int, optional
+            If given, controls the pseudo-random behavior inside this
+            method, so the results will be reproducible.
+
         **kwargs:
             Additional arguments. May have previously precomputed before
             this method from other precomputed methods, so they can help
@@ -517,7 +521,7 @@ class MFEBoilerplate:
         -------
         :obj:`dict`
             The following precomputed items are returned:
-                * ``random_special_num`` (:obj:`float`): a random value
+                * ``random_special_num`` (float): a random value
                   that must be controlled by the random seed specified
                   by the user using the ``random_state`` pymfe framework
                   global argument.
@@ -617,7 +621,7 @@ class MFEBoilerplate:
             arguments in the method documentation, as it can get way too
             much repetitive without any information gain.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             Extremely important argument. This one is a fixed feature from the
             MFE framework. If your method has ANY pseudo-random behaviour,
             you should use specifically this argument to provide the random
@@ -625,15 +629,15 @@ class MFEBoilerplate:
             is the random behaviour of your method to make clear to the
             user why he or she ever needs a random seed in the first place.
 
-        opt_arg_bar : :obj:`float`
+        opt_arg_bar : float, optional
             Argument used to detect carbon footprints of hungry dinosaurs.
 
-        opt_arg_baz : :obj:`np.ndarray`
+        opt_arg_baz : :obj:`np.ndarray`, optional
             If None, this argument is foo. Otherwise, this argument is bar.
 
         Returns
         -------
-        :obj:`int`
+        int
             Give a clear description about the returned value.
 
         Notes
@@ -709,7 +713,7 @@ class MFEBoilerplate:
 
         Returns
         -------
-        :obj:`int`
+        int
             Some important return value.
 
         Notes
@@ -890,6 +894,16 @@ class MFEBoilerplate:
 
         So far, there is not even a single private method in any pymfe
         code.
+
+        3. Protected method documentation
+        -----------------------------------------------------------------
+        You don't need to follow the standard documentation format for
+        protected methods (method description, argument list, return value
+        description etc.) Instead, you can be more technical since the
+        documentation will probably be more suitable for other developers
+        and maintainers of the package. If you fell more confortable with
+        the standard format (just like the public methods), there is no
+        harm to follow it in the protected method documentation then.
         """
 
         def inner_functions(x: float, lamb: float = 1.0) -> float:
@@ -1014,17 +1028,17 @@ class MFEBoilerplate:
 
         Arguments
         ---------
-        mtf_names : :obj:`list` of :obj:`str`
+        mtf_names : :obj:`list` of str
             A list containing all previously extracted metafeature names.
 
-        mtf_vals : :obj:`list` of :obj:`float`
+        mtf_vals : :obj:`list` of float
             A list containing all previously extracted metafeature values.
 
-        mtf_time : :obj:`list` of :obj:`float`
+        mtf_time : :obj:`list` of float
             A list containing all time elapsed for each metafeature
             previously extracted.
 
-        class_indexes : Sequence of :obj:`int`
+        class_indexes : Sequence of int
             Indexes of the metafeatures related to this method ``groups of
             interest``. The ``groups of interest`` are the metafeature groups
             whose name are in this method's name after the ``postprocess_``
@@ -1044,7 +1058,7 @@ class MFEBoilerplate:
             particular interest, and there is no need for an auxiliary
             list to split the metafeatures.
 
-        groups : :obj:`tuple` of :obj:`str`
+        groups : :obj:`tuple` of str
             Extracted metafeature groups (including metafeature groups
             inserted due to group dependencies). Can be used as reference
             inside the post-processing method.
