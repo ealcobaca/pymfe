@@ -122,10 +122,6 @@ class TestClustering:
         with pytest.raises(TypeError):
             MFEClustering._get_class_representatives(N, y, representative=1)
 
-        # with pytest.raises(TypeError):
-        #     MFEClustering._get_class_representatives(
-        #         N, y, classes=np.array([]))
-
     @pytest.mark.parametrize(
         "dt_id, exp_value, precompute",
         [
@@ -142,19 +138,6 @@ class TestClustering:
                 0.016754815003958073, 0, -0.03842692011975991,
                 58.22425419399301, 1.698593922818614e-08
             ], True),
-            ###################
-            # Categorical data
-            ###################
-            # (1, [
-            #     97.00317235631576, 3.153969124655814, 0.6921598191951595,
-            #     -0.09651355252305963, 0, 0.0316248093980556, 5.676987002418947,
-            #     8.009381946424901e-08
-            # ], False),
-            # (1, [
-            #     97.00317235631576, 3.153969124655814, 0.6921598191951595,
-            #     -0.09651355252305963, 0, 0.0316248093980556, 5.676987002418947,
-            #     8.009381946424901e-08
-            # ], True),
             ###################
             # Numerical data
             ###################
