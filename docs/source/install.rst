@@ -4,7 +4,7 @@ Install
 Requirements
 =============
 
-The pymfe package requires the following dependencies:
+The PyMFE package requires the following dependencies:
 
 * numpy
 * scipy
@@ -18,7 +18,7 @@ The pymfe package requires the following dependencies:
 Install
 =======
 
-The pymfe is available on the `PyPi <https://pypi.org/project/pymfe/>`_. You can install it via `pip` as follow::
+The PyMFE is available on the `PyPi <https://pypi.org/project/pymfe/>`_. You can install it via `pip` as follow::
 
   pip install -U pymfe
 
