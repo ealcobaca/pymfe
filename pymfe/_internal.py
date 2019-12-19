@@ -1249,10 +1249,10 @@ def check_data(X: t.Union[np.ndarray, list],
 
         y = y.flatten()
 
-    if len(X.shape) == 1 and X.shape[0]:
-        X = X.reshape(*X.shape, -1)
+    if X.ndim == 1:
+        X = X.reshape(-1, 1)
 
-    if X.shape[0] == 0 or (y is not None and y.shape[0] == 0):
+    if X.size == 0 or (y is not None and y.size == 0):
         raise ValueError('Neither "X" nor "y" can be empty.')
 
     if y is not None:
