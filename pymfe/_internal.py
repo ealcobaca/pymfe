@@ -950,7 +950,7 @@ def process_summary(
                     summary_mtd_callable)
 
             except ValueError:
-                summary_mtd_args = tuple()
+                summary_mtd_args, mandatory = tuple(), tuple()
 
             summary_mtd_pack = (
                 summary_func,
