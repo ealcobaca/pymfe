@@ -493,6 +493,7 @@ class MFE:
         metafeat_times = []  # type: t.List[float]
 
         ind = 0
+        skipped_count = 0
         for cur_metadata in self._metadata_mtd_ft:
             (ft_mtd_name, ft_mtd_callable,
              ft_mtd_args, ft_mandatory) = cur_metadata
@@ -519,6 +520,7 @@ class MFE:
                     print("\nSkipped '{}' ({} of {}).".format(
                         ft_mtd_name, ind, len(self._metadata_mtd_ft)))
 
+                skipped_count += 1
                 continue
 
             if verbose >= 2:
@@ -566,6 +568,10 @@ class MFE:
             print("\r{:<{fill}}".format(
                 "Process of metafeature extraction finished.",
                 fill=_t_num_cols))
+
+        if verbose >= 2 and skipped_count > 0:
+            print("\nNote: skipped a total of {} metafeatures."
+                  .format(skipped_count))
 
         return metafeat_names, metafeat_vals, metafeat_times
 
