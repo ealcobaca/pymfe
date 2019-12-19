@@ -10,10 +10,10 @@ You can find the contributors of this package here_.
 .. _here: https://github.com/ealcobaca/pymfe/graphs/contributors
 
 
-Citing pymfe
------------------------
+Citing PyMFE
+------------
 
-If you use pymfe in a scientific publication, we would appreciate
+If you use PyMFE in a scientific publication, we would appreciate
 citations to the following paper::
 
   None
