@@ -1,4 +1,4 @@
 Introductory Examples
 ---------------------
 
-Introductory examples for the pymfe package.
+Introductory examples for the PyMFE package.
