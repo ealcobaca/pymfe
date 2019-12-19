@@ -5,6 +5,35 @@ The pymfe releases are available in PyPI_ and GitHub_.
 .. _PyPI: https://pypi.org/project/pymfe/
 .. _GitHub: https://github.com/ealcobaca/pymfe/releases
 
+Version 0.2.0
+-------------
+* New meta-feature groups
+
+  * Complexity
+
+  * Itemset
+
+  * Concept
+
+* New feature in MFE to list meta-feature description and references
+
+* Dev class update
+
+* Integration, system tests, tests updates
+
+* Old module reviews
+
+* Docstring improvement
+
+* Online documentation improvement
+
+* Clustering group updated
+
+* Landmarking group updated
+
+* Statistical group updated
+
+
 Version 0.1.1
 -------------
 * Bugs solved
