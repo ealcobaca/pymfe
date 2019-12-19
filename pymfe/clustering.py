@@ -162,7 +162,7 @@ class MFEClustering:
         """
         precomp_vals = {}
 
-        if y is not None and not {
+        if N is not None and y is not None and not {
                 "pairwise_norm_interclass_dist", "pairwise_intraclass_dists",
                 "intraclass_dists"
         }.issubset(kwargs):
@@ -206,7 +206,7 @@ class MFEClustering:
     @classmethod
     def precompute_nearest_neighbors(cls,
                                      N: np.ndarray,
-                                     y: np.ndarray,
+                                     y: t.Optional[np.ndarray] = None,
                                      n_neighbors: t.Optional[int] = None,
                                      dist_metric: str = "euclidean",
                                      **kwargs) -> t.Dict[str, t.Any]:
@@ -248,8 +248,10 @@ class MFEClustering:
         """
         precomp_vals = {}
 
-        if not {"nearest_neighbors"}.issubset(kwargs):
+        if (N is not None and y is not None
+                and not {"nearest_neighbors"}.issubset(kwargs)):
             class_freqs = kwargs.get("class_freqs")
+
             if class_freqs is None:
                 _, class_freqs = np.unique(y, return_counts=True)
 
@@ -265,7 +267,7 @@ class MFEClustering:
     def precompute_class_representatives(
             cls,
             N: np.ndarray,
-            y: np.ndarray,
+            y: t.Optional[np.ndarray] = None,
             representative: str = "mean",
             classes: t.Optional[np.ndarray] = None,
             **kwargs) -> t.Dict[str, t.Any]:
@@ -331,7 +333,8 @@ class MFEClustering:
         """
         precomp_vals = {}
 
-        if not {"representative"}.issubset(kwargs):
+        if (N is not None and y is not None
+                and not {"representative"}.issubset(kwargs)):
             precomp_vals["representative"] = cls._get_class_representatives(
                 N=N, y=y, representative=representative, classes=classes)
 
