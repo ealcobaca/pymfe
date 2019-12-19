@@ -109,7 +109,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Extract only two model-based measures
-mfe = MFE(features=["leaves", "nodel"])
+mfe = MFE(features=["leaves", "nodes"])
 mfe.fit(X, y)
 ft = mfe.extract()
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
