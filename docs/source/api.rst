@@ -59,7 +59,7 @@ This is the full API documentation of the `pymfe` toolbox.
 .. _info_theory_ref:
 
 :mod:`pymfe.info_theory`: Information theory Meta-features
-================================================================
+==========================================================
 
 .. automodule:: pymfe.info_theory
    :no-members:
@@ -124,10 +124,10 @@ This is the full API documentation of the `pymfe` toolbox.
    relative.MFERelativeLandmarking
 
 
-.. _clustering_ref:
+.. _concept_ref:
 
 :mod:`pymfe.concept`: Concept Meta-features
-===================================================
+===========================================
 
 .. automodule:: pymfe.concept
    :no-members:
@@ -144,7 +144,7 @@ This is the full API documentation of the `pymfe` toolbox.
 .. _itemset_ref:
 
 :mod:`pymfe.itemset`: Itemset Meta-features
-===================================================
+===========================================
 
 .. automodule:: pymfe.itemset
    :no-members:
