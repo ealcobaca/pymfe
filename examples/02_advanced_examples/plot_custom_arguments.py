@@ -19,7 +19,7 @@ X = data.data
 # Custom Arguments
 # ----------------
 #
-# It is possible to pass custom arguments to every meta-feature using pymfe
+# It is possible to pass custom arguments to every meta-feature using PyMFE
 # extract method kwargs. The keywords must be the target meta-feature name, and
 # the value must be a dictionary in the format {argument: value}, i.e., each
 # key in the dictionary is a target argument with its respective value. In the
