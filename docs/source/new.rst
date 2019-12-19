@@ -1,5 +1,9 @@
 What is new on pymfe package?
 #############################
+The pymfe releases are available in PyPI_ and GitHub_.
+
+.. _PyPI: https://pypi.org/project/pymfe/
+.. _GitHub: https://github.com/ealcobaca/pymfe/releases
 
 Version 0.1.1
 -------------
@@ -19,8 +23,8 @@ Version 0.1.1
   current percentage of progress done so far.
 
 
-Version 0.1.0
--------------
+Version 0.1.0 (Available on PyPI)
+---------------------------------
 * Meta-feature groups available
 
    * Relative landmarking
@@ -53,8 +57,8 @@ Version 0.1.0
 
    * Several new tests added
 
-Version 0.0.3
--------------
+Version 0.0.3 (Available on PyPI)
+---------------------------------
 * Documentation improvement
   
 * Setup improvement
