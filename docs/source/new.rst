@@ -1,6 +1,6 @@
-What is new on pymfe package?
+What is new on PyMFE package?
 #############################
-The pymfe releases are available in PyPI_ and GitHub_.
+The PyMFE releases are available in PyPI_ and GitHub_.
 
 .. _PyPI: https://pypi.org/project/pymfe/
 .. _GitHub: https://github.com/ealcobaca/pymfe/releases
