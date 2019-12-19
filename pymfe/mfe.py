@@ -9,7 +9,8 @@ import numpy as np
 
 import pymfe._internal as _internal
 
-_TypeSeqExt = t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
+_TypeSeqExt = t.Sequence[t.Tuple[str, t.Callable, t.Tuple[str, ...],
+                                 t.Tuple[str, ...]]]
 """Type annotation for a sequence of TypeExtMtdTuple objects."""
 
 
@@ -392,7 +393,9 @@ class MFE:
         metafeat_names = []  # type: t.List[str]
         metafeat_times = []  # type: t.List[float]
 
-        for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
+        for cur_metadata in self._metadata_mtd_sm:
+            sm_mtd_name, sm_mtd_callable, sm_mtd_args, _ = cur_metadata
+
             if verbose >= 2:
                 print(
                     "  Summarizing '{0}' feature with '{1}' summary "
@@ -402,6 +405,7 @@ class MFE:
             sm_mtd_args_pack = _internal.build_mtd_kwargs(
                 mtd_name=sm_mtd_name,
                 mtd_args=sm_mtd_args,
+                mtd_mandatory=set(),
                 user_custom_args=kwargs.get(sm_mtd_name),
                 inner_custom_args=self._custom_args_sum,
                 suppress_warnings=suppress_warnings)
@@ -489,7 +493,9 @@ class MFE:
         metafeat_times = []  # type: t.List[float]
 
         ind = 0
-        for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
+        for cur_metadata in self._metadata_mtd_ft:
+            (ft_mtd_name, ft_mtd_callable,
+             ft_mtd_args, ft_mandatory) = cur_metadata
 
             if verbose >= 2:
                 print("\nExtracting '{}' feature ({} of {})..."
@@ -499,13 +505,20 @@ class MFE:
             ft_name_without_prefix = _internal.remove_prefix(
                 value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
 
-            ft_mtd_args_pack = _internal.build_mtd_kwargs(
-                mtd_name=ft_name_without_prefix,
-                mtd_args=ft_mtd_args,
-                user_custom_args=kwargs.get(ft_name_without_prefix),
-                inner_custom_args=self._custom_args_ft,
-                precomp_args=self._precomp_args_ft,
-                suppress_warnings=suppress_warnings)
+            try:
+                ft_mtd_args_pack = _internal.build_mtd_kwargs(
+                    mtd_name=ft_name_without_prefix,
+                    mtd_args=ft_mtd_args,
+                    mtd_mandatory=ft_mandatory,
+                    user_custom_args=kwargs.get(ft_name_without_prefix),
+                    inner_custom_args=self._custom_args_ft,
+                    precomp_args=self._precomp_args_ft,
+                    suppress_warnings=suppress_warnings)
+
+            except RuntimeError:
+                # Not all method's mandatory arguments were satisfied.
+                # Skip the current method.
+                continue
 
             features, time_ft = _internal.timeit(
                 _internal.get_feat_value, ft_mtd_name, ft_mtd_args_pack,
@@ -790,7 +803,7 @@ class MFE:
 
     def fit(self,
             X: t.Sequence,
-            y: t.Sequence,
+            y: t.Optional[t.Sequence] = None,
             transform_num: bool = True,
             transform_cat: bool = True,
             rescale: t.Optional[str] = None,
@@ -808,7 +821,7 @@ class MFE:
         X : :obj:`Sequence`
             Predictive attributes of the dataset.
 
-        y : :obj:`Sequence`
+        y : :obj:`Sequence`, optional
             Target attributes of the dataset, assuming that it is a supervised
             task.
 
@@ -919,7 +932,6 @@ class MFE:
             "X": self.X,
             "N": data_num,
             "C": data_cat,
-            "y": self.y,
             "num_cv_folds": self.num_cv_folds,
             "shuffle_cv_folds": self.shuffle_cv_folds,
             "lm_sample_frac": self.lm_sample_frac,
@@ -928,6 +940,9 @@ class MFE:
             "cat_cols": self._attr_indexes_cat,
             "hypparam_model_dt": self.hypparam_model_dt,
         }
+
+        if self.y is not None:
+            self._custom_args_ft["y"] = self.y
 
         # Custom arguments from preprocessing methods
         self._precomp_args_ft = _internal.process_precomp_groups(
@@ -1053,7 +1068,7 @@ class MFE:
         >>> res = extract(sd={'ddof': 2}, leaves={'max_depth': 4})
 
         """
-        if self.X is None or self.y is None:
+        if self.X is None:
             raise TypeError("Fitted data not found. Call "
                             '"fit" method before "extract".')
 

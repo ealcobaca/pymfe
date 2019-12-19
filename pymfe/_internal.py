@@ -166,8 +166,9 @@ POSTPROCESS_PREFIX = "postprocess_"
 TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
 
-TypeExtMtdTuple = t.Tuple[str, t.Callable[[], t.Any], t.Sequence]
-"""Type annotation which extends TypeMtdTuple with extra field (``Args``)"""
+TypeExtMtdTuple = t.Tuple[str, t.Callable[[], t.Any],
+                          t.Tuple[str, ...], t.Tuple[str, ...]]
+"""Type annotation which extends TypeMtdTuple with extra fields."""
 
 _TYPE_NUMERIC = (
     int,
@@ -445,7 +446,8 @@ def _preprocess_iterable_arg(
     return list(map(str.lower, set(values)))
 
 
-def _extract_mtd_args(ft_mtd_callable: t.Callable) -> t.Tuple[str, ...]:
+def _extract_mtd_args(ft_mtd_callable: t.Callable,
+                      ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[str, ...]]:
     """Extracts arguments from given method.
 
     Args:
@@ -453,14 +455,29 @@ def _extract_mtd_args(ft_mtd_callable: t.Callable) -> t.Tuple[str, ...]:
             extraction method.
 
     Returns:
-        list: containing the name of arguments of ``ft_mtd_callable``.
+        tuple of tuples:
+            The first tuple contains the name of arguments of the given
+            method. The second tuple contains the name of the mandatory
+            arguments (i.e., arguments that does not have a default value
+            defined.)
 
     Raises:
         TypeError: if ``ft_mtd_callable`` is not a valid callable.
     """
-    ft_mtd_signature = inspect.signature(ft_mtd_callable)
-    mtd_callable_args = tuple(ft_mtd_signature.parameters.keys())
-    return mtd_callable_args
+    ft_mtd_signature = inspect.signature(ft_mtd_callable).parameters
+    mtd_callable_args = tuple(ft_mtd_signature.keys())
+
+    # pylint: disable=W0212
+    # 'Access to a protected member _empty of a client class'
+    _empty = inspect._empty  # type: ignore
+
+    mandatory_args = tuple(
+        cur_param
+        for cur_param in ft_mtd_signature.keys()
+        if ft_mtd_signature[cur_param].default is _empty
+    )
+
+    return mtd_callable_args, mandatory_args
 
 
 def summarize(
@@ -564,6 +581,7 @@ def get_feat_value(
 
 def build_mtd_kwargs(mtd_name: str,
                      mtd_args: t.Iterable[str],
+                     mtd_mandatory: t.Iterable[str],
                      inner_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
                      user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
                      precomp_args: t.Optional[t.Dict[str, t.Any]] = None,
@@ -575,6 +593,10 @@ def build_mtd_kwargs(mtd_name: str,
 
         mtd_args (:obj:`iterable` of :obj:`str`): iterable containing the name
             of all arguments of the callable.
+
+        mtd_mandatory (:obj:`iterable` of :obj:`bool`): iterable containing
+            the name of all method's mandatory arguments (i.e., arguments
+            that does not have a default value defined.)
 
         inner_custom_args (:obj:`dict`, optional): custom arguments for inner
             usage, for example, to pass ``X``, ``y`` or other user-independent
@@ -619,6 +641,9 @@ def build_mtd_kwargs(mtd_name: str,
         custom_arg: combined_args[custom_arg]
         for custom_arg in combined_args if custom_arg in mtd_args
     }
+
+    if not set(mtd_mandatory).issubset(callable_args):
+        raise RuntimeError("Method mandatory arguments not satisfied.")
 
     if not suppress_warnings:
         unknown_arg_set = (unknown_arg
@@ -921,7 +946,8 @@ def process_summary(
                           RuntimeWarning)
         else:
             try:
-                summary_mtd_args = _extract_mtd_args(summary_mtd_callable)
+                summary_mtd_args, mandatory = _extract_mtd_args(
+                    summary_mtd_callable)
 
             except ValueError:
                 summary_mtd_args = tuple()
@@ -930,6 +956,7 @@ def process_summary(
                 summary_func,
                 summary_mtd_callable,
                 summary_mtd_args,
+                mandatory,
             )
 
             summary_methods.append(summary_mtd_pack)
@@ -1028,10 +1055,11 @@ def process_features(
         ft_mtd_name, ft_mtd_callable = ft_mtd_tuple
 
         if ft_mtd_name in processed_ft:
-            mtd_callable_args = _extract_mtd_args(ft_mtd_callable)
+            mtd_callable_args, mandatory = _extract_mtd_args(ft_mtd_callable)
 
             extended_item = (*ft_mtd_tuple,
-                             mtd_callable_args)  # type: TypeExtMtdTuple
+                             mtd_callable_args,
+                             mandatory)  # type: TypeExtMtdTuple
 
             ft_mtd_processed.append(extended_item)
             available_feat_names.append(ft_mtd_name)
@@ -1176,7 +1204,7 @@ def process_precomp_groups(
 
 def check_data(X: t.Union[np.ndarray, list],
                y: t.Union[np.ndarray, list]
-               ) -> t.Tuple[np.ndarray, np.ndarray]:
+               ) -> t.Tuple[np.ndarray, t.Optional[np.ndarray]]:
     """Checks ``X`` and ``y`` data type and shape and transform it if necessary.
 
     Args:
@@ -1196,7 +1224,7 @@ def check_data(X: t.Union[np.ndarray, list],
     if not isinstance(X, (np.ndarray, list)):
         raise TypeError('"X" is neither "list" nor "np.array".')
 
-    if not isinstance(y, (np.ndarray, list)):
+    if y is not None and not isinstance(y, (np.ndarray, list)):
         raise TypeError('"y" is neither "list" nor "np.array".')
 
     # We force numpy array to assume ``dtype=np.object`` because sometimes
@@ -1215,22 +1243,26 @@ def check_data(X: t.Union[np.ndarray, list],
     if not isinstance(X, np.ndarray):
         X = np.array(X, dtype=np.object)
 
-    if not isinstance(y, np.ndarray):
-        y = np.array(y, dtype=np.object)
+    if y is not None:
+        if not isinstance(y, np.ndarray):
+            y = np.array(y, dtype=np.object)
 
-    y = y.flatten()
+        y = y.flatten()
 
     if len(X.shape) == 1 and X.shape[0]:
         X = X.reshape(*X.shape, -1)
 
-    if X.shape[0] == 0 or y.shape[0] == 0:
+    if X.shape[0] == 0 or (y is not None and y.shape[0] == 0):
         raise ValueError('Neither "X" nor "y" can be empty.')
 
-    if X.shape[0] != y.shape[0]:
-        raise ValueError('"X" number of rows and "y" '
-                         "length shapes do not match.")
+    if y is not None:
+        if X.shape[0] != y.shape[0]:
+            raise ValueError('"X" number of rows and "y" '
+                             "length shapes do not match.")
 
-    return np.copy(X), np.copy(y)
+        return np.copy(X), np.copy(y)
+
+    return np.copy(X), None
 
 
 def isnumeric(
