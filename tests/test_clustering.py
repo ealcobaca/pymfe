@@ -95,6 +95,7 @@ class TestClustering:
         X, y = load_xy(0)
         precomp_group = GNAME if precompute else None
         mfe = MFE(
+            groups="clustering",
             features="sil", random_state=1234).fit(
                 X.values, y.values, precomp_groups=precomp_group)
         value = mfe.extract(sil={"sample_frac": 0.5})[1]
