@@ -3,7 +3,7 @@
 #################
 API Documentation
 #################
-This is the full API documentation of the `pymfe` toolbox.
+This is the full API documentation of the PyMFE package.
 
 .. _mfe_ref:
 
