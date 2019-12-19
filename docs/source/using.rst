@@ -1,6 +1,6 @@
-Using pymfe
+Using PyMFE
 ###########
-Extracting metafeatures with pymfe is easy.                                     
+Extracting metafeatures with PyMFE is easy.                                     
   
 The parameters are the measures, the group of measures and the summarization
 functions to be extracted. The default behavior is to extract all default
