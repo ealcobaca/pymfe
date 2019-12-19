@@ -412,7 +412,7 @@ class TestSystem:
             1.0,
         ], True),
     ])
-    def test_system_testing(self, dt_id, exp_value, precompute):
+    def test_system_testing_supervised(self, dt_id, exp_value, precompute):
         precomp_group = "all" if precompute else None
         X, y = load_xy(dt_id)
         mfe = MFE(
@@ -593,7 +593,7 @@ class TestSystem:
             4.62189883e-01,
         ], True),
     ])
-    def test_system_testing(self, dt_id, exp_value, precompute):
+    def test_system_testing_unsupervised(self, dt_id, exp_value, precompute):
         precomp_group = "all" if precompute else None
         X, y = load_xy(dt_id)
         mfe = MFE(
