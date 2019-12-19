@@ -3,7 +3,7 @@
 #################
 API Documentation
 #################
-This is the full API documentation of the `pymfe` toolbox.
+This is the full API documentation of the PyMFE package.
 
 .. _mfe_ref:
 
@@ -59,7 +59,7 @@ This is the full API documentation of the `pymfe` toolbox.
 .. _info_theory_ref:
 
 :mod:`pymfe.info_theory`: Information theory Meta-features
-================================================================
+==========================================================
 
 .. automodule:: pymfe.info_theory
    :no-members:
@@ -126,8 +126,25 @@ This is the full API documentation of the `pymfe` toolbox.
 
 .. _clustering_ref:
 
+:mod:`pymfe.clustering`: Clustering Meta-features
+=================================================
+
+.. automodule:: pymfe.clustering
+   :no-members:
+   :no-inherited-members:
+
+.. currentmodule:: pymfe
+
+.. autosummary::
+   :toctree: generated/
+
+   clustering.MFEClustering
+
+
+.. _concept_ref:
+
 :mod:`pymfe.concept`: Concept Meta-features
-===================================================
+===========================================
 
 .. automodule:: pymfe.concept
    :no-members:
@@ -144,7 +161,7 @@ This is the full API documentation of the `pymfe` toolbox.
 .. _itemset_ref:
 
 :mod:`pymfe.itemset`: Itemset Meta-features
-===================================================
+===========================================
 
 .. automodule:: pymfe.itemset
    :no-members:
