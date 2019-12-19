@@ -497,10 +497,7 @@ class MFE:
             (ft_mtd_name, ft_mtd_callable,
              ft_mtd_args, ft_mandatory) = cur_metadata
 
-            if verbose >= 2:
-                print("\nExtracting '{}' feature ({} of {})..."
-                      .format(ft_mtd_name, ind + 1,
-                              len(self._metadata_mtd_ft)))
+            ind += 1
 
             ft_name_without_prefix = _internal.remove_prefix(
                 value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
@@ -518,7 +515,15 @@ class MFE:
             except RuntimeError:
                 # Not all method's mandatory arguments were satisfied.
                 # Skip the current method.
+                if verbose >= 2:
+                    print("\nSkipped '{}' ({} of {}).".format(
+                        ft_mtd_name, ind, len(self._metadata_mtd_ft)))
+
                 continue
+
+            if verbose >= 2:
+                print("\nExtracting '{}' feature ({} of {})..."
+                      .format(ft_mtd_name, ind, len(self._metadata_mtd_ft)))
 
             features, time_ft = _internal.timeit(
                 _internal.get_feat_value, ft_mtd_name, ft_mtd_args_pack,
@@ -551,8 +556,6 @@ class MFE:
                 metafeat_times.append(time_ft)
 
             if verbose > 0:
-                ind += 1
-
                 self._print_verbose_progress(
                     cur_progress=100 * ind / len(self._metadata_mtd_ft),
                     cur_mtf_name=ft_mtd_name,
