@@ -1,9 +1,9 @@
-.. pymfe documentation master file, created by
+.. PyMFE documentation master file, created by
    sphinx-quickstart on Mon Apr 22 10:19:46 2019.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pymfe's documentation!
+Welcome to PyMFE's documentation!
 =================================
 
 .. toctree::
@@ -56,16 +56,16 @@ functions, and all parameters available for the meta-feature extraction.
 
 `Examples <auto_examples/index.html>`_
 --------------------------------------
-A set of examples illustrating the use of pymfe package. You will learn in this
-section how pymfe works, patter, tips, and more. 
+A set of examples illustrating the use of PyMFE package. You will learn in this
+section how PyMFE works, patter, tips, and more. 
 
 
 `What's new ? <new.html>`_
 ------------------------------
-Log of the pymfe history.
+Log of the PyMFE history.
 
 
-`About pymfe <about.html>`_
+`About PyMFE <about.html>`_
 --------------------------------------
 If you would like to know more about this project, how to cite it, and the
 contributors, see this section.
