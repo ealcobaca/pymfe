@@ -399,7 +399,7 @@ class MFELandmarking:
             Stratified K-Folds cross-validator. Provides train/test indices to
             split data in train/test sets.
 
-        num_cv_folds : :obj:`int`, optional
+        num_cv_folds : int, optional
             Number of folds to k-fold cross validation. Used only if ``skf``
             is None.
 
@@ -408,7 +408,7 @@ class MFELandmarking:
             validation folds. The random seed used for this process is the
             ``random_state`` argument.
 
-        lm_sample_frac : :obj:`float`, optional
+        lm_sample_frac : float, optional
             Proportion of instances to be sampled before extracting the
             metafeature. Used only if ``sample_inds`` is None.
 
@@ -417,7 +417,7 @@ class MFELandmarking:
             extracting this metafeature. If None, then ``lm_sample_frac``
             is taken into account. Argument used to exploit precomputations.
 
-        random_state : :obj:`int`, optional
+        random_state : int, optional
             If given, set the random seed before any pseudo-random calculations
             to keep the experiments reproducible.
 
