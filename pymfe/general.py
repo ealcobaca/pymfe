@@ -58,7 +58,7 @@ class MFEGeneral:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         **kwargs
             Additional arguments. May have previously precomputed before
@@ -93,7 +93,7 @@ class MFEGeneral:
         Parameters
         ----------
         X : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted data.
 
         Returns
         -------
@@ -123,7 +123,7 @@ class MFEGeneral:
         Parameters
         ----------
         X : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted data.
 
         cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
@@ -131,7 +131,7 @@ class MFEGeneral:
 
         Returns
         -------
-        int | float
+        int or float
             Proportion of categorical and numerical attributes.
 
         References
@@ -159,7 +159,7 @@ class MFEGeneral:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         class_freqs : :obj:`np.ndarray`, optional
             Absolute frequency of each distinct class. Argument
@@ -194,7 +194,7 @@ class MFEGeneral:
         Parameters
         ----------
         X : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted data.
 
         Returns
         -------
@@ -217,7 +217,7 @@ class MFEGeneral:
         Parameters
         ----------
         X : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted data.
 
         Returns
         -------
@@ -242,7 +242,7 @@ class MFEGeneral:
         Parameters
         ----------
         X : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted data.
 
         Returns
         -------
@@ -292,7 +292,7 @@ class MFEGeneral:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         classes : :obj:`np.ndarray`, optional
             Array with all distinct classes. This argument purpose is
@@ -321,7 +321,7 @@ class MFEGeneral:
         Parameters
         ----------
         X : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted data.
 
         Returns
         -------
@@ -343,7 +343,7 @@ class MFEGeneral:
         Parameters
         ----------
         X : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted data.
 
         cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
@@ -376,7 +376,7 @@ class MFEGeneral:
         Parameters
         ----------
         X : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted data.
 
         cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
@@ -384,7 +384,7 @@ class MFEGeneral:
 
         Returns
         -------
-        int | float
+        int or float
             If ``X`` has at least one categorical feature, then return the
             ratio of numerical and categorical features. Return :obj:`np.nan`
             otherwise.

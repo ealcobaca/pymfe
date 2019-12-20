@@ -61,7 +61,7 @@ class MFEInfoTheory:
         Parameters
         ----------
         y : :obj:`np.ndarray`, optional
-            The target attribute vector.
+            Target attribute.
 
         kwargs:
             Additional arguments. May have previously precomputed before this
@@ -96,10 +96,10 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         class_freqs : :obj:`np.ndarray`, optional
             Absolute frequency of each distinct class in ``y``.
@@ -210,7 +210,7 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         max_attr_num : int, optional
             Maximum number of attributes considered. If ``C`` has more
@@ -273,7 +273,7 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         attr_ent : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
@@ -306,10 +306,10 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         Returns
         -------
@@ -344,7 +344,7 @@ class MFEInfoTheory:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         class_ent : float, optional
             Entropy of the target attribute ``y``. Used to explot
@@ -392,10 +392,10 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         class_ent : float, optional
             Entropy of the target attribute ``y``. Used to explot
@@ -459,10 +459,10 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         joint_ent : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
@@ -510,10 +510,10 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         mut_inf : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
@@ -584,10 +584,10 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         attr_ent : :obj:`np.ndarray`, optional
             Values of each attribute entropy in ``N``. This argument purpose is
