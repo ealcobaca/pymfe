@@ -128,7 +128,7 @@ class MFEStatistical:
             can_cors = cls._calc_can_cors(N=N, y=y)
 
             precomp_vals["can_cors"] = can_cors
-            precomp_vals["can_cors_eigvals"] = cls._can_cor_to_eigval(can_cors)
+            precomp_vals["can_cor_eigvals"] = cls._can_cor_to_eigval(can_cors)
 
         return precomp_vals
 
