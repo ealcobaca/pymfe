@@ -72,10 +72,8 @@ class MFELandmarking:
             metafeatures.
 
         random_state : int, optional
-            If int, random_state is the seed used by the random number
-            generator; If RandomState instance, random_state is the random
-            number generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         Returns
         -------
@@ -121,17 +119,15 @@ class MFELandmarking:
             Fitted target attribute.
 
         num_cv_folds : int, optional
-            Number of num_cv_folds to k-fold cross validation.
+            Number of folds to k-fold cross validation.
 
         shuffle_cv_folds : bool, optional
             If True, shuffle the samples before splitting the k-fold cross
             validation.
 
         random_state : int, optional
-            If int, random_state is the seed used by the random number
-            generator; If RandomState instance, random_state is the random
-            number generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         lm_sample_frac : float, optional
             The percentage of examples subsampled. Value different from default
@@ -252,9 +248,8 @@ class MFELandmarking:
             is taken into account. Argument used to exploit precomputations.
 
         random_state : int, optional
-            If int, random_state is the seed used by the random number
-            generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         Returns
         -------
@@ -307,8 +302,8 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : int, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if
-            ``skf`` is None.
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
 
         shuffle_cv_folds : bool, optional
             If True, shuffle the data before splitting into the k-fold cross
@@ -325,14 +320,13 @@ class MFELandmarking:
             is taken into account. Argument used to exploit precomputations.
 
         random_state : int, optional
-            If int, random_state is the seed used by the random number
-            generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         Returns
         -------
         :obj:`np.ndarray`
-            The performance of each fold.
+            The Decision Tree best-node model performance of each fold.
 
         References
         ----------
@@ -406,8 +400,8 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : :obj:`int`, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if
-            ``skf`` is None.
+            Number of folds to k-fold cross validation. Used only if ``skf``
+            is None.
 
         shuffle_cv_folds : :obj:`bool`, optional
             If True, shuffle the data before splitting into the k-fold cross
@@ -424,14 +418,13 @@ class MFELandmarking:
             is taken into account. Argument used to exploit precomputations.
 
         random_state : :obj:`int`, optional
-            If int, random_state is the seed used by the random number
-            generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         Returns
         -------
         :obj:`np.ndarray`
-            The performance of each fold.
+            The Decision Tree random-node model performance of each fold.
 
         References
         ----------
@@ -503,7 +496,7 @@ class MFELandmarking:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        score : obj:`callable`
+        score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
             functions are described in `scoring.py` module.
 
@@ -512,7 +505,7 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : int, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if
+            Number of folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
         shuffle_cv_folds : bool, optional
@@ -530,9 +523,8 @@ class MFELandmarking:
             is taken into account. Argument used to exploit precomputations.
 
         random_state : int, optional
-            If int, random_state is the seed used by the random number
-            generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         cv_folds_imp_rank : :obj:`np.ndarray`, optional
             Ranking based on the predictive attribute importance per
@@ -545,7 +537,7 @@ class MFELandmarking:
         Returns
         -------
         :obj:`np.ndarray`
-            The performance of each fold.
+            The Decision Tree worst-node model performance of each fold.
 
         References
         ----------
@@ -649,14 +641,13 @@ class MFELandmarking:
             is taken into account. Argument used to exploit precomputations.
 
         random_state : int, optional
-            If int, random_state is the seed used by the random number
-            generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         Returns
         -------
         :obj:`np.ndarray`
-            The performance of each fold.
+            The Linear Discriminant Analysis model performance of each fold.
 
         References
         ----------
@@ -750,14 +741,13 @@ class MFELandmarking:
             is taken into account. Argument used to exploit precomputations.
 
         random_state : int, optional
-            If int, random_state is the seed used by the random number
-            generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         Returns
         -------
         :obj:`np.ndarray`
-            The performance of each fold.
+            The Naive Bayes model performance of each fold.
 
         References
         ----------
@@ -851,14 +841,13 @@ class MFELandmarking:
             is taken into account. Argument used to exploit precomputations.
 
         random_state : int, optional
-            If int, random_state is the seed used by the random number
-            generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         Returns
         -------
         :obj:`np.ndarray`
-            The performance of each fold.
+            The 1-NN model performance of each fold.
 
         References
         ----------
@@ -917,8 +906,10 @@ class MFELandmarking:
         """Performance of Elite Nearest Neighbor.
 
         Elite nearest neighbor uses the most informative attribute in the
-        dataset to induce the 1-nearest neighbor. With the subset of informati-
-        ve attributes is expected that the models should be noise tolerant.
+        dataset to induce the 1-nearest neighbor.
+
+        With the subset of informative attributes it is expected that the
+        models should be noise tolerant.
 
         Parameters
         ----------
@@ -937,7 +928,7 @@ class MFELandmarking:
             split data in train/test sets.
 
         num_cv_folds : int, optional
-            Number of num_cv_folds to k-fold cross validation. Used only if
+            Number of folds to k-fold cross validation. Used only if
             ``skf`` is None.
 
         shuffle_cv_folds : bool, optional
@@ -955,9 +946,8 @@ class MFELandmarking:
             is taken into account. Argument used to exploit precomputations.
 
         random_state : int, optional
-            If int, random_state is the seed used by the random number
-            generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            If given, set the random seed before any pseudo-random calculations
+            to keep the experiments reproducible.
 
         cv_folds_imp_rank : :obj:`np.ndarray`, optional
             Ranking based on the predictive attribute importance per
@@ -970,7 +960,7 @@ class MFELandmarking:
         Returns
         -------
         :obj:`np.ndarray`
-            The performance of each fold.
+            The Elite 1-NN model performance of each fold.
 
         References
         ----------
