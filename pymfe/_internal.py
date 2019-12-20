@@ -632,9 +632,9 @@ def build_mtd_kwargs(mtd_name: str,
         precomp_args = {}
 
     combined_args = {
-        **user_custom_args,
         **inner_custom_args,
         **precomp_args,
+        **user_custom_args,
     }
 
     callable_args = {
