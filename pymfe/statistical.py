@@ -1516,7 +1516,7 @@ class MFEStatistical:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
         can_cors : :obj:`np.ndarray`, optional
@@ -1574,7 +1574,7 @@ class MFEStatistical:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
         can_cor_eigvals : :obj:`np.ndarray`, optional
@@ -1628,7 +1628,7 @@ class MFEStatistical:
     ) -> float:
         """Compute the Roy's largest root.
 
-        The Roy's kargest root is the largest squared canonical
+        The Roy's largest root is the largest squared canonical
         correlations of ``N`` and the one-hot encoded version of ``y``.
 
         Parameters
@@ -1636,7 +1636,7 @@ class MFEStatistical:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
         can_cors : :obj:`np.ndarray`, optional
