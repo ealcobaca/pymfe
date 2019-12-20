@@ -1498,3 +1498,166 @@ class MFEStatistical:
             return np.nan
 
         return np.prod(1 / (1 + can_cor_eigvals))
+
+    @classmethod
+    def ft_p_trace(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            can_cors: t.Optional[np.ndarray] = None,
+    ) -> float:
+        """Compute the Pillai's trace.
+
+        The Pillai's trace is the sum of the squared canonical
+        correlations of ``N`` and the one-hot encoded version of ``y``.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        can_cors : :obj:`np.ndarray`, optional
+            Canonical correlations between ``N`` and the one-hot encoded
+            version of ``y``. Argument used to take advantage of
+            precomputations.
+
+        Returns
+        -------
+        float
+            Pillai's trace value.
+
+        References
+        ----------
+        .. [1] Pillai K.C.S (1955). Some New test criteria in multivariate
+           analysis. Ann Math Stat: 26(1):117–21. Seber, G.A.F. (1984).
+           Multivariate Observations. New York: John Wiley and Sons.
+        """
+        if can_cors is None:
+            can_cors = cls._calc_can_cors(N=N, y=y)
+
+        if can_cors.size == 0:  # type: ignore
+            return np.nan
+
+        return np.sum(np.square(can_cors))
+
+    @classmethod
+    def ft_lh_trace(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            can_cor_eigvals: t.Optional[np.ndarray] = None,
+            can_cors: t.Optional[np.ndarray] = None,
+    ) -> float:
+        """Compute the Lawley-Hotelling trace.
+
+        The Lawley-Hotelling trace LH is given by:
+
+            LH = sum_{i} can_cor_i**2 / (1 - can_cor_i**2)
+
+        Where `can_cor_i` is the ith canonical correlation of
+        ``N`` and the one-hot encoded version of ``y``.
+
+        Equivalently, LH can be calculated from the eigenvalues
+        related to each canonical correlation due to the relationship:
+
+            can_cor_eigval_i = can_cor_i**2 / (1 - can_cor_i**2)
+
+        Therefore, LH is given simply by:
+
+            LH = sum_{i} can_cor_eigval_i
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        can_cor_eigvals : :obj:`np.ndarray`, optional
+            Eigenvalues associated with the canonical correlations of
+            ``N`` and one-hot encoded ``y``. This argument is used to
+            exploit precomputations. The relationship between the ith
+            canonical correlation ``can_cor_i`` and its eigenvalue is:
+
+                can_cor_i = sqrt(can_cor_eigval_i / (1 + can_cor_eigval_i))
+
+            Or, equivalently:
+
+                can_cor_eigval_i = can_cor_i**2 / (1 - can_cor_i**2)
+
+        can_cors : :obj:`np.ndarray`, optional
+            Canonical correlations between ``N`` and the one-hot encoded
+            version of ``y``. Argument used to take advantage of
+            precomputations. Used only if ``can_cor_eigvals`` is None.
+
+        Returns
+        -------
+        float
+            Lawley-Hotelling trace value.
+
+        References
+        ----------
+        .. [1] Lawley D. A Generalization of Fisher’s z Test. Biometrika.
+           1938;30(1):180-187.
+        .. [2] Hotelling H. A generalized T test and measure of multivariate
+           dispersion. In: Neyman J, ed. Proceedings of the Second Berkeley
+           Symposium on Mathematical Statistics and Probability. Berkeley:
+           University of California Press; 1951:23-41.
+        """
+        if can_cor_eigvals is None:
+            if can_cors is None:
+                can_cors = cls._calc_can_cors(N=N, y=y)
+
+            can_cor_eigvals = cls._can_cor_to_eigval(can_cors)
+
+        if can_cor_eigvals.size == 0:  # type: ignore
+            return np.nan
+
+        return np.sum(can_cor_eigvals)
+
+    @classmethod
+    def ft_roy_root(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            can_cors: t.Optional[np.ndarray] = None,
+    ) -> float:
+        """Compute the Roy's largest root.
+
+        The Roy's kargest root is the largest squared canonical
+        correlations of ``N`` and the one-hot encoded version of ``y``.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Attributes from fitted data.
+
+        y : :obj:`np.ndarray`, optional
+            Target attribute from fitted data.
+
+        can_cors : :obj:`np.ndarray`, optional
+            Canonical correlations between ``N`` and the one-hot encoded
+            version of ``y``. Argument used to take advantage of
+            precomputations.
+
+        Returns
+        -------
+        float
+            Roy's largest root.
+
+        References
+        ----------
+        .. [1] Roy SN. On a Heuristic Method of Test Construction and its
+           use in Multivariate Analysis. Ann Math Stat. 1953;24(2):220-238.
+        """
+        if can_cors is None:
+            can_cors = cls._calc_can_cors(N=N, y=y)
+
+        if can_cors.size == 0:  # type: ignore
+            return np.nan
+
+        return np.max(np.square(can_cors))
