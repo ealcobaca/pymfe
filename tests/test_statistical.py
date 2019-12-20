@@ -38,7 +38,7 @@ class TestStatistical:
             (0, "nr_outliers", 11, True),
             (0, "p_trace", 0.24675450218721, True),
             (0, "range", [2.055151e+06, 6.788900e+06], True),
-            (0, "roy_root", 0.24675450218721, True),
+            (0, "roy_root", 0.32758839, True),
             (0, "sd", [5.807830e+05, 1.920665e+06], True),
             (0, "sd_ratio", np.nan, True),
             (0, "skewness", [1.563538e+00, 3.244487e-01], True),
@@ -67,7 +67,7 @@ class TestStatistical:
             (0, "nr_outliers", 11, False),
             (0, "p_trace", 0.24675450218721, False),
             (0, "range", [2.055151e+06, 6.788900e+06], False),
-            (0, "roy_root", 0.24675450218721, False),
+            (0, "roy_root", 0.32758839, False),
             (0, "sd", [5.807830e+05, 1.920665e+06], False),
             (0, "sd_ratio", np.nan, False),
             (0, "skewness", [1.563538e+00, 3.244487e-01], False),
@@ -99,7 +99,7 @@ class TestStatistical:
             (1, "nr_outliers", 25, True),
             (1, "p_trace", 0.6397163674317442, True),
             (1, "range", [1, 0], True),
-            (1, "roy_root", 0.6397163674317442, True),
+            (1, "roy_root", 1.77559093, True),
             (1, "sd", [0.32349560, 0.15153916], True),
             (1, "sd_ratio", np.nan, True),
             (1, "skewness", [4.108820, 9.629959], True),
@@ -128,7 +128,7 @@ class TestStatistical:
             (1, "nr_outliers", 25, False),
             (1, "p_trace", 0.6397163674317442, False),
             (1, "range", [1, 0], False),
-            (1, "roy_root", 0.6397163674317442, False),
+            (1, "roy_root", 1.77559093, False),
             (1, "sd", [0.32349560, 0.15153916], False),
             (1, "sd_ratio", np.nan, False),
             (1, "skewness", [4.108820, 9.629959], False),
@@ -160,7 +160,7 @@ class TestStatistical:
             (2, "nr_outliers", 1, True),
             (2, "p_trace", 1.1872067523722512, True),
             (2, "range", [3.57500000, 1.65000000], True),
-            (2, "roy_root", 0.9699446498549823, True),
+            (2, "roy_root", 32.27195242, True),
             (2, "sd", [0.94731040, 0.57146108], True),
             (2, "sd_ratio", 1.27345134, True),
             (2, "skewness", [0.06603418, 0.29886394], True),
@@ -189,7 +189,7 @@ class TestStatistical:
             (2, "nr_outliers", 1, False),
             (2, "p_trace", 1.1872067523722512, False),
             (2, "range", [3.57500000, 1.65000000], False),
-            (2, "roy_root", 0.9699446498549823, False),
+            (2, "roy_root", 32.27195242, False),
             (2, "sd", [0.94731040, 0.57146108], False),
             (2, "sd_ratio", 1.27345134, False),
             (2, "skewness", [0.06603418, 0.29886394], False),
@@ -305,6 +305,43 @@ class TestStatistical:
         assert np.allclose(
             vals, np.full(shape=len(vals), fill_value=np.nan), equal_nan=True)
 
+    @pytest.mark.parametrize("dt_id, exp_value, precompute, criterion", [
+        (0, 0.32758839, False, "eigval"),
+        (0, 0.24675448231745442, False, "cancor"),
+        (1, 1.77559093, False, "eigval"),
+        (1, 0.6397163674317442, False, "cancor"),
+        (2, 32.27195242, False, "eigval"),
+        (2, 0.9699446498549823, False, "cancor"),
+        (0, 0.32758839, True, "eigval"),
+        (0, 0.24675448231745442, True, "cancor"),
+        (1, 1.77559093, True, "eigval"),
+        (1, 0.6397163674317442, True, "cancor"),
+        (2, 32.27195242, True, "eigval"),
+        (2, 0.9699446498549823, True, "cancor"),
+    ])
+    def test_roy_largest_root(self, dt_id, exp_value, precompute, criterion):
+        precomp_group = GNAME if precompute else None
+        X, y = load_xy(dt_id)
+        mfe = MFE(
+            groups=[GNAME], features="roy_root").fit(
+                X.values, y.values, precomp_groups=precomp_group)
+        value = mfe.extract(roy_root={"criterion": criterion})[1]
+
+        if exp_value is np.nan:
+            assert value[0] is exp_value
+
+        else:
+            assert np.allclose(
+                value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
+
+    @pytest.mark.parametrize("criterion", ("invalid", "", None))
+    def test_roy_largest_root_invalid_criteria(self, criterion):
+        with pytest.warns(RuntimeWarning):
+            X, y = load_xy(0)
+            mfe = MFE(groups=[GNAME], features="roy_root")
+            mfe.fit(X.values, y.values, precomp_groups=None)
+            mfe.extract(roy_root={"criterion": criterion})
+
     @pytest.mark.parametrize("dt_id, exp_value, precompute", [
         (0, [
             4.967439e-01,
@@ -328,7 +365,7 @@ class TestStatistical:
             11,
             0.24675450218721,
             2.055151e+06,
-            0.24675450218721,
+            0.32758839,
             5.807830e+05,
             np.nan,
             1.563538e+00,
@@ -359,7 +396,7 @@ class TestStatistical:
             11,
             0.24675450218721,
             2.055151e+06,
-            0.24675450218721,
+            0.32758839,
             5.807830e+05,
             np.nan,
             1.563538e+00,
@@ -390,7 +427,7 @@ class TestStatistical:
             1,
             1.1872067523722512,
             3.57500000,
-            0.9699446498549823,
+            32.27195242,
             0.94731040,
             1.27345134,
             0.06603418,
@@ -421,7 +458,7 @@ class TestStatistical:
             1,
             1.1872067523722512,
             3.57500000,
-            0.9699446498549823,
+            32.27195242,
             0.94731040,
             1.27345134,
             0.06603418,
