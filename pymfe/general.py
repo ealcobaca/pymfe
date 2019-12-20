@@ -92,7 +92,7 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
+        X : :obj:`np.ndarray`
             Attributes from fitted data.
 
         Returns
@@ -122,10 +122,10 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
+        X : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        cat_cols : :obj:`list`
+        cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
             in ``X``.
 
@@ -149,10 +149,11 @@ class MFEGeneral:
         return num_cat / (X.shape[1] - num_cat)
 
     @classmethod
-    def ft_freq_class(cls,
-                      y: np.ndarray,
-                      class_freqs: t.Optional[np.ndarray] = None
-                      ) -> np.ndarray:
+    def ft_freq_class(
+            cls,
+            y: np.ndarray,
+            class_freqs: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Compute the relative frequency of each distinct class.
 
         Parameters
@@ -192,7 +193,7 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
+        X : :obj:`np.ndarray`
             Attributes from fitted data.
 
         Returns
@@ -215,7 +216,7 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
+        X : :obj:`np.ndarray`
             Attributes from fitted data.
 
         Returns
@@ -240,7 +241,7 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
+        X : :obj:`np.ndarray`
             Attributes from fitted data.
 
         Returns
@@ -265,7 +266,7 @@ class MFEGeneral:
 
         Parameters
         ----------
-        cat_cols : list
+        cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
             in ``X``.
 
@@ -284,10 +285,8 @@ class MFEGeneral:
         return len(cat_cols)
 
     @classmethod
-    def ft_nr_class(
-            cls,
-            y: np.ndarray,
-            classes: t.Optional[np.ndarray] = None) -> int:
+    def ft_nr_class(cls, y: np.ndarray,
+                    classes: t.Optional[np.ndarray] = None) -> int:
         """Compute the number of distinct classes.
 
         Parameters
@@ -321,7 +320,7 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
+        X : :obj:`np.ndarray`
             Attributes from fitted data.
 
         Returns
@@ -343,10 +342,10 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
+        X : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        cat_cols : list
+        cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
             in ``X``.
 
@@ -376,10 +375,10 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
+        X : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        cat_cols : :obj:`list`
+        cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
             in ``X``.
 
