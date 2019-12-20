@@ -570,8 +570,11 @@ class MFE:
                 fill=_t_num_cols))
 
         if verbose >= 2 and skipped_count > 0:
-            print("\nNote: skipped a total of {} metafeatures."
-                  .format(skipped_count))
+            print("\nNote: skipped a total of {} metafeatures, "
+                  "out of {} ({:.2f}%).".format(
+                      skipped_count,
+                      len(self._metadata_mtd_ft),
+                      100 * skipped_count / len(self._metadata_mtd_ft)))
 
         return metafeat_names, metafeat_vals, metafeat_times
 
