@@ -64,7 +64,7 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         lm_sample_frac : float
             The percentage of examples subsampled. Value different from default
@@ -113,10 +113,10 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`, optional
-            Fitted target attribute.
+            Target attribute.
 
         num_cv_folds : int, optional
             Number of folds to k-fold cross validation.
@@ -233,10 +233,10 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         lm_sample_frac : float, optional
             Proportion of instances to be sampled before extracting the
@@ -288,10 +288,10 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
@@ -386,10 +386,10 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
@@ -491,10 +491,10 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
@@ -609,10 +609,10 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
@@ -709,10 +709,10 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
@@ -809,10 +809,10 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible
@@ -914,10 +914,10 @@ class MFELandmarking:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         score : :obj:`callable`
             Function to compute score of the K-fold evaluations. Possible

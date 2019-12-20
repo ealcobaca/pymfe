@@ -64,10 +64,10 @@ class MFEModelBased:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+            Target attribute.
 
         random_state : int, optional
             If int, random_state is the seed used by the random number

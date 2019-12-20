@@ -102,10 +102,10 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`, optional
-            Numerical attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         kwargs:
             Additional arguments. May have previously precomputed before this
@@ -145,7 +145,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`, optional
-            Numerical attributes from fitted data.
+            Numerical fitted data.
 
         ddof : int, optional
             Degrees of freedom of covariance matrix.
@@ -263,7 +263,7 @@ class MFEStatistical:
             Fitted numerical data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         can_cors : :obj:`np.ndarray`, optional
             Canonical correlations between ``N`` and the one-hot encoded
@@ -308,7 +308,7 @@ class MFEStatistical:
             Fitted numerical data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         norm_ord : :obj:`numeric`, optional
             Minkowski Distance parameter. Minkowski Distance has the following
@@ -495,7 +495,7 @@ class MFEStatistical:
             Fitted numerical data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         can_cors : :obj:`np.ndarray`, optional
             Canonical correlations between ``N`` and the one-hot encoded
@@ -1154,7 +1154,7 @@ class MFEStatistical:
             Fitted numerical data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         ddof : int, optional
             Degrees of freedom for covariance matrix, calculated during this
@@ -1451,7 +1451,7 @@ class MFEStatistical:
             Fitted numerical data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         can_cor_eigvals : :obj:`np.ndarray`, optional
             Eigenvalues associated with the canonical correlations of
