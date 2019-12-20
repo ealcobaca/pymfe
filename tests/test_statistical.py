@@ -280,6 +280,31 @@ class TestStatistical:
             mfe.fit(X.values, y.values, precomp_groups=None)
             mfe.extract(nr_norm={"failure": failure, "method": test})
 
+    def test_none_cancor(self):
+        X, y = load_xy(0)
+
+        feats = [
+            "w_lambda",
+            "p_trace",
+            "lh_trace",
+            "roy_root",
+        ]
+
+        mfe = MFE(groups=[GNAME], features=feats)
+
+        custom_args = {
+            "can_cors": np.array([]),
+            "can_cor_eigvals": np.array([])
+        }
+
+        mfe.fit(X.values, y.values, precomp_groups=None)
+
+        extract_args = {cur_feat: custom_args for cur_feat in feats}
+        vals = mfe.extract(**extract_args, suppress_warnings=True)[1]
+
+        assert np.allclose(
+            vals, np.full(shape=len(vals), fill_value=np.nan), equal_nan=True)
+
     @pytest.mark.parametrize("dt_id, exp_value, precompute", [
         (0, [
             4.967439e-01,
