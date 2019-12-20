@@ -145,20 +145,21 @@ class MFEClustering:
                 * ``intraclass_dists`` (:obj:`np.ndarray`): the distance
                   between the fartest pair of instances of the same class.
 
-            The following precomputed items are necessary and are also
-            returned, if still not previously precomputed:
-                * ``classes`` (:obj:`np.ndarray`):  distinct classes of
-                  ``y``, if ``y`` is not :obj:`NoneType`.
-                * ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
-                  ``y``, if ``y`` is not :obj:`NoneType`.
-                * ``cls_inds`` (:obj:`np.ndarray`): Boolean array which
-                  indicates whether each example belongs to each class. The
-                  rows represents the distinct classes, and the instances
-                  are represented by the columns.
+        The following precomputed items are necessary and are also
+        returned, if still not previously precomputed:
+            * ``classes`` (:obj:`np.ndarray`):  distinct classes of
+              ``y``, if ``y`` is not :obj:`NoneType`.
+            * ``class_freqs`` (:obj:`np.ndarray`): class frequencies of
+              ``y``, if ``y`` is not :obj:`NoneType`.
+            * ``cls_inds`` (:obj:`np.ndarray`): Boolean array which
+              indicates whether each example belongs to each class. The
+              rows represents the distinct classes, and the instances
+              are represented by the columns.
+
         Notes
         -----
             .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
-                documentation.
+              documentation.
         """
         precomp_vals = {}
 
