@@ -76,7 +76,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 # measures:
 
 ###############################################################################
-# Extract all info-theo measures
+# Extract all info-theory measures
 mfe = MFE(groups=["info-theory"])
 mfe.fit(X, y)
 ft = mfe.extract()
@@ -109,7 +109,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Extract only two model-based measures
-mfe = MFE(features=["leaves", "nodel"])
+mfe = MFE(features=["leaves", "nodes"])
 mfe.fit(X, y)
 ft = mfe.extract()
 print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
@@ -167,7 +167,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 # dataset.
 
 ###############################################################################
-# Extract all relative landmarking measures
+# Extract all subsampling landmarking measures
 mfe = MFE(groups=["landmarking"], lm_sample_frac=0.7)
 mfe.fit(X, y)
 ft = mfe.extract()
@@ -196,7 +196,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 # the examples density.
 
 ###############################################################################
-# Extract all clustering based measures
+# Extract all concept measures
 mfe = MFE(groups=["concept"])
 mfe.fit(X, y)
 ft = mfe.extract()
@@ -210,7 +210,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 #
 
 ###############################################################################
-# Extract all clustering based measures
+# Extract all itemset measures
 mfe = MFE(groups=["itemset"])
 mfe.fit(X, y)
 ft = mfe.extract()
@@ -225,7 +225,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 #
 
 ###############################################################################
-# Extract all clustering based measures
+# Extract all complexity measures
 mfe = MFE(groups=["complexity"])
 mfe.fit(X, y)
 ft = mfe.extract()

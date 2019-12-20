@@ -1,6 +1,6 @@
 """
 Select specific measures and summaries
-===========================================
+======================================
 
 To customize the measure extraction, is necessary to use the feature
 and summary attribute. For instance, ``info-theo and`` and ``statistical``
@@ -21,7 +21,7 @@ X = data.data
 
 ###############################################################################
 # Select specific measures and summaries for ``statistical``
-# -------------------------------------------------------------------
+# ----------------------------------------------------------
 #
 # Extracting three information theoretical measures.
 
@@ -34,7 +34,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Select specific measures and summaries for ``info-theo``
-# ------------------------------------------------------------------
+# --------------------------------------------------------
 #
 # Extracting two statistical measures.
 
@@ -47,7 +47,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 
 ###############################################################################
 # Select specific measures for both ``info-theo`` and ``statistical``
-# --------------------------------------------------------------------
+# -------------------------------------------------------------------
 #
 # Extracting five measures.
 

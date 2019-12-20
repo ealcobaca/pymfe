@@ -1,6 +1,6 @@
 """
 Using Summaries
-====================
+===============
 
 In this example we will explain the different ways to select summary functions.
 """
@@ -21,7 +21,7 @@ X = data.data
 #
 # Several meta-features generate multiple values and ``mean`` and ``sd`` are
 # the standard method to summary these values. In order to increase the
-# flexibility, the pymfe package implemented the summary (or post processing)
+# flexibility, the PyMFE package implemented the summary (or post processing)
 # methods to deal with multiple measures values. This method is able to deal
 # with descriptive statistic (resulting in a single value) or a distribution
 # (resulting in multiple values).

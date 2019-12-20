@@ -1,6 +1,6 @@
 """
 Basic of meta-features extraction
-======================================
+=================================
 
 This example show how to extract meta-features using standard configuration.
 """

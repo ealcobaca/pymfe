@@ -4,19 +4,21 @@ Install
 Requirements
 =============
 
-The pymfe package requires the following dependencies:
+The PyMFE package requires the following dependencies:
 
 * numpy
 * scipy
-* scikit-learn
+* sklearn
 * pandas
 * patsy
+* statsmodels
+* texttable
 
 
 Install
 =======
 
-The pymfe is available on the `PyPi <https://pypi.org/project/pymfe/>`_. You can install it via `pip` as follow::
+The PyMFE is available on the `PyPi <https://pypi.org/project/pymfe/>`_. You can install it via `pip` as follow::
 
   pip install -U pymfe
 
@@ -39,8 +41,10 @@ Test and coverage
 
 You want to test/test-coverage the code before to install::
 
+  $ make install-dev
   $ make test-cov
 
 Or::
 
+  $ make install-dev
   $ pytest --cov=pymfe/ tests/

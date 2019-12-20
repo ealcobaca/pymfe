@@ -10,7 +10,7 @@ from sklearn.datasets import load_iris
 from pymfe.mfe import MFE
 
 ###############################################################################
-# Print all available metafeature groups from the ``pymfe`` package.
+# Print all available metafeature groups from the PyMFE package.
 model = MFE()
 model_groups = model.valid_groups()
 print(model_groups)
@@ -21,7 +21,7 @@ model_groups = MFE.valid_groups()
 print(model_groups)
 
 ###############################################################################
-# Print all available metafeatures from some groups of the ``pymfe`` package
+# Print all available metafeatures from some groups of the PyMFE package
 # If no parameter is given (or is 'None'), then all available
 # will be returned.
 model = MFE()
@@ -43,7 +43,7 @@ mtfs_subset = MFE.valid_metafeatures(groups=["general", "relative"])
 print(mtfs_subset)
 
 ###############################################################################
-# Print all available summary functions from the ``pymfe`` package
+# Print all available summary functions from the PyMFE package
 model = MFE()
 summaries = model.valid_summary()
 print(summaries)

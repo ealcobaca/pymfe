@@ -1,12 +1,12 @@
-Using pymfe
+Using PyMFE
 ###########
-
-Extracting metafeatures with pymfe is easy.
-
+Extracting metafeatures with PyMFE is easy.                                     
+  
 The parameters are the measures, the group of measures and the summarization
-functions to be extracted. The default parameter is extract all common
-measures. The fit function can be called by passing the X and y. The extract
-function is used to extract the related measures. See this example::
+functions to be extracted. The default behavior is to extract all default
+measures, which is. The ``fit`` function can be called by passing the ``X``
+and ``y``. The ``extract`` function is used to extract the related measures.
+See this example::
 
    # Load a dataset
    from sklearn.datasets import load_iris
@@ -16,7 +16,7 @@ function is used to extract the related measures. See this example::
    y = data.target
    X = data.data
 
-   # Extract all measures
+   # Extract default measures
    mfe = MFE()
    mfe.fit(X, y)
    ft = mfe.extract()
