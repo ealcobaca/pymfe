@@ -92,13 +92,26 @@ def sum_quantiles(values: TypeValList,
                          "(got {}).".format(valid_packges, package))
 
     if package == "numpy":
-        return np.percentile(
-            values, (0, 25, 50, 75, 100), interpolation=numpy_interpolation)
+        return np.quantile(
+            values, (0.00, 0.25, 0.50, 0.75, 1.00),
+            interpolation=numpy_interpolation)
 
     return scipy.stats.mstats.mquantiles(
         values, (0.00, 0.25, 0.50, 0.75, 1.00),
         alphap=scipy_alphap,
         betap=scipy_betap)
+
+
+def sum_nanquantiles(values: TypeValList,
+                     numpy_interpolation: str = "linear") -> float:
+    """Calculate the ``values`` quantiles, ignoring `nan` values.
+
+    The quantiles calculated corresponds to the minimum, maximum,
+    median value, and third and fourth quartiles.
+    """
+    return np.nanquantile(
+        values, (0.00, 0.25, 0.50, 0.75, 1.00),
+        interpolation=numpy_interpolation)
 
 
 def sum_skewness(values: TypeValList, method: int = 3,
@@ -224,7 +237,15 @@ def sum_kurtosis(values: TypeValList, method: int = 3,
     return kurt_val
 
 
-def sum_std(values: TypeValList, ddof: int = 1) -> TypeValList:
+def sum_nanstd(values: TypeValList, ddof: int = 1) -> float:
+    """Standard deviation summary function."""
+    if len(values) <= ddof:
+        return np.nan
+
+    return np.nanstd(values, ddof=ddof)
+
+
+def sum_std(values: TypeValList, ddof: int = 1) -> float:
     """Standard deviation summary function."""
     if len(values) <= ddof:
         return np.nan
@@ -232,7 +253,15 @@ def sum_std(values: TypeValList, ddof: int = 1) -> TypeValList:
     return np.std(values, ddof=ddof)
 
 
-def sum_var(values: TypeValList, ddof: int = 1) -> TypeValList:
+def sum_nanvar(values: TypeValList, ddof: int = 1) -> float:
+    """Standard deviation summary function."""
+    if len(values) <= ddof:
+        return np.nan
+
+    return np.nanvar(values, ddof=ddof)
+
+
+def sum_var(values: TypeValList, ddof: int = 1) -> float:
     """Standard deviation summary function."""
     if len(values) <= ddof:
         return np.nan
@@ -240,18 +269,77 @@ def sum_var(values: TypeValList, ddof: int = 1) -> TypeValList:
     return np.var(values, ddof=ddof)
 
 
+def sum_nancount(values: TypeValList) -> int:
+    """Count how many non-nan element in ``values``."""
+    return len(values) - np.isnan(values).size
+
+
+def sum_naniq_range(values: TypeValList) -> int:
+    """Count how many non-nan element in ``values``."""
+    return scipy.stats.iqr(values, nan_policy="omit")
+
+
+def sum_nanptp(values: TypeValList) -> float:
+    """Calculate (max - min) ignoring `nan` values."""
+    return np.nanmax(values) - np.nanmin(values)
+
+
+def sum_nanhistogram(values: TypeValList,
+                     bins: int = 10,
+                     normalize: bool = True) -> TypeValList:
+    """Create a histogram ignoring `nan` values."""
+    if not isinstance(values, np.ndarray):
+        values = np.asarray(values, dtype=float)
+
+    return sum_histogram(
+        values=values[~np.isnan(values)], bins=bins, normalize=normalize)
+
+
+def sum_nankurtosis(values: TypeValList, method: int = 3,
+                    bias: bool = True) -> TypeValList:
+    """Estimate data kurtosis ignoring `nan` values."""
+    if not isinstance(values, np.ndarray):
+        values = np.asarray(values, dtype=float)
+
+    return sum_kurtosis(
+        values=values[~np.isnan(values)], method=method, bias=bias)
+
+
+def sum_nanskewness(values: TypeValList, method: int = 3,
+                    bias: bool = True) -> TypeValList:
+    """Estimate data skewness ignoring `nan` values."""
+    if not isinstance(values, np.ndarray):
+        values = np.asarray(values, dtype=float)
+
+    return sum_skewness(
+        values=values[~np.isnan(values)], method=method, bias=bias)
+
+
 SUMMARY_METHODS = collections.OrderedDict((
     ("mean", np.mean),
+    ("nanmean", np.nanmean),
     ("sd", sum_std),
+    ("nansd", sum_nanstd),
     ("var", sum_var),
+    ("nanvar", sum_nanvar),
     ("count", len),
+    ("nancount", sum_nancount),
     ("histogram", sum_histogram),
+    ("nanhistogram", sum_nanhistogram),
     ("iq_range", scipy.stats.iqr),
+    ("naniq_range", sum_naniq_range),
     ("kurtosis", sum_kurtosis),
-    ("max", max),
+    ("nankurtosis", sum_nankurtosis),
+    ("max", np.max),
+    ("nanmax", np.nanmax),
     ("median", np.median),
-    ("min", min),
+    ("nanmedian", np.nanmedian),
+    ("min", np.min),
+    ("nanmin", np.nanmin),
     ("quantiles", sum_quantiles),
+    ("nanquantiles", sum_nanquantiles),
     ("range", np.ptp),
+    ("nanrange", sum_nanptp),
     ("skewness", sum_skewness),
+    ("nanskewness", sum_nanskewness),
 ))
