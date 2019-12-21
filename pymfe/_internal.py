@@ -66,6 +66,7 @@ import typing as t
 import inspect
 import collections
 import warnings
+import shutil
 import time
 import sys
 import re
@@ -186,6 +187,13 @@ TypeNumeric = t.TypeVar(
 """Typing alias of generic numeric types for static code checking."""
 
 
+VERBOSE_BLOCK_MID_SYMBOL = "|"
+
+VERBOSE_BLOCK_END_SYMBOL = "."
+
+VERBOSE_WARNING_SYMBOL = "*"
+
+
 def warning_format(message: str,
                    category: t.Type[Warning],
                    filename: str,
@@ -208,7 +216,7 @@ def warning_format(message: str,
         str: formated warning message.
     """
     # pylint: disable=W0613
-    return "Warning: {}\n".format(message)
+    return " {} Warning: {}\n".format(VERBOSE_WARNING_SYMBOL, message)
 
 
 warnings.formatwarning = warning_format
@@ -1097,6 +1105,7 @@ def process_precomp_groups(
         groups: t.Optional[t.Tuple[str, ...]] = None,
         wildcard: str = "all",
         suppress_warnings: bool = False,
+        verbose: int = 0,
         custom_class_: t.Any = None,
         **kwargs) -> t.Dict[str, t.Any]:
     """Process ``precomp_groups`` argument while fitting into a MFE model.
@@ -1125,6 +1134,11 @@ def process_precomp_groups(
             not None, the given class will be used as reference to extract
             the preprocomputing methods.
 
+        verbose (:obj:`int`, optional): defines the level of verbosity in
+            this function. If `1`, print a progress bar related to the
+            precomputation process. If `2` or higher, then log every step of
+            the precomputation process.
+
         **kwargs: used to pass extra custom arguments to precomputation metho-
             ds.
 
@@ -1132,6 +1146,9 @@ def process_precomp_groups(
         dict: precomputed values given by ``kwargs`` using convenient methods
             based in valid selected metafeature groups.
     """
+    # pylint: disable=R0912
+    # 'Too many branches (15/12) (too-many-branches)'
+
     if groups is None:
         groups = tuple()
 
@@ -1152,9 +1169,9 @@ def process_precomp_groups(
 
             for unknown_precomp in unknown_groups:
                 warnings.warn(
-                    "Unknown precomp_groups '{0}'. You can check available "
-                    "metafeature groups using 'valid_groups()' method."
-                    .format(unknown_precomp), UserWarning)
+                    " {} Unknown precomp_groups '{}'. You can check available "
+                    "metafeature groups using 'valid_groups()' method.".format(
+                        VERBOSE_WARNING_SYMBOL, unknown_precomp), UserWarning)
 
         processed_precomp_groups = tuple(
             set(processed_precomp_groups).intersection(groups))
@@ -1172,8 +1189,14 @@ def process_precomp_groups(
 
     precomp_items = {}  # type: t.Dict[str, t.Any]
 
-    for precomp_mtd_tuple in precomp_mtds_filtered:
+    error_count = 0
+    _prev_precomp_len = 0
+
+    for ind, precomp_mtd_tuple in enumerate(precomp_mtds_filtered, 1):
         precomp_mtd_name, precomp_mtd_callable = precomp_mtd_tuple
+
+        if verbose >= 2:
+            print("\nStarted precomputing '{}'.".format(precomp_mtd_name))
 
         try:
             new_precomp_vals = precomp_mtd_callable(**kwargs)  # type: ignore
@@ -1182,10 +1205,14 @@ def process_precomp_groups(
             new_precomp_vals = {}
 
             if not suppress_warnings:
-                warnings.warn("Something went wrong while "
-                              "precomputing '{0}'. Will ignore "
+                warnings.warn(" {} Something went wrong while "
+                              "precomputing '{}'. Will ignore "
                               "this method. Error message:\n"
-                              "{1}.".format(precomp_mtd_name, repr(type_err)))
+                              "{}.".format(VERBOSE_WARNING_SYMBOL,
+                                           precomp_mtd_name,
+                                           repr(type_err)))
+
+                error_count += 1
 
         if new_precomp_vals:
             precomp_items = {
@@ -1193,11 +1220,37 @@ def process_precomp_groups(
                 **new_precomp_vals,
             }
 
+            new_item_count = len(precomp_items) - _prev_precomp_len
+            _prev_precomp_len = len(precomp_items)
+
+            if verbose >= 2 and new_item_count > 0:
+                print(" {} Got {} new precomputed values.".format(
+                    VERBOSE_BLOCK_MID_SYMBOL, new_item_count))
+
             # Update kwargs to avoid recalculations iteratively
             kwargs = {
                 **kwargs,
                 **new_precomp_vals,
             }
+
+        if verbose > 0:
+            print_verbose_progress(
+                cur_progress=100 * ind / len(precomp_mtds_filtered),
+                cur_mtf_name=precomp_mtd_name,
+                item_type="precomputation",
+                verbose=verbose)
+
+    if verbose == 1:
+        _t_num_cols, _ = shutil.get_terminal_size()
+        print("\r{:<{fill}}".format(
+            "Process of precomputation finished.", fill=_t_num_cols))
+
+    if verbose >= 2 and error_count > 0:
+        print("\nNote: can't precompute a total of {} metafeatures, "
+              "out of {} ({:.2f}%).".format(
+                  error_count,
+                  len(precomp_mtds_filtered),
+                  100 * error_count / len(precomp_mtds_filtered)))
 
     return precomp_items
 
@@ -1674,3 +1727,29 @@ def post_processing(
 
     if remove_groups:
         kwargs.pop("groups")
+
+
+def print_verbose_progress(
+        cur_progress: float,
+        cur_mtf_name: str,
+        item_type: str,
+        verbose: int = 0) -> None:
+    """Print messages about extraction progress based on ``verbose``."""
+    if verbose >= 2:
+        print("Done with '{}' {} (progress of {:.2f}%)."
+              .format(cur_mtf_name, item_type, cur_progress))
+        return
+
+    _t_num_cols, _ = shutil.get_terminal_size()
+    _t_num_cols -= 9
+
+    if _t_num_cols <= 0:
+        return
+
+    _total_prog_symb = int(cur_progress * _t_num_cols / 100)
+
+    print("".join([
+        "\r[",
+        _total_prog_symb * "#",
+        (_t_num_cols - _total_prog_symb) * ".",
+        "]{:.2f}%".format(cur_progress)]), end="")
