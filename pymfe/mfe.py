@@ -3,6 +3,7 @@
 import typing as t
 import collections
 import shutil
+import time
 
 import texttable
 import numpy as np
@@ -314,6 +315,15 @@ class MFE:
         self.score = _internal.check_score(score, self.groups)
         self.hypparam_model_dt = (hypparam_model_dt.copy()
                                   if hypparam_model_dt else None)
+
+        self.time_precomp = -1.0
+        """Total time elapsed for precomputations."""
+
+        self.time_extract = -1.0
+        """Total time elapsed for metafeature extraction."""
+
+        self.time_total = -1.0
+        """Total time elapsed in total (precomp + extract.)"""
 
     def _call_summary_methods(
             self,
@@ -956,6 +966,8 @@ class MFE:
         if self.y is not None:
             self._custom_args_ft["y"] = self.y
 
+        _time_start = time.time()
+
         # Custom arguments from preprocessing methods
         self._precomp_args_ft = _internal.process_precomp_groups(
             precomp_groups=precomp_groups,
@@ -963,6 +975,8 @@ class MFE:
             wildcard=wildcard,
             suppress_warnings=suppress_warnings,
             **self._custom_args_ft)
+
+        self.time_precomp = time.time() - _time_start
 
         # Custom arguments for postprocessing methods
         self._postprocess_args_ft = {
@@ -1091,6 +1105,8 @@ class MFE:
         if verbose >= 2:
             print("Started the metafeature extraction process.")
 
+        _time_start = time.time()
+
         results = self._call_feature_methods(
             remove_nan=remove_nan,
             verbose=verbose,
@@ -1105,6 +1121,9 @@ class MFE:
             **self._postprocess_args_ft,
             **kwargs)
 
+        self.time_extract = time.time() - _time_start
+        self.time_total = self.time_extract + self.time_precomp
+
         if results and results[0]:
             # Sort results by metafeature name
             results = tuple(
@@ -1114,16 +1133,16 @@ class MFE:
         res_names, res_vals, res_times = results
 
         if verbose >= 2:
-            if self._timeopt_type_is_avg():
-                time_type = "average"
-            else:
-                time_type = "total"
-
+            _ext_t_pct = 100 * self.time_extract / self.time_total
             print(
-                "\nMetafeature extraction process done.",
-                "Total of {0} values obtained. Time elapsed "
-                "({1}) = {2:.8f} seconds.".format(
-                    len(res_vals), time_type, np.sum(res_times)),
+                "\nMetafeature extraction process done.", " * Total of {} "
+                "values obtained.".format(len(res_vals)),
+                " . Time elapsed in total (precomputations + extraction): "
+                "{:.8f} seconds.".format(self.time_total),
+                " . Time elapsed for extractions: {:.8f} seconds ({:.2f}% "
+                "from the total).".format(self.time_extract, _ext_t_pct),
+                " . Time elapsed for precomputations: {:.8f} seconds ({:.2f}% "
+                "from the total).".format(self.time_precomp, 100 - _ext_t_pct),
                 sep="\n")
 
         if self.timeopt:
