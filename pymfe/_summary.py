@@ -103,7 +103,7 @@ def sum_quantiles(values: TypeValList,
 
 
 def sum_nanquantiles(values: TypeValList,
-                     numpy_interpolation: str = "linear") -> float:
+                     numpy_interpolation: str = "linear") -> TypeValList:
     """Calculate the ``values`` quantiles, ignoring `nan` values.
 
     The quantiles calculated corresponds to the minimum, maximum,
@@ -176,7 +176,7 @@ def sum_skewness(values: TypeValList, method: int = 3,
 
 
 def sum_kurtosis(values: TypeValList, method: int = 3,
-                 bias: bool = True) -> TypeValList:
+                 bias: bool = True) -> float:
     """Calculate the kurtosis of ``values`` using ``method`` strategy.
 
     Args:
@@ -274,8 +274,8 @@ def sum_nancount(values: TypeValList) -> int:
     return len(values) - np.isnan(values).size
 
 
-def sum_naniq_range(values: TypeValList) -> int:
-    """Count how many non-nan element in ``values``."""
+def sum_naniq_range(values: TypeValList) -> float:
+    """Inter-quartile range (IQR) ignoring `nan` values."""
     return scipy.stats.iqr(values, nan_policy="omit")
 
 
@@ -296,7 +296,7 @@ def sum_nanhistogram(values: TypeValList,
 
 
 def sum_nankurtosis(values: TypeValList, method: int = 3,
-                    bias: bool = True) -> TypeValList:
+                    bias: bool = True) -> float:
     """Estimate data kurtosis ignoring `nan` values."""
     if not isinstance(values, np.ndarray):
         values = np.asarray(values, dtype=float)
@@ -306,7 +306,7 @@ def sum_nankurtosis(values: TypeValList, method: int = 3,
 
 
 def sum_nanskewness(values: TypeValList, method: int = 3,
-                    bias: bool = True) -> TypeValList:
+                    bias: bool = True) -> float:
     """Estimate data skewness ignoring `nan` values."""
     if not isinstance(values, np.ndarray):
         values = np.asarray(values, dtype=float)
