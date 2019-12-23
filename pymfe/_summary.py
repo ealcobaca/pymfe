@@ -238,7 +238,7 @@ def sum_kurtosis(values: TypeValList, method: int = 3,
 
 
 def sum_nanstd(values: TypeValList, ddof: int = 1) -> float:
-    """Standard deviation summary function."""
+    """Standard deviation summary function ignoring `nan` values."""
     if len(values) <= ddof:
         return np.nan
 
@@ -254,7 +254,7 @@ def sum_std(values: TypeValList, ddof: int = 1) -> float:
 
 
 def sum_nanvar(values: TypeValList, ddof: int = 1) -> float:
-    """Standard deviation summary function."""
+    """Variance summary function ignoring `nan` values."""
     if len(values) <= ddof:
         return np.nan
 
@@ -262,7 +262,7 @@ def sum_nanvar(values: TypeValList, ddof: int = 1) -> float:
 
 
 def sum_var(values: TypeValList, ddof: int = 1) -> float:
-    """Standard deviation summary function."""
+    """Variance summary function."""
     if len(values) <= ddof:
         return np.nan
 
