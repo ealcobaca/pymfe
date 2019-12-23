@@ -70,6 +70,10 @@ def test_ddof():
     assert np.isnan(pymfe._summary.sum_var(sing_val, ddof=1))
     assert np.isnan(pymfe._summary.sum_std(sing_val, ddof=2))
     assert np.isnan(pymfe._summary.sum_var(sing_val, ddof=2))
+    assert np.isnan(pymfe._summary.sum_nanstd(sing_val, ddof=1))
+    assert np.isnan(pymfe._summary.sum_nanvar(sing_val, ddof=1))
+    assert np.isnan(pymfe._summary.sum_nanstd(sing_val, ddof=2))
+    assert np.isnan(pymfe._summary.sum_nanvar(sing_val, ddof=2))
 
 
 @pytest.mark.parametrize("summary_func", [
@@ -95,16 +99,30 @@ def test_nansummary(summary_func):
     summary_nan = pymfe._summary.SUMMARY_METHODS[summary_func]
     summary_reg = pymfe._summary.SUMMARY_METHODS[summary_func[3:]]
 
-    assert np.allclose(summary_nan(values), summary_reg(clean_values))
+    assert np.allclose(
+        summary_nan(list(values)), summary_reg(list(clean_values)))
 
 
 def test_nancount():
     values = np.array([
-        1, np.nan, np.nan, 2, -4, np.nan, 9, -11, 1, 5, 6.4, 2.3, 4.5, np.nan,
+        1,
+        np.nan,
+        np.nan,
+        2,
+        -4,
+        np.nan,
+        9,
+        -11,
+        1,
+        5,
+        6.4,
+        2.3,
+        4.5,
+        np.nan,
         0,
     ])
     summary_nan = pymfe._summary.SUMMARY_METHODS["nancount"]
     summary_reg = pymfe._summary.SUMMARY_METHODS["count"]
     assert np.allclose(
-        summary_nan(values),
-        summary_reg(values) - np.count_nonzero(np.isnan(values)))
+        summary_nan(list(values)),
+        summary_reg(list(values)) - np.count_nonzero(np.isnan(values)))
