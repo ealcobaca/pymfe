@@ -87,7 +87,7 @@ class MFELandmarking:
         """
         precomp_vals = {}
 
-        if N is not None and "sample_inds" not in kwargs:
+        if N is not None and N.size > 0 and "sample_inds" not in kwargs:
             if lm_sample_frac < 1.0:
                 num_inst, _ = N.shape
 
@@ -150,7 +150,7 @@ class MFELandmarking:
         """
         precomp_vals = {}
 
-        if N is not None and y is not None:
+        if N is not None and N.size > 0 and y is not None:
             if "skf" not in kwargs:
                 precomp_vals["skf"] = sklearn.model_selection.StratifiedKFold(
                     n_splits=num_cv_folds,

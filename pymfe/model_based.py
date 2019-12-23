@@ -94,7 +94,7 @@ class MFEModelBased:
         """
         precomp_vals = {}  # type: t.Dict[str, t.Any]
 
-        if (N is not None and y is not None and not {
+        if (N is not None and N.size > 0 and y is not None and not {
                 "dt_model", "dt_info_table", "dt_node_depths", "leaf_nodes",
                 "non_leaf_nodes"
         }.issubset(kwargs)):
