@@ -222,3 +222,18 @@ class TestArchitecture:
         names, _ = mfe.parse_by_group(groups, res)
 
         assert not set(names).symmetric_difference(target_mtf)
+
+    def test_no_cat_transformation(self):
+        X, y = load_xy(1)
+        mfe = MFE()
+        mfe.fit(X.values, y.values, transform_cat=None)
+        assert mfe._custom_args_ft["N"].size == 0
+
+    def test_one_hot_encoding(self):
+        X, y = load_xy(1)
+        mfe = MFE()
+        mfe.fit(X.values, y.values, transform_cat="one-hot")
+
+        exp_value = np.sum([np.unique(attr).size for attr in X.values.T])
+
+        assert mfe._custom_args_ft["N"].shape[1] == exp_value
