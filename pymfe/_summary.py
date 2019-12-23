@@ -271,7 +271,7 @@ def sum_var(values: TypeValList, ddof: int = 1) -> float:
 
 def sum_nancount(values: TypeValList) -> int:
     """Count how many non-nan element in ``values``."""
-    return len(values) - np.isnan(values).size
+    return len(values) - np.count_nonzero(np.isnan(values))
 
 
 def sum_naniq_range(values: TypeValList) -> float:
