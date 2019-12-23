@@ -920,11 +920,7 @@ def process_summary(
                               summary_func),
                           RuntimeWarning)
         else:
-            try:
-                summary_mtd_args = _extract_mtd_args(summary_mtd_callable)
-
-            except ValueError:
-                summary_mtd_args = tuple()
+            summary_mtd_args = _extract_mtd_args(summary_mtd_callable)
 
             summary_mtd_pack = (
                 summary_func,
