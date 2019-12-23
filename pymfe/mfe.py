@@ -782,7 +782,7 @@ class MFE:
                 transform_cat not in _internal.VALID_TRANSFORM_CAT):
             raise ValueError("Invalid 'transform_cat' value ('{}'). Must be "
                              "a value in {}.".format(
-                                transform_cat, _internal.VALID_TRANSFORM_CAT))
+                                 transform_cat, _internal.VALID_TRANSFORM_CAT))
 
         data_num = self.X[:, self._attr_indexes_num]
 
@@ -838,14 +838,16 @@ class MFE:
             categorical-only meta-features.
 
         transform_cat : :obj:`str`, optional
+            Transform categorical data to use alongside numerical data while
+            extracting numeric-only metafeatures. Note that categoric-only
+            features still uses the original categoric values, and not the
+            binarized ones.
+
             If `one-hot`, categorical attributes are binarized using one-hot
             encoding.
 
-            If `gray`, categorical attributes are binarized using a model matrix
-            to use when alongside numerical data while extracting numeric-only
-            metafeatures. Note that categoric-only features still uses the
-            original categoric values, not the binarized ones. If False, then
-            categorical attributes are ignored for numeric-only metafeatures.
+            If `gray`, categorical attributes are binarized using a model
+            matrix.
 
             The formula used for this transformation is just the union (+) of
             all categoric attributes using formula language from ``patsy``
