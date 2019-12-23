@@ -1225,7 +1225,7 @@ def process_precomp_groups(
 
             if verbose >= 2 and new_item_count > 0:
                 print(" {} Got {} new precomputed values.".format(
-                    VERBOSE_BLOCK_MID_SYMBOL, new_item_count))
+                    VERBOSE_BLOCK_END_SYMBOL, new_item_count))
 
             # Update kwargs to avoid recalculations iteratively
             kwargs = {

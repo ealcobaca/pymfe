@@ -936,7 +936,7 @@ class MFE:
         if verbose >= 2:
             print("Started data transformation process.",
                   " {} Encoding numerical data into discrete values... "
-                  .format(_internal.VERBOSE_BLOCK_MID_SYMBOL),
+                  .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
                   sep="\n", end="")
 
         data_cat = self._set_data_categoric(transform_num=transform_num)
@@ -944,7 +944,7 @@ class MFE:
         if verbose >= 2:
             print("Done.",
                   " {} Enconding categorical data into numerical values... "
-                  .format(_internal.VERBOSE_BLOCK_MID_SYMBOL),
+                  .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
                   sep="\n", end="")
 
         data_num = self._set_data_numeric(
@@ -991,8 +991,14 @@ class MFE:
         self.time_precomp = time.time() - _time_start
 
         if verbose >= 2:
-            print("\nFinished precomputation process. Got a total of "
-                  "{} precomputed values.".format(len(self._precomp_args_ft)))
+            print("\nFinished precomputation process.",
+                  " {} Total time elapsed: {:.8f} seconds".format(
+                      _internal.VERBOSE_BLOCK_MID_SYMBOL,
+                      self.time_precomp),
+                  " {} Got a total of {} precomputed values.".format(
+                      _internal.VERBOSE_BLOCK_END_SYMBOL,
+                      len(self._precomp_args_ft)),
+                  sep="\n")
 
         # Custom arguments for postprocessing methods
         self._postprocess_args_ft = {
