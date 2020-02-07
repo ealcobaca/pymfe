@@ -35,6 +35,11 @@ Finally, go to the web page of your fork of the pymfe repo,
 and click 'Pull request' to send your changes to the maintainers for
 review. This will send an email to the Collaborators.
 
+See examples in our [Git Repository](https://github.com/ealcobaca/pymfe/blob/master/pymfe/_dev.py)  or [Documentation](https://pymfe.readthedocs.io/en/latest/auto_examples/04_dev_examples/plot_dev.html) that we made to any
+person that wishes to contribute for the development of the package or
+understand more about it. We expect that these examples show you the
+basics of PYMFE architecture and inspire you to contribute.
+
 (If any of the above seems like magic to you, then look up the
 [Git documentation](https://git-scm.com/documentation) on the web.)
 
