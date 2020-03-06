@@ -55,7 +55,7 @@ class MFEModelBased:
     def precompute_model_based_class(
             cls,
             N: np.ndarray,
-            y: np.ndarray,
+            y: t.Optional[np.ndarray] = None,
             random_state: t.Optional[int] = None,
             hypparam_model_dt: t.Optional[t.Dict[str, t.Any]] = None,
             **kwargs) -> t.Dict[str, t.Any]:
@@ -66,7 +66,7 @@ class MFEModelBased:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`
+        y : :obj:`np.ndarray`, optional
             Target attribute from fitted data.
 
         random_state : int, optional

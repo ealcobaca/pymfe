@@ -3,13 +3,15 @@
 import typing as t
 import collections
 import shutil
+import time
 
 import texttable
 import numpy as np
 
 import pymfe._internal as _internal
 
-_TypeSeqExt = t.Sequence[t.Tuple[str, t.Callable, t.Sequence]]
+_TypeSeqExt = t.Sequence[t.Tuple[str, t.Callable, t.Tuple[str, ...],
+                                 t.Tuple[str, ...]]]
 """Type annotation for a sequence of TypeExtMtdTuple objects."""
 
 
@@ -321,6 +323,15 @@ class MFE:
         self.hypparam_model_dt = (hypparam_model_dt.copy()
                                   if hypparam_model_dt else None)
 
+        self.time_precomp = -1.0
+        """Total time elapsed for precomputations."""
+
+        self.time_extract = -1.0
+        """Total time elapsed for metafeature extraction."""
+
+        self.time_total = -1.0
+        """Total time elapsed in total (precomp + extract.)"""
+
     def _call_summary_methods(
             self,
             feature_values: t.Sequence[_internal.TypeNumeric],
@@ -399,16 +410,22 @@ class MFE:
         metafeat_names = []  # type: t.List[str]
         metafeat_times = []  # type: t.List[float]
 
-        for sm_mtd_name, sm_mtd_callable, sm_mtd_args in self._metadata_mtd_sm:
+        for cur_metadata in self._metadata_mtd_sm:
+            sm_mtd_name, sm_mtd_callable, sm_mtd_args, _ = cur_metadata
+
             if verbose >= 2:
                 print(
-                    "  Summarizing '{0}' feature with '{1}' summary "
-                    "function...".format(feature_name, sm_mtd_name),
+                    " {} Summarizing '{}' feature with '{}' summary "
+                    "function...".format(
+                        _internal.VERBOSE_BLOCK_MID_SYMBOL,
+                        feature_name,
+                        sm_mtd_name),
                     end=" ")
 
             sm_mtd_args_pack = _internal.build_mtd_kwargs(
                 mtd_name=sm_mtd_name,
                 mtd_args=sm_mtd_args,
+                mtd_mandatory=set(),
                 user_custom_args=kwargs.get(sm_mtd_name),
                 inner_custom_args=self._custom_args_sum,
                 suppress_warnings=suppress_warnings)
@@ -445,35 +462,11 @@ class MFE:
                 print("Done.")
 
         if verbose >= 2:
-            print("Done Summarizing '{0}' feature.".format(feature_name))
+            print(" {} Done summarizing '{}' feature.".format(
+                _internal.VERBOSE_BLOCK_END_SYMBOL,
+                feature_name))
 
         return metafeat_names, metafeat_vals, metafeat_times
-
-    @classmethod
-    def _print_verbose_progress(
-            cls,
-            cur_progress: float,
-            cur_mtf_name: str,
-            verbose: int = 0) -> None:
-        """Print messages about extraction progress based on ``verbose``."""
-        if verbose >= 2:
-            print("Done with '{}' feature (progress of {:.2f}%)."
-                  .format(cur_mtf_name, cur_progress))
-            return
-
-        _t_num_cols, _ = shutil.get_terminal_size()
-        _t_num_cols -= 9
-
-        if _t_num_cols <= 0:
-            return
-
-        _total_prog_symb = int(cur_progress * _t_num_cols / 100)
-
-        print("".join([
-            "\r[",
-            _total_prog_symb * "#",
-            (_t_num_cols - _total_prog_symb) * ".",
-            "]{:.2f}%".format(cur_progress)]), end="")
 
     def _call_feature_methods(
             self,
@@ -495,24 +488,37 @@ class MFE:
         metafeat_names = []  # type: t.List[str]
         metafeat_times = []  # type: t.List[float]
 
-        ind = 0
-        for ft_mtd_name, ft_mtd_callable, ft_mtd_args in self._metadata_mtd_ft:
-
-            if verbose >= 2:
-                print("\nExtracting '{}' feature ({} of {})..."
-                      .format(ft_mtd_name, ind + 1,
-                              len(self._metadata_mtd_ft)))
+        skipped_count = 0
+        for ind, cur_metadata in enumerate(self._metadata_mtd_ft, 1):
+            (ft_mtd_name, ft_mtd_callable,
+             ft_mtd_args, ft_mandatory) = cur_metadata
 
             ft_name_without_prefix = _internal.remove_prefix(
                 value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
 
-            ft_mtd_args_pack = _internal.build_mtd_kwargs(
-                mtd_name=ft_name_without_prefix,
-                mtd_args=ft_mtd_args,
-                user_custom_args=kwargs.get(ft_name_without_prefix),
-                inner_custom_args=self._custom_args_ft,
-                precomp_args=self._precomp_args_ft,
-                suppress_warnings=suppress_warnings)
+            try:
+                ft_mtd_args_pack = _internal.build_mtd_kwargs(
+                    mtd_name=ft_name_without_prefix,
+                    mtd_args=ft_mtd_args,
+                    mtd_mandatory=ft_mandatory,
+                    user_custom_args=kwargs.get(ft_name_without_prefix),
+                    inner_custom_args=self._custom_args_ft,
+                    precomp_args=self._precomp_args_ft,
+                    suppress_warnings=suppress_warnings)
+
+            except RuntimeError:
+                # Not all method's mandatory arguments were satisfied.
+                # Skip the current method.
+                if verbose >= 2:
+                    print("\nSkipped '{}' ({} of {}).".format(
+                        ft_mtd_name, ind, len(self._metadata_mtd_ft)))
+
+                skipped_count += 1
+                continue
+
+            if verbose >= 2:
+                print("\nExtracting '{}' feature ({} of {})..."
+                      .format(ft_mtd_name, ind, len(self._metadata_mtd_ft)))
 
             features, time_ft = _internal.timeit(
                 _internal.get_feat_value, ft_mtd_name, ft_mtd_args_pack,
@@ -545,11 +551,10 @@ class MFE:
                 metafeat_times.append(time_ft)
 
             if verbose > 0:
-                ind += 1
-
-                self._print_verbose_progress(
+                _internal.print_verbose_progress(
                     cur_progress=100 * ind / len(self._metadata_mtd_ft),
                     cur_mtf_name=ft_mtd_name,
+                    item_type="feature",
                     verbose=verbose)
 
         if verbose == 1:
@@ -557,6 +562,13 @@ class MFE:
             print("\r{:<{fill}}".format(
                 "Process of metafeature extraction finished.",
                 fill=_t_num_cols))
+
+        if verbose >= 2 and skipped_count > 0:
+            print("\nNote: skipped a total of {} metafeatures, "
+                  "out of {} ({:.2f}%).".format(
+                      skipped_count,
+                      len(self._metadata_mtd_ft),
+                      100 * skipped_count / len(self._metadata_mtd_ft)))
 
         return metafeat_names, metafeat_vals, metafeat_times
 
@@ -814,7 +826,7 @@ class MFE:
 
     def fit(self,
             X: t.Sequence,
-            y: t.Sequence,
+            y: t.Optional[t.Sequence] = None,
             transform_num: bool = True,
             transform_cat: str = "gray",
             rescale: t.Optional[str] = None,
@@ -824,6 +836,7 @@ class MFE:
             precomp_groups: t.Optional[str] = "all",
             wildcard: str = "all",
             suppress_warnings: bool = False,
+            verbose: int = 0,
             ) -> "MFE":
         """Fits dataset into an MFE model.
 
@@ -832,7 +845,7 @@ class MFE:
         X : :obj:`Sequence`
             Predictive attributes of the dataset.
 
-        y : :obj:`Sequence`
+        y : :obj:`Sequence`, optional
             Target attributes of the dataset, assuming that it is a supervised
             task.
 
@@ -919,6 +932,12 @@ class MFE:
         suppress_warnings : :obj:`bool`, optional
             If True, ignore all warnings invoked while fitting dataset.
 
+        verbose : :obj:`int`, optional
+            Defines the level of verbosity for the fit method. If `1`, then
+            print a progress bar related to the precomputations. If `2` or
+            higher, then log every step of the fitted data transformations and
+            the precomputation steps.
+
         Returns
         -------
         self
@@ -932,25 +951,48 @@ class MFE:
             object.
 
         """
+        if verbose >= 2:
+            print("Fitting data into model... ", end="")
+
         self.X, self.y = _internal.check_data(X, y)
+
+        if verbose >= 2:
+            print("Done.")
 
         rescale = _internal.process_generic_option(
             value=rescale, group_name="rescale", allow_none=True)
 
         self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
 
+        if verbose >= 2:
+            print("Started data transformation process.",
+                  " {} Encoding numerical data into discrete values... "
+                  .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
+                  sep="\n", end="")
+
         data_cat = self._set_data_categoric(transform_num=transform_num)
+
+        if verbose >= 2:
+            print("Done.",
+                  " {} Enconding categorical data into numerical values... "
+                  .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
+                  sep="\n", end="")
+
         data_num = self._set_data_numeric(
             transform_cat=transform_cat,
             rescale=rescale,
             rescale_args=rescale_args)
+
+        if verbose >= 2:
+            print("Done.",
+                  "Finished data transformation process.",
+                  sep="\n")
 
         # Custom arguments for metafeature extraction methods
         self._custom_args_ft = {
             "X": self.X,
             "N": data_num,
             "C": data_cat,
-            "y": self.y,
             "num_cv_folds": self.num_cv_folds,
             "shuffle_cv_folds": self.shuffle_cv_folds,
             "lm_sample_frac": self.lm_sample_frac,
@@ -960,13 +1002,34 @@ class MFE:
             "hypparam_model_dt": self.hypparam_model_dt,
         }
 
+        if self.y is not None:
+            self._custom_args_ft["y"] = self.y
+
+        if verbose >= 2:
+            print("Started precomputation process.")
+
+        _time_start = time.time()
+
         # Custom arguments from preprocessing methods
         self._precomp_args_ft = _internal.process_precomp_groups(
             precomp_groups=precomp_groups,
             groups=self.groups,
             wildcard=wildcard,
             suppress_warnings=suppress_warnings,
+            verbose=verbose,
             **self._custom_args_ft)
+
+        self.time_precomp = time.time() - _time_start
+
+        if verbose >= 2:
+            print("\nFinished precomputation process.",
+                  " {} Total time elapsed: {:.8f} seconds".format(
+                      _internal.VERBOSE_BLOCK_MID_SYMBOL,
+                      self.time_precomp),
+                  " {} Got a total of {} precomputed values.".format(
+                      _internal.VERBOSE_BLOCK_END_SYMBOL,
+                      len(self._precomp_args_ft)),
+                  sep="\n")
 
         # Custom arguments for postprocessing methods
         self._postprocess_args_ft = {
@@ -1011,9 +1074,6 @@ class MFE:
             If True, then the meta-feature extraction is done with
             multi-processes. Currently, this argument has no effect by now
             (to be implemented).
-
-        by_class : :obj:`bool`, optional
-            Not implemented yet.
 
         suppress_warnings : :obj:`bool`, optional
             If True, do not show warnings about unknown user custom parameters
@@ -1084,7 +1144,7 @@ class MFE:
         >>> res = extract(sd={'ddof': 2}, leaves={'max_depth': 4})
 
         """
-        if self.X is None or self.y is None:
+        if self.X is None:
             raise TypeError("Fitted data not found. Call "
                             '"fit" method before "extract".')
 
@@ -1094,6 +1154,8 @@ class MFE:
 
         if verbose >= 2:
             print("Started the metafeature extraction process.")
+
+        _time_start = time.time()
 
         results = self._call_feature_methods(
             remove_nan=remove_nan,
@@ -1109,6 +1171,9 @@ class MFE:
             **self._postprocess_args_ft,
             **kwargs)
 
+        self.time_extract = time.time() - _time_start
+        self.time_total = self.time_extract + self.time_precomp
+
         if results and results[0]:
             # Sort results by metafeature name
             results = tuple(
@@ -1118,16 +1183,23 @@ class MFE:
         res_names, res_vals, res_times = results
 
         if verbose >= 2:
-            if self._timeopt_type_is_avg():
-                time_type = "average"
-            else:
-                time_type = "total"
-
+            _ext_t_pct = 100 * self.time_extract / self.time_total
             print(
                 "\nMetafeature extraction process done.",
-                "Total of {0} values obtained. Time elapsed "
-                "({1}) = {2:.8f} seconds.".format(
-                    len(res_vals), time_type, np.sum(res_times)),
+                " {} Time elapsed in total (precomputations + extraction): "
+                "{:.8f} seconds.".format(
+                    _internal.VERBOSE_BLOCK_MID_SYMBOL, self.time_total),
+                " {} Time elapsed for extractions: {:.8f} seconds ({:.2f}% "
+                "from the total).".format(
+                    _internal.VERBOSE_BLOCK_MID_SYMBOL,
+                    self.time_extract,
+                    _ext_t_pct),
+                " {} Time elapsed for precomputations: {:.8f} seconds "
+                "({:.2f}% from the total).".format(
+                    _internal.VERBOSE_BLOCK_MID_SYMBOL,
+                    self.time_precomp, 100 - _ext_t_pct),
+                " {} Total of {} values obtained.".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL, len(res_vals)),
                 sep="\n")
 
         if self.timeopt:
