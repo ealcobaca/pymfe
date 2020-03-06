@@ -111,6 +111,13 @@ class MFE:
                 12. ``skewness``: Describes the shape of the measure values
                     distribution in terms of symmetry.
 
+            You can concatenate `nan` with the desired summary function name
+            to use an alternative version of the same summary which ignores
+            `nan` values. For instance, `nanmean` is the `mean` summary
+            function which ignores all `nan` values, while 'naniq_range`
+            is the interquartile range calculated only with valid (non-`nan`)
+            values.
+
             If more than one summary function is selected, then all multivalued
             extracted metafeatures are summarized with each summary function.
 
