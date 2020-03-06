@@ -66,6 +66,7 @@ import typing as t
 import inspect
 import collections
 import warnings
+import shutil
 import time
 import sys
 import re
@@ -171,8 +172,9 @@ POSTPROCESS_PREFIX = "postprocess_"
 TypeMtdTuple = t.Tuple[str, t.Callable[[], t.Any]]
 """Type annotation which describes the a metafeature method tuple."""
 
-TypeExtMtdTuple = t.Tuple[str, t.Callable[[], t.Any], t.Sequence]
-"""Type annotation which extends TypeMtdTuple with extra field (``Args``)"""
+TypeExtMtdTuple = t.Tuple[str, t.Callable[[], t.Any],
+                          t.Tuple[str, ...], t.Tuple[str, ...]]
+"""Type annotation which extends TypeMtdTuple with extra fields."""
 
 _TYPE_NUMERIC = (
     int,
@@ -188,6 +190,13 @@ TypeNumeric = t.TypeVar(
     np.number,
 )
 """Typing alias of generic numeric types for static code checking."""
+
+
+VERBOSE_BLOCK_MID_SYMBOL = "|"
+
+VERBOSE_BLOCK_END_SYMBOL = "."
+
+VERBOSE_WARNING_SYMBOL = "*"
 
 
 def warning_format(message: str,
@@ -212,7 +221,7 @@ def warning_format(message: str,
         str: formated warning message.
     """
     # pylint: disable=W0613
-    return "Warning: {}\n".format(message)
+    return " {} Warning: {}\n".format(VERBOSE_WARNING_SYMBOL, message)
 
 
 warnings.formatwarning = warning_format
@@ -450,7 +459,8 @@ def _preprocess_iterable_arg(
     return list(map(str.lower, set(values)))
 
 
-def _extract_mtd_args(ft_mtd_callable: t.Callable) -> t.Tuple[str, ...]:
+def _extract_mtd_args(ft_mtd_callable: t.Callable,
+                      ) -> t.Tuple[t.Tuple[str, ...], t.Tuple[str, ...]]:
     """Extracts arguments from given method.
 
     Args:
@@ -458,14 +468,29 @@ def _extract_mtd_args(ft_mtd_callable: t.Callable) -> t.Tuple[str, ...]:
             extraction method.
 
     Returns:
-        list: containing the name of arguments of ``ft_mtd_callable``.
+        tuple of tuples:
+            The first tuple contains the name of arguments of the given
+            method. The second tuple contains the name of the mandatory
+            arguments (i.e., arguments that does not have a default value
+            defined.)
 
     Raises:
         TypeError: if ``ft_mtd_callable`` is not a valid callable.
     """
-    ft_mtd_signature = inspect.signature(ft_mtd_callable)
-    mtd_callable_args = tuple(ft_mtd_signature.parameters.keys())
-    return mtd_callable_args
+    ft_mtd_signature = inspect.signature(ft_mtd_callable).parameters
+    mtd_callable_args = tuple(ft_mtd_signature.keys())
+
+    # pylint: disable=W0212
+    # 'Access to a protected member _empty of a client class'
+    _empty = inspect._empty  # type: ignore
+
+    mandatory_args = tuple(
+        cur_param
+        for cur_param in ft_mtd_signature.keys()
+        if ft_mtd_signature[cur_param].default is _empty
+    )
+
+    return mtd_callable_args, mandatory_args
 
 
 def summarize(
@@ -569,6 +594,7 @@ def get_feat_value(
 
 def build_mtd_kwargs(mtd_name: str,
                      mtd_args: t.Iterable[str],
+                     mtd_mandatory: t.Iterable[str],
                      inner_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
                      user_custom_args: t.Optional[t.Dict[str, t.Any]] = None,
                      precomp_args: t.Optional[t.Dict[str, t.Any]] = None,
@@ -580,6 +606,10 @@ def build_mtd_kwargs(mtd_name: str,
 
         mtd_args (:obj:`iterable` of :obj:`str`): iterable containing the name
             of all arguments of the callable.
+
+        mtd_mandatory (:obj:`iterable` of :obj:`bool`): iterable containing
+            the name of all method's mandatory arguments (i.e., arguments
+            that does not have a default value defined.)
 
         inner_custom_args (:obj:`dict`, optional): custom arguments for inner
             usage, for example, to pass ``X``, ``y`` or other user-independent
@@ -615,15 +645,18 @@ def build_mtd_kwargs(mtd_name: str,
         precomp_args = {}
 
     combined_args = {
-        **user_custom_args,
         **inner_custom_args,
         **precomp_args,
+        **user_custom_args,
     }
 
     callable_args = {
         custom_arg: combined_args[custom_arg]
         for custom_arg in combined_args if custom_arg in mtd_args
     }
+
+    if not set(mtd_mandatory).issubset(callable_args):
+        raise RuntimeError("Method mandatory arguments not satisfied.")
 
     if not suppress_warnings:
         unknown_arg_set = (unknown_arg
@@ -925,12 +958,18 @@ def process_summary(
                               summary_func),
                           RuntimeWarning)
         else:
-            summary_mtd_args = _extract_mtd_args(summary_mtd_callable)
+            try:
+                summary_mtd_args, mandatory = _extract_mtd_args(
+                    summary_mtd_callable)
+
+            except ValueError:
+                summary_mtd_args, mandatory = tuple(), tuple()
 
             summary_mtd_pack = (
                 summary_func,
                 summary_mtd_callable,
                 summary_mtd_args,
+                mandatory,
             )
 
             summary_methods.append(summary_mtd_pack)
@@ -1029,10 +1068,11 @@ def process_features(
         ft_mtd_name, ft_mtd_callable = ft_mtd_tuple
 
         if ft_mtd_name in processed_ft:
-            mtd_callable_args = _extract_mtd_args(ft_mtd_callable)
+            mtd_callable_args, mandatory = _extract_mtd_args(ft_mtd_callable)
 
             extended_item = (*ft_mtd_tuple,
-                             mtd_callable_args)  # type: TypeExtMtdTuple
+                             mtd_callable_args,
+                             mandatory)  # type: TypeExtMtdTuple
 
             ft_mtd_processed.append(extended_item)
             available_feat_names.append(ft_mtd_name)
@@ -1070,6 +1110,7 @@ def process_precomp_groups(
         groups: t.Optional[t.Tuple[str, ...]] = None,
         wildcard: str = "all",
         suppress_warnings: bool = False,
+        verbose: int = 0,
         custom_class_: t.Any = None,
         **kwargs) -> t.Dict[str, t.Any]:
     """Process ``precomp_groups`` argument while fitting into a MFE model.
@@ -1098,6 +1139,11 @@ def process_precomp_groups(
             not None, the given class will be used as reference to extract
             the preprocomputing methods.
 
+        verbose (:obj:`int`, optional): defines the level of verbosity in
+            this function. If `1`, print a progress bar related to the
+            precomputation process. If `2` or higher, then log every step of
+            the precomputation process.
+
         **kwargs: used to pass extra custom arguments to precomputation metho-
             ds.
 
@@ -1105,6 +1151,9 @@ def process_precomp_groups(
         dict: precomputed values given by ``kwargs`` using convenient methods
             based in valid selected metafeature groups.
     """
+    # pylint: disable=R0912
+    # 'Too many branches (15/12) (too-many-branches)'
+
     if groups is None:
         groups = tuple()
 
@@ -1125,9 +1174,9 @@ def process_precomp_groups(
 
             for unknown_precomp in unknown_groups:
                 warnings.warn(
-                    "Unknown precomp_groups '{0}'. You can check available "
-                    "metafeature groups using 'valid_groups()' method."
-                    .format(unknown_precomp), UserWarning)
+                    " {} Unknown precomp_groups '{}'. You can check available "
+                    "metafeature groups using 'valid_groups()' method.".format(
+                        VERBOSE_WARNING_SYMBOL, unknown_precomp), UserWarning)
 
         processed_precomp_groups = tuple(
             set(processed_precomp_groups).intersection(groups))
@@ -1145,8 +1194,14 @@ def process_precomp_groups(
 
     precomp_items = {}  # type: t.Dict[str, t.Any]
 
-    for precomp_mtd_tuple in precomp_mtds_filtered:
+    error_count = 0
+    _prev_precomp_len = 0
+
+    for ind, precomp_mtd_tuple in enumerate(precomp_mtds_filtered, 1):
         precomp_mtd_name, precomp_mtd_callable = precomp_mtd_tuple
+
+        if verbose >= 2:
+            print("\nStarted precomputing '{}'.".format(precomp_mtd_name))
 
         try:
             new_precomp_vals = precomp_mtd_callable(**kwargs)  # type: ignore
@@ -1155,10 +1210,14 @@ def process_precomp_groups(
             new_precomp_vals = {}
 
             if not suppress_warnings:
-                warnings.warn("Something went wrong while "
-                              "precomputing '{0}'. Will ignore "
+                warnings.warn(" {} Something went wrong while "
+                              "precomputing '{}'. Will ignore "
                               "this method. Error message:\n"
-                              "{1}.".format(precomp_mtd_name, repr(type_err)))
+                              "{}.".format(VERBOSE_WARNING_SYMBOL,
+                                           precomp_mtd_name,
+                                           repr(type_err)))
+
+                error_count += 1
 
         if new_precomp_vals:
             precomp_items = {
@@ -1166,18 +1225,44 @@ def process_precomp_groups(
                 **new_precomp_vals,
             }
 
+            new_item_count = len(precomp_items) - _prev_precomp_len
+            _prev_precomp_len = len(precomp_items)
+
+            if verbose >= 2 and new_item_count > 0:
+                print(" {} Got {} new precomputed values.".format(
+                    VERBOSE_BLOCK_END_SYMBOL, new_item_count))
+
             # Update kwargs to avoid recalculations iteratively
             kwargs = {
                 **kwargs,
                 **new_precomp_vals,
             }
 
+        if verbose > 0:
+            print_verbose_progress(
+                cur_progress=100 * ind / len(precomp_mtds_filtered),
+                cur_mtf_name=precomp_mtd_name,
+                item_type="precomputation",
+                verbose=verbose)
+
+    if verbose == 1:
+        _t_num_cols, _ = shutil.get_terminal_size()
+        print("\r{:<{fill}}".format(
+            "Process of precomputation finished.", fill=_t_num_cols))
+
+    if verbose >= 2 and error_count > 0:
+        print("\nNote: can't precompute a total of {} metafeatures, "
+              "out of {} ({:.2f}%).".format(
+                  error_count,
+                  len(precomp_mtds_filtered),
+                  100 * error_count / len(precomp_mtds_filtered)))
+
     return precomp_items
 
 
 def check_data(X: t.Union[np.ndarray, list],
                y: t.Union[np.ndarray, list]
-               ) -> t.Tuple[np.ndarray, np.ndarray]:
+               ) -> t.Tuple[np.ndarray, t.Optional[np.ndarray]]:
     """Checks ``X`` and ``y`` data type and shape and transform it if necessary.
 
     Args:
@@ -1197,7 +1282,7 @@ def check_data(X: t.Union[np.ndarray, list],
     if not isinstance(X, (np.ndarray, list)):
         raise TypeError('"X" is neither "list" nor "np.array".')
 
-    if not isinstance(y, (np.ndarray, list)):
+    if y is not None and not isinstance(y, (np.ndarray, list)):
         raise TypeError('"y" is neither "list" nor "np.array".')
 
     # We force numpy array to assume ``dtype=np.object`` because sometimes
@@ -1216,22 +1301,26 @@ def check_data(X: t.Union[np.ndarray, list],
     if not isinstance(X, np.ndarray):
         X = np.array(X, dtype=np.object)
 
-    if not isinstance(y, np.ndarray):
-        y = np.array(y, dtype=np.object)
+    if y is not None:
+        if not isinstance(y, np.ndarray):
+            y = np.array(y, dtype=np.object)
 
-    y = y.flatten()
+        y = y.flatten()
 
-    if len(X.shape) == 1 and X.shape[0]:
-        X = X.reshape(*X.shape, -1)
+    if X.ndim == 1:
+        X = X.reshape(-1, 1)
 
-    if X.shape[0] == 0 or y.shape[0] == 0:
+    if X.size == 0 or (y is not None and y.size == 0):
         raise ValueError('Neither "X" nor "y" can be empty.')
 
-    if X.shape[0] != y.shape[0]:
-        raise ValueError('"X" number of rows and "y" '
-                         "length shapes do not match.")
+    if y is not None:
+        if X.shape[0] != y.shape[0]:
+            raise ValueError('"X" number of rows and "y" '
+                             "length shapes do not match.")
 
-    return np.copy(X), np.copy(y)
+        return np.copy(X), np.copy(y)
+
+    return np.copy(X), None
 
 
 def isnumeric(
@@ -1660,3 +1749,29 @@ def post_processing(
 
     if remove_groups:
         kwargs.pop("groups")
+
+
+def print_verbose_progress(
+        cur_progress: float,
+        cur_mtf_name: str,
+        item_type: str,
+        verbose: int = 0) -> None:
+    """Print messages about extraction progress based on ``verbose``."""
+    if verbose >= 2:
+        print("Done with '{}' {} (progress of {:.2f}%)."
+              .format(cur_mtf_name, item_type, cur_progress))
+        return
+
+    _t_num_cols, _ = shutil.get_terminal_size()
+    _t_num_cols -= 9
+
+    if _t_num_cols <= 0:
+        return
+
+    _total_prog_symb = int(cur_progress * _t_num_cols / 100)
+
+    print("".join([
+        "\r[",
+        _total_prog_symb * "#",
+        (_t_num_cols - _total_prog_symb) * ".",
+        "]{:.2f}%".format(cur_progress)]), end="")

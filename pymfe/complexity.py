@@ -59,7 +59,8 @@ class MFEComplexity:
     """
 
     @classmethod
-    def precompute_fx(cls, y: np.ndarray, **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_fx(cls, y: t.Optional[np.ndarray] = None,
+                      **kwargs) -> t.Dict[str, t.Any]:
         """Precompute some useful things to support feature-based measures.
 
         Parameters

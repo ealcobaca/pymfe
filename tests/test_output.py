@@ -1,6 +1,7 @@
 """Test module for MFE class output details."""
 import pytest
 
+import pymfe._internal as _internal
 from pymfe.mfe import MFE
 from tests.utils import load_xy
 
@@ -67,8 +68,11 @@ class TestOutput:
         (2, True),
     ])
     def test_verbosity_1(self, verbosity, msg_expected, capsys):
-        MFE._print_verbose_progress(
-            cur_progress=0, cur_mtf_name="foo", verbose=verbosity)
+        _internal.print_verbose_progress(
+            cur_progress=0,
+            cur_mtf_name="foo",
+            item_type="test",
+            verbose=verbosity)
 
         captured = capsys.readouterr().out
 
