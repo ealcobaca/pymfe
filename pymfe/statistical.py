@@ -215,8 +215,8 @@ class MFEStatistical:
         At most min(num_classes, num_attr) canonical correlations are
         kept.
         """
-        y_bin = sklearn.preprocessing.OneHotEncoder().fit_transform(
-            y.reshape(-1, 1)).todense()
+        y_bin = sklearn.preprocessing.OneHotEncoder(
+            sparse=False).fit_transform(y.reshape(-1, 1))
 
         num_classes, num_attr = y_bin.shape[1], N.shape[1]
         # Note: 'n_components' is a theoretical upper bound, so it is not
