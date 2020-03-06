@@ -146,6 +146,11 @@ VALID_TIMEOPT = (
     "total_summ",
 )
 
+VALID_TRANSFORM_CAT = (
+    "gray",
+    "one-hot",
+)
+
 _RESCALE_SCALERS = {
     "standard": sklearn.preprocessing.StandardScaler,
     "min-max": sklearn.preprocessing.MinMaxScaler,
@@ -1397,7 +1402,7 @@ def timeit(func: t.Callable, *args) -> t.Tuple[t.Any, float]:
     return ret_val, time_total
 
 
-def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
+def transform_cat_gray(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     """Transform categorical data using a model matrix.
 
     The formula used for this transformation is just the union (+) of all cat-
@@ -1425,6 +1430,23 @@ def transform_cat(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     formula = "~ 0 + {}".format(" + ".join(dummy_attr_names))
 
     return np.asarray(patsy.dmatrix(formula, named_data))
+
+
+def transform_cat_onehot(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
+    """Transform categorical data using one-hot encoding."""
+    if data_categoric.size == 0:
+        return None
+
+    _, num_col = data_categoric.shape
+
+    ohe = sklearn.preprocessing.OneHotEncoder(sparse=False)
+
+    one_cat_attrs = np.hstack([
+        ohe.fit_transform(data_categoric[:, attr_ind, np.newaxis])
+        for attr_ind in np.arange(num_col)
+    ])
+
+    return one_cat_attrs
 
 
 def _equal_freq_discretization(data: np.ndarray,

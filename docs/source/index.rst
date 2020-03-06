@@ -1,9 +1,9 @@
-.. pymfe documentation master file, created by
+.. PyMFE documentation master file, created by
    sphinx-quickstart on Mon Apr 22 10:19:46 2019.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pymfe's documentation!
+Welcome to PyMFE's documentation!
 =================================
 
 .. toctree::
@@ -17,7 +17,7 @@ Welcome to pymfe's documentation!
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Documentation
+   :caption: API Documentation
 
    auto_pages/meta_features_description
    api
@@ -25,7 +25,7 @@ Welcome to pymfe's documentation!
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Tutorial - Examples
+   :caption: Tutorial and Examples
 
    auto_examples/index
 
@@ -50,25 +50,22 @@ Information to install, test, and contribute to the package.
 
 `API Documentation <api.html>`_
 -------------------------------
-The exact API of all functions and classes, as given in the
-doctring. The API documents expected types and allowed features for
-all functions, and all parameters available for the meta-feature extraction.
+In this section, we document expected types and allowed features for all
+functions, and all parameters available for the meta-feature extraction.
 
 
 `Examples <auto_examples/index.html>`_
 --------------------------------------
-A set of examples illustrating the use of the different meta-features.
+A set of examples illustrating the use of PyMFE package. You will learn in this
+section how PyMFE works, patter, tips, and more. 
 
 
-`What's new <new.html>`_
+`What's new ? <new.html>`_
 ------------------------------
-Log of the pymfe history.
+Log of the PyMFE history.
 
 
-`About pymfe <about.html>`_
+`About PyMFE <about.html>`_
 --------------------------------------
-Just to know about history of pymfe.
-
-
-See the `README <https://github.com/ealcobaca/pymfe/blob/master/README.md>`_
-for more information.
+If you would like to know more about this project, how to cite it, and the
+contributors, see this section.
