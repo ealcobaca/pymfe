@@ -14,13 +14,17 @@ class TestSystem:
     metafeatures from other groups.
     """
 
-    @pytest.mark.parametrize("dt_id, precompute", [
-        (0, False),
-        (0, True),
-        (2, False),
-        (2, True),
+    @pytest.mark.parametrize("dt_id, precompute, supervised", [
+        (0, False, True),
+        (0, True, True),
+        (2, False, True),
+        (2, True, True),
+        (0, False, False),
+        (0, True, False),
+        (2, False, False),
+        (2, True, False),
     ])
-    def test_system_testing(self, dt_id, precompute):
+    def test_system_testing(self, dt_id, precompute, supervised):
         precomp_group = "all" if precompute else None
         X, y = load_xy(dt_id)
 
@@ -37,7 +41,7 @@ class TestSystem:
 
                 mfe = MFE(
                     groups=cur_group, summary="mean", random_state=1234).fit(
-                        X.values, y.values, precomp_groups=cur_precomp_group)
+                        X.values, y.values if supervised else None, precomp_groups=cur_precomp_group)
 
                 cur_names, cur_vals = mfe.extract()
 
@@ -54,7 +58,7 @@ class TestSystem:
         def extract_all_mtf():
             mfe = MFE(
                 groups=mtf_groups, summary="mean", random_state=1234).fit(
-                    X.values, y.values, precomp_groups=precomp_group)
+                    X.values, y.values if supervised else None, precomp_groups=precomp_group)
 
             all_mtf_vals = mfe.extract()[1]
 

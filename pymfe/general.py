@@ -97,7 +97,7 @@ class MFEGeneral:
 
         Returns
         -------
-        :obj:`float`
+        float
             The ration between the number of attributes and instances.
 
         References
@@ -131,14 +131,14 @@ class MFEGeneral:
 
         Returns
         -------
-        :obj:`int` | :obj:`float`
+        int | float
             Proportion of categorical and numerical attributes.
 
         References
         ----------
         .. [1] Matthias Feurer, Jost Tobias Springenberg, and Frank Hutter.
            Using meta-learning toinitialize bayesian optimization of
-           hyperparameters. InInternational Conference on Meta-learning and
+           hyperparameters. In International Conference on Meta-learning and
            Algorithm Selection (MLAS), pages 3 – 10, 2014.
         """
         num_cat = len(cat_cols)
@@ -197,7 +197,7 @@ class MFEGeneral:
 
         Returns
         -------
-        :obj:`float`
+        float
             Ratio of number of instances and number of predictive attributes.
 
         References
@@ -220,7 +220,7 @@ class MFEGeneral:
 
         Returns
         -------
-        :obj:`int`
+        int
             Total number of attributes in the data without transformations.
 
         References
@@ -245,7 +245,7 @@ class MFEGeneral:
 
         Returns
         -------
-        :obj:`int`
+        int
             Number of binary attributes in ``X``.
 
         References
@@ -271,7 +271,7 @@ class MFEGeneral:
 
         Returns
         -------
-        :obj:`int`
+        int
             Number of categorical attributes in ``X``.
 
         References
@@ -286,12 +286,9 @@ class MFEGeneral:
     @classmethod
     def ft_nr_class(
             cls,
-            y: t.Optional[np.ndarray] = None,
-            classes: t.Optional[np.ndarray] = None) -> t.Union[float, int]:
+            y: np.ndarray,
+            classes: t.Optional[np.ndarray] = None) -> int:
         """Compute the number of distinct classes.
-
-        ``y`` and ``classes`` can not be :obj:`NoneType` simultaneously,
-        or else :obj:`np.nan` is returned.
 
         Parameters
         ----------
@@ -299,14 +296,13 @@ class MFEGeneral:
             Target attribute from fitted data.
 
         classes : :obj:`np.ndarray`, optional
-            Vector with all distinct classes. This argument purpose is
+            Array with all distinct classes. This argument purpose is
             mainly for benefit from precomputations.
 
         Returns
         -------
-        :obj:`int` | :obj:`float`
-            Number of distinct classes in a target vector if either ``y`` or
-            ``classes`` is given. Otherwise, returns :obj:`np.nan`.
+        int
+            Number of distinct classes in ``y``.
 
         References
         ----------
@@ -316,9 +312,6 @@ class MFEGeneral:
         """
         if classes is not None:
             return classes.size
-
-        if y is None:
-            return np.nan
 
         return np.unique(y).size
 
@@ -333,7 +326,7 @@ class MFEGeneral:
 
         Returns
         -------
-        :obj:`int`
+        int
             Number of instances in ``X``.
 
         References
@@ -359,7 +352,7 @@ class MFEGeneral:
 
         Returns
         -------
-        :obj:`int`
+        int
             Number of numerical attributes in ``X``.
 
         References
@@ -392,7 +385,7 @@ class MFEGeneral:
 
         Returns
         -------
-        :obj:`int` | :obj:`float`
+        int | float
             If ``X`` has at least one categorical feature, then return the
             ratio of numerical and categorical features. Return :obj:`np.nan`
             otherwise.
@@ -401,7 +394,7 @@ class MFEGeneral:
         ----------
         .. [1] Matthias Feurer, Jost Tobias Springenberg, and Frank Hutter.
            Using meta-learning toinitialize bayesian optimization of
-           hyperparameters. InInternational Conference on Meta-learning and
+           hyperparameters. In International Conference on Meta-learning and
            Algorithm Selection (MLAS), pages 3 – 10, 2014.
         """
         if not cat_cols:

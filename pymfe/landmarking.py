@@ -104,8 +104,8 @@ class MFELandmarking:
     def precompute_landmarking_kfolds(
             cls,
             N: np.ndarray,
-            y: np.ndarray,
-            num_cv_folds: int,
+            y: t.Optional[np.ndarray] = None,
+            num_cv_folds: int = 10,
             shuffle_cv_folds: t.Optional[bool] = False,
             random_state: t.Optional[int] = None,
             lm_sample_frac: float = 1.0,
@@ -117,10 +117,10 @@ class MFELandmarking:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`
+        y : :obj:`np.ndarray`, optional
             Fitted target attribute.
 
-        num_cv_folds : int
+        num_cv_folds : int, optional
             Number of num_cv_folds to k-fold cross validation.
 
         shuffle_cv_folds : bool, optional
@@ -154,32 +154,34 @@ class MFELandmarking:
         """
         precomp_vals = {}
 
-        if "skf" not in kwargs:
-            precomp_vals["skf"] = sklearn.model_selection.StratifiedKFold(
-                n_splits=num_cv_folds,
-                shuffle=shuffle_cv_folds,
-                random_state=random_state if shuffle_cv_folds else None)
+        if N is not None and y is not None:
+            if "skf" not in kwargs:
+                precomp_vals["skf"] = sklearn.model_selection.StratifiedKFold(
+                    n_splits=num_cv_folds,
+                    shuffle=shuffle_cv_folds,
+                    random_state=random_state if shuffle_cv_folds else None)
 
-        if not shuffle_cv_folds or random_state is not None:
-            skf = precomp_vals.get("skf", kwargs.get("skf"))
-            sample_inds = kwargs.get("sample_inds")
+            if (not shuffle_cv_folds or random_state is not None and
+                    "cv_folds_imp_rank" not in kwargs):
+                skf = precomp_vals.get("skf", kwargs.get("skf"))
+                sample_inds = kwargs.get("sample_inds")
 
-            N, y = cls._sample_data(
-                N=N,
-                y=y,
-                lm_sample_frac=lm_sample_frac,
-                random_state=random_state,
-                sample_inds=sample_inds)
+                N, y = cls._sample_data(
+                    N=N,
+                    y=y,
+                    lm_sample_frac=lm_sample_frac,
+                    random_state=random_state,
+                    sample_inds=sample_inds)
 
-            attr_fold_imp = np.array([
-                cls._rank_feat_importance(
-                    N=N[inds_train, :],
-                    y=y[inds_train],
-                    random_state=random_state)
-                for inds_train, inds_test in skf.split(N, y)
-            ], dtype=int)
+                attr_fold_imp = np.array([
+                    cls._rank_feat_importance(
+                        N=N[inds_train, :],
+                        y=y[inds_train],
+                        random_state=random_state)
+                    for inds_train, inds_test in skf.split(N, y)
+                ], dtype=int)
 
-            precomp_vals["cv_folds_imp_rank"] = attr_fold_imp
+                precomp_vals["cv_folds_imp_rank"] = attr_fold_imp
 
         return precomp_vals
 

@@ -31,13 +31,6 @@ class TestErrorsWarnings:
         with pytest.raises(ValueError):
             MFE().fit(X=[], y=[])
 
-    def test_error_empty_data_4(self):
-        with pytest.raises(TypeError):
-            X, y = load_xy(0)
-            model = MFE().fit(X=X.values, y=y.values)
-            model.y = None
-            model.extract()
-
     def test_error_data_wrong_shape(self):
         with pytest.raises(ValueError):
             X, y = load_xy(0)
