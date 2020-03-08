@@ -11,6 +11,22 @@ from tests.utils import load_xy
 GNAME = "framework-testing"
 
 
+def summary_exception(values: np.ndarray,
+                      raise_exception: bool = False) -> int:
+    if raise_exception:
+        raise ValueError("Summary exception raised.")
+
+    return len(values)
+
+
+def summary_memory_error(values: np.ndarray,
+                         raise_mem_err: bool = False) -> int:
+    if raise_mem_err:
+        aux = np.zeros(int(1e+20), dtype=np.float64)
+
+    return len(values)
+
+
 class MFETestClass:
     """Some generic methods for testing the MFE Framework."""
 
@@ -115,6 +131,42 @@ class MFETestClass:
 
 class TestArchitecture:
     """Tests for the framework architecture."""
+
+    def test_summary_valid1(self):
+        vals = np.arange(5)
+
+        res = _internal.summarize(
+            features=vals, callable_sum=summary_exception)
+
+        assert res == len(vals)
+
+    def test_summary_valid2(self):
+        vals = np.arange(5)
+
+        res = _internal.summarize(
+            features=vals, callable_sum=summary_memory_error)
+
+        assert res == len(vals)
+
+    def test_summary_invalid1(self):
+        res = _internal.summarize(
+            features=np.arange(5),
+            callable_sum=summary_exception,
+            callable_args={
+                "raise_exception": True
+            })
+
+        assert np.isnan(res)
+
+    def test_summary_invalid2(self):
+        res = _internal.summarize(
+            features=np.arange(5),
+            callable_sum=summary_memory_error,
+            callable_args={
+                "raise_mem_err": True
+            })
+
+        assert np.isnan(res)
 
     def test_postprocessing_valid(self):
         """Test valid postprocessing and its automatic detection."""
