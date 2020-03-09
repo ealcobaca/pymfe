@@ -286,3 +286,9 @@ class TestErrorsWarnings:
             mfe = MFE()
             mfe.X = np.array([])
             mfe._set_data_numeric(True)
+
+    def test_invalid_cat_transf(self):
+        X, y = load_xy(0)
+        with pytest.raises(ValueError):
+            mfe = MFE()
+            mfe.fit(X.values, y.values, transform_cat="invalid")
