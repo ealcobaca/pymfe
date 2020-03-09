@@ -13,15 +13,16 @@ GNAME = "framework-testing"
 
 class MFETestClass:
     """Some generic methods for testing the MFE Framework."""
-
     @classmethod
     def postprocess_return_none(cls, **kwargs) -> None:
         """Postprocess: return None."""
         return None
 
     @classmethod
-    def postprocess_return_new_feature(cls, number_of_lists: int = 3, **kwargs
-                                       ) -> t.Tuple[t.List, t.List, t.List]:
+    def postprocess_return_new_feature(
+            cls,
+            number_of_lists: int = 3,
+            **kwargs) -> t.Tuple[t.List, t.List, t.List]:
         """Postprocess: return Tuple of lists."""
         return tuple(["test_value"] for _ in range(number_of_lists))
 
@@ -88,13 +89,13 @@ class MFETestClass:
 
 class TestArchitecture:
     """Tests for the framework architecture."""
-
     def test_postprocessing_valid(self):
         """Test valid postprocessing and its automatic detection."""
         results = [], [], []
 
-        _internal.post_processing(
-            results=results, groups=tuple(), custom_class_=MFETestClass)
+        _internal.post_processing(results=results,
+                                  groups=tuple(),
+                                  custom_class_=MFETestClass)
 
         assert all(map(lambda l: len(l) > 0, results))
 
@@ -103,22 +104,20 @@ class TestArchitecture:
         results = [], [], []
 
         with pytest.warns(UserWarning):
-            _internal.post_processing(
-                results=results,
-                groups=tuple(),
-                custom_class_=MFETestClass,
-                raise_exception=True)
+            _internal.post_processing(results=results,
+                                      groups=tuple(),
+                                      custom_class_=MFETestClass,
+                                      raise_exception=True)
 
     def test_postprocessing_invalid_2(self):
         """Test incorrect return value in postprocessing methods."""
         results = [], [], []
 
         with pytest.warns(UserWarning):
-            _internal.post_processing(
-                results=results,
-                groups=tuple(),
-                custom_class_=MFETestClass,
-                number_of_lists=2)
+            _internal.post_processing(results=results,
+                                      groups=tuple(),
+                                      custom_class_=MFETestClass,
+                                      number_of_lists=2)
 
     def test_preprocessing_valid(self):
         """Test valid precomputation and its automatic detection."""
@@ -130,11 +129,10 @@ class TestArchitecture:
     def test_preprocessing_invalid(self):
         """Test exception handling of precomputation."""
         with pytest.warns(UserWarning):
-            _internal.process_precomp_groups(
-                precomp_groups=tuple(),
-                groups=tuple(),
-                custom_class_=MFETestClass,
-                raise_exception=True)
+            _internal.process_precomp_groups(precomp_groups=tuple(),
+                                             groups=tuple(),
+                                             custom_class_=MFETestClass,
+                                             raise_exception=True)
 
     def test_feature_detection(self):
         """Test automatic dectection of metafeature extraction method."""
@@ -157,11 +155,10 @@ class TestArchitecture:
         groups = [d[0] for d in desc]
         assert len(set(groups)) == len(_internal.VALID_GROUPS)
 
-        desc, _ = MFE.metafeature_description(
-            sort_by_group=True,
-            sort_by_mtf=True,
-            print_table=False,
-            include_references=True)
+        desc, _ = MFE.metafeature_description(sort_by_group=True,
+                                              sort_by_mtf=True,
+                                              print_table=False,
+                                              include_references=True)
         mtf = [d[1] for d in desc]
         assert mtf[1][0] < mtf[-1][0]
 
@@ -211,8 +208,10 @@ class TestArchitecture:
         """Check the length of valid metafeatures per group."""
         X, y = load_xy(0)
 
-        mfe = MFE(
-            groups="all", summary=None, lm_sample_frac=0.5, random_state=1234)
+        mfe = MFE(groups="all",
+                  summary=None,
+                  lm_sample_frac=0.5,
+                  random_state=1234)
 
         mfe.fit(X.values, y.values)
 
@@ -246,3 +245,24 @@ class TestArchitecture:
         exp_value = X.values.shape[1]
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
+
+    @pytest.mark.parametrize("data_id", (0, 2))
+    def precomputation_custom_args(self, data_id):
+        X, y = load_xy(data_id)
+
+        model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
+            X.data, y.data)
+
+        extractor = pymfe.mfe.MFE(groups="model-based", random_state=1234)
+        extractor.fit(X=[1.0],
+                      transform_num=False,
+                      **{"dt_model": model},
+                      verbose=2)
+        mtf_name, mtf_vals = extractor.extract()
+
+        extractor = pymfe.mfe.MFE(groups="model-based", random_state=1234)
+        extractor.fit(X=X.data, y=y.target, transform_num=False)
+        mtf_name2, mtf_vals2 = extractor.extract()
+
+        assert (np.all(mtf_name == mtf_name2)
+                and np.allclose(mtf_vals, mtf_vals2))
