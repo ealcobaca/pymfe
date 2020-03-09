@@ -113,6 +113,13 @@ class MFE:
                 12. ``skewness``: Describes the shape of the measure values
                     distribution in terms of symmetry.
 
+            You can concatenate `nan` with the desired summary function name
+            to use an alternative version of the same summary which ignores
+            `nan` values. For instance, `nanmean` is the `mean` summary
+            function which ignores all `nan` values, while 'naniq_range`
+            is the interquartile range calculated only with valid (non-`nan`)
+            values.
+
             If more than one summary function is selected, then all multivalued
             extracted metafeatures are summarized with each summary function.
 
@@ -739,7 +746,7 @@ class MFE:
 
     def _set_data_numeric(
             self,
-            transform_cat: bool,
+            transform_cat: str,
             rescale: t.Optional[str] = None,
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None) -> np.ndarray:
         """Returns numeric data from the fitted dataset.
@@ -747,8 +754,10 @@ class MFE:
         Parameters
         ----------
         transform_cat: :obj:`bool`
-            If True, then all categoric-type data will be binarized with a
-            model matrix strategy.
+            If `gray`, then all categoric-type data will be binarized with a
+            model matrix strategy. If `one-hot`, then all categoric-type
+            data will be transformed using the one-hot encoding strategy.
+            If None, then categorical attributes are not transformed.
 
         rescale : :obj:`str`, optional
             Check ``fit`` documentation for more information about this
@@ -773,6 +782,10 @@ class MFE:
             :obj:`NoneType`. This can be avoided passing valid data to fit and
             first calling ``_fill_col_ind_by_type`` instance method before
             this method.
+
+        ValueError
+            If `transform_cat` is neither None nor a value among `one-hot` and
+            `gray`.
         """
         if self.X is None:
             raise TypeError("It is necessary to fit valid data into the "
@@ -784,11 +797,22 @@ class MFE:
                             "attributes. Please be sure to call method "
                             '"_fill_col_ind_by_type" before this method.')
 
+        if (transform_cat is not None and
+                transform_cat not in _internal.VALID_TRANSFORM_CAT):
+            raise ValueError("Invalid 'transform_cat' value ('{}'). Must be "
+                             "a value in {}.".format(
+                                 transform_cat, _internal.VALID_TRANSFORM_CAT))
+
         data_num = self.X[:, self._attr_indexes_num]
 
         if transform_cat:
-            categorical_dummies = _internal.transform_cat(
-                self.X[:, self._attr_indexes_cat])
+            if transform_cat == "gray":
+                categorical_dummies = _internal.transform_cat_gray(
+                    self.X[:, self._attr_indexes_cat])
+
+            else:
+                categorical_dummies = _internal.transform_cat_onehot(
+                    self.X[:, self._attr_indexes_cat])
 
             if categorical_dummies is not None:
                 data_num = np.concatenate((data_num, categorical_dummies),
@@ -804,7 +828,7 @@ class MFE:
             X: t.Sequence,
             y: t.Optional[t.Sequence] = None,
             transform_num: bool = True,
-            transform_cat: bool = True,
+            transform_cat: str = "gray",
             rescale: t.Optional[str] = None,
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None,
             cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
@@ -833,18 +857,25 @@ class MFE:
             discretized ones. If False, then numeric attributes are ignored for
             categorical-only meta-features.
 
-        transform_cat : :obj:`bool`, optional
-            If True, categorical attributes are binarized using a model matrix
-            to use when alongside numerical data while extracting numeric-only
-            metafeatures. Note that categoric-only features still uses the
-            original categoric values, not the binarized ones. If False, then
-            categorical attributes are ignored for numeric-only metafeatures.
+        transform_cat : :obj:`str`, optional
+            Transform categorical data to use alongside numerical data while
+            extracting numeric-only metafeatures. Note that categoric-only
+            features still uses the original categoric values, and not the
+            binarized ones.
+
+            If `one-hot`, categorical attributes are binarized using one-hot
+            encoding.
+
+            If `gray`, categorical attributes are binarized using a model
+            matrix.
 
             The formula used for this transformation is just the union (+) of
             all categoric attributes using formula language from ``patsy``
             package API, removing the intercept terms:
             ``~ 0 + A_1 + ... + A_n``, where ``n`` is the number of attributes
             and A_i is the ith categoric attribute, 1 <= i <= n.
+
+            If None, then categorical attributes are not transformed.
 
         rescale : :obj:`str`, optional
             If :obj:`NoneType`, the model keeps all numeric data with its

@@ -35,7 +35,7 @@ class TestDataScaling:
                               exp_max):
         X, y = load_xy(dt_id)
         model = MFE().fit(
-            X=X.values, y=y.values, rescale=scaler, transform_cat=False)
+            X=X.values, y=y.values, rescale=scaler, transform_cat=None)
 
         numeric_data = model._custom_args_ft["N"]
 

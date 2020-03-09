@@ -128,7 +128,7 @@ class MFEStatistical:
             can_cors = cls._calc_can_cors(N=N, y=y)
 
             precomp_vals["can_cors"] = can_cors
-            precomp_vals["can_cors_eigvals"] = cls._can_cor_to_eigval(can_cors)
+            precomp_vals["can_cor_eigvals"] = cls._can_cor_to_eigval(can_cors)
 
         return precomp_vals
 
@@ -215,8 +215,8 @@ class MFEStatistical:
         At most min(num_classes, num_attr) canonical correlations are
         kept.
         """
-        y_bin = sklearn.preprocessing.OneHotEncoder().fit_transform(
-            y.reshape(-1, 1)).todense()
+        y_bin = sklearn.preprocessing.OneHotEncoder(
+            sparse=False).fit_transform(y.reshape(-1, 1))
 
         num_classes, num_attr = y_bin.shape[1], N.shape[1]
         # Note: 'n_components' is a theoretical upper bound, so it is not
@@ -1492,3 +1492,236 @@ class MFEStatistical:
             return np.nan
 
         return np.prod(1 / (1 + can_cor_eigvals))
+
+    @classmethod
+    def ft_p_trace(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            can_cors: t.Optional[np.ndarray] = None,
+    ) -> float:
+        """Compute the Pillai's trace.
+
+        The Pillai's trace is the sum of the squared canonical
+        correlations of ``N`` and the one-hot encoded version of ``y``.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : :obj:`np.ndarray`
+            Target attribute.
+
+        can_cors : :obj:`np.ndarray`, optional
+            Canonical correlations between ``N`` and the one-hot encoded
+            version of ``y``. Argument used to take advantage of
+            precomputations.
+
+        Returns
+        -------
+        float
+            Pillai's trace value.
+
+        References
+        ----------
+        .. [1] Pillai K.C.S (1955). Some New test criteria in multivariate
+           analysis. Ann Math Stat: 26(1):117–21. Seber, G.A.F. (1984).
+           Multivariate Observations. New York: John Wiley and Sons.
+        """
+        if can_cors is None:
+            can_cors = cls._calc_can_cors(N=N, y=y)
+
+        if can_cors.size == 0:  # type: ignore
+            return np.nan
+
+        return np.sum(np.square(can_cors))
+
+    @classmethod
+    def ft_lh_trace(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            can_cor_eigvals: t.Optional[np.ndarray] = None,
+            can_cors: t.Optional[np.ndarray] = None,
+    ) -> float:
+        """Compute the Lawley-Hotelling trace.
+
+        The Lawley-Hotelling trace LH is given by:
+
+            LH = sum_{i} can_cor_i**2 / (1 - can_cor_i**2)
+
+        Where `can_cor_i` is the ith canonical correlation of
+        ``N`` and the one-hot encoded version of ``y``.
+
+        Equivalently, LH can be calculated from the eigenvalues
+        related to each canonical correlation due to the relationship:
+
+            can_cor_eigval_i = can_cor_i**2 / (1 - can_cor_i**2)
+
+        Therefore, LH is given simply by:
+
+            LH = sum_{i} can_cor_eigval_i
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : :obj:`np.ndarray`
+            Target attribute.
+
+        can_cor_eigvals : :obj:`np.ndarray`, optional
+            Eigenvalues associated with the canonical correlations of
+            ``N`` and one-hot encoded ``y``. This argument is used to
+            exploit precomputations. The relationship between the ith
+            canonical correlation ``can_cor_i`` and its eigenvalue is:
+
+                can_cor_i = sqrt(can_cor_eigval_i / (1 + can_cor_eigval_i))
+
+            Or, equivalently:
+
+                can_cor_eigval_i = can_cor_i**2 / (1 - can_cor_i**2)
+
+        can_cors : :obj:`np.ndarray`, optional
+            Canonical correlations between ``N`` and the one-hot encoded
+            version of ``y``. Argument used to take advantage of
+            precomputations. Used only if ``can_cor_eigvals`` is None.
+
+        Returns
+        -------
+        float
+            Lawley-Hotelling trace value.
+
+        References
+        ----------
+        .. [1] Lawley D. A Generalization of Fisher’s z Test. Biometrika.
+           1938;30(1):180-187.
+        .. [2] Hotelling H. A generalized T test and measure of multivariate
+           dispersion. In: Neyman J, ed. Proceedings of the Second Berkeley
+           Symposium on Mathematical Statistics and Probability. Berkeley:
+           University of California Press; 1951:23-41.
+        """
+        if can_cor_eigvals is None:
+            if can_cors is None:
+                can_cors = cls._calc_can_cors(N=N, y=y)
+
+            can_cor_eigvals = cls._can_cor_to_eigval(can_cors)
+
+        if can_cor_eigvals.size == 0:  # type: ignore
+            return np.nan
+
+        return np.sum(can_cor_eigvals)
+
+    @classmethod
+    def ft_roy_root(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            criterion: str = "eigval",
+            can_cors: t.Optional[np.ndarray] = None,
+            can_cor_eigvals: t.Optional[np.ndarray] = None,
+    ) -> float:
+        """Compute the Roy's largest root.
+
+        The Roy's largest root RLR can be computed using two distinct
+        approaches (see references for further explanation.)
+
+        1. Based on Roy's (ii) original hypothesis: formulated using the
+        largest eigenvalue associated with the canonical correlations
+        between ``N`` and the one-hot encoded version of ``y``. That
+        is, the Roy's Largest Root RLR_a can be defined as:
+
+            RLR_a = max_{I} can_cor_eig_val_i
+
+        It is in range [0, +inf).
+
+        2. Based on Roy's (iii) original hypothesis: formulated using
+        the largest squared canonical correlations of ``N``and the one-
+        hot encoded version of ``y``. Therefore, the Roy's Largest Root
+        RLR_b can be defined as:
+
+            RLR_b = max_{i} can_cor_i**2
+
+        It is in range [0, 1].
+
+        Note that both statistics have different meanings and, therefore,
+        will assume distinct values.
+
+        Which formulation is used can be controled using the ``criterion``
+        argument (see below for more information.)
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : :obj:`np.ndarray`
+            Target attribute.
+
+        criterion : str, optional
+            If `eigval`, calculate the Roy's largest root as the largest
+            eigenvalue associated with each canonical correlation.
+            This is the first formulation described above. If `cancor`,
+            calculate the Roy's largest root as the largest squared
+            canonical correlation. This is the second formulation above.
+
+        can_cors : :obj:`np.ndarray`, optional
+            Canonical correlations between ``N`` and the one-hot encoded
+            version of ``y``. Argument used to take advantage of
+            precomputations. Used only if ``criterion`` is `cancor` or,
+            if otherwise, ``can_cor_eigvals`` argument is None.
+
+        can_cor_eigvals : :obj:`np.ndarray`, optional
+            Eigenvalues associated with the canonical correlations of
+            ``N`` and one-hot encoded ``y``. This argument is used to
+            exploit precomputations. The relationship between the ith
+            canonical correlation ``can_cor_i`` and its eigenvalue is:
+
+                can_cor_i = sqrt(can_cor_eigval_i / (1 + can_cor_eigval_i))
+
+            Or, equivalently:
+
+                can_cor_eigval_i = can_cor_i**2 / (1 - can_cor_i**2)
+
+            This argument is used only if ``criterion`` argument is
+            `eigval`.
+
+        Returns
+        -------
+        float
+            Roy's largest root calculated based on criterion defined by the
+            ``criterion`` argument.
+
+        References
+        ----------
+        .. [1] Roy SN. On a Heuristic Method of Test Construction and its
+           use in Multivariate Analysis. Ann Math Stat. 1953;24(2):220-238.
+        .. [2] A note on Roy's largest root. Kuhfeld, W.F. Psychometrika (1986)
+           51: 479. https://doi.org/10.1007/BF02294069
+        """
+        VALID_CRITERIA = ("eigval", "cancor")
+
+        if criterion not in VALID_CRITERIA:
+            raise ValueError("Roy's largest root 'criterion' must be in {}."
+                             .format(VALID_CRITERIA))
+
+        if criterion == "eigval":
+            if can_cor_eigvals is None:
+                if can_cors is None:
+                    can_cors = cls._calc_can_cors(N=N, y=y)
+
+                can_cor_eigvals = cls._can_cor_to_eigval(can_cors)
+
+            values = can_cor_eigvals
+
+        else:
+            if can_cors is None:
+                can_cors = cls._calc_can_cors(N=N, y=y)
+
+            values = np.square(can_cors)
+
+        if values.size == 0:  # type: ignore
+            return np.nan
+
+        return np.max(values)
