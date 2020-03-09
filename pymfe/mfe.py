@@ -837,6 +837,7 @@ class MFE:
             wildcard: str = "all",
             suppress_warnings: bool = False,
             verbose: int = 0,
+            **kwargs,
             ) -> "MFE":
         """Fits dataset into an MFE model.
 
@@ -938,6 +939,17 @@ class MFE:
             higher, then log every step of the fitted data transformations and
             the precomputation steps.
 
+        **kwargs:
+            Extra custom arguments to the precomputation methods. Keep in
+            mind that those values may even replace internal custom parameters,
+            if the name matches. Use this resource carefully.
+
+            Hint: you can check which are the internal custom arguments by
+            verifying the values in '._custom_args_ft' attribute after the
+            model is fitted.
+
+            This argument format is {'parameter_name': parameter_value}.
+
         Returns
         -------
         self
@@ -1017,7 +1029,7 @@ class MFE:
             wildcard=wildcard,
             suppress_warnings=suppress_warnings,
             verbose=verbose,
-            **self._custom_args_ft)
+            **{**self._custom_args_ft, **kwargs})
 
         self.time_precomp = time.time() - _time_start
 
