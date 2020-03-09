@@ -50,12 +50,12 @@ class MFEModelBased:
     computed in module ``statistical`` can freely be used for any
     precomputation or feature extraction method of module ``landmarking``).
     """
-
     @classmethod
     def precompute_model_based_class(
             cls,
             N: np.ndarray,
             y: t.Optional[np.ndarray] = None,
+            dt_model: t.Optional[sklearn.tree.DecisionTreeClassifier] = None,
             random_state: t.Optional[int] = None,
             hypparam_model_dt: t.Optional[t.Dict[str, t.Any]] = None,
             **kwargs) -> t.Dict[str, t.Any]:
@@ -69,11 +69,16 @@ class MFEModelBased:
         y : :obj:`np.ndarray`, optional
             Target attribute.
 
+        dt_model : :obj:`np.ndarray`, optional
+            Decision tree fitted with the given data `N` and `y`. This
+            argument can be used to use a previously fitted custom model.
+
         random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If RandomState instance, random_state is the random
             number generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            RandomState instance used by np.random. Used only if argument
+            ``dt_model`` is None.
 
         kwargs:
             Additional arguments. May have previously precomputed before this
@@ -85,7 +90,9 @@ class MFEModelBased:
         :obj:`dict`
             With following precomputed items:
                 - ``dt_model`` (:obj:`sklearn.tree.DecisionTreeClassifier`):
-                  decision tree classifier.
+                  decision tree classifier either fitted with the given data
+                  ``N`` and ``y`` (if ``dt_model`` is None), or the given
+                  ``dt_model``.
                 - ``dt_info_table`` (:obj:`np.ndarray`): some tree properties
                   table.
                 - ``dt_node_depths`` (:obj:`np.ndarray`): the depth of each
@@ -94,21 +101,28 @@ class MFEModelBased:
         """
         precomp_vals = {}  # type: t.Dict[str, t.Any]
 
-        if (N is not None and N.size > 0 and y is not None and not {
-                "dt_model", "dt_info_table", "dt_node_depths", "leaf_nodes",
-                "non_leaf_nodes"
-        }.issubset(kwargs)):
+        if dt_model is not None:
+            precomp_vals["dt_model"] = dt_model
+
+        if ((dt_model is not None or
+             (N is not None and N.size > 0 and y is not None)) and not {
+                 "dt_model", "dt_info_table", "dt_node_depths", "leaf_nodes",
+                 "non_leaf_nodes"
+             }.issubset(kwargs)):
             if hypparam_model_dt is None:
                 hypparam_model_dt = {}
 
-            dt_model = cls._fit_dt_model(
-                N=N, y=y, random_state=random_state, **hypparam_model_dt)
+            if dt_model is None:
+                dt_model = cls._fit_dt_model(N=N,
+                                             y=y,
+                                             random_state=random_state,
+                                             **hypparam_model_dt)
 
             leaf_nodes = cls._get_leaf_node_array(dt_model)
             nonleaf_nodes = cls._get_nonleaf_node_array(dt_model)
 
-            dt_info_table = cls.extract_table(
-                dt_model=dt_model, leaf_nodes=leaf_nodes)
+            dt_info_table = cls.extract_table(dt_model=dt_model,
+                                              leaf_nodes=leaf_nodes)
             dt_node_depths = cls._calc_dt_node_depths(dt_model)
 
             precomp_vals["leaf_nodes"] = np.flatnonzero(leaf_nodes)
@@ -203,7 +217,6 @@ class MFEModelBased:
         :obj:`np.ndarray`
             The depth of each node.
         """
-
         def node_depth(node_ind: int, cur_depth: int) -> None:
             if not 0 <= node_ind < depths.size:
                 return
@@ -478,10 +491,9 @@ class MFEModelBased:
             if dt_node_depths is None:
                 dt_node_depths = cls._calc_dt_node_depths(dt_model)
 
-            tree_shape = cls.ft_tree_shape(
-                dt_model=dt_model,
-                leaf_nodes=leaf_nodes,
-                dt_node_depths=dt_node_depths)
+            tree_shape = cls.ft_tree_shape(dt_model=dt_model,
+                                           leaf_nodes=leaf_nodes,
+                                           dt_node_depths=dt_node_depths)
 
         num_leaves = cls.ft_leaves(dt_model)
 
