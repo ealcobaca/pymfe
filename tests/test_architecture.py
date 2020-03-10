@@ -3,6 +3,7 @@ import pytest
 import typing as t
 
 import numpy as np
+import sklearn.tree
 
 from pymfe import _internal
 from pymfe.mfe import MFE
@@ -246,22 +247,18 @@ class TestArchitecture:
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
-    @pytest.mark.parametrize("data_id", (0, 2))
-    def precomputation_custom_args(self, data_id):
-        X, y = load_xy(data_id)
+    def test_precomputation_custom_args(self):
+        X, y = load_xy(2)
 
         model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
-            X.data, y.data)
+            X.values, y.values)
 
-        extractor = pymfe.mfe.MFE(groups="model-based", random_state=1234)
-        extractor.fit(X=[1.0],
-                      transform_num=False,
-                      **{"dt_model": model},
-                      verbose=2)
+        extractor = MFE(groups="model-based", random_state=1234)
+        extractor.fit(X=[1.0], transform_num=False, **{"dt_model": model})
         mtf_name, mtf_vals = extractor.extract()
 
-        extractor = pymfe.mfe.MFE(groups="model-based", random_state=1234)
-        extractor.fit(X=X.data, y=y.target, transform_num=False)
+        extractor = MFE(groups="model-based", random_state=1234)
+        extractor.fit(X=X.values, y=y.values, transform_num=False)
         mtf_name2, mtf_vals2 = extractor.extract()
 
         assert (np.all(mtf_name == mtf_name2)
