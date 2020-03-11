@@ -247,15 +247,13 @@ class TestArchitecture:
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
-    def test_precomputation_custom_args(self):
+    def test_extract_from_model(self):
         X, y = load_xy(2)
 
         model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
             X.values, y.values)
 
-        extractor = MFE(groups="model-based", random_state=1234)
-        extractor.fit(X=[1.0], transform_num=False, **{"dt_model": model})
-        mtf_name, mtf_vals = extractor.extract()
+        mtf_name, mtf_vals = MFE(random_state=1234).extract_from_model(model)
 
         extractor = MFE(groups="model-based", random_state=1234)
         extractor.fit(X=X.values, y=y.values, transform_num=False)
@@ -263,3 +261,20 @@ class TestArchitecture:
 
         assert (np.all(mtf_name == mtf_name2)
                 and np.allclose(mtf_vals, mtf_vals2))
+
+    def test_extract_from_model_invalid1(self):
+        X, y = load_xy(2)
+
+        model = sklearn.tree.DecisionTreeRegressor().fit(X.values, y.values)
+
+        with pytest.raises(TypeError):
+            MFE().extract_from_model(model)
+
+    def test_extract_from_model_invalid2(self):
+        X, y = load_xy(2)
+
+        model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
+            X.values, y.values)
+
+        with pytest.raises(KeyError):
+            MFE().extract_from_model(model, arguments_fit={"dt_model": model})
