@@ -73,6 +73,7 @@ import re
 
 import numpy as np
 import sklearn.preprocessing
+import sklearn.tree
 import patsy
 
 import pymfe._summary as _summary
@@ -197,6 +198,11 @@ VERBOSE_BLOCK_MID_SYMBOL = "|"
 VERBOSE_BLOCK_END_SYMBOL = "."
 
 VERBOSE_WARNING_SYMBOL = "*"
+
+type_translator = {
+    sklearn.tree.DecisionTreeClassifier: "dt_model",
+}
+"""'.extract_from_model' supported types and correspoding parameters."""
 
 
 def warning_format(message: str,
