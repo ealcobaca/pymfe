@@ -1112,7 +1112,7 @@ class MFE:
         Returns
         -------
         :obj:`tuple`(:obj:`list`, :obj:`list`)
-            A tuple containing two lists.
+            A tuple containing two lists (if ``measure_time`` is None.)
 
             The first field is the identifiers of each summarized value in the
             form ``feature_name.summary_mtd_name`` (i.e., the feature
@@ -1130,6 +1130,10 @@ class MFE:
                 is the return value for the feature ``attr_end`` summarized by
                 both ``mean`` and ``sd`` (standard deviation), giving the valu-
                 es ``0.983`` and ``0.344``, respectively.
+
+            if ``measure_time`` is given during the model instantiation, a
+            third list will be returned with the time spent during the
+            calculations for the corresponding (by index) metafeature.
 
         Raises
         ------
@@ -1218,6 +1222,69 @@ class MFE:
             return res_names, res_vals, res_times
 
         return res_names, res_vals
+
+    def extract_from_model(
+            self,
+            model: t.Any,
+            arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
+            arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> t.Tuple[t.Sequence, ...]:
+        """Extract model-based metafeatures from given model.
+
+        Parameters
+        ----------
+        model : any
+            Pre-fitted machine learning model.
+
+        arguments_fit : :obj:`dict`
+            Custom arguments to fit the extractor model. See `.fit` method
+            documentation for more information.
+
+        arguments_extract : :obj:`dict`
+            Custom arguments to extract the metafeatures. See `.extract`
+            method documentation for more information.
+
+        Returns
+        -------
+        :obj:`tuple`(:obj:`list`, :obj:`list`)
+            See `.extract` method return value for more information.
+
+        Notes
+        -----
+        Internally, a new MFE model is created to perform the metafeature
+        extractions. Therefore, the current model (if any) will not be
+        affected by this method by any means.
+
+        The random seed used by the new internal model is the same random
+        seed set in the current model (if any.)
+        """
+        model_argument = _internal.type_translator.get(type(model), None)
+
+        if model_argument is None:
+            raise TypeError("'model' from type '{}' not supported. Currently "
+                            "only supporting classes: {}.".format(
+                                type(model),
+                                list(_internal.type_translator.keys())))
+
+        if arguments_fit is None:
+            arguments_fit = {}
+
+        if arguments_extract is None:
+            arguments_extract = {}
+
+        if model_argument in arguments_fit:
+            raise KeyError("Illegal argument '{}' in 'arguments_fit' (used "
+                           "internally by '.extract_from_model' method.)")
+
+        _extractor = MFE(
+            groups="model-based",
+            random_state=self.random_state).fit(
+                X=[1],
+                y=None, transform_num=False,
+                **{model_argument: model},
+                **arguments_fit)
+
+        return _extractor.extract(**arguments_extract)
 
     @classmethod
     def valid_groups(cls) -> t.Tuple[str, ...]:
