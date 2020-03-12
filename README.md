@@ -138,6 +138,31 @@ ft = mfe.extract(
 print(ft)
 ```
 
+If you want to extract metafeatures from a pre-fitted machine learning model (from `sklearn package`), you can use the `extract_from_model` method, without the need for use the training data:
+
+```python
+import sklearn.tree
+from sklearn.datasets import load_iris
+from pymfe.mfe import MFE
+
+# Extract from model
+iris = load_iris()
+model = sklearn.tree.DecisionTreeClassifier().fit(iris.data, iris.target)
+extractor = MFE()
+ft = extractor.extract_from_model(model)
+print(ft)
+
+# Extract specific metafeatures from model
+extractor = MFE(features=["tree_shape", "nodes_repeated"], summary="histogram")
+
+ft = extractor.extract_from_model(
+    model,
+    arguments_fit={"verbose": 1},
+    arguments_extract={"verbose": 1, "histogram": {"bins": 5}})
+
+print(ft)
+```
+
 ## Documentation
 We write a great Documentation to guide you on how to use the pymfe library. You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
 You can find in the documentation interesting pages like:
