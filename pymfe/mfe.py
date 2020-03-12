@@ -264,6 +264,8 @@ class MFE:
             summary,
             wildcard=wildcard)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
+        self._measure_time = measure_time
+
         self.timeopt = _internal.process_generic_option(
             value=measure_time, group_name="timeopt",
             allow_none=True)  # type: t.Optional[str]
@@ -1228,21 +1230,38 @@ class MFE:
             model: t.Any,
             arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
             arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
+            verbose: int = 0,
     ) -> t.Tuple[t.Sequence, ...]:
         """Extract model-based metafeatures from given model.
+
+        The random seed used by the new internal model is the same random
+        seed set in the current model (if any.)
+
+        The metafeatures extracted will be all metafeatures selected
+        originally in the current model that are also in the 'model-based'
+        group.
+
+        The extracted values will be summarized also with the summary
+        functions selected originally in this model.
 
         Parameters
         ----------
         model : any
             Pre-fitted machine learning model.
 
-        arguments_fit : :obj:`dict`
+        arguments_fit : :obj:`dict`, optional
             Custom arguments to fit the extractor model. See `.fit` method
             documentation for more information.
 
-        arguments_extract : :obj:`dict`
+        arguments_extract : :obj:`dict`, optional
             Custom arguments to extract the metafeatures. See `.extract`
             method documentation for more information.
+
+        verbose : int, optional
+            Select the level of verbosity of this method. Please note that
+            the verbosity level of each step (`fit` and `extract`) need to
+            be given separately using, respectively, `arguments_fit` and
+            `arguments_extract` arguments.
 
         Returns
         -------
@@ -1254,9 +1273,6 @@ class MFE:
         Internally, a new MFE model is created to perform the metafeature
         extractions. Therefore, the current model (if any) will not be
         affected by this method by any means.
-
-        The random seed used by the new internal model is the same random
-        seed set in the current model (if any.)
         """
         model_argument = _internal.type_translator.get(type(model), None)
 
@@ -1276,15 +1292,38 @@ class MFE:
             raise KeyError("Illegal argument '{}' in 'arguments_fit' (used "
                            "internally by '.extract_from_model' method.)")
 
+        _fts = set(self.features).intersection(
+            MFE.valid_metafeatures(groups="model-based"))
+
+        if verbose >= 1:
+            print("Selected features from 'model-based' group:")
+
+            for ft_name in _fts:
+                print(" {} {}".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL, ft_name))
+
+            print("Total of {} 'model-based' metafeature method candidates."
+                  .format(len(_fts)))
+
+            print("Started extraction from model.")
+
         _extractor = MFE(
+            features=_fts,
             groups="model-based",
+            summary=self.summary,
+            measure_time=self._measure_time,
             random_state=self.random_state).fit(
                 X=[1],
                 y=None, transform_num=False,
                 **{model_argument: model},
                 **arguments_fit)
 
-        return _extractor.extract(**arguments_extract)
+        res = _extractor.extract(**arguments_extract)
+
+        if verbose >= 1:
+            print("Finished extracting metafeatures from model.")
+
+        return res
 
     @classmethod
     def valid_groups(cls) -> t.Tuple[str, ...]:
