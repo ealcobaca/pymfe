@@ -1759,6 +1759,9 @@ def print_verbose_progress(
         item_type: str,
         verbose: int = 0) -> None:
     """Print messages about extraction progress based on ``verbose``."""
+    if verbose <= 0:
+        return
+
     if verbose >= 2:
         print("Done with '{}' {} (progress of {:.2f}%)."
               .format(cur_mtf_name, item_type, cur_progress))
