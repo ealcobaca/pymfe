@@ -1272,7 +1272,7 @@ class MFE:
 
             if verbose > 0:
                 print("Done extracting from sample dataset {}.\n"
-                      .format(it_num))
+                      .format(1 + it_num))
 
         return res
 
