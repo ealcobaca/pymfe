@@ -264,8 +264,6 @@ class MFE:
             summary,
             wildcard=wildcard)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
-        self._measure_time = measure_time
-
         self.timeopt = _internal.process_generic_option(
             value=measure_time, group_name="timeopt",
             allow_none=True)  # type: t.Optional[str]
@@ -1311,7 +1309,7 @@ class MFE:
             features=_fts,
             groups="model-based",
             summary=self.summary,
-            measure_time=self._measure_time,
+            measure_time=self.timeopt,
             random_state=self.random_state).fit(
                 X=[1],
                 y=None, transform_num=False,
