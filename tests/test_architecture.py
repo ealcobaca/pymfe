@@ -246,3 +246,44 @@ class TestArchitecture:
         exp_value = X.values.shape[1]
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
+
+    @pytest.mark.parametrize("confidence", (0.95, 0.99))
+    def test_extract_with_confidence(self, confidence):
+        X, y = load_xy(2)
+
+        mtf_names, mtf_vals, mtf_conf_int = MFE(
+            groups="all",
+            features=["mean", "best_node", "sil"],
+            random_state=1234).fit(
+                X=X.values, y=y.values, precomp_groups=None).extract_with_confidence(
+                    sample_num=64,
+                    return_avg_val=False,
+                    confidence=confidence,
+                    verbose=0)
+
+        in_range_prop = np.zeros(len(mtf_names), dtype=float)
+
+        for mtf_ind, cur_mtf_vals in enumerate(mtf_vals.T):
+            int_low, int_high = mtf_conf_int[:, mtf_ind]
+            in_range_prop[mtf_ind] = np.sum(np.logical_and(
+                int_low <= cur_mtf_vals, cur_mtf_vals <= int_high)) / len(cur_mtf_vals)
+
+        assert np.all(confidence - 0.05 <= in_range_prop)
+
+    def test_extract_with_confidence_invalid1(self):
+        with pytest.raises(TypeError):
+            MFE().extract_with_confidence()
+
+    def test_extract_with_confidence_invalid2(self):
+        X, y = load_xy(2)
+
+        with pytest.raises(ValueError):
+            MFE().fit(
+                X.values, y.values).extract_with_confidence(confidence=-0.0001)
+
+    def test_extract_with_confidence_invalid3(self):
+        X, y = load_xy(2)
+
+        with pytest.raises(ValueError):
+            MFE().fit(
+                X.values, y.values).extract_with_confidence(confidence=1.0001)

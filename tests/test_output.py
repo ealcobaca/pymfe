@@ -100,3 +100,16 @@ class TestOutput:
         captured = capsys.readouterr().out
 
         assert (not msg_expected) or captured
+
+    @pytest.mark.parametrize("verbosity, msg_expected", [
+        (0, False),
+        (1, True),
+    ])
+    def test_verbosity_with_confidence(self, verbosity, msg_expected, capsys):
+        X, y = load_xy(2)
+
+        MFE().extract_with_confidence(model, verbose=verbosity)
+
+        captured = capsys.readouterr().out
+
+        assert ((not msg_expected) and (not captured)) or (msg_expected and captured)
