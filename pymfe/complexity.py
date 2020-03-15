@@ -275,7 +275,7 @@ class MFEComplexity:
         # The measure is computed in the literature using the mean. However, it
         # is formulated here as a meta-feature. Therefore, the post-processing
         # should be used to get the mean and other measures as well.
-        return np.asarray(f3)
+        return f3
 
     @classmethod
     def ft_f4(
@@ -332,12 +332,12 @@ class MFEComplexity:
         f4 = np.zeros(ovo_comb.shape[0], dtype=float)
 
         for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
-            cls_subset_intersec = np.logical_or(cls_inds[cls_id_1, :],
-                                                cls_inds[cls_id_2, :])
+            cls_subset_union = np.logical_or(cls_inds[cls_id_1, :],
+                                             cls_inds[cls_id_2, :])
 
-            cls_1 = cls_inds[cls_id_1, cls_subset_intersec]
-            cls_2 = cls_inds[cls_id_2, cls_subset_intersec]
-            N_subset = N[cls_subset_intersec, :]
+            cls_1 = cls_inds[cls_id_1, cls_subset_union]
+            cls_2 = cls_inds[cls_id_2, cls_subset_union]
+            N_subset = N[cls_subset_union, :]
 
             while N_subset.size > 0:
                 # True if the example is in the overlapping region
@@ -351,13 +351,25 @@ class MFEComplexity:
                 # region
                 overlapped_region = feat_overlapped_region[:, ind_less_overlap]
 
-                # removing the non overlapped features
+                # removing the non-overlapping instances
                 N_subset = N_subset[overlapped_region, :]
                 cls_1 = cls_1[overlapped_region]
                 cls_2 = cls_2[overlapped_region]
 
-                # removing the most efficient feature
-                N_subset = np.delete(N_subset, ind_less_overlap, axis=1)
+                inst_num_1 = np.sum(cls_1)
+                inst_num_2 = np.sum(cls_2)
+
+                if inst_num_1 == 0 or inst_num_2 == 0:
+                    # All instances are already discriminated, thus the
+                    # procecure may stop, and the results must be 0 (by
+                    # definition of F4 measure, which is the ratio of
+                    # examples not discriminated after applying its
+                    # algorithm multiple times.)
+                    N_subset = np.array([])
+
+                else:
+                    # removing the most efficient feature
+                    N_subset = np.delete(N_subset, ind_less_overlap, axis=1)
 
             subset_size = N_subset.shape[0]
 
@@ -367,7 +379,7 @@ class MFEComplexity:
         # The measure is computed in the literature using the mean. However, it
         # is formulated here as a meta-feature. Therefore, the post-processing
         # should be used to get the mean and other measures as well.
-        return np.asarray(f4)
+        return f4
 
     @classmethod
     def ft_l2(cls,
