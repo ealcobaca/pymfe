@@ -1418,7 +1418,7 @@ class MFE:
             print("Done.")
 
         if return_avg_val:
-            mtf_vals = np.mean(mtf_vals, axis=0)
+            mtf_vals = np.nanmean(mtf_vals, axis=0)
 
         if self.timeopt:
             if return_avg_val:
