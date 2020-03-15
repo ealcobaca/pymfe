@@ -1253,7 +1253,7 @@ class MFE:
         bootstrap_random_state = (
             self.random_state
             if self.random_state is not None
-            else np.random.randint(np.iinfo(np.int).max))
+            else np.random.randint(2 ** 20 - 1))
 
         for it_num in np.arange(sample_num):
             if verbose > 0:
