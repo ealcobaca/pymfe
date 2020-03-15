@@ -1207,6 +1207,81 @@ class MFE:
 
         return res_names, res_vals
 
+    def extract_with_confidence(
+            self,
+            sample_num: int = 128,
+            confidence: float = 0.95,
+            arguments_fit: t.Optional[t.Dict[str, t.Any]],
+            arguments_extract: t.Optional[t.Dict[str, t.Any]],
+            verbose: int = 0,
+    ) -> t.Tuple[t.List, ...]:
+        """Extract metafeatures with confidence intervals.
+        
+        To build the confidence intervals, each metafeature is extracted
+        ``sample_num`` times from a distinct dataset built from the
+        fitted data using bootstrap.
+
+        Parameters
+        ----------
+        sample_num : int, optional
+            Number of samples from the fitted data using bootstrap. Each
+            metafeature will be extracted ``sample_num`` times.
+
+        confidence : float, optional
+            Confidence of the interval. Must be in (0, 1) range.
+
+        Returns
+        -------
+        tuple of :obj:`np.ndarray`
+            The same return value of the ``extract`` method, appended with
+            the confidence intervals as a new sequence of values in the form
+            (interval_low, interval_high) for each corresponding metafeature.
+
+        Raises
+        ------
+        ValueError
+            If ``confidence`` is not in (0, 1) range.
+        """
+        if not 0 < confidence < 1.0:
+            raise ValueError("'confidence' must be in (0, 1) range (got {}.)"
+                             .format(confidence))
+
+        if self.random_state is not None:
+            np.random.seed(self.random_state)
+
+        if arguments_fit is None:
+            arguments_fit = {}
+
+        if arguments_extract is None:
+            arguments_extract = {}
+
+        if verbose > 0:
+            print("Started metafeature extract with confidence interval.")
+
+        # Note: the metafeature extraction random seed will be fixed due
+        # to the random indices while bootstrapping the fitted data.
+        _random_state = self.random_state if self.random_state else 1234
+
+        _extractor = MFE(
+            features=self.features,
+            groups=self.groups,
+            precomp_groups=self.precomp_groups,
+            summary=self.summary,
+            measure_time=self.timeopt,
+            random_state=_random_state)
+
+        for sample_inds in np.random.randint(self.y.size, size=self.y.size):
+            _extractor.fit(self.X, self.y, **arguments_fit)
+            res = _extractor.extract(**arguments_extract)
+
+        if verbose > 0:
+            print("Started metafeature extract with confidence interval.")
+
+        if self.timeopt:
+            return mtf_names, mtf_avg_vals, mtf_avg_time, mtf_conf_int
+
+        return mtf_names, mtf_avg_vals, mtf_conf_int
+
     @classmethod
     def valid_groups(cls) -> t.Tuple[str, ...]:
         """Return a tuple of valid metafeature groups.
