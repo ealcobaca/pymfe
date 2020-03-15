@@ -373,14 +373,14 @@ class MFEClustering:
 
             cls_inds = _utils.calc_cls_inds(y=y, classes=classes)
 
-        interclass_dists = np.array([
+        interclass_dists = [
             cls._calc_normalized_interclass_dist(
                 N[cls_inds[id_cls_a, :], :],
                 N[cls_inds[id_cls_b, :], :],
                 dist_metric=dist_metric)
             for id_cls_a, id_cls_b in itertools.combinations(
                 np.arange(cls_inds.shape[0]), 2)
-        ])
+        ]
 
         return interclass_dists
 
