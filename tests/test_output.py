@@ -108,7 +108,7 @@ class TestOutput:
     def test_verbosity_with_confidence(self, verbosity, msg_expected, capsys):
         X, y = load_xy(2)
 
-        MFE().extract_with_confidence(model, verbose=verbosity)
+        MFE().fit(X.values, y.values).extract_with_confidence(verbose=verbosity)
 
         captured = capsys.readouterr().out
 
