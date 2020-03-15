@@ -1250,6 +1250,11 @@ class MFE:
 
         res = 3 * (np.array([]),)
 
+        bootstrap_random_state = (
+            self.random_state
+            if self.random_state is not None
+            else np.random.randint(np.iinfo(np.int).max))
+
         for it_num in np.arange(sample_num):
             if verbose > 0:
                 print("Extracting from sample dataset {} of {} ({:.2f}%)..."
@@ -1257,9 +1262,15 @@ class MFE:
                               sample_num,
                               100.0 * (1 + it_num) / sample_num))
 
+            # Note: setting random state to prevent same sample indices due
+            # to random states set during fit/extraction
+            np.random.seed(bootstrap_random_state)
+            bootstrap_random_state += 1
+
             sample_inds = np.random.randint(
                 self.X.shape[0],
                 size=self.X.shape[0])
+
             X_sample = self.X[sample_inds, :]
             y_sample = self.y[sample_inds] if self.y is not None else None
 
