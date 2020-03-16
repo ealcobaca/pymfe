@@ -108,6 +108,20 @@ ft = mfe.extract(
 print(ft)
 ```
 
+You can also extract your metafeatures with confidence intervals using boostrap. Keep in mind that this method extracts each metafeature several times, and may be very expensive depending mainly on your data and the number of metafeature extract methods called.
+
+```python
+# Extract metafeatures with confidence interval
+mfe = MFE(features=["mean", "nr_cor_attr", "sd", "max"])
+mfe.fit(X, y)
+ft = mfe.extract_with_confidence(
+    sample_num=256,
+    confidence=0.99,
+    verbose=1,
+)
+print(ft)
+```
+
 ## Documentation
 We write a great Documentation to guide you on how to use the pymfe library. You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
 You can find in the documentation interesting pages like:
