@@ -263,8 +263,8 @@ class TestArchitecture:
 
         in_range_prop = np.zeros(len(mtf_names), dtype=float)
 
-        for mtf_ind, cur_mtf_vals in enumerate(mtf_vals.T):
-            int_low, int_high = mtf_conf_int[:, mtf_ind]
+        for mtf_ind, cur_mtf_vals in enumerate(mtf_vals):
+            int_low, int_high = mtf_conf_int[mtf_ind, :]
             in_range_prop[mtf_ind] = np.sum(np.logical_and(
                 int_low <= cur_mtf_vals, cur_mtf_vals <= int_high)) / len(cur_mtf_vals)
 
@@ -287,3 +287,18 @@ class TestArchitecture:
         with pytest.raises(ValueError):
             MFE().fit(
                 X.values, y.values).extract_with_confidence(confidence=1.0001)
+
+    @pytest.mark.parametrize("return_avg_val", (True, False))
+    def test_extract_with_confidence_time(self, return_avg_val):
+        X, y = load_xy(2)
+
+        res = MFE(
+            features=["mean", "inst_num"],
+            measure_time="avg").fit(
+                X=X.values, y=y.values).extract_with_confidence(
+                    sample_num=3,
+                    return_avg_val=return_avg_val)
+
+        mtf_names, mtf_vals, mtf_time, mtf_conf_int = res
+
+        assert (len(mtf_names) == len(mtf_vals) == len(mtf_time) == len(mtf_conf_int))
