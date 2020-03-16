@@ -1324,11 +1324,11 @@ class MFE:
 
         arguments_fit : dict, optional
             Extra arguments for the fit method for each sampled dataset.
-            See ``.fit`` kwargs for more information.
+            See ``.fit`` method documentation for more information.
 
         arguments_extract : dict, optional
             Extra arguments for each metafeature extraction procedure.
-            See ``.extract`` kwargs for more information.
+            See ``.extract`` method documentation for more information.
 
         verbose : int, optional
             Verbosity level for this method. Please note that the
