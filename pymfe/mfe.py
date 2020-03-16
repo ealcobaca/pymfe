@@ -1250,6 +1250,11 @@ class MFE:
 
         res = 3 * (np.array([]),)
 
+        if self.random_state is None:
+            # Enforce pseudo-random behaviour to avoid previously set
+            # random seeds out of this context
+            np.random.seed()
+
         bootstrap_random_state = (
             self.random_state
             if self.random_state is not None
