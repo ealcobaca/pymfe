@@ -293,7 +293,7 @@ class TestArchitecture:
         X, y = load_xy(2)
 
         res = MFE(
-            features=["mean", "inst_num"],
+            features=["mean", "nr_inst", "unknown"],
             measure_time="avg").fit(
                 X=X.values, y=y.values).extract_with_confidence(
                     sample_num=3,
@@ -302,3 +302,53 @@ class TestArchitecture:
         mtf_names, mtf_vals, mtf_time, mtf_conf_int = res
 
         assert (len(mtf_names) == len(mtf_vals) == len(mtf_time) == len(mtf_conf_int))
+
+    def test_extract_with_confidence_random_state_1(self):
+        X, y = load_xy(2)
+
+        _, mtf_vals_1, mtf_conf_int_1 = MFE(
+            features=["mean", "sd"], random_state=16).fit(
+                X=X.values, y=y.values).extract_with_confidence(
+                    sample_num=3)
+
+        _, mtf_vals_2, mtf_conf_int_2 = MFE(
+            features=["mean", "sd"], random_state=16).fit(
+                X=X.values, y=y.values).extract_with_confidence(
+                    sample_num=3)
+
+        assert (np.allclose(mtf_vals_1, mtf_vals_2) and
+                np.allclose(mtf_conf_int_1, mtf_conf_int_2))
+
+    def test_extract_with_confidence_random_state_2(self):
+        X, y = load_xy(2)
+
+        _, mtf_vals_1, mtf_conf_int_1 = MFE(
+            features=["mean", "sd"], random_state=16).fit(
+                X=X.values, y=y.values).extract_with_confidence(
+                    sample_num=3)
+
+        _, mtf_vals_2, mtf_conf_int_2 = MFE(
+            features=["mean", "sd"], random_state=17).fit(
+                X=X.values, y=y.values).extract_with_confidence(
+                    sample_num=3)
+
+        assert (np.any(~np.isclose(mtf_vals_1, mtf_vals_2)) and
+                np.any(~np.isclose(mtf_conf_int_1, mtf_conf_int_2)))
+
+    def test_extract_with_confidence_random_state_3(self):
+        X, y = load_xy(2)
+
+        np.random.seed(1234)
+        _, mtf_vals_1, mtf_conf_int_1 = MFE(
+            features=["mean", "sd"]).fit(
+                X=X.values, y=y.values).extract_with_confidence(
+                    sample_num=3)
+
+        np.random.seed(1234)
+        _, mtf_vals_2, mtf_conf_int_2 = MFE(
+            features=["mean", "sd"]).fit(
+                X=X.values, y=y.values).extract_with_confidence(
+                    sample_num=3)
+
+        assert (np.any(~np.isclose(mtf_vals_1, mtf_vals_2)) and
+                np.any(~np.isclose(mtf_conf_int_1, mtf_conf_int_2)))
