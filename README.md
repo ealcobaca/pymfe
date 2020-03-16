@@ -108,7 +108,7 @@ ft = mfe.extract(
 print(ft)
 ```
 
-You can also extract your metafeatures with confidence intervals using boostrap. Keep in mind that this method extracts each metafeature several times, and may be very expensive depending mainly on your data and the number of metafeature extract methods called.
+You can also extract your metafeatures with confidence intervals using bootstrap. Keep in mind that this method extracts each metafeature several times, and may be very expensive depending mainly on your data and the number of metafeature extract methods called.
 
 ```python
 # Extract metafeatures with confidence interval

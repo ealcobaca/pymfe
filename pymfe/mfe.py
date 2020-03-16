@@ -1207,13 +1207,13 @@ class MFE:
 
         return res_names, res_vals
 
-    def _extract_with_boostrap(self,
-                               extractor: "MFE",
-                               sample_num: int,
-                               arguments_fit: t.Dict[str, t.Any],
-                               arguments_extract: t.Dict[str, t.Any],
-                               verbose: int = 0) -> t.Tuple[np.ndarray, ...]:
-        """Extract metafeatures using bootstrap."""
+    def _extract_with_bootstrap(self,
+                                extractor: "MFE",
+                                sample_num: int,
+                                arguments_fit: t.Dict[str, t.Any],
+                                arguments_extract: t.Dict[str, t.Any],
+                                verbose: int = 0) -> t.Tuple[np.ndarray, ...]:
+        """Extract metafeatures using bootstrapping."""
         if self.X is None:
             raise TypeError("Fitted data not found. Please call 'fit' "
                             "method first.")
@@ -1409,7 +1409,7 @@ class MFE:
             measure_time=self.timeopt,
             random_state=_random_state)
 
-        mtf_names, mtf_vals, mtf_time = self._extract_with_boostrap(
+        mtf_names, mtf_vals, mtf_time = self._extract_with_bootstrap(
             extractor=extractor,
             sample_num=sample_num,
             verbose=verbose,
