@@ -1232,7 +1232,7 @@ class MFE:
                 cur_mtf_names, cur_mtf_vals, cur_mtf_time = args
 
             if mtf_names.size:
-                mtf_vals[it_num, :] = cur_mtf_vals
+                mtf_vals[:, it_num] = cur_mtf_vals
 
                 if self.timeopt:
                     mtf_time += cur_mtf_time
@@ -1240,8 +1240,8 @@ class MFE:
             else:
                 mtf_names = np.asarray(cur_mtf_names, dtype=str)
                 mtf_vals = np.zeros(
-                    (sample_num, len(cur_mtf_vals)), dtype=float)
-                mtf_vals[0, :] = cur_mtf_vals
+                    (len(cur_mtf_vals), sample_num), dtype=float)
+                mtf_vals[:, 0] = cur_mtf_vals
 
                 if self.timeopt:
                     mtf_time = np.asarray(cur_mtf_time, dtype=float)
@@ -1318,9 +1318,12 @@ class MFE:
             If True, return the average value for both the metafeature
             values and the time elapsed for its extraction (if any
             ``measure_time`` option was chosen.) If False, then all
-            extracted metafeature values are returned as a 2D numpy array,
-            and the time elapsed will be the sum of all extractions for
-            each metafeature.
+            extracted metafeature values are returned as a 2D numpy array
+            of shape (`metafeature_num`, `sample_num`) (i.e., each row
+            represents a distinct metafeature, and each column is the
+            value of the corresponding metafeature extracted from a
+            distinct sample dataset) and the time elapsed will be the
+            sum of all extractions for each metafeature.
 
         arguments_fit : dict, optional
             Extra arguments for the fit method for each sampled dataset.
@@ -1343,15 +1346,17 @@ class MFE:
             The same return value format of the ``extract`` method, appended
             with the confidence intervals as a new sequence of values in the
             form (interval_low, interval_high) for each corresponding
-            metafeature.
+            metafeature, and with shape (`metafeature_num`, 2) (i.e., the rows
+            represents each metafeature and the columns each interval limit.)
 
             if ``return_avg_val`` is True, the metafeature values and the
             time elapsed for extraction for each item (if any ``measure_time``
             options was chosen) will be the average value between all
             extractions. Otherwise, all extract metafeature values will be
-            returned as a 2D numpy array (where each row is from a distinct
-            sampled dataset), and time time elapsed will be the sum of all
-            extractions for the corresponding metafeature.
+            returned as a 2D numpy array (where each columns is from a distinct
+            sampled dataset, and each row is a distinct metafeature), and the
+            time elapsed will be the sum of all extractions for the
+            corresponding metafeature.
 
         Raises
         ------
@@ -1412,13 +1417,13 @@ class MFE:
 
         _half_sig_level = 0.5 * (1.0 - confidence)
         interval = [_half_sig_level, 1.0 - _half_sig_level]
-        mtf_conf_int = np.quantile(a=mtf_vals, q=interval, axis=0)
+        mtf_conf_int = np.quantile(a=mtf_vals, q=interval, axis=1).T
 
         if verbose > 0:
             print("Done.")
 
         if return_avg_val:
-            mtf_vals = np.nanmean(mtf_vals, axis=0)
+            mtf_vals = np.nanmean(mtf_vals, axis=1)
 
         if self.timeopt:
             if return_avg_val:
