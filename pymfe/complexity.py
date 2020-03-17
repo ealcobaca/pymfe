@@ -81,12 +81,12 @@ class MFEComplexity:
                   ([(0, 1), (0, 2) ...].)
                 - ``cls_inds`` (:obj:`np.ndarray`): Boolean array which
                   indicates whether each example belongs to each class. The
-                  rows represents the distinct classes, and the instances
+                  rows corresponds to the distinct classes, and the instances
                   are represented by the columns.
                 - ``classes`` (:obj:`np.ndarray`): distinct classes in the
                   fitted target attribute.
                 - ``class_freqs`` (:obj:`np.ndarray`): The number of examples
-                  in each class. The indices represent the classes.
+                  in each class. The indices corresponds to the classes.
         """
         precomp_vals = {}  # type: t.Dict[str, t.Any]
 
@@ -220,12 +220,17 @@ class MFEComplexity:
         return ind_less_overlap, feat_overlap_num, feat_overlapped_region
 
     @classmethod
-    def ft_f1(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_f1(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            cls_inds: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Maximum Fisher's discriminant ratio.
 
         ...
 
-        This measure is in [0, 1] range.
+        This measure is in (0, 1] range.
 
         Parameters
         ----------
@@ -235,11 +240,54 @@ class MFEComplexity:
         y : ;obj:`np.ndarray`
             Target attribute.
 
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices corresponds to
+            the classes.
+
         Returns
         -------
         :obj:`np.ndarray`
             ...
         """
+        classes = None
+
+        if class_freqs is None:
+            classes, class_freqs = np.unique(y, return_counts=True)
+
+        if cls_inds is None:
+            if classes is None:
+                classes = np.unique(y)
+
+            cls_inds = _utils.calc_cls_inds(y, classes)
+
+        mean_global = np.mean(N, axis=0)
+
+        mean_classes = np.asarray([
+            np.mean(N[inds_cur_cls, :], axis=0) for inds_cur_cls in cls_inds
+        ], dtype=float)
+
+        _numer = np.sum(
+            np.square(mean_classes - mean_global).T * class_freqs, axis=1)
+
+        _denom = np.sum(np.square([
+            N[inds_cur_cls, :] - mean_classes[cls_ind, :]
+            for cls_ind, inds_cur_cls in enumerate(cls_inds)
+        ]), axis=(0, 1))
+
+        attr_discriminant_ratio = _numer / _denom
+
+        # Note: in the reference paper, this measure is calculated as:
+        # f1 = 1.0 / (1.0 + np.max(attr_discriminant_ratio))
+        # But in the R package 'ECoL', to enable summarization, it is
+        # calculated as:
+        f1 = 1.0 / (1.0 + attr_discriminant_ratio)
+
+        return f1
 
     @classmethod
     def ft_f1v(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -310,11 +358,11 @@ class MFEComplexity:
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
-            The rows represents each distinct class, and the columns
-            represents the instances.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
 
         class_freqs : :obj:`np.ndarray`, optional
-            The number of examples in each class. The indices represent
+            The number of examples in each class. The indices corresponds to
             the classes.
 
         Returns
@@ -381,11 +429,11 @@ class MFEComplexity:
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
-            The rows represents each distinct class, and the columns
-            represents the instances.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
 
         class_freqs : :obj:`np.ndarray`, optional
-            The number of examples in each class. The indices represent
+            The number of examples in each class. The indices corresponds to
             the classes.
 
         Returns
@@ -507,8 +555,8 @@ class MFEComplexity:
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
-            The rows represents each distinct class, and the columns
-            represents the instances.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
 
         max_iter : float or int, optional
             Maximum number of iterations allowed for the support vector
@@ -712,8 +760,8 @@ class MFEComplexity:
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
-            The rows represents each distinct class, and the columns
-            represents the instances.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
 
         metric_n4 : str, optional (default = "minkowski")
             The distance metric used in the internal kNN classifier. See the
@@ -806,7 +854,7 @@ class MFEComplexity:
             Target attribute from fitted data.
 
         class_freqs : :obj:`np.ndarray`, optional
-            The number of examples in each class. The indices represent
+            The number of examples in each class. The indices corresponds to
             the classes.
 
         Returns
@@ -845,7 +893,7 @@ class MFEComplexity:
             Target attribute from fitted data.
 
         class_freqs : :obj:`np.ndarray`, optional
-            The number of examples in each class. The indices represent
+            The number of examples in each class. The indices corresponds to
             the classes.
 
         Returns
