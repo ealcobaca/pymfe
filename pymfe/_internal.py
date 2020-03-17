@@ -546,7 +546,7 @@ def summarize(
     try:
         metafeature = callable_sum(processed_feat, **callable_args)
 
-    except (TypeError, ValueError, ZeroDivisionError):
+    except (TypeError, ValueError, ZeroDivisionError, MemoryError):
         metafeature = np.nan
 
     return metafeature
@@ -586,7 +586,7 @@ def get_feat_value(
     try:
         features = mtd_callable(**mtd_args)
 
-    except (TypeError, ValueError, ZeroDivisionError) as type_e:
+    except (TypeError, ValueError, ZeroDivisionError, MemoryError) as type_e:
         if not suppress_warnings:
             warnings.warn(
                 "Can't extract feature '{0}'.\n Exception message: {1}.\n"
@@ -1208,7 +1208,8 @@ def process_precomp_groups(
         try:
             new_precomp_vals = precomp_mtd_callable(**kwargs)  # type: ignore
 
-        except (AttributeError, TypeError, ValueError) as type_err:
+        except (AttributeError, TypeError,
+                ValueError, MemoryError) as type_err:
             new_precomp_vals = {}
 
             if not suppress_warnings:
@@ -1741,7 +1742,8 @@ def post_processing(
                 for res_list_old, res_list_new in zip(results, new_results):
                     res_list_old += res_list_new
 
-        except (AttributeError, TypeError, ValueError) as type_err:
+        except (AttributeError, TypeError,
+                ValueError, MemoryError) as type_err:
             if not suppress_warnings:
                 warnings.warn("Something went wrong while "
                               "postprocessing '{0}'. Will ignore "
