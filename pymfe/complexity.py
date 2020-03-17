@@ -290,12 +290,18 @@ class MFEComplexity:
         return f1
 
     @classmethod
-    def ft_f1v(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """TODO.
+    def ft_f1v(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            ovo_comb: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
+        """Directional-vector maximum Fisher's discriminant ratio.
 
         ...
 
-        This measure is in [0, 1] range.
+        This measure is in (0, 1] range.
 
         Parameters
         ----------
@@ -310,6 +316,49 @@ class MFEComplexity:
         :obj:`np.ndarray`
             ...
         """
+        if ovo_comb is None or cls_inds is None or class_freqs is None:
+            sub_dic = cls.precompute_fx(y=y)
+            ovo_comb = sub_dic["ovo_comb"]
+            cls_inds = sub_dic["cls_inds"]
+            class_freqs = sub_dic["class_freqs"]
+
+        num_attr = N.shape[1]
+
+        df = np.zeros(ovo_comb.shape[0], dtype=float)
+        mat_scatter_within = []
+        centroids = np.zeros((class_freqs.size, num_attr), dtype=float)
+
+        for cls_ind, inds_cur_cls in enumerate(cls_inds):
+            cur_cls_inst = N[inds_cur_cls, :]
+            mat_scatter_within.append(
+                np.cov(cur_cls_inst, rowvar=False, ddof=1))
+            centroids[cls_ind, :] = cur_cls_inst.mean(axis=0)
+
+        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
+            centroid_diff = (
+                centroids[cls_id_1, :] - centroids[cls_id_2, :]).reshape(-1, 1)
+
+            total_inst_num = class_freqs[cls_id_1] + class_freqs[cls_id_2]
+
+            W_mat = (
+                class_freqs[cls_id_1] * mat_scatter_within[cls_id_1] +
+                class_freqs[cls_id_2] * mat_scatter_within[cls_id_2]
+            ) / total_inst_num
+
+            # Note: the result of np.linalg.piv 'Moore-Penrose' pseudo-inverse
+            # does not match with the result of MASS::ginv 'Moore-Penrose'
+            # pseudo-inverse implementation.
+            direc = np.matmul(scipy.linalg.pinv(W_mat), centroid_diff)
+            mat_scatter_between = np.outer(centroid_diff, centroid_diff)
+
+            _numen = np.matmul(direc.T, np.matmul(mat_scatter_between, direc))
+            _denom = np.matmul(direc.T, np.matmul(W_mat, direc))
+
+            df[ind] = _numen / _denom
+
+        f1v = 1.0 / (1.0 + df)
+
+        return f1v
 
     @classmethod
     def ft_f2(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
