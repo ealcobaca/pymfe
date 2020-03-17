@@ -220,6 +220,72 @@ class MFEComplexity:
         return ind_less_overlap, feat_overlap_num, feat_overlapped_region
 
     @classmethod
+    def ft_f1(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """Maximum Fisher's discriminant ratio.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
+    def ft_f1v(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
+    def ft_f2(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
     def ft_f3(
             cls,
             N: np.ndarray,
@@ -394,6 +460,28 @@ class MFEComplexity:
         return f4
 
     @classmethod
+    def ft_l1(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
     def ft_l2(cls,
               N: np.ndarray,
               y: np.ndarray,
@@ -477,6 +565,28 @@ class MFEComplexity:
         return l2
 
     @classmethod
+    def ft_l3(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
     def ft_n1(cls, N: np.ndarray, y: np.ndarray,
               metric: str = "euclidean") -> float:
         """Compute the fraction of borderline points.
@@ -536,6 +646,50 @@ class MFEComplexity:
         inst_num = N.shape[0]
 
         return borderline_inst_num / inst_num
+
+    @classmethod
+    def ft_n2(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
+    def ft_n3(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
 
     @classmethod
     def ft_n4(cls,
@@ -721,6 +875,28 @@ class MFEComplexity:
         return c2
 
     @classmethod
+    def ft_t1(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
     def ft_t2(cls, N: np.ndarray) -> float:
         """Compute the average number of features per dimension.
 
@@ -844,3 +1020,91 @@ class MFEComplexity:
         num_attr = N.shape[1]
 
         return num_attr_pca / num_attr
+
+    @classmethod
+    def ft_lsc(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
+    def ft_density(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
+    def ft_cis_coef(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
+
+    @classmethod
+    def ft_hubs(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+        """TODO.
+
+        ...
+
+        This measure is in [0, 1] range.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : ;obj:`np.ndarray`
+            Target attribute.
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            ...
+        """
