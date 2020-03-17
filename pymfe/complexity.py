@@ -169,6 +169,38 @@ class MFEComplexity:
         return np.asarray(list(ovo_comb), dtype=int)
 
     @staticmethod
+    def _calc_maxmax(N_cls_1: np.ndarray, N_cls_2: np.ndarray) -> np.ndarray:
+        """Compute the maximum of the maximum values per class for all feat.
+
+        The index i indicate the maxmax of feature i.
+        """
+        max_cls_1 = np.max(N_cls_1, axis=0) if N_cls_1.size else -np.inf
+        max_cls_2 = np.max(N_cls_2, axis=0) if N_cls_2.size else -np.inf
+
+        maxmax = np.maximum(max_cls_1, max_cls_2)
+
+        if not maxmax.shape:
+            return np.full(shape=N_cls_1.shape[1], fill_value=-np.inf)
+
+        return maxmax
+
+    @staticmethod
+    def _calc_minmin(N_cls_1: np.ndarray, N_cls_2: np.ndarray) -> np.ndarray:
+        """Compute the minimum of the minimum values per class for all feat.
+
+        The index i indicate the minmin of feature i.
+        """
+        min_cls_1 = np.min(N_cls_1, axis=0) if N_cls_1.size else np.inf
+        min_cls_2 = np.min(N_cls_2, axis=0) if N_cls_2.size else np.inf
+
+        minmin = np.minimum(min_cls_1, min_cls_2)
+
+        if not minmin.shape:
+            return np.full(shape=N_cls_1.shape[1], fill_value=np.inf)
+
+        return minmin
+
+    @staticmethod
     def _calc_minmax(N_cls_1: np.ndarray, N_cls_2: np.ndarray) -> np.ndarray:
         """Compute the minimum of the maximum values per class for all feat.
 
@@ -179,10 +211,9 @@ class MFEComplexity:
             # becomes ill defined. Thus, returning '-np.inf' alongside
             # '_calc_maxmin()' returning '+np.inf' guarantees that no
             # example will remain into the (undefined) 'overlapping region.'
-            return -np.inf
+            return np.full(shape=N_cls_1.shape[1], fill_value=-np.inf)
 
-        minmax = np.min((np.max(N_cls_1, axis=0), np.max(N_cls_2, axis=0)),
-                        axis=0)
+        minmax = np.minimum(np.max(N_cls_1, axis=0), np.max(N_cls_2, axis=0))
 
         return minmax
 
@@ -197,10 +228,9 @@ class MFEComplexity:
             # becomes ill defined. Thus, returning '+np.inf' alongside
             # '_calc_minmax()' returning '-np.inf' guarantees that no
             # example will remain into the (undefined) 'overlapping region.'
-            return np.inf
+            return np.full(shape=N_cls_1.shape[1], fill_value=np.inf)
 
-        maxmin = np.max((np.min(N_cls_1, axis=0), np.min(N_cls_2, axis=0)),
-                        axis=0)
+        maxmin = np.maximum(np.min(N_cls_1, axis=0), np.min(N_cls_2, axis=0))
 
         return maxmin
 
@@ -237,7 +267,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         cls_inds : :obj:`np.ndarray`, optional
@@ -308,8 +338,21 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
+
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices corresponds to
+            the classes.
 
         Returns
         -------
@@ -362,8 +405,13 @@ class MFEComplexity:
         return f1v
 
     @classmethod
-    def ft_f2(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """TODO.
+    def ft_f2(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            ovo_comb: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
+        """Volume of the overlapping region.
 
         ...
 
@@ -374,14 +422,43 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
-            Target attribute.
+        y : :obj:`np.ndarray`
+            Fitted target attribute.
+
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
 
         Returns
         -------
         :obj:`np.ndarray`
             ...
         """
+        if ovo_comb is None or cls_inds is None:
+            sub_dic = cls.precompute_fx(y=y)
+            ovo_comb = sub_dic["ovo_comb"]
+            cls_inds = sub_dic["cls_inds"]
+
+        f4 = np.zeros(ovo_comb.shape[0], dtype=float)
+
+        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
+            N_cls_1 = N[cls_inds[cls_id_1], :]
+            N_cls_2 = N[cls_inds[cls_id_2], :]
+
+            maxmax = cls._calc_maxmax(N_cls_1, N_cls_2)
+            minmin = cls._calc_minmin(N_cls_1, N_cls_2)
+            minmax = cls._calc_minmax(N_cls_1, N_cls_2)
+            maxmin = cls._calc_maxmin(N_cls_1, N_cls_2)
+
+            f4[ind] = np.prod(
+                np.maximum(0.0, minmax - maxmin) / (maxmax - minmin))
+
+        return f4
 
     @classmethod
     def ft_f3(
@@ -570,7 +647,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         Returns
@@ -675,7 +752,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         Returns
@@ -758,7 +835,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         Returns
@@ -780,7 +857,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         Returns
@@ -985,7 +1062,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         Returns
@@ -1132,7 +1209,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         Returns
@@ -1154,7 +1231,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         Returns
@@ -1176,7 +1253,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         Returns
@@ -1198,7 +1275,7 @@ class MFEComplexity:
         N : :obj:`np.ndarray`
             Numerical fitted data.
 
-        y : ;obj:`np.ndarray`
+        y : :obj:`np.ndarray`
             Target attribute.
 
         Returns
