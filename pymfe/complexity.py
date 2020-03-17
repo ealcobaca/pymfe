@@ -267,15 +267,15 @@ class MFEComplexity:
 
         mean_global = np.mean(N, axis=0)
 
-        mean_classes = np.asarray([
+        centroids = np.asarray([
             np.mean(N[inds_cur_cls, :], axis=0) for inds_cur_cls in cls_inds
         ], dtype=float)
 
         _numer = np.sum(
-            np.square(mean_classes - mean_global).T * class_freqs, axis=1)
+            np.square(centroids - mean_global).T * class_freqs, axis=1)
 
         _denom = np.sum(np.square([
-            N[inds_cur_cls, :] - mean_classes[cls_ind, :]
+            N[inds_cur_cls, :] - centroids[cls_ind, :]
             for cls_ind, inds_cur_cls in enumerate(cls_inds)
         ]), axis=(0, 1))
 
@@ -347,7 +347,8 @@ class MFEComplexity:
 
             # Note: the result of np.linalg.piv 'Moore-Penrose' pseudo-inverse
             # does not match with the result of MASS::ginv 'Moore-Penrose'
-            # pseudo-inverse implementation.
+            # pseudo-inverse implementation. The metafeature final result does
+            # not seems to be affected.
             direc = np.matmul(scipy.linalg.pinv(W_mat), centroid_diff)
             mat_scatter_between = np.outer(centroid_diff, centroid_diff)
 
