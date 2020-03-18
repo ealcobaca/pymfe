@@ -1206,7 +1206,7 @@ class MFEComplexity:
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
 
-        model = sklearn.neighbors.NearestNeighbors(
+        model = sklearn.neighbors.KNeighborsClassifier(
             n_neighbors=1, metric=metric, p=p).fit(N, y)
 
         neighbor_inds = model.kneighbors(return_distance=False).ravel()
@@ -1559,11 +1559,11 @@ class MFEComplexity:
 
     @classmethod
     def ft_density(
-              cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              radius: float = 0.15,
-              cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            radius: float = 0.15,
+            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1612,6 +1612,37 @@ class MFEComplexity:
         # of the adjacency matrix.
         density = 1.0 - total_edges / (y.size * (y.size - 1))
 
+        """
+        # How it seems to be implemented in R mfe:
+
+        # Note: values for Iris dataset.
+        # 'epsilon'/'radius' in R mfe = eps * N.shape[0] = int(0.15 * 150) = 22
+        # source: https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L88
+
+        # They are considering the number of edges from the 22 nearest
+        # neighbors of each instance
+        # source: https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L125
+
+        model = sklearn.neighbors.KNeighborsClassifier(
+            n_neighbors=int(radius * y.size))
+
+        model.fit(N, y)
+        neigh_ind = model.kneighbors(return_distance=False)
+
+        total_edges = 0
+
+        for i, neighs in enumerate(neigh_ind):
+            total_edges += np.sum(y[i] == y[neighs])
+
+        # Make the graph undirected
+        total_edges /= 2
+
+        density = 1.0 - 2 * total_edges / (y.size * (y.size - 1))
+
+        # For iris dataset:
+        # Pymfe density (following the paper description): 0.9387024608501119
+        # R mfe density: 0.8659955257270693
+        """
         return density
 
     @classmethod
