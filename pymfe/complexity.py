@@ -1558,7 +1558,7 @@ class MFEComplexity:
         return np.array([0.0], dtype=float)
 
     @classmethod
-    def ft_density(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_density(cls, N: np.ndarray, y: np.ndarray, radius: float = 0.15) -> np.ndarray:
         """TODO.
 
         ...
@@ -1586,10 +1586,22 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        return np.array([0.0], dtype=float)
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
+
+        model = sklearn.neighbors.RadiusNeighborsClassifier(
+            radius=radius).fit(N, y)
+
+        adj_matrix = model.radius_neighbors_graph(mode="connectivity")
+
+        # Note: subtracting 'y.size' from the number of edges to
+        # disconsider the self-loops in the adjacency matrix.
+        density = 1.0 - 2 * (np.sum(adj_matrix) - y.size) / (y.size * (y.size - 1))
+
+        return density
 
     @classmethod
-    def ft_cis_coef(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_cls_coef(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
         """TODO.
 
         ...
