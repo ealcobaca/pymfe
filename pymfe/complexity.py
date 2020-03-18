@@ -1137,7 +1137,8 @@ class MFEComplexity:
             sub_dic = cls.precompute_fx(y=y)
             cls_inds = sub_dic["cls_inds"]
 
-        N = sklearn.preprocessing.StandardScaler().fit_transform(N)
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
 
         dist_mat = scipy.spatial.distance.squareform(
             scipy.spatial.distance.pdist(N, metric=metric, p=p))
@@ -1170,7 +1171,11 @@ class MFEComplexity:
         return n2
 
     @classmethod
-    def ft_n3(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_n3(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              metric: str = "minkowski",
+              p: int = 2) -> np.ndarray:
         """TODO.
 
         ...
@@ -1198,7 +1203,17 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        return np.array([0.0], dtype=float)
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
+
+        model = sklearn.neighbors.NearestNeighbors(
+            n_neighbors=1, metric=metric, p=p).fit(N, y)
+
+        neighbor_inds = model.kneighbors(return_distance=False).ravel()
+
+        misclassifications = np.not_equal(y[neighbor_inds], y).astype(int)
+
+        return misclassifications
 
     @classmethod
     def ft_n4(cls,
