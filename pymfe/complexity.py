@@ -160,7 +160,7 @@ class MFEComplexity:
 
     @classmethod
     def precompute_complexity_svm(
-            cls, 
+            cls,
             max_iter: t.Union[int, float] = 1e5,
             random_state: t.Optional[int] = None,
             **kwargs) -> t.Dict[str, int]:
@@ -188,7 +188,7 @@ class MFEComplexity:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``svc_pipeline`` (sklearn.pipeline.Pipeline): 
+                - ``svc_pipeline`` (sklearn.pipeline.Pipeline):
                 TODO.
         """
         precomp_vals = {}
@@ -209,7 +209,7 @@ class MFEComplexity:
 
             pip = sklearn.pipeline.Pipeline([("zscore", zscore), ("svc", svc)])
 
-            precomp_vals["svc_pipeline" ] = pip
+            precomp_vals["svc_pipeline"] = pip
 
         return precomp_vals
 
@@ -303,6 +303,47 @@ class MFEComplexity:
         ind_less_overlap = np.argmin(feat_overlap_num)
 
         return ind_less_overlap, feat_overlap_num, feat_overlapped_region
+
+    @classmethod
+    def _interpolate(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            cls_inds: np.ndarray,
+            random_state: t.Optional[int] = None,
+    ) -> t.Tuple[np.ndarray, np.ndarray]:
+        """Create a new dataset using interpolated instances from ``N``.
+
+        The instances are interpolated using only other instances
+        from the same class.
+        """
+        if random_state is not None:
+            np.random.seed(random_state)
+
+        N_interpol = np.zeros(N.shape, dtype=N.dtype)
+        y_interpol = np.zeros(y.shape, dtype=y.dtype)
+
+        ind_cur = 0
+
+        for inds_cur_cls in cls_inds:
+            N_cur_cls = N[inds_cur_cls, :]
+            subset_size = N_cur_cls.shape[0]
+
+            # Currently it is allowed to a instance 'interpolate with itself',
+            # which holds the instance itself as result.
+            sample_a = N_cur_cls[np.random.choice(subset_size, subset_size), :]
+            sample_b = N_cur_cls[np.random.choice(subset_size, subset_size), :]
+
+            rand_delta = np.random.ranf(N_cur_cls.shape)
+
+            N_subset_interp = sample_a + (sample_b - sample_a) * rand_delta
+
+            ind_next = ind_cur + subset_size
+            N_interpol[ind_cur:ind_next, :] = N_subset_interp
+            y_interpol[ind_cur:ind_next] = y[inds_cur_cls]
+            ind_cur = ind_next
+
+        return N_interpol, y_interpol
 
     @classmethod
     def ft_f1(
@@ -721,7 +762,8 @@ class MFEComplexity:
               cls_inds: t.Optional[np.ndarray] = None,
               class_freqs: t.Optional[np.ndarray] = None,
               svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
-              max_iter: t.Union[int, float] = 1e5) -> np.ndarray:
+              max_iter: t.Union[int, float] = 1e5,
+              random_state: t.Optional[int] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -810,8 +852,9 @@ class MFEComplexity:
             else:
                 insts_dists = np.array([0.0], dtype=float)
 
-            sum_err_dist[ind] = (np.linalg.norm(insts_dists, ord=1) /
-                       (class_freqs[cls_1] + class_freqs[cls_2]))
+            sum_err_dist[ind] = (
+                np.linalg.norm(insts_dists, ord=1) /
+                (class_freqs[cls_1] + class_freqs[cls_2]))
 
         l1 = 1.0 - 1.0 / (1.0 + sum_err_dist)
         # The measure is computed in the literature using the mean. However, it
@@ -826,7 +869,8 @@ class MFEComplexity:
               ovo_comb: t.Optional[np.ndarray] = None,
               cls_inds: t.Optional[np.ndarray] = None,
               svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
-              max_iter: t.Union[int, float] = 1e5) -> np.ndarray:
+              max_iter: t.Union[int, float] = 1e5,
+              random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute the OVO subsets error rate of linear classifier.
 
         The linear model used is induced by the Support Vector
@@ -913,7 +957,14 @@ class MFEComplexity:
         return l2
 
     @classmethod
-    def ft_l3(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_l3(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              ovo_comb: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None,
+              svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
+              max_iter: t.Union[int, float] = 1e5,
+              random_state: t.Optional[int] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -941,7 +992,47 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        return np.array([0.0], dtype=float)
+        if ovo_comb is None or cls_inds is None:
+            sub_dic = cls.precompute_fx(y=y)
+            ovo_comb = sub_dic["ovo_comb"]
+            cls_inds = sub_dic["cls_inds"]
+
+        if svc_pipeline is None:
+            sub_dic = cls.precompute_complexity_svm(
+                max_iter=max_iter,
+                random_state=random_state)
+
+            svc_pipeline = sub_dic["svc_pipeline"]
+
+        l3 = np.zeros(ovo_comb.shape[0], dtype=float)
+
+        for ind, (cls_1, cls_2) in enumerate(ovo_comb):
+            cls_union = np.logical_or(cls_inds[cls_1, :],
+                                      cls_inds[cls_2, :])
+
+            N_subset = N[cls_union, :]
+            y_subset = cls_inds[cls_1, cls_union]
+            cls_inds_subset = cls_inds[:, cls_union]
+
+            svc_pipeline.fit(N_subset, y_subset)
+
+            N_interpol, y_interpol = cls._interpolate(
+                N=N_subset,
+                y=y_subset,
+                cls_inds=cls_inds_subset,
+                random_state=random_state)
+
+            y_pred = svc_pipeline.predict(N_interpol)
+
+            error = sklearn.metrics.zero_one_loss(
+                y_true=y_interpol, y_pred=y_pred, normalize=True)
+
+            l3[ind] = error
+
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
+        return l3
 
     @classmethod
     def ft_n1(cls, N: np.ndarray, y: np.ndarray,
@@ -1129,38 +1220,15 @@ class MFEComplexity:
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
 
-        if random_state is not None:
-            np.random.seed(random_state)
-
-        N_test = np.zeros(N.shape, dtype=N.dtype)
-        y_test = np.zeros(y.shape, dtype=y.dtype)
-
-        ind_cur = 0
-
-        for inds_cur_cls in cls_inds:
-            N_cur_cls = N[inds_cur_cls, :]
-            subset_size = N_cur_cls.shape[0]
-
-            # Currently it is allowed to a instance 'interpolate with itself',
-            # which holds the instance itself as result.
-            sample_a = N_cur_cls[np.random.choice(subset_size, subset_size), :]
-            sample_b = N_cur_cls[np.random.choice(subset_size, subset_size), :]
-
-            rand_delta = np.random.ranf(N_cur_cls.shape)
-
-            N_subset_interp = sample_a + (sample_b - sample_a) * rand_delta
-
-            ind_next = ind_cur + subset_size
-            N_test[ind_cur:ind_next, :] = N_subset_interp
-            y_test[ind_cur:ind_next] = y[inds_cur_cls]
-            ind_cur = ind_next
+        N_interpol, y_interpol = cls._interpolate(
+            N=N, y=y, cls_inds=cls_inds, random_state=random_state)
 
         knn = sklearn.neighbors.KNeighborsClassifier(
             n_neighbors=n_neighbors_n4, p=p_n4, metric=metric_n4).fit(N, y)
 
-        y_pred = knn.predict(N_test)
+        y_pred = knn.predict(N_interpol)
 
-        misclassifications = np.not_equal(y_test, y_pred).astype(int)
+        misclassifications = np.not_equal(y_interpol, y_pred).astype(int)
 
         # The measure is computed in the literature using the mean. However, it
         # is formulated here as a meta-feature. Therefore, the post-processing
