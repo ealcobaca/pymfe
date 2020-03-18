@@ -158,6 +158,61 @@ class MFEComplexity:
 
         return precomp_vals
 
+    @classmethod
+    def precompute_complexity_svm(
+            cls, 
+            max_iter: t.Union[int, float] = 1e5,
+            random_state: t.Optional[int] = None,
+            **kwargs) -> t.Dict[str, int]:
+        """TODO.
+
+        Parameters
+        ----------
+        max_iter : float or int, optional
+            Maximum number of iterations allowed for the support vector
+            machine model convergence. This parameter can receive float
+            numbers to be compatible with the Python scientific notation
+            data type.
+
+        random_state : int, optional
+            Random seed for dual coordinate descent while fitting the
+            Support Vector Classifier model. Check `sklearn.svm.LinearSVC`
+            documentation (`random_state` parameter) for more information.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
+                - ``svc_pipeline`` (sklearn.pipeline.Pipeline): 
+                TODO.
+        """
+        precomp_vals = {}
+
+        if "svc_pipeline" not in kwargs:
+            zscore = sklearn.preprocessing.StandardScaler()
+
+            # Note: 'C' parameter is inversely proportional to the
+            # regularization strenght, which is '0.5' in the reference
+            # paper.
+            svc = sklearn.svm.LinearSVC(
+                penalty="l2",
+                loss="hinge",
+                C=2.0,
+                tol=10e-3,
+                max_iter=int(max_iter),
+                random_state=random_state)
+
+            pip = sklearn.pipeline.Pipeline([("zscore", zscore), ("svc", svc)])
+
+            precomp_vals["svc_pipeline" ] = pip
+
+        return precomp_vals
+
     @staticmethod
     def _calc_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
         """Compute the ``ovo_comb`` variable.
@@ -283,6 +338,14 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         classes = None
 
@@ -358,6 +421,14 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
             sub_dic = cls.precompute_fx(y=y)
@@ -438,6 +509,14 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None:
             sub_dic = cls.precompute_fx(y=y)
@@ -635,7 +714,14 @@ class MFEComplexity:
         return f4
 
     @classmethod
-    def ft_l1(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_l1(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              ovo_comb: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None,
+              class_freqs: t.Optional[np.ndarray] = None,
+              svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
+              max_iter: t.Union[int, float] = 1e5) -> np.ndarray:
         """TODO.
 
         ...
@@ -650,11 +736,88 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices corresponds to
+            the classes.
+
+        max_iter : float or int, optional
+            Maximum number of iterations allowed for the support vector
+            machine model convergence. This parameter can receive float
+            numbers to be compatible with the Python scientific notation
+            data type. Used only if ``svc_pipeline`` is None.
+
+        svc_pipeline : sklearn.pipeline.Pipeline, optional
+            TODO.
+
+        random_state : int, optional
+            Random seed for dual coordinate descent while fitting the
+            Support Vector Classifier model. Check `sklearn.svm.LinearSVC`
+            documentation (`random_state` parameter) for more information.
+            Used only if ``svc_pipeline`` is None.
+
         Returns
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        if ovo_comb is None or cls_inds is None or class_freqs is None:
+            sub_dic = cls.precompute_fx(y=y)
+            ovo_comb = sub_dic["ovo_comb"]
+            cls_inds = sub_dic["cls_inds"]
+            class_freqs = sub_dic["class_freqs"]
+
+        if svc_pipeline is None:
+            sub_dic = cls.precompute_complexity_svm(
+                max_iter=max_iter,
+                random_state=random_state)
+
+            svc_pipeline = sub_dic["svc_pipeline"]
+
+        sum_err_dist = np.zeros(ovo_comb.shape[0], dtype=float)
+
+        for ind, (cls_1, cls_2) in enumerate(ovo_comb):
+            cls_union = np.logical_or(cls_inds[cls_1, :],
+                                      cls_inds[cls_2, :])
+
+            N_subset = N[cls_union, :]
+            y_subset = cls_inds[cls_1, cls_union]
+
+            svc_pipeline.fit(N_subset, y_subset)
+            y_pred = svc_pipeline.predict(N_subset)
+            misclassified_insts = N_subset[y_pred != y_subset, :]
+
+            if misclassified_insts.size:
+                insts_dists = svc_pipeline.decision_function(
+                    misclassified_insts)
+
+            else:
+                insts_dists = np.array([0.0], dtype=float)
+
+            sum_err_dist[ind] = (np.linalg.norm(insts_dists, ord=1) /
+                       (class_freqs[cls_1] + class_freqs[cls_2]))
+
+        l1 = 1.0 - 1.0 / (1.0 + sum_err_dist)
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
+        return l1
 
     @classmethod
     def ft_l2(cls,
@@ -662,6 +825,7 @@ class MFEComplexity:
               y: np.ndarray,
               ovo_comb: t.Optional[np.ndarray] = None,
               cls_inds: t.Optional[np.ndarray] = None,
+              svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
               max_iter: t.Union[int, float] = 1e5) -> np.ndarray:
         """Compute the OVO subsets error rate of linear classifier.
 
@@ -689,7 +853,16 @@ class MFEComplexity:
             Maximum number of iterations allowed for the support vector
             machine model convergence. This parameter can receive float
             numbers to be compatible with the Python scientific notation
-            data type.
+            data type. Used only if ``svc_pipeline`` is None.
+
+        svc_pipeline : sklearn.pipeline.Pipeline, optional
+            TODO.
+
+        random_state : int, optional
+            Random seed for dual coordinate descent while fitting the
+            Support Vector Classifier model. Check `sklearn.svm.LinearSVC`
+            documentation (`random_state` parameter) for more information.
+            Used only if ``svc_pipeline`` is None.
 
         Returns
         -------
@@ -710,24 +883,24 @@ class MFEComplexity:
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
+        if svc_pipeline is None:
+            sub_dic = cls.precompute_complexity_svm(
+                max_iter=max_iter,
+                random_state=random_state)
+
+            svc_pipeline = sub_dic["svc_pipeline"]
+
         l2 = np.zeros(ovo_comb.shape[0], dtype=float)
 
-        zscore = sklearn.preprocessing.StandardScaler()
-
-        svc = sklearn.svm.SVC(
-            kernel="linear", C=1.0, tol=10e-3, max_iter=int(max_iter))
-
-        pip = sklearn.pipeline.Pipeline([("zscore", zscore), ("svc", svc)])
-
         for ind, (cls_1, cls_2) in enumerate(ovo_comb):
-            cls_intersec = np.logical_or(cls_inds[cls_1, :],
-                                         cls_inds[cls_2, :])
+            cls_union = np.logical_or(cls_inds[cls_1, :],
+                                      cls_inds[cls_2, :])
 
-            N_subset = N[cls_intersec, :]
-            y_subset = cls_inds[cls_1, cls_intersec]
+            N_subset = N[cls_union, :]
+            y_subset = cls_inds[cls_1, cls_union]
 
-            pip.fit(N_subset, y_subset)
-            y_pred = pip.predict(N_subset)
+            svc_pipeline.fit(N_subset, y_subset)
+            y_pred = svc_pipeline.predict(N_subset)
 
             error = sklearn.metrics.zero_one_loss(
                 y_true=y_subset, y_pred=y_pred, normalize=True)
@@ -759,7 +932,16 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        return np.array([0.0], dtype=float)
 
     @classmethod
     def ft_n1(cls, N: np.ndarray, y: np.ndarray,
@@ -842,7 +1024,16 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        return np.array([0.0], dtype=float)
 
     @classmethod
     def ft_n3(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -864,7 +1055,16 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        return np.array([0.0], dtype=float)
 
     @classmethod
     def ft_n4(cls,
@@ -1069,7 +1269,16 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        return np.array([0.0], dtype=float)
 
     @classmethod
     def ft_t2(cls, N: np.ndarray) -> float:
@@ -1217,6 +1426,7 @@ class MFEComplexity:
         :obj:`np.ndarray`
             ...
         """
+        return np.array([0.0], dtype=float)
 
     @classmethod
     def ft_density(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -1238,7 +1448,16 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        return np.array([0.0], dtype=float)
 
     @classmethod
     def ft_cis_coef(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -1260,7 +1479,16 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        return np.array([0.0], dtype=float)
 
     @classmethod
     def ft_hubs(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -1282,4 +1510,13 @@ class MFEComplexity:
         -------
         :obj:`np.ndarray`
             ...
+
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 9). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        return np.array([0.0], dtype=float)
