@@ -1096,7 +1096,13 @@ class MFEComplexity:
         return borderline_inst_num / inst_num
 
     @classmethod
-    def ft_n2(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_n2(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              metric: str = "minkowski",
+              p: float = 2.0,
+              class_freqs: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1124,7 +1130,44 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        return np.array([0.0], dtype=float)
+        if class_freqs is None:
+            _, class_freqs = np.unique(y)
+
+        if cls_inds is None:
+            sub_dic = cls.precompute_fx(y=y)
+            cls_inds = sub_dic["cls_inds"]
+
+        N = sklearn.preprocessing.StandardScaler().fit_transform(N)
+
+        dist_mat = scipy.spatial.distance.squareform(
+            scipy.spatial.distance.pdist(N, metric=metric, p=p))
+
+        dist_mat[np.diag_indices_from(dist_mat)] = np.inf
+
+        intra_extra = np.zeros(y.size, dtype=float)
+
+        cur_ind = 0
+
+        for cls_ind, inds_cur_cls in enumerate(cls_inds):
+            dist_mat_intracls = dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            dist_mat_intercls = dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
+
+            _aux = np.arange(class_freqs[cls_ind])
+
+            intra = dist_mat_intracls[
+                np.argmin(dist_mat_intracls, axis=0), _aux]
+            extra = dist_mat_intercls[
+                np.argmin(dist_mat_intercls, axis=0), _aux]
+
+            next_ind = cur_ind + class_freqs[cls_ind]
+            intra_extra[cur_ind:next_ind] = intra / extra
+            cur_ind = next_ind
+
+        # Note: in the original paper, 'intra_extra' is the ratio of two
+        # sums. However, to enable summarization, the sums are omitted.
+        n2 = 1.0 - 1.0 / (1.0 + intra_extra)
+
+        return n2
 
     @classmethod
     def ft_n3(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -1162,9 +1205,9 @@ class MFEComplexity:
               N: np.ndarray,
               y: np.ndarray,
               cls_inds: t.Optional[np.ndarray] = None,
-              metric_n4: str = "minkowski",
-              p_n4: int = 2,
-              n_neighbors_n4: int = 1,
+              metric: str = "minkowski",
+              p: int = 2,
+              n_neighbors: int = 1,
               random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute the non-linearity of the NN Classifier.
 
@@ -1181,18 +1224,21 @@ class MFEComplexity:
             The rows corresponds to each distinct class, and the columns
             corresponds to the instances.
 
-        metric_n4 : str, optional (default = "minkowski")
+        metric : str, optional (default = "minkowski")
             The distance metric used in the internal kNN classifier. See the
             documentation of the ``sklearn.neighbors.DistanceMetric`` class
             for a list of available metrics.
 
-        p_n4 : int, optional (default = 2)
+        p : int, optional (default = 2)
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using manhattan_distance (l1), and
             euclidean_distance (l2) for p = 2. For arbitrary p,
             minkowski_distance (l_p) is used. Please, check the
             ``sklearn.neighbors.KNeighborsClassifier`` documentation for
             more information.
+
+        n_neighbors : int, optional (default = 1)
+            TODO.
 
         random_state : int, optional
             If given, set the random seed before computing the randomized
@@ -1224,7 +1270,7 @@ class MFEComplexity:
             N=N, y=y, cls_inds=cls_inds, random_state=random_state)
 
         knn = sklearn.neighbors.KNeighborsClassifier(
-            n_neighbors=n_neighbors_n4, p=p_n4, metric=metric_n4).fit(N, y)
+            n_neighbors=n_neighbors, p=p, metric=metric).fit(N, y)
 
         y_pred = knn.predict(N_interpol)
 
