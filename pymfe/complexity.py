@@ -1558,7 +1558,12 @@ class MFEComplexity:
         return np.array([0.0], dtype=float)
 
     @classmethod
-    def ft_density(cls, N: np.ndarray, y: np.ndarray, radius: float = 0.15) -> np.ndarray:
+    def ft_density(
+              cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              radius: float = 0.15,
+              cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1586,17 +1591,26 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        if cls_inds is None:
+            classes = np.unique(y)
+            cls_inds = _utils.calc_cls_inds(y, classes)
+
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
 
         model = sklearn.neighbors.RadiusNeighborsClassifier(
-            radius=radius).fit(N, y)
+            outlier_label="most_frequent", radius=radius)
 
-        adj_matrix = model.radius_neighbors_graph(mode="connectivity")
+        total_edges = 0
 
-        # Note: subtracting 'y.size' from the number of edges to
-        # disconsider the self-loops in the adjacency matrix.
-        density = 1.0 - 2 * (np.sum(adj_matrix) - y.size) / (y.size * (y.size - 1))
+        for inds_cur_cls in cls_inds:
+            model.fit(N[inds_cur_cls, :], y[inds_cur_cls])
+            adj_matrix = model.radius_neighbors_graph(mode="connectivity")
+            total_edges += np.sum(adj_matrix)
+
+        # Note: dividing 'total_edges' by 2 to discount the symmetry
+        # of the adjacency matrix.
+        density = 1.0 - total_edges / (y.size * (y.size - 1))
 
         return density
 
