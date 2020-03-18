@@ -1646,7 +1646,12 @@ class MFEComplexity:
         return density
 
     @classmethod
-    def ft_cls_coef(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_cls_coef(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            radius: float = 0.15,
+            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1674,10 +1679,33 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        return np.array([0.0], dtype=float)
+        if cls_inds is None:
+            classes = np.unique(y)
+            cls_inds = _utils.calc_cls_inds(y, classes)
+
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
+
+        model = sklearn.neighbors.RadiusNeighborsClassifier(
+            outlier_label="most_frequent", radius=radius)
+
+        total_edges = 0
+
+        # TODO.
+
+        # Note: dividing 'total_edges' by 2 to discount the symmetry
+        # of the adjacency matrix.
+        cls_coef = 1.0 - 2 * total_edges / y.size
+
+        return cls_coef
 
     @classmethod
-    def ft_hubs(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_hubs(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            radius: float = 0.15,
+            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1705,4 +1733,17 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        return np.array([0.0], dtype=float)
+        # TODO: check validity.
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
+
+        model_enn = sklearn.neighbors.RadiusNeighborsClassifier(
+            outlier_label="most_frequent", radius=radius)
+        model_enn.fit(N, y)
+        adj_matrix = model_enn.radius_neighbors_graph(mode="connectivity")
+
+        model_pca = sklearn.decomposition.PCA().fit(adj_matrix.todense())
+
+        hubs = 1.0 - model_pca.components_
+
+        return hubs
