@@ -429,7 +429,7 @@ class MFEComplexity:
             nearest_enemy_dist=nearest_enemy_dist,
             ind_inst=ind_enemy)
 
-        radius[ind_inst] = nearest_enemy_dist[ind_inst] - radius_enemy
+        radius[ind_inst] = abs(nearest_enemy_dist[ind_inst] - radius_enemy)
         return radius[ind_inst]
 
     @classmethod
@@ -1499,10 +1499,19 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        def _is_hypersphere_in(center_a, center_b, radius_a, radius_b) -> bool:
+            """Checks if a hypersphere `a` is in another hypersphere `b`."""
+            upper_a, lower_a = center_a + radius_a, center_a - radius_a
+            upper_b, lower_b = center_b + radius_b, center_b - radius_b
+            for ind in np.arange(center_a.size):
+                if ((upper_a[ind] > upper_b[ind]) or
+                        (lower_a[ind] < lower_b[ind])):
+                    return False
+
+            return True
+
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
-
-        radius = np.zeros(y.size, dtype=float)
 
         nearest_enemy_dist, nearest_enemy_ind = (
             cls._calc_nearest_enemies(
@@ -1514,15 +1523,33 @@ class MFEComplexity:
                 return_inds=True,
                 return_dist_mat=False))
 
-        cls._calc_data_hyperspheres(
-            radius=radius,
-            nearest_enemy_ind=nearest_enemy_ind,
-            nearest_enemy_dist=nearest_enemy_dist,
-            ind_inst=0)
+        radius = np.full(y.size, fill_value=-1.0, dtype=float)
 
-        # TODO: absorb inner spheres
+        for ind in np.arange(y.size):
+            if radius[ind] < 0.0:
+                cls._calc_data_hyperspheres(
+                    radius=radius,
+                    nearest_enemy_ind=nearest_enemy_ind,
+                    nearest_enemy_dist=nearest_enemy_dist,
+                    ind_inst=ind)
 
-        t1 = radius / y.size
+        sorted_spheres = np.argsort(radius)
+
+        sphere_inst_count = np.ones(y.size, dtype=int)
+
+        for ind_a, ind_sphere_a in enumerate(sorted_spheres[:-1]):
+            for ind_sphere_b in sorted_spheres[(1 + ind_a):]:
+                if _is_hypersphere_in(
+                        center_a=N[ind_sphere_a, :],
+                        center_b=N[ind_sphere_b, :],
+                        radius_a=radius[ind_sphere_a],
+                        radius_b=radius[ind_sphere_b]):
+
+                    sphere_inst_count[ind_sphere_b] += sphere_inst_count[ind_sphere_a]
+                    sphere_inst_count[ind_sphere_a] = 0
+                    break
+
+        t1 = sphere_inst_count[sphere_inst_count > 0] / y.size
 
         return t1
 
