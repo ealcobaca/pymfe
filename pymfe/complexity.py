@@ -1535,7 +1535,13 @@ class MFEComplexity:
         return num_attr_pca / num_attr
 
     @classmethod
-    def ft_lsc(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_lsc(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2.0,
+            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1555,7 +1561,38 @@ class MFEComplexity:
         :obj:`np.ndarray`
             ...
         """
-        return np.array([0.0], dtype=float)
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
+
+        dist_mat = scipy.spatial.distance.squareform(
+            scipy.spatial.distance.pdist(N, metric=metric, p=p))
+
+        model = sklearn.neighbors.KNeighborsClassifier(
+            n_neighbors=1,
+            metric="precomputed")
+
+        nearest_enemy_dist = np.full(y.size, fill_value=np.inf)
+
+        for inds_cur_cls in cls_inds:
+            inds_non_cls = ~inds_cur_cls
+
+            dist_mat_subset = dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            dist_mat_non_cls = dist_mat[inds_non_cls, :][:, inds_cur_cls]
+            y_subset = y[inds_cur_cls]
+
+            model.fit(dist_mat_subset, y_subset)
+
+            neigh_dist, neigh_ind = model.kneighbors(
+                X=dist_mat_non_cls,
+                return_distance=True)
+
+            nearest_enemy_dist[inds_non_cls] = np.minimum(
+                nearest_enemy_dist[inds_non_cls],
+                neigh_dist.ravel())
+
+        lsc = 1.0 - np.sum(dist_mat < nearest_enemy_dist) / (y.size ** 2)
+
+        return lsc
 
     @classmethod
     def ft_density(
@@ -1621,7 +1658,8 @@ class MFEComplexity:
 
         # They are considering the number of edges from the 22 nearest
         # neighbors of each instance
-        # source: https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L125
+        # source:
+        # https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L125
 
         model = sklearn.neighbors.KNeighborsClassifier(
             n_neighbors=int(radius * y.size))
@@ -1686,8 +1724,8 @@ class MFEComplexity:
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
 
-        model = sklearn.neighbors.RadiusNeighborsClassifier(
-            outlier_label="most_frequent", radius=radius)
+        # model = sklearn.neighbors.RadiusNeighborsClassifier(
+        #     outlier_label="most_frequent", radius=radius)
 
         total_edges = 0
 
