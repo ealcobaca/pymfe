@@ -346,6 +346,93 @@ class MFEComplexity:
         return N_interpol, y_interpol
 
     @classmethod
+    def _calc_nearest_enemies(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            cls_inds: np.ndarray,
+            metric: str,
+            p: t.Union[float, int],
+            return_inds: bool = True,
+            return_dist_mat: bool = False,
+    ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, ...]]:
+        """Calculate each instances nearest enemies.
+
+        Returns the nearest enemies distance and its indices.
+        """
+        dist_mat = scipy.spatial.distance.squareform(
+            scipy.spatial.distance.pdist(N, metric=metric, p=p))
+
+        model = sklearn.neighbors.KNeighborsClassifier(
+            n_neighbors=1,
+            metric="precomputed")
+
+        # Note: 'n_ene' stands for 'nearest_enemy'
+        n_ene_dist = np.full(y.size, fill_value=np.inf, dtype=float)
+
+        if return_inds:
+            n_ene_inds = np.full(y.size, fill_value=-1, dtype=int)
+
+        for inds_cur_cls in cls_inds:
+            inds_non_cls = ~inds_cur_cls
+
+            dist_mat_subset = dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            dist_mat_non_cls = dist_mat[inds_non_cls, :][:, inds_cur_cls]
+            y_subset = y[inds_cur_cls]
+
+            model.fit(dist_mat_subset, y_subset)
+
+            neigh_dist, neigh_ind = model.kneighbors(
+                X=dist_mat_non_cls,
+                return_distance=True)
+
+            neigh_dist = neigh_dist.ravel()
+
+            n_ene_dist[inds_non_cls] = np.minimum(
+                n_ene_dist[inds_non_cls], neigh_dist)
+
+            if return_inds:
+                n_ene_inds[inds_non_cls] = np.where(
+                    n_ene_dist[inds_non_cls] < neigh_dist,
+                    n_ene_inds[inds_non_cls], neigh_ind.ravel())
+
+        ret = [n_ene_dist]
+
+        if return_inds:
+            ret.append(n_ene_inds)
+
+        if return_dist_mat:
+            ret.append(dist_mat)
+
+        return tuple(ret) if len(ret) > 1 else ret[0]
+
+    @classmethod
+    def _calc_data_hyperspheres(
+            cls,
+            radius: np.ndarray,
+            nearest_enemy_ind: np.ndarray,
+            nearest_enemy_dist: np.ndarray,
+            ind_inst: int) -> float:
+        """Recursively calculate hyperspheres to cover dataset."""
+        ind_enemy = nearest_enemy_ind[ind_inst]
+
+        if ind_inst == nearest_enemy_ind[ind_enemy]:
+            # In this case, both instances are the nearest enemy of
+            # each other, thus the hypersphere radius of both is
+            # half the distance between the instances.
+            radius[ind_inst] = 0.5 * nearest_enemy_dist[ind_inst]
+            return radius[ind_inst]
+
+        radius_enemy = cls._calc_data_hyperspheres(
+            radius=radius,
+            nearest_enemy_ind=nearest_enemy_ind,
+            nearest_enemy_dist=nearest_enemy_dist,
+            ind_inst=ind_enemy)
+
+        radius[ind_inst] = nearest_enemy_dist[ind_inst] - radius_enemy
+        return radius[ind_inst]
+
+    @classmethod
     def ft_f1(
             cls,
             N: np.ndarray,
@@ -1379,7 +1466,12 @@ class MFEComplexity:
         return c2
 
     @classmethod
-    def ft_t1(cls, N: np.ndarray, y: np.ndarray) -> np.ndarray:
+    def ft_t1(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              metric: str = "minkowski",
+              p: int = 2,
+              cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1407,7 +1499,32 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        return np.array([0.0], dtype=float)
+        N = sklearn.preprocessing.MinMaxScaler(
+            feature_range=(0, 1)).fit_transform(N)
+
+        radius = np.zeros(y.size, dtype=float)
+
+        nearest_enemy_dist, nearest_enemy_ind = (
+            cls._calc_nearest_enemies(
+                N=N,
+                y=y,
+                cls_inds=cls_inds,
+                metric=metric,
+                p=p,
+                return_inds=True,
+                return_dist_mat=False))
+
+        cls._calc_data_hyperspheres(
+            radius=radius,
+            nearest_enemy_ind=nearest_enemy_ind,
+            nearest_enemy_dist=nearest_enemy_dist,
+            ind_inst=0)
+
+        # TODO: absorb inner spheres
+
+        t1 = radius / y.size
+
+        return t1
 
     @classmethod
     def ft_t2(cls, N: np.ndarray) -> float:
@@ -1564,31 +1681,14 @@ class MFEComplexity:
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
 
-        dist_mat = scipy.spatial.distance.squareform(
-            scipy.spatial.distance.pdist(N, metric=metric, p=p))
-
-        model = sklearn.neighbors.KNeighborsClassifier(
-            n_neighbors=1,
-            metric="precomputed")
-
-        nearest_enemy_dist = np.full(y.size, fill_value=np.inf)
-
-        for inds_cur_cls in cls_inds:
-            inds_non_cls = ~inds_cur_cls
-
-            dist_mat_subset = dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            dist_mat_non_cls = dist_mat[inds_non_cls, :][:, inds_cur_cls]
-            y_subset = y[inds_cur_cls]
-
-            model.fit(dist_mat_subset, y_subset)
-
-            neigh_dist, neigh_ind = model.kneighbors(
-                X=dist_mat_non_cls,
-                return_distance=True)
-
-            nearest_enemy_dist[inds_non_cls] = np.minimum(
-                nearest_enemy_dist[inds_non_cls],
-                neigh_dist.ravel())
+        nearest_enemy_dist, dist_mat = cls._calc_nearest_enemies(
+            N=N,
+            y=y,
+            cls_inds=cls_inds,
+            metric=metric,
+            p=p,
+            return_inds=False,
+            return_dist_mat=True)
 
         lsc = 1.0 - np.sum(dist_mat < nearest_enemy_dist) / (y.size ** 2)
 
@@ -1679,7 +1779,8 @@ class MFEComplexity:
 
         # For iris dataset:
         # Pymfe density (following the paper description): 0.9387024608501119
-        # R mfe density: 0.8659955257270693
+        # 'R mfe implementation'-like density: 0.8659955257270693
+        # R MFE implementation: 0.8436689
         """
         return density
 
@@ -1743,6 +1844,7 @@ class MFEComplexity:
             N: np.ndarray,
             y: np.ndarray,
             radius: float = 0.15,
+            random_state: t.Optional[int] = None,
             cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
@@ -1780,7 +1882,8 @@ class MFEComplexity:
         model_enn.fit(N, y)
         adj_matrix = model_enn.radius_neighbors_graph(mode="connectivity")
 
-        model_pca = sklearn.decomposition.PCA().fit(adj_matrix.todense())
+        model_pca = sklearn.decomposition.PCA(
+            random_state=random_state).fit(adj_matrix.todense())
 
         hubs = 1.0 - model_pca.components_
 
