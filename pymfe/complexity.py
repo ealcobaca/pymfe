@@ -1538,7 +1538,7 @@ class MFEComplexity:
         sphere_inst_count = np.ones(y.size, dtype=int)
 
         for ind_a, ind_sphere_a in enumerate(sorted_spheres[:-1]):
-            for ind_sphere_b in sorted_spheres[(1 + ind_a):]:
+            for ind_sphere_b in sorted_spheres[:ind_a:-1]:
                 if _is_hypersphere_in(
                         center_a=N[ind_sphere_a, :],
                         center_b=N[ind_sphere_b, :],
