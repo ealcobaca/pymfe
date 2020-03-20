@@ -1900,18 +1900,18 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        # TODO: check validity.
         N = sklearn.preprocessing.MinMaxScaler(
             feature_range=(0, 1)).fit_transform(N)
 
         model_enn = sklearn.neighbors.RadiusNeighborsClassifier(
             outlier_label="most_frequent", radius=radius)
         model_enn.fit(N, y)
-        adj_matrix = model_enn.radius_neighbors_graph(mode="connectivity")
 
-        model_pca = sklearn.decomposition.PCA(
-            random_state=random_state).fit(adj_matrix.todense())
+        adj_matrix = model_enn.radius_neighbors_graph(
+            mode="connectivity").todense()
 
-        hubs = 1.0 - model_pca.components_
+        _, eigvecs = np.linalg.eig(np.dot(adj_matrix.T, adj_matrix))
+
+        hubs = 1.0 - np.squeeze(np.asarray(eigvecs[:, 0]))
 
         return hubs
