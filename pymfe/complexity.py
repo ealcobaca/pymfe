@@ -213,6 +213,50 @@ class MFEComplexity:
 
         return precomp_vals
 
+    @classmethod
+    def precompute_scaled_norm_dist_mat(
+            cls,
+            N: np.ndarray,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
+            **kwargs) -> t.Dict[str, int]:
+        """TODO.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
+                TODO.
+        """
+        precomp_vals = {}
+
+        if "N_scaled" not in kwargs:
+            N_scaled = cls._scale_N(N=N)
+            precomp_vals["N_scaled"] = N_scaled
+
+        if "norm_dist_mat" not in kwargs:
+            N_scaled = kwargs.get("N_scaled", precomp_vals.get("N_scaled"))
+
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled,
+                N_scaled,
+                metric=metric,
+                p=p)
+
+            precomp_vals["norm_dist_mat"] = norm_dist_mat
+
+        return precomp_vals
+
     @staticmethod
     def _calc_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
         """Compute the ``ovo_comb`` variable.
@@ -348,21 +392,17 @@ class MFEComplexity:
     @classmethod
     def _calc_nearest_enemies(
             cls,
-            N: np.ndarray,
+            norm_dist_mat: np.ndarray,
             y: np.ndarray,
             cls_inds: np.ndarray,
             metric: str,
             p: t.Union[float, int],
             return_inds: bool = True,
-            return_dist_mat: bool = False,
     ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, ...]]:
         """Calculate each instances nearest enemies.
 
         Returns the nearest enemies distance and its indices.
         """
-        dist_mat = scipy.spatial.distance.squareform(
-            scipy.spatial.distance.pdist(N, metric=metric, p=p))
-
         model = sklearn.neighbors.KNeighborsClassifier(
             n_neighbors=1,
             metric="precomputed")
@@ -376,14 +416,14 @@ class MFEComplexity:
         for inds_cur_cls in cls_inds:
             inds_non_cls = ~inds_cur_cls
 
-            dist_mat_subset = dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            dist_mat_non_cls = dist_mat[inds_non_cls, :][:, inds_cur_cls]
+            norm_dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            norm_dist_mat_non_cls = norm_dist_mat[inds_non_cls, :][:, inds_cur_cls]
             y_subset = y[inds_cur_cls]
 
-            model.fit(dist_mat_subset, y_subset)
+            model.fit(norm_dist_mat_subset, y_subset)
 
             neigh_dist, neigh_ind = model.kneighbors(
-                X=dist_mat_non_cls,
+                X=norm_dist_mat_non_cls,
                 return_distance=True)
 
             neigh_dist = neigh_dist.ravel()
@@ -396,15 +436,10 @@ class MFEComplexity:
                     n_ene_dist[inds_non_cls] < neigh_dist,
                     n_ene_inds[inds_non_cls], neigh_ind.ravel())
 
-        ret = [n_ene_dist]
-
         if return_inds:
-            ret.append(n_ene_inds)
+            return n_ene_dist, n_ene_inds
 
-        if return_dist_mat:
-            ret.append(dist_mat)
-
-        return tuple(ret) if len(ret) > 1 else ret[0]
+        return n_ene_dist
 
     @classmethod
     def _calc_data_hyperspheres(
@@ -431,6 +466,18 @@ class MFEComplexity:
 
         radius[ind_inst] = abs(nearest_enemy_dist[ind_inst] - radius_enemy)
         return radius[ind_inst]
+
+    @staticmethod
+    def _scale_N(N: np.ndarray) -> np.ndarray:
+        """Scale all features of N to [0, 1] range."""
+        N_scaled = N
+
+        if (not np.allclose(1.0, np.max(N, axis=0)) or
+                not np.allclose(0.0, np.min(N, axis=0))):
+            N_scaled = sklearn.preprocessing.MinMaxScaler(
+                feature_range=(0, 1)).fit_transform(N)
+
+        return N_scaled
 
     @classmethod
     def ft_f1(
@@ -1122,8 +1169,14 @@ class MFEComplexity:
         return l3
 
     @classmethod
-    def ft_n1(cls, N: np.ndarray, y: np.ndarray,
-              metric: str = "euclidean") -> float:
+    def ft_n1(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
+            N_scaled: t.Optional[np.ndarray] = None,
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the fraction of borderline points.
 
         Parameters
@@ -1152,19 +1205,21 @@ class MFEComplexity:
            (Cited on page 9-10). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        # 0-1 feature scaling
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
+        if norm_dist_mat is None:
+            if N_scaled is None:
+                N_scaled = cls._scale_N(N=N)
 
-        # Compute the distance matrix and the minimum spanning tree
-        # using Kruskal's Minimum Spanning Tree algorithm.
-        dist_mat = scipy.spatial.distance.cdist(N, N, metric=metric)
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled, N_scaled, metric=metric, p=p)
+
+        # Compute the minimum spanning tree using Kruskal's Minimum
+        # Spanning Tree algorithm.
         # Note: in the paper, the authors used Prim's algorithm.
         # Our implementation may change it in a future version due to
         # time complexity advantages of Prim's algorithm in this context.
 
         mst = scipy.sparse.csgraph.minimum_spanning_tree(
-            csgraph=np.triu(dist_mat, k=1), overwrite=True)
+            csgraph=np.triu(norm_dist_mat, k=1), overwrite=True)
 
         node_id_i, node_id_j = np.nonzero(mst)
 
@@ -1183,13 +1238,16 @@ class MFEComplexity:
         return borderline_inst_num / inst_num
 
     @classmethod
-    def ft_n2(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              metric: str = "minkowski",
-              p: float = 2.0,
-              class_freqs: t.Optional[np.ndarray] = None,
-              cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_n2(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
+            class_freqs: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
+            N_scaled: t.Optional[np.ndarray] = None,
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1218,34 +1276,39 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if class_freqs is None:
-            _, class_freqs = np.unique(y)
+            _, class_freqs = np.unique(y, return_counts=True)
 
         if cls_inds is None:
             sub_dic = cls.precompute_fx(y=y)
             cls_inds = sub_dic["cls_inds"]
 
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
+        if norm_dist_mat is None:
+            if N_scaled is None:
+                N_scaled = cls._scale_N(N=N)
 
-        dist_mat = scipy.spatial.distance.squareform(
-            scipy.spatial.distance.pdist(N, metric=metric, p=p))
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled, N_scaled, metric=metric, p=p)
 
-        dist_mat[np.diag_indices_from(dist_mat)] = np.inf
+            norm_dist_mat[np.diag_indices_from(norm_dist_mat)] = np.inf
+
+        else:
+            norm_dist_mat = np.copy(norm_dist_mat)
+            norm_dist_mat[np.diag_indices_from(norm_dist_mat)] = np.inf
 
         intra_extra = np.zeros(y.size, dtype=float)
 
         cur_ind = 0
 
         for cls_ind, inds_cur_cls in enumerate(cls_inds):
-            dist_mat_intracls = dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            dist_mat_intercls = dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
+            norm_dist_mat_intracls = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            norm_dist_mat_intercls = norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
 
             _aux = np.arange(class_freqs[cls_ind])
 
-            intra = dist_mat_intracls[
-                np.argmin(dist_mat_intracls, axis=0), _aux]
-            extra = dist_mat_intercls[
-                np.argmin(dist_mat_intercls, axis=0), _aux]
+            intra = norm_dist_mat_intracls[
+                np.argmin(norm_dist_mat_intracls, axis=0), _aux]
+            extra = norm_dist_mat_intercls[
+                np.argmin(norm_dist_mat_intercls, axis=0), _aux]
 
             next_ind = cur_ind + class_freqs[cls_ind]
             intra_extra[cur_ind:next_ind] = intra / extra
@@ -1258,11 +1321,14 @@ class MFEComplexity:
         return n2
 
     @classmethod
-    def ft_n3(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              metric: str = "minkowski",
-              p: int = 2) -> np.ndarray:
+    def ft_n3(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
+            N_scaled: t.Optional[np.ndarray] = None,
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1290,11 +1356,15 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
+        if norm_dist_mat is None:
+            if N_scaled is None:
+                N_scaled = cls._scale_N(N=N)
+
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled, N_scaled, metric=metric, p=p)
 
         model = sklearn.neighbors.KNeighborsClassifier(
-            n_neighbors=1, metric=metric, p=p).fit(N, y)
+            n_neighbors=1, metric="precomputed").fit(norm_dist_mat, y)
 
         neighbor_inds = model.kneighbors(return_distance=False).ravel()
 
@@ -1303,14 +1373,17 @@ class MFEComplexity:
         return misclassifications
 
     @classmethod
-    def ft_n4(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              cls_inds: t.Optional[np.ndarray] = None,
-              metric: str = "minkowski",
-              p: int = 2,
-              n_neighbors: int = 1,
-              random_state: t.Optional[int] = None) -> np.ndarray:
+    def ft_n4(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            cls_inds: t.Optional[np.ndarray] = None,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
+            n_neighbors: int = 1,
+            random_state: t.Optional[int] = None,
+            N_scaled: t.Optional[np.ndarray] = None,
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the non-linearity of the NN Classifier.
 
         Parameters
@@ -1364,17 +1437,22 @@ class MFEComplexity:
             classes = np.unique(y)
             cls_inds = _utils.calc_cls_inds(y, classes)
 
-        # 0-1 feature scaling
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
+        if N_scaled is None:
+            N_scaled = cls._scale_N(N=N)
+
+        if norm_dist_mat is None:
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled, N_scaled, metric=metric, p=p)
 
         N_interpol, y_interpol = cls._interpolate(
-            N=N, y=y, cls_inds=cls_inds, random_state=random_state)
+            N=N_scaled, y=y, cls_inds=cls_inds, random_state=random_state)
 
         knn = sklearn.neighbors.KNeighborsClassifier(
-            n_neighbors=n_neighbors, p=p, metric=metric).fit(N, y)
+            n_neighbors=n_neighbors, metric="precomputed").fit(norm_dist_mat, y)
 
-        y_pred = knn.predict(N_interpol)
+        y_pred = knn.predict(
+            scipy.spatial.distance.cdist(
+                N_interpol, N_scaled, metric=metric, p=p))
 
         misclassifications = np.not_equal(y_interpol, y_pred).astype(int)
 
@@ -1466,12 +1544,15 @@ class MFEComplexity:
         return c2
 
     @classmethod
-    def ft_t1(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              metric: str = "minkowski",
-              p: int = 2,
-              cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_t1(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
+            cls_inds: t.Optional[np.ndarray] = None,
+            N_scaled: t.Optional[np.ndarray] = None,
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1510,18 +1591,25 @@ class MFEComplexity:
 
             return True
 
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
+        if cls_inds is None:
+            classes = np.unique(y)
+            cls_inds = _utils.calc_cls_inds(y, classes)
+
+        if N_scaled is None:
+            N_scaled = cls._scale_N(N=N)
+
+        if norm_dist_mat is None:
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled, N_scaled, metric=metric, p=p)
 
         nearest_enemy_dist, nearest_enemy_ind = (
             cls._calc_nearest_enemies(
-                N=N,
+                norm_dist_mat=norm_dist_mat,
                 y=y,
                 cls_inds=cls_inds,
                 metric=metric,
                 p=p,
-                return_inds=True,
-                return_dist_mat=False))
+                return_inds=True))
 
         radius = np.full(y.size, fill_value=-1.0, dtype=float)
 
@@ -1540,8 +1628,8 @@ class MFEComplexity:
         for ind_a, ind_sphere_a in enumerate(sorted_spheres[:-1]):
             for ind_sphere_b in sorted_spheres[:ind_a:-1]:
                 if _is_hypersphere_in(
-                        center_a=N[ind_sphere_a, :],
-                        center_b=N[ind_sphere_b, :],
+                        center_a=N_scaled[ind_sphere_a, :],
+                        center_b=N_scaled[ind_sphere_b, :],
                         radius_a=radius[ind_sphere_a],
                         radius_b=radius[ind_sphere_b]):
 
@@ -1684,8 +1772,10 @@ class MFEComplexity:
             N: np.ndarray,
             y: np.ndarray,
             metric: str = "minkowski",
-            p: t.Union[int, float] = 2.0,
-            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
+            p: t.Union[int, float] = 2,
+            cls_inds: t.Optional[np.ndarray] = None,
+            N_scaled: t.Optional[np.ndarray] = None,
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1705,19 +1795,26 @@ class MFEComplexity:
         :obj:`np.ndarray`
             ...
         """
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
+        if cls_inds is None:
+            classes = np.unique(y)
+            cls_inds = _utils.calc_cls_inds(y, classes)
 
-        nearest_enemy_dist, dist_mat = cls._calc_nearest_enemies(
-            N=N,
+        if norm_dist_mat is None:
+            if N_scaled is None:
+                N_scaled = cls._scale_N(N=N)
+
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled, N_scaled, metric=metric, p=p)
+
+        nearest_enemy_dist = cls._calc_nearest_enemies(
+            norm_dist_mat=norm_dist_mat,
             y=y,
             cls_inds=cls_inds,
             metric=metric,
             p=p,
-            return_inds=False,
-            return_dist_mat=True)
+            return_inds=False)
 
-        lsc = 1.0 - np.sum(dist_mat < nearest_enemy_dist) / (y.size ** 2)
+        lsc = 1.0 - np.sum(norm_dist_mat < nearest_enemy_dist) / (y.size ** 2)
 
         return lsc
 
@@ -1726,8 +1823,12 @@ class MFEComplexity:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            radius: float = 0.15,
-            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
+            radius: t.Union[int, float] = 0.15,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
+            cls_inds: t.Optional[np.ndarray] = None,
+            N_scaled: t.Optional[np.ndarray] = None,
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1759,16 +1860,22 @@ class MFEComplexity:
             classes = np.unique(y)
             cls_inds = _utils.calc_cls_inds(y, classes)
 
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
+        if norm_dist_mat is None:
+            if N_scaled is None:
+                N_scaled = cls._scale_N(N=N)
+
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled, N_scaled, metric=metric, p=p)
 
         model = sklearn.neighbors.RadiusNeighborsClassifier(
-            outlier_label="most_frequent", radius=radius)
+            outlier_label="most_frequent",
+            radius=radius,
+            metric="precomputed")
 
         total_edges = 0
 
         for inds_cur_cls in cls_inds:
-            model.fit(N[inds_cur_cls, :], y[inds_cur_cls])
+            model.fit(norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls], y[inds_cur_cls])
             adj_matrix = model.radius_neighbors_graph(mode="connectivity")
             total_edges += np.sum(adj_matrix)
 
@@ -1816,8 +1923,12 @@ class MFEComplexity:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            radius: float = 0.15,
-            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
+            radius: t.Union[int, float] = 0.15,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
+            cls_inds: t.Optional[np.ndarray] = None,
+            N_scaled: t.Optional[np.ndarray] = None,
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1849,11 +1960,17 @@ class MFEComplexity:
             classes = np.unique(y)
             cls_inds = _utils.calc_cls_inds(y, classes)
 
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
+        if norm_dist_mat is None:
+            if N_scaled is None:
+                N_scaled = cls._scale_N(N=N)
+
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled, N_scaled, metric=metric, p=p)
 
         # model = sklearn.neighbors.RadiusNeighborsClassifier(
-        #     outlier_label="most_frequent", radius=radius)
+        #     outlier_label="most_frequent",
+        #     radius=radius,
+        #     metric="precomputed")
 
         total_edges = 0
 
@@ -1870,9 +1987,13 @@ class MFEComplexity:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            radius: float = 0.15,
+            radius: t.Union[int, float] = 0.15,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
             random_state: t.Optional[int] = None,
-            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
+            cls_inds: t.Optional[np.ndarray] = None,
+            N_scaled: t.Optional[np.ndarray] = None,
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1900,18 +2021,26 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        N = sklearn.preprocessing.MinMaxScaler(
-            feature_range=(0, 1)).fit_transform(N)
+        if norm_dist_mat is None:
+            if N_scaled is None:
+                N_scaled = cls._scale_N(N=N)
+
+            norm_dist_mat = scipy.spatial.distance.cdist(
+                N_scaled, N_scaled, metric=metric, p=p)
 
         model_enn = sklearn.neighbors.RadiusNeighborsClassifier(
-            outlier_label="most_frequent", radius=radius)
-        model_enn.fit(N, y)
+            outlier_label="most_frequent",
+            radius=radius,
+            metric="precomputed")
+
+        model_enn.fit(norm_dist_mat, y)
 
         adj_matrix = model_enn.radius_neighbors_graph(
-            mode="connectivity").todense()
+            mode="distance")
 
-        _, eigvecs = np.linalg.eig(np.dot(adj_matrix.T, adj_matrix))
+        _, eigvecs = np.linalg.eig(
+            np.dot(adj_matrix, adj_matrix.T).todense())
 
-        hubs = 1.0 - np.squeeze(np.asarray(eigvecs[:, 0]))
+        hubs = 1.0 - np.squeeze(np.asarray(eigvecs[:, 0].real))
 
         return hubs
