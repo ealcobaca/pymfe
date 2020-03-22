@@ -161,6 +161,7 @@ class MFEComplexity:
     @classmethod
     def precompute_complexity_svm(
             cls,
+            y: t.Optional[np.ndarray] = None,
             max_iter: t.Union[int, float] = 1e5,
             random_state: t.Optional[int] = None,
             **kwargs) -> t.Dict[str, int]:
@@ -193,7 +194,7 @@ class MFEComplexity:
         """
         precomp_vals = {}
 
-        if "svc_pipeline" not in kwargs:
+        if y is not None and "svc_pipeline" not in kwargs:
             zscore = sklearn.preprocessing.StandardScaler()
 
             # Note: 'C' parameter is inversely proportional to the
@@ -214,7 +215,7 @@ class MFEComplexity:
         return precomp_vals
 
     @classmethod
-    def precompute_scaled_norm_dist_mat(
+    def precompute_norm_dist_mat(
             cls,
             N: np.ndarray,
             metric: str = "minkowski",
@@ -240,13 +241,14 @@ class MFEComplexity:
         """
         precomp_vals = {}
 
-        if "N_scaled" not in kwargs:
+        if N.size and "N_scaled" not in kwargs:
             N_scaled = cls._scale_N(N=N)
             precomp_vals["N_scaled"] = N_scaled
 
-        if "norm_dist_mat" not in kwargs:
-            N_scaled = kwargs.get("N_scaled", precomp_vals.get("N_scaled"))
+        else:
+            N_scaled = kwargs.get("N_scaled")
 
+        if N_scaled is not None and "norm_dist_mat" not in kwargs:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled,
                 N_scaled,
@@ -254,6 +256,63 @@ class MFEComplexity:
                 p=p)
 
             precomp_vals["norm_dist_mat"] = norm_dist_mat
+
+        return precomp_vals
+
+    @classmethod
+    def precompute_nearest_enemy(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            metric: str = "minkowski",
+            p: t.Union[int, float] = 2,
+            **kwargs) -> t.Dict[str, int]:
+        """TODO.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
+                TODO.
+        """
+        precomp_vals = {}
+
+        if (y is not None and N.size and not
+                {"nearest_enemy_dist", "nearest_enemy_ind"}.issubset(kwargs)): 
+            norm_dist_mat = kwargs.get("norm_dist_mat")
+            cls_inds = kwargs.get("cls_inds")
+
+            if norm_dist_mat is None:
+                precomp_vals.update(
+                    cls.precompute_norm_dist_mat(
+                        N=N, metric=metric, p=p, **kwargs))
+                norm_dist_mat = precomp_vals["norm_dist_mat"]
+
+            if cls_inds is None:
+                precomp_vals.update(cls.precompute_fx(y=y, **kwargs))
+                cls_inds = precomp_vals["cls_inds"]
+
+            nearest_enemy_dist, nearest_enemy_ind = (
+                cls._calc_nearest_enemies(
+                    norm_dist_mat=norm_dist_mat,
+                    y=y,
+                    cls_inds=cls_inds,
+                    metric=metric,
+                    p=p,
+                    return_inds=True))
+
+            precomp_vals["nearest_enemy_dist"] = nearest_enemy_dist
+            precomp_vals["nearest_enemy_ind"] = nearest_enemy_ind
 
         return precomp_vals
 
@@ -1552,7 +1611,9 @@ class MFEComplexity:
             p: t.Union[int, float] = 2,
             cls_inds: t.Optional[np.ndarray] = None,
             N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+            norm_dist_mat: t.Optional[np.ndarray] = None,
+            nearest_enemy_dist: t.Optional[np.ndarray] = None,
+            nearest_enemy_ind: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1602,14 +1663,15 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        nearest_enemy_dist, nearest_enemy_ind = (
-            cls._calc_nearest_enemies(
-                norm_dist_mat=norm_dist_mat,
-                y=y,
-                cls_inds=cls_inds,
-                metric=metric,
-                p=p,
-                return_inds=True))
+        if nearest_enemy_dist is None or nearest_enemy_ind is None:
+            nearest_enemy_dist, nearest_enemy_ind = (
+                cls._calc_nearest_enemies(
+                    norm_dist_mat=norm_dist_mat,
+                    y=y,
+                    cls_inds=cls_inds,
+                    metric=metric,
+                    p=p,
+                    return_inds=True))
 
         radius = np.full(y.size, fill_value=-1.0, dtype=float)
 
@@ -1775,7 +1837,8 @@ class MFEComplexity:
             p: t.Union[int, float] = 2,
             cls_inds: t.Optional[np.ndarray] = None,
             N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+            norm_dist_mat: t.Optional[np.ndarray] = None,
+            nearest_enemy_dist: t.Optional[np.ndarray] = None) -> np.ndarray:
         """TODO.
 
         ...
@@ -1806,13 +1869,14 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        nearest_enemy_dist = cls._calc_nearest_enemies(
-            norm_dist_mat=norm_dist_mat,
-            y=y,
-            cls_inds=cls_inds,
-            metric=metric,
-            p=p,
-            return_inds=False)
+        if nearest_enemy_dist is None:
+            nearest_enemy_dist = cls._calc_nearest_enemies(
+                norm_dist_mat=norm_dist_mat,
+                y=y,
+                cls_inds=cls_inds,
+                metric=metric,
+                p=p,
+                return_inds=False)
 
         lsc = 1.0 - np.sum(norm_dist_mat < nearest_enemy_dist) / (y.size ** 2)
 
