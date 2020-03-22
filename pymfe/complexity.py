@@ -1931,17 +1931,12 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        model = sklearn.neighbors.RadiusNeighborsClassifier(
-            outlier_label="most_frequent",
-            radius=radius,
-            metric="precomputed")
-
-        total_edges = 0
+        # Note: -y.size to discount the instances itself
+        total_edges = -y.size
 
         for inds_cur_cls in cls_inds:
-            model.fit(norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls], y[inds_cur_cls])
-            adj_matrix = model.radius_neighbors_graph(mode="connectivity")
-            total_edges += np.sum(adj_matrix)
+            dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            total_edges += np.sum(dist_mat_subset <= radius)
 
         # Note: dividing 'total_edges' by 2 to discount the symmetry
         # of the adjacency matrix.
@@ -2031,18 +2026,19 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        # model = sklearn.neighbors.RadiusNeighborsClassifier(
-        #     outlier_label="most_frequent",
-        #     radius=radius,
-        #     metric="precomputed")
+        # Note: -1 to discount the instance itself
+        neighbor_edges = np.full(y.size, fill_value=-1, dtype=int)
 
-        total_edges = 0
+        for inds_cur_cls in cls_inds:
+            dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            neigh_num = np.sum(dist_mat_subset <= radius, axis=1)
+            neighbor_edges[inds_cur_cls] += neigh_num
 
-        # TODO.
+        # Note: -1 to discount the instance itself
+        total_edges = np.sum(norm_dist_mat <= radius, axis=1) - 1.0
 
-        # Note: dividing 'total_edges' by 2 to discount the symmetry
-        # of the adjacency matrix.
-        cls_coef = 1.0 - 2 * total_edges / y.size
+        cls_coef = 1.0 - 2 * np.nanmean(
+            neighbor_edges / (total_edges * (total_edges + 1)))
 
         return cls_coef
 
@@ -2103,8 +2099,8 @@ class MFEComplexity:
             mode="distance")
 
         _, eigvecs = np.linalg.eig(
-            np.dot(adj_matrix, adj_matrix.T).todense())
+            np.dot(adj_matrix, adj_matrix.T).toarray())
 
-        hubs = 1.0 - np.squeeze(np.asarray(eigvecs[:, 0].real))
+        hubs = 1.0 - eigvecs[:, 0].real
 
         return hubs
