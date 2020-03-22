@@ -288,7 +288,8 @@ class MFEComplexity:
         precomp_vals = {}
 
         if (y is not None and N.size and not
-                {"nearest_enemy_dist", "nearest_enemy_ind"}.issubset(kwargs)): 
+                {"nearest_enemy_dist",
+                 "nearest_enemy_ind"}.issubset(kwargs)):
             norm_dist_mat = kwargs.get("norm_dist_mat")
             cls_inds = kwargs.get("cls_inds")
 
@@ -307,8 +308,6 @@ class MFEComplexity:
                     norm_dist_mat=norm_dist_mat,
                     y=y,
                     cls_inds=cls_inds,
-                    metric=metric,
-                    p=p,
                     return_inds=True))
 
             precomp_vals["nearest_enemy_dist"] = nearest_enemy_dist
@@ -454,8 +453,6 @@ class MFEComplexity:
             norm_dist_mat: np.ndarray,
             y: np.ndarray,
             cls_inds: np.ndarray,
-            metric: str,
-            p: t.Union[float, int],
             return_inds: bool = True,
     ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, ...]]:
         """Calculate each instances nearest enemies.
@@ -475,8 +472,10 @@ class MFEComplexity:
         for inds_cur_cls in cls_inds:
             inds_non_cls = ~inds_cur_cls
 
-            norm_dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            norm_dist_mat_non_cls = norm_dist_mat[inds_non_cls, :][:, inds_cur_cls]
+            norm_dist_mat_subset = (
+                norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls])
+            norm_dist_mat_non_cls = (
+                norm_dist_mat[inds_non_cls, :][:, inds_cur_cls])
             y_subset = y[inds_cur_cls]
 
             model.fit(norm_dist_mat_subset, y_subset)
@@ -499,32 +498,6 @@ class MFEComplexity:
             return n_ene_dist, n_ene_inds
 
         return n_ene_dist
-
-    @classmethod
-    def _calc_data_hyperspheres(
-            cls,
-            radius: np.ndarray,
-            nearest_enemy_ind: np.ndarray,
-            nearest_enemy_dist: np.ndarray,
-            ind_inst: int) -> float:
-        """Recursively calculate hyperspheres to cover dataset."""
-        ind_enemy = nearest_enemy_ind[ind_inst]
-
-        if ind_inst == nearest_enemy_ind[ind_enemy]:
-            # In this case, both instances are the nearest enemy of
-            # each other, thus the hypersphere radius of both is
-            # half the distance between the instances.
-            radius[ind_inst] = 0.5 * nearest_enemy_dist[ind_inst]
-            return radius[ind_inst]
-
-        radius_enemy = cls._calc_data_hyperspheres(
-            radius=radius,
-            nearest_enemy_ind=nearest_enemy_ind,
-            nearest_enemy_dist=nearest_enemy_dist,
-            ind_inst=ind_enemy)
-
-        radius[ind_inst] = abs(nearest_enemy_dist[ind_inst] - radius_enemy)
-        return radius[ind_inst]
 
     @staticmethod
     def _scale_N(N: np.ndarray) -> np.ndarray:
@@ -1359,8 +1332,10 @@ class MFEComplexity:
         cur_ind = 0
 
         for cls_ind, inds_cur_cls in enumerate(cls_inds):
-            norm_dist_mat_intracls = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            norm_dist_mat_intercls = norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
+            norm_dist_mat_intracls = (
+                norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls])
+            norm_dist_mat_intercls = (
+                norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls])
 
             _aux = np.arange(class_freqs[cls_ind])
 
@@ -1507,7 +1482,8 @@ class MFEComplexity:
             N=N_scaled, y=y, cls_inds=cls_inds, random_state=random_state)
 
         knn = sklearn.neighbors.KNeighborsClassifier(
-            n_neighbors=n_neighbors, metric="precomputed").fit(norm_dist_mat, y)
+            n_neighbors=n_neighbors,
+            metric="precomputed").fit(norm_dist_mat, y)
 
         y_pred = knn.predict(
             scipy.spatial.distance.cdist(
@@ -1641,6 +1617,38 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        def _calc_hyperspheres_radius(
+                nearest_enemy_ind: np.ndarray,
+                nearest_enemy_dist: np.ndarray) -> np.ndarray:
+            """Calculate hyperspheres to cover the given dataset."""
+
+            def _recurse_radius_calc(ind_inst: int) -> float:
+                """Recursively calculate hyperspheres to cover dataset."""
+                ind_enemy = nearest_enemy_ind[ind_inst]
+
+                if ind_inst == nearest_enemy_ind[ind_enemy]:
+                    # In this case, both instances are the nearest enemy of
+                    # each other, thus the hypersphere radius of both is
+                    # half the distance between the instances.
+                    radius[ind_inst] = 0.5 * nearest_enemy_dist[ind_inst]
+                    return radius[ind_inst]
+
+                radius_enemy = _recurse_radius_calc(ind_inst=ind_enemy)
+
+                radius[ind_inst] = abs(
+                    nearest_enemy_dist[ind_inst] - radius_enemy)
+
+                return radius[ind_inst]
+
+            radius = np.full(
+                nearest_enemy_ind.size, fill_value=-1.0, dtype=float)
+
+            for ind in np.arange(radius.size):
+                if radius[ind] < 0.0:
+                    _recurse_radius_calc(ind_inst=ind)
+
+            return radius
+
         def _is_hypersphere_in(center_a, center_b, radius_a, radius_b) -> bool:
             """Checks if a hypersphere `a` is in another hypersphere `b`."""
             upper_a, lower_a = center_a + radius_a, center_a - radius_a
@@ -1651,6 +1659,32 @@ class MFEComplexity:
                     return False
 
             return True
+
+        def _agglomerate_hyperspheres(
+                centers: np.ndarray, radius: np.ndarray) -> np.ndarray:
+            """Agglomerate internal hyperspheres into outer hyperspheres.
+
+            Returns the number of training instances within each
+            remaining hypersphere. Interal hyperspheres will have
+            zero instances within.
+            """
+            sorted_sphere_inds = np.argsort(radius)
+            sphere_inst_num = np.ones(radius.size, dtype=int)
+
+            for ind_a, ind_sphere_a in enumerate(sorted_sphere_inds[:-1]):
+                for ind_sphere_b in sorted_sphere_inds[:ind_a:-1]:
+                    if _is_hypersphere_in(
+                            center_a=centers[ind_sphere_a, :],
+                            center_b=centers[ind_sphere_b, :],
+                            radius_a=radius[ind_sphere_a],
+                            radius_b=radius[ind_sphere_b]):
+
+                        sphere_inst_num[ind_sphere_b] += (
+                            sphere_inst_num[ind_sphere_a])
+                        sphere_inst_num[ind_sphere_a] = 0
+                        break
+
+            return sphere_inst_num
 
         if cls_inds is None:
             classes = np.unique(y)
@@ -1669,35 +1703,15 @@ class MFEComplexity:
                     norm_dist_mat=norm_dist_mat,
                     y=y,
                     cls_inds=cls_inds,
-                    metric=metric,
-                    p=p,
                     return_inds=True))
 
-        radius = np.full(y.size, fill_value=-1.0, dtype=float)
+        radius = _calc_hyperspheres_radius(
+            nearest_enemy_ind=nearest_enemy_ind,
+            nearest_enemy_dist=nearest_enemy_dist)
 
-        for ind in np.arange(y.size):
-            if radius[ind] < 0.0:
-                cls._calc_data_hyperspheres(
-                    radius=radius,
-                    nearest_enemy_ind=nearest_enemy_ind,
-                    nearest_enemy_dist=nearest_enemy_dist,
-                    ind_inst=ind)
-
-        sorted_spheres = np.argsort(radius)
-
-        sphere_inst_count = np.ones(y.size, dtype=int)
-
-        for ind_a, ind_sphere_a in enumerate(sorted_spheres[:-1]):
-            for ind_sphere_b in sorted_spheres[:ind_a:-1]:
-                if _is_hypersphere_in(
-                        center_a=N_scaled[ind_sphere_a, :],
-                        center_b=N_scaled[ind_sphere_b, :],
-                        radius_a=radius[ind_sphere_a],
-                        radius_b=radius[ind_sphere_b]):
-
-                    sphere_inst_count[ind_sphere_b] += sphere_inst_count[ind_sphere_a]
-                    sphere_inst_count[ind_sphere_a] = 0
-                    break
+        sphere_inst_count = _agglomerate_hyperspheres(
+            centers=N_scaled,
+            radius=radius)
 
         t1 = sphere_inst_count[sphere_inst_count > 0] / y.size
 
@@ -1874,11 +1888,11 @@ class MFEComplexity:
                 norm_dist_mat=norm_dist_mat,
                 y=y,
                 cls_inds=cls_inds,
-                metric=metric,
-                p=p,
                 return_inds=False)
 
-        lsc = 1.0 - np.sum(norm_dist_mat < nearest_enemy_dist) / (y.size ** 2)
+        lsc = (
+            1.0 - np.sum(norm_dist_mat < nearest_enemy_dist) /
+            (y.size ** 2))
 
         return lsc
 
@@ -1942,39 +1956,39 @@ class MFEComplexity:
         # of the adjacency matrix.
         density = 1.0 - total_edges / (y.size * (y.size - 1))
 
-        """
-        # How it seems to be implemented in R mfe:
+        # # How it seems to be implemented in R mfe:
 
-        # Note: values for Iris dataset.
-        # 'epsilon'/'radius' in R mfe = eps * N.shape[0] = int(0.15 * 150) = 22
-        # source: https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L88
+        # # Note: values for Iris dataset.
+        # # 'epsilon'/'radius' in R mfe = eps * N.shape[0]
+        # #                             = int(0.15 * 150) = 22
+        # # source:
+        # # https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L88
 
-        # They are considering the number of edges from the 22 nearest
-        # neighbors of each instance
-        # source:
-        # https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L125
+        # # They are considering the number of edges from the 22 nearest
+        # # neighbors of each instance
+        # # source:
+        # # https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L125
 
-        model = sklearn.neighbors.KNeighborsClassifier(
-            n_neighbors=int(radius * y.size))
+        # model = sklearn.neighbors.KNeighborsClassifier(
+        #     n_neighbors=int(radius * y.size))
 
-        model.fit(N, y)
-        neigh_ind = model.kneighbors(return_distance=False)
+        # model.fit(N, y)
+        # neigh_ind = model.kneighbors(return_distance=False)
 
-        total_edges = 0
+        # total_edges = 0
 
-        for i, neighs in enumerate(neigh_ind):
-            total_edges += np.sum(y[i] == y[neighs])
+        # for i, neighs in enumerate(neigh_ind):
+        #     total_edges += np.sum(y[i] == y[neighs])
 
-        # Make the graph undirected
-        total_edges /= 2
+        # # Make the graph undirected
+        # total_edges /= 2
 
-        density = 1.0 - 2 * total_edges / (y.size * (y.size - 1))
+        # density = 1.0 - 2 * total_edges / (y.size * (y.size - 1))
 
-        # For iris dataset:
-        # Pymfe density (following the paper description): 0.9387024608501119
-        # 'R mfe implementation'-like density: 0.8659955257270693
-        # R MFE implementation: 0.8436689
-        """
+        # # For iris dataset:
+        # # Pymfe density (following the paper description): 0.9387024608501119
+        # # 'R mfe implementation'-like density: 0.8659955257270693
+        # # R MFE implementation: 0.8436689
         return density
 
     @classmethod
@@ -2037,8 +2051,8 @@ class MFEComplexity:
         # Note: -1 to discount the instance itself
         total_edges = np.sum(norm_dist_mat <= radius, axis=1) - 1.0
 
-        cls_coef = 1.0 - 2 * np.nanmean(
-            neighbor_edges / (total_edges * (total_edges + 1)))
+        cls_coef = 1.0 - 2 * np.mean(
+            neighbor_edges / (1e-8 + total_edges * (total_edges + 1)))
 
         return cls_coef
 
@@ -2050,7 +2064,6 @@ class MFEComplexity:
             radius: t.Union[int, float] = 0.15,
             metric: str = "minkowski",
             p: t.Union[int, float] = 2,
-            random_state: t.Optional[int] = None,
             cls_inds: t.Optional[np.ndarray] = None,
             N_scaled: t.Optional[np.ndarray] = None,
             norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
@@ -2081,6 +2094,10 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
+        if cls_inds is None:
+            classes = np.unique(y)
+            cls_inds = _utils.calc_cls_inds(y, classes)
+
         if norm_dist_mat is None:
             if N_scaled is None:
                 N_scaled = cls._scale_N(N=N)
@@ -2088,19 +2105,19 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        model_enn = sklearn.neighbors.RadiusNeighborsClassifier(
-            outlier_label="most_frequent",
-            radius=radius,
-            metric="precomputed")
+        adj_matrix = np.zeros_like(norm_dist_mat, dtype=int)
 
-        model_enn.fit(norm_dist_mat, y)
+        for inds_cur_cls in cls_inds:
+            dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            cur_adj_mat = (
+                dist_mat_subset <= radius).astype(int)
+            adj_matrix[inds_cur_cls, :][:, inds_cur_cls] = cur_adj_mat
 
-        adj_matrix = model_enn.radius_neighbors_graph(
-            mode="distance")
+        # Note: remove self-loops
+        adj_matrix -= np.identity(y.size, dtype=int)
 
-        _, eigvecs = np.linalg.eig(
-            np.dot(adj_matrix, adj_matrix.T).toarray())
+        _, eigvecs = np.linalg.eig(np.dot(adj_matrix.T, adj_matrix))
 
-        hubs = 1.0 - eigvecs[:, 0].real
+        hubs = 1.0 - eigvecs[:, 0]
 
         return hubs
