@@ -520,7 +520,8 @@ class MFEComplexity:
             class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Maximum Fisher's discriminant ratio.
 
-        ...
+        It measures theoverlap between the values of the features in
+        different classes.
 
         This measure is in (0, 1] range.
 
@@ -544,7 +545,7 @@ class MFEComplexity:
         Returns
         -------
         :obj:`np.ndarray`
-            ...
+            Inverse of all Fisher's discriminant ratios.
 
         References
         ----------
@@ -553,6 +554,10 @@ class MFEComplexity:
            A survey on measuring classification complexity (V2). (2019)
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
+        .. [2] Ramón A Mollineda, José S Sánchez, and José M Sotoca. Data
+           characterization for effective prototype selection. In 2nd Iberian
+           Conference on Pattern Recognition and Image Analysis (IbPRIA),
+           pages 27–34, 2005.
         """
         classes = None
 
@@ -599,7 +604,10 @@ class MFEComplexity:
             class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Directional-vector maximum Fisher's discriminant ratio.
 
-        ...
+        This measure searches for a vector which can separate the two
+        classes after the examples have been projected into it and
+        considers a directional Fisher criterion. Check the references
+        for more information.
 
         This measure is in (0, 1] range.
 
@@ -627,7 +635,7 @@ class MFEComplexity:
         Returns
         -------
         :obj:`np.ndarray`
-            ...
+            Inverse of directional vector of Fisher's discriminant ratio.
 
         References
         ----------
@@ -636,6 +644,9 @@ class MFEComplexity:
            A survey on measuring classification complexity (V2). (2019)
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
+        .. [2] Witold Malina. Two-parameter fisher criterion. IEEE
+           Transactions on Systems, Man, and Cybernetics, Part B
+           (Cybernetics), 31(4):629–636, 2001.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
             sub_dic = cls.precompute_fx(y=y)
@@ -688,10 +699,11 @@ class MFEComplexity:
             N: np.ndarray,
             y: np.ndarray,
             ovo_comb: t.Optional[np.ndarray] = None,
-            cls_inds: t.Optional[np.ndarray] = None) -> np.ndarray:
+            cls_inds: t.Optional[np.ndarray] = None) -> float:
         """Volume of the overlapping region.
 
-        ...
+        This measure calculates the overlap of the distributions of
+        the features values within the classes.
 
         This measure is in [0, 1] range.
 
@@ -714,8 +726,8 @@ class MFEComplexity:
 
         Returns
         -------
-        :obj:`np.ndarray`
-            ...
+        float
+            Volume of the overlapping region.
 
         References
         ----------
@@ -724,6 +736,14 @@ class MFEComplexity:
            A survey on measuring classification complexity (V2). (2019)
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
+        .. [2] Marcilio C P Souto, Ana C Lorena, Newton Spolaôr, and Ivan G
+           Costa. Complexity measures of supervised classification tasks: a
+           case study for cancer gene expression data. In International
+           Joint Conference on Neural Networks (IJCNN), pages 1352–1358,
+           2010.
+        .. [3] Lisa Cummins. Combining and Choosing Case Base Maintenance
+           Algorithms. PhD thesis, National University of Ireland, Cork,
+           2013.
         """
         if ovo_comb is None or cls_inds is None:
             sub_dic = cls.precompute_fx(y=y)
@@ -921,18 +941,24 @@ class MFEComplexity:
         return f4
 
     @classmethod
-    def ft_l1(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              ovo_comb: t.Optional[np.ndarray] = None,
-              cls_inds: t.Optional[np.ndarray] = None,
-              class_freqs: t.Optional[np.ndarray] = None,
-              svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
-              max_iter: t.Union[int, float] = 1e5,
-              random_state: t.Optional[int] = None) -> np.ndarray:
-        """TODO.
+    def ft_l1(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            ovo_comb: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
+            class_freqs: t.Optional[np.ndarray] = None,
+            svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
+            max_iter: t.Union[int, float] = 1e5,
+            random_state: t.Optional[int] = None) -> np.ndarray:
+        """Sum of error distance by linear programming.
 
-        ...
+        This measure assesses if the data are linearly separable by
+        computing, for a dataset, the sum of the distances of incorrectly
+        classified examples to a linear boundary used in their classification.
+        If the value of L1 is zero, then theproblem is linearly separable and
+        can be considered simpler than a problem for which a non-linear
+        boundary is required.
 
         This measure is in [0, 1] range.
 
@@ -975,7 +1001,9 @@ class MFEComplexity:
         Returns
         -------
         :obj:`np.ndarray`
-            ...
+            Complement of the inverse of the sum of distances from a Support
+            Vector Classifier (SVC) hyperplane of incorrectly classified
+            instances.
 
         References
         ----------
@@ -1029,14 +1057,15 @@ class MFEComplexity:
         return l1
 
     @classmethod
-    def ft_l2(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              ovo_comb: t.Optional[np.ndarray] = None,
-              cls_inds: t.Optional[np.ndarray] = None,
-              svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
-              max_iter: t.Union[int, float] = 1e5,
-              random_state: t.Optional[int] = None) -> np.ndarray:
+    def ft_l2(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            ovo_comb: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
+            svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
+            max_iter: t.Union[int, float] = 1e5,
+            random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute the OVO subsets error rate of linear classifier.
 
         The linear model used is induced by the Support Vector
@@ -1059,14 +1088,14 @@ class MFEComplexity:
             The rows corresponds to each distinct class, and the columns
             corresponds to the instances.
 
+        svc_pipeline : sklearn.pipeline.Pipeline, optional
+            TODO.
+
         max_iter : float or int, optional
             Maximum number of iterations allowed for the support vector
             machine model convergence. This parameter can receive float
             numbers to be compatible with the Python scientific notation
             data type. Used only if ``svc_pipeline`` is None.
-
-        svc_pipeline : sklearn.pipeline.Pipeline, optional
-            TODO.
 
         random_state : int, optional
             Random seed for dual coordinate descent while fitting the
@@ -1123,17 +1152,22 @@ class MFEComplexity:
         return l2
 
     @classmethod
-    def ft_l3(cls,
-              N: np.ndarray,
-              y: np.ndarray,
-              ovo_comb: t.Optional[np.ndarray] = None,
-              cls_inds: t.Optional[np.ndarray] = None,
-              svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
-              max_iter: t.Union[int, float] = 1e5,
-              random_state: t.Optional[int] = None) -> np.ndarray:
-        """TODO.
+    def ft_l3(
+            cls,
+            N: np.ndarray,
+            y: np.ndarray,
+            ovo_comb: t.Optional[np.ndarray] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
+            svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
+            max_iter: t.Union[int, float] = 1e5,
+            random_state: t.Optional[int] = None) -> np.ndarray:
+        """Non-Linearity of a linear classifier.
 
-        ...
+        This index is sensitive to how the data from a class are
+        distributed inthe border regions and also on how much the convex
+        hulls which delimit the classes overlap. In particular, it detects
+        the presence of concavities in the class boundaries. Higher values
+        indicate a greater complexity.
 
         This measure is in [0, 1] range.
 
@@ -1145,10 +1179,36 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
+        ovo_comb : :obj:`np.ndarray`, optional
+            List of all class OVO combination, i.e., all combinations of
+            distinct class indices by pairs ([(0, 1), (0, 2) ...].)
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
+
+        svc_pipeline : sklearn.pipeline.Pipeline, optional
+            TODO.
+
+        max_iter : float or int, optional
+            Maximum number of iterations allowed for the support vector
+            machine model convergence. This parameter can receive float
+            numbers to be compatible with the Python scientific notation
+            data type. Used only if ``svc_pipeline`` is None.
+
+        random_state : int, optional
+            Random seed for dual coordinate descent while fitting the
+            Support Vector Classifier model. Check `sklearn.svm.LinearSVC`
+            documentation (`random_state` parameter) for more information.
+            Used only if ``svc_pipeline`` is None.
+
         Returns
         -------
         :obj:`np.ndarray`
-            ...
+            Zero-one losses of a Support Vector Classifier for a randomly
+            interpolated dataset using the original instances. The classes
+            are separated in a OVO (One-Versus-One) fashion.
 
         References
         ----------
@@ -1185,11 +1245,14 @@ class MFEComplexity:
             # Note: add 'ind' to 'random_state' to prevent the same
             # instances be selected to the same class over and over
             # again.
+            if random_state is not None:
+                random_state += 1
+
             N_interpol, y_interpol = cls._interpolate(
                 N=N_subset,
                 y=y_subset,
                 cls_inds=cls_inds_subset,
-                random_state=random_state + ind)
+                random_state=random_state)
 
             y_pred = svc_pipeline.predict(N_interpol)
 
@@ -1225,7 +1288,24 @@ class MFEComplexity:
         metric : str, optional
             Metric used to calculate the distances between the instances.
             Check the ``scipy.spatial.distance.cdist`` documentation to
-            get a list of all available metrics.
+            get a list of all available metrics. This argument is used
+            only if ``norm_dist_mat`` is None.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used.
+
+        N_scaled : :obj:`np.ndarray`, optional
+            Numerical data ``N`` with each feature normalized  in [0, 1]
+            range. Used only if ``norm_dist_mat`` is None. Used to take
+            advantage of precomputations.
+
+        norm_dist_mat : :obj:`np.ndarray`, optional
+            Square matrix with the oairwise distances between each
+            instance in ``N_scaled``, i.e., between the normalized
+            instances. Used to take advantage of precomputations.
 
         Returns
         -------
@@ -1252,7 +1332,6 @@ class MFEComplexity:
         # Note: in the paper, the authors used Prim's algorithm.
         # Our implementation may change it in a future version due to
         # time complexity advantages of Prim's algorithm in this context.
-
         mst = scipy.sparse.csgraph.minimum_spanning_tree(
             csgraph=np.triu(norm_dist_mat, k=1), overwrite=True)
 
@@ -1283,9 +1362,13 @@ class MFEComplexity:
             cls_inds: t.Optional[np.ndarray] = None,
             N_scaled: t.Optional[np.ndarray] = None,
             norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """TODO.
+        """Ratio of intra and extra class nearest neighbor distance.
 
-        ...
+        This measure computes the ratio of two sums:
+        (i) The sum of the distances between each example and its closest
+            neighborfrom the same class (intra-class); and
+        (ii) The sum of the distances between each example and its closest
+            neighbor fromanother class (extra-class)
 
         This measure is in [0, 1] range.
 
@@ -1297,10 +1380,41 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics. This argument is used
+            only if ``norm_dist_mat`` is None.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used.
+
+        class_freqs : :obj:`np.ndarray`, optional
+            The number of examples in each class. The indices corresponds to
+            the classes.
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
+
+        N_scaled : :obj:`np.ndarray`, optional
+            Numerical data ``N`` with each feature normalized  in [0, 1]
+            range. Used only if ``norm_dist_mat`` is None. Used to take
+            advantage of precomputations.
+
+        norm_dist_mat : :obj:`np.ndarray`, optional
+            Square matrix with the oairwise distances between each
+            instance in ``N_scaled``, i.e., between the normalized
+            instances. Used to take advantage of precomputations.
+
         Returns
         -------
         :obj:`np.ndarray`
-            ...
+            Complement of the inverse of the intra and extra class variance.
 
         References
         ----------
@@ -1324,12 +1438,6 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-            norm_dist_mat[np.diag_indices_from(norm_dist_mat)] = np.inf
-
-        else:
-            norm_dist_mat = np.copy(norm_dist_mat)
-            norm_dist_mat[np.diag_indices_from(norm_dist_mat)] = np.inf
-
         intra_extra = np.zeros(y.size, dtype=float)
 
         cur_ind = 0
@@ -1339,6 +1447,9 @@ class MFEComplexity:
                 norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls])
             norm_dist_mat_intercls = (
                 norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls])
+
+            norm_dist_mat_intracls[
+                np.diag_indices_from(norm_dist_mat_intracls)] = np.inf
 
             _aux = np.arange(class_freqs[cls_ind])
 
@@ -1366,9 +1477,10 @@ class MFEComplexity:
             p: t.Union[int, float] = 2,
             N_scaled: t.Optional[np.ndarray] = None,
             norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """TODO.
+        """Error rate of the nearest neighbor classifier.
 
-        ...
+        The N3 measure refers to the error rate of a 1-NN classifier
+        that is estimated using a leave-one-out cross-validation procedure.
 
         This measure is in [0, 1] range.
 
@@ -1380,10 +1492,32 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics. This argument is used
+            only if ``norm_dist_mat`` is None.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used.
+
+        N_scaled : :obj:`np.ndarray`, optional
+            Numerical data ``N`` with each feature normalized  in [0, 1]
+            range. Used only if ``norm_dist_mat`` is None. Used to take
+            advantage of precomputations.
+
+        norm_dist_mat : :obj:`np.ndarray`, optional
+            Square matrix with the oairwise distances between each
+            instance in ``N_scaled``, i.e., between the normalized
+            instances. Used to take advantage of precomputations.
+
         Returns
         -------
         :obj:`np.ndarray`
-            ...
+            Binary array of misclassification of a 1-NN classifier.
 
         References
         ----------
@@ -1421,7 +1555,7 @@ class MFEComplexity:
             random_state: t.Optional[int] = None,
             N_scaled: t.Optional[np.ndarray] = None,
             norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """Compute the non-linearity of the NN Classifier.
+        """Compute the non-linearity of the k-NN Classifier.
 
         Parameters
         ----------
@@ -1436,21 +1570,19 @@ class MFEComplexity:
             The rows corresponds to each distinct class, and the columns
             corresponds to the instances.
 
-        metric : str, optional (default = "minkowski")
+        metric : str, optional
             The distance metric used in the internal kNN classifier. See the
-            documentation of the ``sklearn.neighbors.DistanceMetric`` class
+            documentation of the ``scipy.spatial.distance.cdist`` class
             for a list of available metrics.
 
-        p : int, optional (default = 2)
+        p : int, optional
             Power parameter for the Minkowski metric. When p = 1, this is
-            equivalent to using manhattan_distance (l1), and
-            euclidean_distance (l2) for p = 2. For arbitrary p,
-            minkowski_distance (l_p) is used. Please, check the
-            ``sklearn.neighbors.KNeighborsClassifier`` documentation for
-            more information.
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used.
 
-        n_neighbors : int, optional (default = 1)
-            TODO.
+        n_neighbors : int, optional
+            Number of neighbors used for the Nearest Neighbors classifier.
 
         random_state : int, optional
             If given, set the random seed before computing the randomized
@@ -1459,7 +1591,7 @@ class MFEComplexity:
         Returns
         -------
         :obj:`np.ndarray`
-            Misclassifications of the NN classifier in the interpolated
+            Misclassifications of the k-NN classifier in the interpolated
             dataset.
 
         References
@@ -1503,8 +1635,7 @@ class MFEComplexity:
     def ft_c1(
             cls,
             y: np.array,
-            class_freqs: t.Optional[np.ndarray] = None,
-    ) -> float:
+            class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute the entropy of class proportions.
 
         Parameters
@@ -1542,8 +1673,10 @@ class MFEComplexity:
         return c1
 
     @classmethod
-    def ft_c2(cls, y: np.ndarray,
-              class_freqs: t.Optional[np.ndarray] = None) -> float:
+    def ft_c2(
+            cls,
+            y: np.ndarray,
+            class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute the imbalance ratio.
 
         Parameters
@@ -1593,9 +1726,16 @@ class MFEComplexity:
             norm_dist_mat: t.Optional[np.ndarray] = None,
             nearest_enemy_dist: t.Optional[np.ndarray] = None,
             nearest_enemy_ind: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """TODO.
+        """Fraction of hyperspheres covering data.
 
-        ...
+        This measure uses a process that builds hyperspheres centered
+        at each one of the examples. In this implementation, we stop the
+        growth of the hypersphere when the hyperspheres centered at two
+        points of opposite classes just start to touch.
+
+        Once the radiuses of all hyperspheres are found, a post-processing
+        step can be applied to verify which hyperspheres must be absorbed
+        (all hyperspheres completely within larger hyperspheres.)
 
         This measure is in [0, 1] range.
 
@@ -1607,10 +1747,49 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics. This argument is used
+            only if ``norm_dist_mat`` is None.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used.
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances. Used only if the arguments
+            ``nearest_enemy_dist`` or ``nearest_enemy_ind`` are None.
+
+        N_scaled : :obj:`np.ndarray`, optional
+            Numerical data ``N`` with each feature normalized  in [0, 1]
+            range. Used only if ``norm_dist_mat`` is None. Used to take
+            advantage of precomputations.
+
+        norm_dist_mat : :obj:`np.ndarray`, optional
+            Square matrix with the oairwise distances between each
+            instance in ``N_scaled``, i.e., between the normalized
+            instances. Used to take advantage of precomputations.
+            Used only if the arguments ``nearest_enemy_dist`` or
+            ``nearest_enemy_ind`` are None.
+
+        nearest_enemy_dist : :obj:`np.ndarray`, optional
+            Distance of each instance to its nearest enemy (instances
+            of a distinct class.)
+
+        nearest_enemy_ind : :obj:`np.ndarray`, optional
+            Index of the nearest enemy (instances of a distinct class)
+            for each instance.
+
         Returns
         -------
         :obj:`np.ndarray`
-            ...
+            Array with the fraction of instances inside each remaining
+            hypersphere.
 
         References
         ----------
@@ -1619,11 +1798,14 @@ class MFEComplexity:
            A survey on measuring classification complexity (V2). (2019)
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
+        .. [2] Tin K Ho and Mitra Basu. Complexity measures of supervised
+           classification problems. IEEE Transactions on Pattern Analysis and
+           Machine Intelligence, 24(3):289–300, 2002.
         """
         def _calc_hyperspheres_radius(
                 nearest_enemy_ind: np.ndarray,
                 nearest_enemy_dist: np.ndarray) -> np.ndarray:
-            """Calculate hyperspheres to cover the given dataset."""
+            """Get the radius of hyperspheres which cover the given dataset."""
 
             def _recurse_radius_calc(ind_inst: int) -> float:
                 """Recursively calculate hyperspheres to cover dataset."""
@@ -1652,8 +1834,12 @@ class MFEComplexity:
 
             return radius
 
-        def _is_hypersphere_in(center_a, center_b, radius_a, radius_b) -> bool:
-            """Checks if a hypersphere `a` is in another hypersphere `b`."""
+        def _is_hypersphere_in(
+                center_a: np.ndarray,
+                center_b: np.ndarray,
+                radius_a: float,
+                radius_b: float) -> bool:
+            """Checks if a hypersphere `a` is in a hypersphere `b`."""
             upper_a, lower_a = center_a + radius_a, center_a - radius_a
             upper_b, lower_b = center_b + radius_b, center_b - radius_b
             for ind in np.arange(center_a.size):
@@ -1664,7 +1850,8 @@ class MFEComplexity:
             return True
 
         def _agglomerate_hyperspheres(
-                centers: np.ndarray, radius: np.ndarray) -> np.ndarray:
+                centers: np.ndarray,
+                radius: np.ndarray) -> np.ndarray:
             """Agglomerate internal hyperspheres into outer hyperspheres.
 
             Returns the number of training instances within each
@@ -1689,18 +1876,18 @@ class MFEComplexity:
 
             return sphere_inst_num
 
-        if cls_inds is None:
-            classes = np.unique(y)
-            cls_inds = _utils.calc_cls_inds(y, classes)
-
         if N_scaled is None:
             N_scaled = cls._scale_N(N=N)
 
-        if norm_dist_mat is None:
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled, N_scaled, metric=metric, p=p)
-
         if nearest_enemy_dist is None or nearest_enemy_ind is None:
+            if cls_inds is None:
+                classes = np.unique(y)
+                cls_inds = _utils.calc_cls_inds(y, classes)
+
+            if norm_dist_mat is None:
+                norm_dist_mat = scipy.spatial.distance.cdist(
+                    N_scaled, N_scaled, metric=metric, p=p)
+
             nearest_enemy_dist, nearest_enemy_ind = (
                 cls._calc_nearest_enemies(
                     norm_dist_mat=norm_dist_mat,
@@ -1959,39 +2146,6 @@ class MFEComplexity:
         # of the adjacency matrix.
         density = 1.0 - total_edges / (y.size * (y.size - 1))
 
-        # # How it seems to be implemented in R mfe:
-
-        # # Note: values for Iris dataset.
-        # # 'epsilon'/'radius' in R mfe = eps * N.shape[0]
-        # #                             = int(0.15 * 150) = 22
-        # # source:
-        # # https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L88
-
-        # # They are considering the number of edges from the 22 nearest
-        # # neighbors of each instance
-        # # source:
-        # # https://github.com/lpfgarcia/ECoL/blob/master/R/network.R#L125
-
-        # model = sklearn.neighbors.KNeighborsClassifier(
-        #     n_neighbors=int(radius * y.size))
-
-        # model.fit(N, y)
-        # neigh_ind = model.kneighbors(return_distance=False)
-
-        # total_edges = 0
-
-        # for i, neighs in enumerate(neigh_ind):
-        #     total_edges += np.sum(y[i] == y[neighs])
-
-        # # Make the graph undirected
-        # total_edges /= 2
-
-        # density = 1.0 - 2 * total_edges / (y.size * (y.size - 1))
-
-        # # For iris dataset:
-        # # Pymfe density (following the paper description): 0.9387024608501119
-        # # 'R mfe implementation'-like density: 0.8659955257270693
-        # # R MFE implementation: 0.8436689
         return density
 
     @classmethod
@@ -2114,12 +2268,12 @@ class MFEComplexity:
 
         for inds_cur_cls in cls_inds:
             dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            cur_adj_mat = dist_mat_subset * (
-                          dist_mat_subset <= radius).astype(float)
+            cur_adj_mat = (
+                dist_mat_subset * (dist_mat_subset <= radius).astype(float))
             _inds = np.flatnonzero(inds_cur_cls)
             adj_matrix[tuple(np.meshgrid(_inds, _inds))] = cur_adj_mat
 
-        eigvals, eigvecs = np.linalg.eig(np.dot(adj_matrix.T, adj_matrix))
+        _, eigvecs = np.linalg.eig(np.dot(adj_matrix.T, adj_matrix))
 
         hubs = 1.0 - np.abs(eigvecs[:, 0])
 
