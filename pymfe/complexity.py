@@ -1182,11 +1182,14 @@ class MFEComplexity:
 
             svc_pipeline.fit(N_subset, y_subset)
 
+            # Note: add 'ind' to 'random_state' to prevent the same
+            # instances be selected to the same class over and over
+            # again.
             N_interpol, y_interpol = cls._interpolate(
                 N=N_subset,
                 y=y_subset,
                 cls_inds=cls_inds_subset,
-                random_state=random_state)
+                random_state=random_state + ind)
 
             y_pred = svc_pipeline.predict(N_interpol)
 
@@ -2048,11 +2051,13 @@ class MFEComplexity:
             neigh_num = np.sum(dist_mat_subset <= radius, axis=1)
             neighbor_edges[inds_cur_cls] += neigh_num
 
-        # Note: -1 to discount the instance itself
-        total_edges = np.sum(norm_dist_mat <= radius, axis=1) - 1.0
+        # Note: also including the node itself, as the formula presented
+        # in the original paper is not supposed to work otherwise as
+        # the paper itself claims.
+        total_nodes = np.sum(norm_dist_mat <= radius, axis=1)
 
         cls_coef = 1.0 - 2 * np.mean(
-            neighbor_edges / (1e-8 + total_edges * (total_edges + 1)))
+            neighbor_edges / (1e-8 + total_nodes * (total_nodes - 1)))
 
         return cls_coef
 
@@ -2105,19 +2110,17 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        adj_matrix = np.zeros_like(norm_dist_mat, dtype=int)
+        adj_matrix = np.zeros_like(norm_dist_mat, dtype=float)
 
         for inds_cur_cls in cls_inds:
             dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            cur_adj_mat = (
-                dist_mat_subset <= radius).astype(int)
-            adj_matrix[inds_cur_cls, :][:, inds_cur_cls] = cur_adj_mat
+            cur_adj_mat = dist_mat_subset * (
+                          dist_mat_subset <= radius).astype(float)
+            _inds = np.flatnonzero(inds_cur_cls)
+            adj_matrix[tuple(np.meshgrid(_inds, _inds))] = cur_adj_mat
 
-        # Note: remove self-loops
-        adj_matrix -= np.identity(y.size, dtype=int)
+        eigvals, eigvecs = np.linalg.eig(np.dot(adj_matrix.T, adj_matrix))
 
-        _, eigvecs = np.linalg.eig(np.dot(adj_matrix.T, adj_matrix))
-
-        hubs = 1.0 - eigvecs[:, 0]
+        hubs = 1.0 - np.abs(eigvecs[:, 0])
 
         return hubs
