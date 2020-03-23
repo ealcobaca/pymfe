@@ -2200,10 +2200,17 @@ class MFEComplexity:
         # Note: -1 to discount the instance itself
         neighbor_edges = np.full(y.size, fill_value=-1, dtype=int)
 
+        adj_mat = np.zeros_like(norm_dist_mat, dtype=float)
+
         for inds_cur_cls in cls_inds:
             dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
             neigh_num = np.sum(dist_mat_subset <= radius, axis=1)
             neighbor_edges[inds_cur_cls] += neigh_num
+
+            cur_adj_mat = (
+                dist_mat_subset * (dist_mat_subset <= radius).astype(float))
+            _inds = np.flatnonzero(inds_cur_cls)
+            adj_mat[tuple(np.meshgrid(_inds, _inds))] = cur_adj_mat
 
         # Note: also including the node itself, as the formula presented
         # in the original paper is not supposed to work otherwise as
@@ -2212,6 +2219,17 @@ class MFEComplexity:
 
         cls_coef = 1.0 - 2 * np.mean(
             neighbor_edges / (1e-8 + total_nodes * (total_nodes - 1)))
+
+        # Note: the R mfe implementation calculates cls_coef as:
+        # cls_coef = 1 - transitivity(g), like the code below:
+
+        # import networkx
+        # g = networkx.Graph(adj_mat)
+        # cls_coef = 1 - networkx.transitivity(g)
+        # print(cls_coef)
+
+        # Whether one implementation should be preferred over another is
+        # up to discussion.
 
         return cls_coef
 
@@ -2264,16 +2282,16 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        adj_matrix = np.zeros_like(norm_dist_mat, dtype=float)
+        adj_mat = np.zeros_like(norm_dist_mat, dtype=float)
 
         for inds_cur_cls in cls_inds:
             dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
             cur_adj_mat = (
                 dist_mat_subset * (dist_mat_subset <= radius).astype(float))
             _inds = np.flatnonzero(inds_cur_cls)
-            adj_matrix[tuple(np.meshgrid(_inds, _inds))] = cur_adj_mat
+            adj_mat[tuple(np.meshgrid(_inds, _inds))] = cur_adj_mat
 
-        _, eigvecs = np.linalg.eig(np.dot(adj_matrix.T, adj_matrix))
+        _, eigvecs = np.linalg.eig(np.dot(adj_mat.T, adj_mat))
 
         hubs = 1.0 - np.abs(eigvecs[:, 0])
 
