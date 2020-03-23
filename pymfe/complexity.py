@@ -1295,7 +1295,7 @@ class MFEComplexity:
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using Manhattan distance (l1), and Euclidean
             distance (l2) for p = 2. For arbitrary p, Minkowski distance
-            (l_p) is used.
+            (l_p) is used. Used only if ``norm_dist_mat`` is None.
 
         N_scaled : :obj:`np.ndarray`, optional
             Numerical data ``N`` with each feature normalized  in [0, 1]
@@ -1303,7 +1303,7 @@ class MFEComplexity:
             advantage of precomputations.
 
         norm_dist_mat : :obj:`np.ndarray`, optional
-            Square matrix with the oairwise distances between each
+            Square matrix with the pairwise distances between each
             instance in ``N_scaled``, i.e., between the normalized
             instances. Used to take advantage of precomputations.
 
@@ -1390,7 +1390,7 @@ class MFEComplexity:
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using Manhattan distance (l1), and Euclidean
             distance (l2) for p = 2. For arbitrary p, Minkowski distance
-            (l_p) is used.
+            (l_p) is used. Used only if ``norm_dist_mat`` is None.
 
         class_freqs : :obj:`np.ndarray`, optional
             The number of examples in each class. The indices corresponds to
@@ -1407,7 +1407,7 @@ class MFEComplexity:
             advantage of precomputations.
 
         norm_dist_mat : :obj:`np.ndarray`, optional
-            Square matrix with the oairwise distances between each
+            Square matrix with the pairwise distances between each
             instance in ``N_scaled``, i.e., between the normalized
             instances. Used to take advantage of precomputations.
 
@@ -1510,7 +1510,7 @@ class MFEComplexity:
             advantage of precomputations.
 
         norm_dist_mat : :obj:`np.ndarray`, optional
-            Square matrix with the oairwise distances between each
+            Square matrix with the pairwise distances between each
             instance in ``N_scaled``, i.e., between the normalized
             instances. Used to take advantage of precomputations.
 
@@ -1548,11 +1548,11 @@ class MFEComplexity:
             cls,
             N: np.ndarray,
             y: np.ndarray,
-            cls_inds: t.Optional[np.ndarray] = None,
             metric: str = "minkowski",
             p: t.Union[int, float] = 2,
             n_neighbors: int = 1,
             random_state: t.Optional[int] = None,
+            cls_inds: t.Optional[np.ndarray] = None,
             N_scaled: t.Optional[np.ndarray] = None,
             norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the non-linearity of the k-NN Classifier.
@@ -1565,21 +1565,17 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute from fitted data.
 
-        cls_inds : :obj:`np.ndarray`, optional
-            Boolean array which indicates the examples of each class.
-            The rows corresponds to each distinct class, and the columns
-            corresponds to the instances.
-
         metric : str, optional
             The distance metric used in the internal kNN classifier. See the
             documentation of the ``scipy.spatial.distance.cdist`` class
-            for a list of available metrics.
+            for a list of available metrics. Used only if ``norm_dist_mat``
+            is None.
 
         p : int, optional
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using Manhattan distance (l1), and Euclidean
             distance (l2) for p = 2. For arbitrary p, Minkowski distance
-            (l_p) is used.
+            (l_p) is used. Used only if ``norm_dist_mat`` is None.
 
         n_neighbors : int, optional
             Number of neighbors used for the Nearest Neighbors classifier.
@@ -1587,6 +1583,22 @@ class MFEComplexity:
         random_state : int, optional
             If given, set the random seed before computing the randomized
             data interpolation.
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances. Used to take advantages of
+            precomputations.
+
+        N_scaled : :obj:`np.ndarray`, optional
+            Numerical data ``N`` with each feature normalized  in [0, 1]
+            range. Used only if ``norm_dist_mat`` is None. Used to take
+            advantage of precomputations.
+
+        norm_dist_mat : :obj:`np.ndarray`, optional
+            Square matrix with the pairwise distances between each
+            instance in ``N_scaled``, i.e., between the normalized
+            instances. Used to take advantage of precomputations.
 
         Returns
         -------
@@ -1757,7 +1769,7 @@ class MFEComplexity:
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using Manhattan distance (l1), and Euclidean
             distance (l2) for p = 2. For arbitrary p, Minkowski distance
-            (l_p) is used.
+            (l_p) is used. Used only if ``norm_dist_mat`` is None.
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
@@ -1771,7 +1783,7 @@ class MFEComplexity:
             advantage of precomputations.
 
         norm_dist_mat : :obj:`np.ndarray`, optional
-            Square matrix with the oairwise distances between each
+            Square matrix with the pairwise distances between each
             instance in ``N_scaled``, i.e., between the normalized
             instances. Used to take advantage of precomputations.
             Used only if the arguments ``nearest_enemy_dist`` or
@@ -2042,10 +2054,17 @@ class MFEComplexity:
             cls_inds: t.Optional[np.ndarray] = None,
             N_scaled: t.Optional[np.ndarray] = None,
             norm_dist_mat: t.Optional[np.ndarray] = None,
-            nearest_enemy_dist: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """TODO.
+            nearest_enemy_dist: t.Optional[np.ndarray] = None) -> float:
+        """Local set average cardinality.
 
-        ...
+        The Local-Set (LS) of an example `x_i` in a dataset ``N`` is
+        defined as the set of points from ``N`` whose distance to `x_i`
+        is smaller than the distance from `x_i` and its nearest enemy
+        (the nearest instance from a distinct class of `x_i`.)
+
+        The cardinality of the LS of an example indicates its proximity
+        to the decision boundary and also the narrowness of the gap
+        between the classes.
 
         This measure is in [0, 1] range.
 
@@ -2057,15 +2076,55 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics. This argument is used
+            only if ``norm_dist_mat`` is None.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used. Used only if ``norm_dist_mat`` is None.
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances. Used only if the argument
+            ``nearest_enemy_dist`` is None.
+
+        N_scaled : :obj:`np.ndarray`, optional
+            Numerical data ``N`` with each feature normalized  in [0, 1]
+            range. Used only if ``norm_dist_mat`` is None. Used to take
+            advantage of precomputations.
+
+        norm_dist_mat : :obj:`np.ndarray`, optional
+            Square matrix with the pairwise distances between each
+            instance in ``N_scaled``, i.e., between the normalized
+            instances. Used to take advantage of precomputations.
+
+        nearest_enemy_dist : :obj:`np.ndarray`, optional
+            Distance of each instance to its nearest enemy (instances
+            of a distinct class.)
+
         Returns
         -------
-        :obj:`np.ndarray`
-            ...
-        """
-        if cls_inds is None:
-            classes = np.unique(y)
-            cls_inds = _utils.calc_cls_inds(y, classes)
+        float
+            Local set average cardinality.
 
+        References
+        ----------
+        .. [1] Ana C. Lorena, Luís P. F. Garcia, Jens Lehmann, Marcilio C. P.
+           Souto, and Tin K. Ho. How Complex is your classification problem?
+           A survey on measuring classification complexity (V2). (2019)
+           (Cited on page 15). Published in ACM Computing Surveys (CSUR),
+           Volume 52 Issue 5, October 2019, Article No. 107.
+        .. [2] Enrique Leyva, Antonio González, and Raúl Pérez. A set of
+           complexity measures designed for applying meta-learning to instance
+           selection. IEEE Transactions on Knowledge and Data Engineering,
+           27(2):354–367, 2014.
+        """
         if norm_dist_mat is None:
             if N_scaled is None:
                 N_scaled = cls._scale_N(N=N)
@@ -2074,6 +2133,10 @@ class MFEComplexity:
                 N_scaled, N_scaled, metric=metric, p=p)
 
         if nearest_enemy_dist is None:
+            if cls_inds is None:
+                classes = np.unique(y)
+                cls_inds = _utils.calc_cls_inds(y, classes)
+
             nearest_enemy_dist = cls._calc_nearest_enemies(
                 norm_dist_mat=norm_dist_mat,
                 y=y,
@@ -2096,10 +2159,12 @@ class MFEComplexity:
             p: t.Union[int, float] = 2,
             cls_inds: t.Optional[np.ndarray] = None,
             N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """TODO.
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> float:
+        """Average density of the network.
 
-        ...
+        This measure considers the number of edges that are retained in the
+        graph (Same-class Radius Nearest Neighbors) built from the dataset
+        normalized by the maximum number of edges between `y.size` instances.
 
         This measure is in [0, 1] range.
 
@@ -2111,10 +2176,45 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
+        radius : float or int, optional
+            Maximum distance between each pair of instances of the same
+            class to both be considered neighbors of each other. Note that
+            each feature of ``N`` is first normalized into the [0, 1]
+            range before the neighbor calculations.
+
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics. This argument is used
+            only if ``norm_dist_mat`` is None.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used. Used only if ``norm_dist_mat`` is None.
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
+
+        N_scaled : :obj:`np.ndarray`, optional
+            Numerical data ``N`` with each feature normalized  in [0, 1]
+            range. Used only if ``norm_dist_mat`` is None. Used to take
+            advantage of precomputations.
+
+        norm_dist_mat : :obj:`np.ndarray`, optional
+            Square matrix with the pairwise distances between each
+            instance in ``N_scaled``, i.e., between the normalized
+            instances. Used to take advantage of precomputations.
+
         Returns
         -------
-        :obj:`np.ndarray`
-            ...
+        float
+            Complement of the ratio of total edges in the Radius Nearest
+            Neighbors graph and the total number of edges that could
+            possibly exists in a graph with the given number of instances.
 
         References
         ----------
@@ -2159,9 +2259,12 @@ class MFEComplexity:
             cls_inds: t.Optional[np.ndarray] = None,
             N_scaled: t.Optional[np.ndarray] = None,
             norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """TODO.
+        """Clustering coefficient.
 
-        ...
+        The clustering coefficient of a vertex `v_i` is given by the
+        ratio of the number of edges between its neighbors (in a Same-class
+        Radius Neighbor Graph) and the maximum number of edges that could
+        possibly exist between them.
 
         This measure is in [0, 1] range.
 
@@ -2173,10 +2276,43 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
+        radius : float or int, optional
+            Maximum distance between each pair of instances of the same
+            class to both be considered neighbors of each other. Note that
+            each feature of ``N`` is first normalized into the [0, 1]
+            range before the neighbor calculations.
+
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics. This argument is used
+            only if ``norm_dist_mat`` is None.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used. Used only if ``norm_dist_mat`` is None.
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
+
+        N_scaled : :obj:`np.ndarray`, optional
+            Numerical data ``N`` with each feature normalized  in [0, 1]
+            range. Used only if ``norm_dist_mat`` is None. Used to take
+            advantage of precomputations.
+
+        norm_dist_mat : :obj:`np.ndarray`, optional
+            Square matrix with the pairwise distances between each
+            instance in ``N_scaled``, i.e., between the normalized
+            instances. Used to take advantage of precomputations.
+
         Returns
         -------
         :obj:`np.ndarray`
-            ...
+            Clustering coefficient of given data.
 
         References
         ----------
@@ -2237,10 +2373,15 @@ class MFEComplexity:
             p: t.Union[int, float] = 2,
             cls_inds: t.Optional[np.ndarray] = None,
             N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
-        """TODO.
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> float:
+        """Hub score.
 
-        ...
+        The hub score scores each node by the number of connections it
+        has to other nodes, weighted by the number of connections these
+        neighbors have.
+
+        The values of node hub score are given by the principal eigenvector
+        of (A.t * A), where A is the adjacency matrix of the graph.
 
         This measure is in [0, 1] range.
 
@@ -2252,10 +2393,43 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
+        radius : float or int, optional
+            Maximum distance between each pair of instances of the same
+            class to both be considered neighbors of each other. Note that
+            each feature of ``N`` is first normalized into the [0, 1]
+            range before the neighbor calculations.
+
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics. This argument is used
+            only if ``norm_dist_mat`` is None.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used. Used only if ``norm_dist_mat`` is None.
+
+        cls_inds : :obj:`np.ndarray`, optional
+            Boolean array which indicates the examples of each class.
+            The rows corresponds to each distinct class, and the columns
+            corresponds to the instances.
+
+        N_scaled : :obj:`np.ndarray`, optional
+            Numerical data ``N`` with each feature normalized  in [0, 1]
+            range. Used only if ``norm_dist_mat`` is None. Used to take
+            advantage of precomputations.
+
+        norm_dist_mat : :obj:`np.ndarray`, optional
+            Square matrix with the pairwise distances between each
+            instance in ``N_scaled``, i.e., between the normalized
+            instances. Used to take advantage of precomputations.
+
         Returns
         -------
-        :obj:`np.ndarray`
-            ...
+        float
+            Complement of the averaged hub score of every node.
 
         References
         ----------
