@@ -2140,7 +2140,7 @@ class MFEComplexity:
 
         for inds_cur_cls in cls_inds:
             dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            total_edges += np.sum(dist_mat_subset <= radius)
+            total_edges += np.sum(dist_mat_subset < radius)
 
         # Note: dividing 'total_edges' by 2 to discount the symmetry
         # of the adjacency matrix.
@@ -2200,22 +2200,15 @@ class MFEComplexity:
         # Note: -1 to discount the instance itself
         neighbor_edges = np.full(y.size, fill_value=-1, dtype=int)
 
-        adj_mat = np.zeros_like(norm_dist_mat, dtype=float)
-
         for inds_cur_cls in cls_inds:
             dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            neigh_num = np.sum(dist_mat_subset <= radius, axis=1)
+            neigh_num = np.sum(dist_mat_subset < radius, axis=1)
             neighbor_edges[inds_cur_cls] += neigh_num
 
-            cur_adj_mat = (
-                dist_mat_subset * (dist_mat_subset <= radius).astype(float))
-            _inds = np.flatnonzero(inds_cur_cls)
-            adj_mat[tuple(np.meshgrid(_inds, _inds))] = cur_adj_mat
-
         # Note: also including the node itself, as the formula presented
-        # in the original paper is not supposed to work otherwise as
-        # the paper itself claims.
-        total_nodes = np.sum(norm_dist_mat <= radius, axis=1)
+        # in the original paper is not supposed to work with only the
+        # neighbors number as the paper itself claims.
+        total_nodes = np.sum(norm_dist_mat < radius, axis=1)
 
         cls_coef = 1.0 - 2 * np.mean(
             neighbor_edges / (1e-8 + total_nodes * (total_nodes - 1)))
@@ -2224,6 +2217,7 @@ class MFEComplexity:
         # cls_coef = 1 - transitivity(g), like the code below:
 
         # import networkx
+        # adj_mat = ...  # Calculate adjacency matrix
         # g = networkx.Graph(adj_mat)
         # cls_coef = 1 - networkx.transitivity(g)
         # print(cls_coef)
@@ -2287,7 +2281,7 @@ class MFEComplexity:
         for inds_cur_cls in cls_inds:
             dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
             cur_adj_mat = (
-                dist_mat_subset * (dist_mat_subset <= radius).astype(float))
+                dist_mat_subset * (dist_mat_subset < radius).astype(float))
             _inds = np.flatnonzero(inds_cur_cls)
             adj_mat[tuple(np.meshgrid(_inds, _inds))] = cur_adj_mat
 
