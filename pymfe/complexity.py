@@ -344,7 +344,6 @@ class MFEComplexity:
             nearest_enemy_dist, nearest_enemy_ind = (
                 cls._calc_nearest_enemies(
                     norm_dist_mat=norm_dist_mat,
-                    y=y,
                     cls_inds=cls_inds,
                     return_inds=True))
 
@@ -489,7 +488,6 @@ class MFEComplexity:
     def _calc_nearest_enemies(
             cls,
             norm_dist_mat: np.ndarray,
-            y: np.ndarray,
             cls_inds: np.ndarray,
             return_inds: bool = True,
     ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, ...]]:
@@ -497,45 +495,30 @@ class MFEComplexity:
 
         Returns the nearest enemies distance and its indices.
         """
-        model = sklearn.neighbors.KNeighborsClassifier(
-            n_neighbors=1,
-            metric="precomputed")
+        num_inst = norm_dist_mat.shape[0]
 
-        # Note: 'n_ene' stands for 'nearest_enemy'
-        n_ene_dist = np.full(y.size, fill_value=np.inf, dtype=float)
+        # Note: 'n_en' stands for 'nearest_enemy'
+        n_en_dist = np.full(num_inst, fill_value=np.inf, dtype=float)
 
         if return_inds:
-            n_ene_inds = np.full(y.size, fill_value=-1, dtype=int)
+            n_en_inds = np.full(num_inst, fill_value=-1, dtype=int)
+
+            for inds_cur_cls in cls_inds:
+                norm_dist_en = norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
+
+                en_inds = np.argmin(norm_dist_en, axis=0)
+                _aux = np.arange(norm_dist_en.shape[1])
+
+                n_en_inds[inds_cur_cls] = en_inds
+                n_en_dist[inds_cur_cls] = norm_dist_en[en_inds, _aux]
+
+            return n_en_dist, n_en_inds
 
         for inds_cur_cls in cls_inds:
-            inds_non_cls = ~inds_cur_cls
+            norm_dist_en = norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
+            n_en_dist[inds_cur_cls] = np.min(norm_dist_mat, axis=0)
 
-            norm_dist_mat_subset = (
-                norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls])
-            norm_dist_mat_non_cls = (
-                norm_dist_mat[inds_non_cls, :][:, inds_cur_cls])
-            y_subset = y[inds_cur_cls]
-
-            model.fit(norm_dist_mat_subset, y_subset)
-
-            neigh_dist, neigh_ind = model.kneighbors(
-                X=norm_dist_mat_non_cls,
-                return_distance=True)
-
-            neigh_dist = neigh_dist.ravel()
-
-            n_ene_dist[inds_non_cls] = np.minimum(
-                n_ene_dist[inds_non_cls], neigh_dist)
-
-            if return_inds:
-                n_ene_inds[inds_non_cls] = np.where(
-                    n_ene_dist[inds_non_cls] < neigh_dist,
-                    n_ene_inds[inds_non_cls], neigh_ind.ravel())
-
-        if return_inds:
-            return n_ene_dist, n_ene_inds
-
-        return n_ene_dist
+        return n_en_dist
 
     @staticmethod
     def _scale_N(N: np.ndarray) -> np.ndarray:
@@ -561,7 +544,7 @@ class MFEComplexity:
         It measures theoverlap between the values of the features in
         different classes.
 
-        This measure is in (0, 1] range.
+        The average value of this measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -647,7 +630,7 @@ class MFEComplexity:
         considers a directional Fisher criterion. Check the references
         for more information.
 
-        This measure is in (0, 1] range.
+        The average value of this measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -815,6 +798,8 @@ class MFEComplexity:
     ) -> np.ndarray:
         """Compute feature maximum individual efficiency.
 
+        The average value of this measure is in [0, 1] range.
+
         Parameters
         ----------
         N : :obj:`np.ndarray`
@@ -885,6 +870,8 @@ class MFEComplexity:
             class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the collective feature efficiency.
+
+        The average value of this measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -998,7 +985,7 @@ class MFEComplexity:
         can be considered simpler than a problem for which a non-linear
         boundary is required.
 
-        This measure is in [0, 1] range.
+        The average value of this measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -1109,6 +1096,8 @@ class MFEComplexity:
         The linear model used is induced by the Support Vector
         Machine algorithm.
 
+        The average value of this measure is in [0, 1] range.
+
         Parameters
         ----------
         N : :obj:`np.ndarray`
@@ -1207,7 +1196,7 @@ class MFEComplexity:
         the presence of concavities in the class boundaries. Higher values
         indicate a greater complexity.
 
-        This measure is in [0, 1] range.
+        The average value of this measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -1280,9 +1269,10 @@ class MFEComplexity:
 
             svc_pipeline.fit(N_subset, y_subset)
 
-            # Note: add 'ind' to 'random_state' to prevent the same
-            # instances be selected to the same class over and over
-            # again.
+            # Note: changing 'random_state' every iteration to prevent
+            # the same subset of instances to be selected for the same
+            # class over and over again. Also note that this does not
+            # breaks the deterministic result of the calculations.
             if random_state is not None:
                 random_state += 1
 
@@ -1312,8 +1302,10 @@ class MFEComplexity:
             metric: str = "minkowski",
             p: t.Union[int, float] = 2,
             N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+            norm_dist_mat: t.Optional[np.ndarray] = None) -> float:
         """Compute the fraction of borderline points.
+
+        This measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -1385,9 +1377,9 @@ class MFEComplexity:
                 node_id_j[which_have_diff_cls],
             ])).size
 
-        inst_num = N.shape[0]
+        n1 = borderline_inst_num / y.size
 
-        return borderline_inst_num / inst_num
+        return n1
 
     @classmethod
     def ft_n2(
@@ -1408,7 +1400,7 @@ class MFEComplexity:
         (ii) The sum of the distances between each example and its closest
             neighbor fromanother class (extra-class)
 
-        This measure is in [0, 1] range.
+        The average value of this measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -1520,7 +1512,7 @@ class MFEComplexity:
         The N3 measure refers to the error rate of a 1-NN classifier
         that is estimated using a leave-one-out cross-validation procedure.
 
-        This measure is in [0, 1] range.
+        The average value of this measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -1579,6 +1571,9 @@ class MFEComplexity:
 
         misclassifications = np.not_equal(y[neighbor_inds], y).astype(int)
 
+        # The measure is computed in the literature using the mean. However, it
+        # is formulated here as a meta-feature. Therefore, the post-processing
+        # should be used to get the mean and other measures as well.
         return misclassifications
 
     @classmethod
@@ -1594,6 +1589,8 @@ class MFEComplexity:
             N_scaled: t.Optional[np.ndarray] = None,
             norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the non-linearity of the k-NN Classifier.
+
+        The average value of this measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -1688,6 +1685,8 @@ class MFEComplexity:
             class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute the entropy of class proportions.
 
+        This measure is in [0, 1] range.
+
         Parameters
         ----------
         y : :obj:`np.ndarray`
@@ -1728,6 +1727,8 @@ class MFEComplexity:
             y: np.ndarray,
             class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute the imbalance ratio.
+
+        This measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -1941,7 +1942,6 @@ class MFEComplexity:
             nearest_enemy_dist, nearest_enemy_ind = (
                 cls._calc_nearest_enemies(
                     norm_dist_mat=norm_dist_mat,
-                    y=y,
                     cls_inds=cls_inds,
                     return_inds=True))
 
@@ -1966,6 +1966,9 @@ class MFEComplexity:
     @classmethod
     def ft_t2(cls, N: np.ndarray) -> float:
         """Compute the average number of features per dimension.
+
+        This measure is in (0, m] range, where `m` is the number of
+        features in ``N``.
 
         Parameters
         ----------
@@ -2001,6 +2004,9 @@ class MFEComplexity:
             random_state: t.Optional[int] = None,
     ) -> float:
         """Compute the average number of PCA dimensions per points.
+
+        This measure is in (0, m] range, where `m` is the number of
+        features in ``N``.
 
         Parameters
         ----------
@@ -2049,6 +2055,8 @@ class MFEComplexity:
 
         The components kept in the PCA dimension explains at least 95% of
         the data variance.
+
+        This measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -2110,7 +2118,8 @@ class MFEComplexity:
         to the decision boundary and also the narrowness of the gap
         between the classes.
 
-        This measure is in [0, 1] range.
+        This measure is in [0, 1 - 1/n] range, where `n` is the number
+        of instances in ``N``.
 
         Parameters
         ----------
@@ -2183,7 +2192,6 @@ class MFEComplexity:
 
             nearest_enemy_dist = cls._calc_nearest_enemies(
                 norm_dist_mat=norm_dist_mat,
-                y=y,
                 cls_inds=cls_inds,
                 return_inds=False)
 
@@ -2279,15 +2287,17 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        # Note: -y.size to discount the instances itself
+        # Note: -y.size to discount self-loops
         total_edges = -y.size
 
         for inds_cur_cls in cls_inds:
             dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
             total_edges += np.sum(dist_mat_subset < radius)
 
-        # Note: dividing 'total_edges' by 2 to discount the symmetry
-        # of the adjacency matrix.
+        # Note: dividing 'total_edges' by 2 (i.e., omitting the '2 *' factor
+        # in the formula below) to discount the symmetry of the adjacency
+        # matrix, as the underlying 'Same-class Radius Nearest Neighbors'
+        # graph is undirected.
         density = 1.0 - total_edges / (y.size * (y.size - 1))
 
         return density
@@ -2377,7 +2387,7 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        # Note: -1 to discount the instance itself
+        # Note: -1 to discount self-loops
         neighbor_edges = np.full(y.size, fill_value=-1, dtype=int)
 
         for inds_cur_cls in cls_inds:
@@ -2385,9 +2395,10 @@ class MFEComplexity:
             neigh_num = np.sum(dist_mat_subset < radius, axis=1)
             neighbor_edges[inds_cur_cls] += neigh_num
 
-        # Note: also including the node itself, as the formula presented
+        # Note: also including the node itself to calculate the total
+        # possible edges between 'k' nodes, as the formula presented
         # in the original paper is not supposed to work with only the
-        # neighbors number as the paper itself claims.
+        # number of the node neighbors, as the paper seems to claim.
         total_nodes = np.sum(norm_dist_mat < radius, axis=1)
 
         cls_coef = 1.0 - 2 * np.mean(
@@ -2494,18 +2505,18 @@ class MFEComplexity:
             norm_dist_mat = scipy.spatial.distance.cdist(
                 N_scaled, N_scaled, metric=metric, p=p)
 
-        adj_mat = np.zeros_like(norm_dist_mat, dtype=float)
+        adj_mat = np.zeros_like(norm_dist_mat, dtype=norm_dist_mat.dtype)
 
         for inds_cur_cls in cls_inds:
             _inds = np.flatnonzero(inds_cur_cls)
-            _inds = tuple(np.meshgrid(_inds, _inds))
-
+            _inds = tuple(np.meshgrid(_inds, _inds, copy=False, sparse=True))
             dist_mat_subset = norm_dist_mat[_inds]
-            cur_adj_mat = dist_mat_subset * (dist_mat_subset < radius)
-            adj_mat[_inds] = cur_adj_mat
+            adj_mat[_inds] = dist_mat_subset * (dist_mat_subset < radius)
 
-        _, eigvecs = np.linalg.eig(np.dot(adj_mat.T, adj_mat))
+        # Note: 'adj_mat' is symmetric because the underlying graph is
+        # undirected. Also, A^t * A = A * A^t, with 'A' = adj_mat.
+        _, eigvecs = np.linalg.eigh(np.dot(adj_mat.T, adj_mat))
 
-        hubs = 1.0 - np.abs(eigvecs[:, 0])
+        hubs = 1.0 - np.abs(eigvecs[:, -1])
 
         return hubs
