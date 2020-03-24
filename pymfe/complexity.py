@@ -164,7 +164,7 @@ class MFEComplexity:
             y: t.Optional[np.ndarray] = None,
             max_iter: t.Union[int, float] = 1e5,
             random_state: t.Optional[int] = None,
-            **kwargs) -> t.Dict[str, int]:
+            **kwargs) -> t.Dict[str, sklearn.pipeline.Pipeline]:
         """TODO.
 
         Parameters
@@ -220,13 +220,24 @@ class MFEComplexity:
             N: np.ndarray,
             metric: str = "minkowski",
             p: t.Union[int, float] = 2,
-            **kwargs) -> t.Dict[str, int]:
-        """TODO.
+            **kwargs) -> t.Dict[str, np.ndarray]:
+        """Precompute normalized ``N`` and pairwise distance among instances.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Numerical fitted data.
+
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -237,7 +248,12 @@ class MFEComplexity:
         -------
         :obj:`dict`
             With following precomputed items:
-                TODO.
+                - ``N_scaled`` (:obj:`np.ndarray`): numerical data ``N`` with
+                    each feature normalized  in [0, 1] range. Used only if
+                    ``norm_dist_mat`` is None.
+                - ``norm_dist_mat`` (:obj:`np.ndarray`): square matrix with
+                    the pairwise distances between each instance in
+                    ``N_scaled``, i.e., between the normalized instances.
         """
         precomp_vals = {}
 
@@ -266,13 +282,30 @@ class MFEComplexity:
             y: np.ndarray,
             metric: str = "minkowski",
             p: t.Union[int, float] = 2,
-            **kwargs) -> t.Dict[str, int]:
-        """TODO.
+            **kwargs) -> t.Dict[str, np.ndarray]:
+        """Precompute instances nearest enemy related values.
+
+        The instance nearest enemy is the nearest instance from a
+        different class.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Numerical fitted data.
+
+        y : :obj:`np.ndarray`
+            Target attribute.
+
+        metric : str, optional
+            Metric used to calculate the distances between the instances.
+            Check the ``scipy.spatial.distance.cdist`` documentation to
+            get a list of all available metrics.
+
+        p : int, optional
+            Power parameter for the Minkowski metric. When p = 1, this is
+            equivalent to using Manhattan distance (l1), and Euclidean
+            distance (l2) for p = 2. For arbitrary p, Minkowski distance
+            (l_p) is used.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -283,7 +316,12 @@ class MFEComplexity:
         -------
         :obj:`dict`
             With following precomputed items:
-                TODO.
+                - ``nearest_enemy_dist`` (:obj:`np.ndarray`): distance of each
+                    instance to its nearest enemy (instances
+                    of a distinct class.)
+                - ``nearest_enemy_ind`` (:obj:`np.ndarray`): index of the
+                    nearest enemy (instances of a distinct class) for each
+                    instance.
         """
         precomp_vals = {}
 
@@ -1915,6 +1953,12 @@ class MFEComplexity:
             centers=N_scaled,
             radius=radius)
 
+        # Note: in the reference paper, just the fraction of
+        # remaining hyperspheres to the size of the dataset is
+        # calculated. However, just like the R mfe package,
+        # we return the fraction of the number of instances in
+        # each remaining hypersphere to provide more informative
+        # summarization values.
         t1 = sphere_inst_count[sphere_inst_count > 0] / y.size
 
         return t1
@@ -2453,11 +2497,12 @@ class MFEComplexity:
         adj_mat = np.zeros_like(norm_dist_mat, dtype=float)
 
         for inds_cur_cls in cls_inds:
-            dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            cur_adj_mat = (
-                dist_mat_subset * (dist_mat_subset < radius).astype(float))
             _inds = np.flatnonzero(inds_cur_cls)
-            adj_mat[tuple(np.meshgrid(_inds, _inds))] = cur_adj_mat
+            _inds = tuple(np.meshgrid(_inds, _inds))
+
+            dist_mat_subset = norm_dist_mat[_inds]
+            cur_adj_mat = dist_mat_subset * (dist_mat_subset < radius)
+            adj_mat[_inds] = cur_adj_mat
 
         _, eigvecs = np.linalg.eig(np.dot(adj_mat.T, adj_mat))
 
