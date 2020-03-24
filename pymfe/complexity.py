@@ -58,14 +58,15 @@ class MFEComplexity:
     precomputation or feature extraction method of module ``landmarking``).
     """
     @classmethod
-    def precompute_fx(cls, y: t.Optional[np.ndarray] = None,
-                      **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_complexity(cls,
+                              y: t.Optional[np.ndarray] = None,
+                              **kwargs) -> t.Dict[str, t.Any]:
         """Precompute some useful things to support feature-based measures.
 
         Parameters
         ----------
         y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+            Target attribute.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -117,7 +118,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         tx_n_components : float, optional
             Specifies the number of components such that the amount of variance
@@ -148,8 +149,10 @@ class MFEComplexity:
         precomp_vals = {}
 
         if N is not None and "num_attr_pca" not in kwargs:
-            pca = sklearn.decomposition.PCA(
-                n_components=tx_n_components, random_state=random_state)
+            pca = sklearn.decomposition.PCA(n_components=tx_n_components,
+                                            copy=False,
+                                            random_state=random_state)
+
             pca.fit(N)
 
             num_attr_pca = pca.explained_variance_ratio_.shape[0]
@@ -200,13 +203,12 @@ class MFEComplexity:
             # Note: 'C' parameter is inversely proportional to the
             # regularization strenght, which is '0.5' in the reference
             # paper.
-            svc = sklearn.svm.LinearSVC(
-                penalty="l2",
-                loss="hinge",
-                C=2.0,
-                tol=10e-3,
-                max_iter=int(max_iter),
-                random_state=random_state)
+            svc = sklearn.svm.LinearSVC(penalty="l2",
+                                        loss="hinge",
+                                        C=2.0,
+                                        tol=10e-3,
+                                        max_iter=int(max_iter),
+                                        random_state=random_state)
 
             pip = sklearn.pipeline.Pipeline([("zscore", zscore), ("svc", svc)])
 
@@ -215,12 +217,11 @@ class MFEComplexity:
         return precomp_vals
 
     @classmethod
-    def precompute_norm_dist_mat(
-            cls,
-            N: np.ndarray,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            **kwargs) -> t.Dict[str, np.ndarray]:
+    def precompute_norm_dist_mat(cls,
+                                 N: np.ndarray,
+                                 metric: str = "minkowski",
+                                 p: t.Union[int, float] = 2,
+                                 **kwargs) -> t.Dict[str, np.ndarray]:
         """Precompute normalized ``N`` and pairwise distance among instances.
 
         Parameters
@@ -265,24 +266,22 @@ class MFEComplexity:
             N_scaled = kwargs.get("N_scaled")
 
         if N_scaled is not None and "norm_dist_mat" not in kwargs:
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled,
-                N_scaled,
-                metric=metric,
-                p=p)
+            norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                         N_scaled,
+                                                         metric=metric,
+                                                         p=p)
 
             precomp_vals["norm_dist_mat"] = norm_dist_mat
 
         return precomp_vals
 
     @classmethod
-    def precompute_nearest_enemy(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            **kwargs) -> t.Dict[str, np.ndarray]:
+    def precompute_nearest_enemy(cls,
+                                 N: np.ndarray,
+                                 y: np.ndarray,
+                                 metric: str = "minkowski",
+                                 p: t.Union[int, float] = 2,
+                                 **kwargs) -> t.Dict[str, np.ndarray]:
         """Precompute instances nearest enemy related values.
 
         The instance nearest enemy is the nearest instance from a
@@ -325,27 +324,28 @@ class MFEComplexity:
         """
         precomp_vals = {}
 
-        if (y is not None and N.size and not
-                {"nearest_enemy_dist",
-                 "nearest_enemy_ind"}.issubset(kwargs)):
+        if (y is not None and N.size
+                and not {"nearest_enemy_dist", "nearest_enemy_ind"
+                         }.issubset(kwargs)):
             norm_dist_mat = kwargs.get("norm_dist_mat")
             cls_inds = kwargs.get("cls_inds")
 
             if norm_dist_mat is None:
                 precomp_vals.update(
-                    cls.precompute_norm_dist_mat(
-                        N=N, metric=metric, p=p, **kwargs))
+                    cls.precompute_norm_dist_mat(N=N,
+                                                 metric=metric,
+                                                 p=p,
+                                                 **kwargs))
                 norm_dist_mat = precomp_vals["norm_dist_mat"]
 
             if cls_inds is None:
-                precomp_vals.update(cls.precompute_fx(y=y, **kwargs))
+                precomp_vals.update(cls.precompute_complexity(y=y, **kwargs))
                 cls_inds = precomp_vals["cls_inds"]
 
-            nearest_enemy_dist, nearest_enemy_ind = (
-                cls._calc_nearest_enemies(
-                    norm_dist_mat=norm_dist_mat,
-                    cls_inds=cls_inds,
-                    return_inds=True))
+            nearest_enemy_dist, nearest_enemy_ind = (cls._calc_nearest_enemies(
+                norm_dist_mat=norm_dist_mat,
+                cls_inds=cls_inds,
+                return_inds=True))
 
             precomp_vals["nearest_enemy_dist"] = nearest_enemy_dist
             precomp_vals["nearest_enemy_ind"] = nearest_enemy_ind
@@ -525,20 +525,19 @@ class MFEComplexity:
         """Scale all features of N to [0, 1] range."""
         N_scaled = N
 
-        if (not np.allclose(1.0, np.max(N, axis=0)) or
-                not np.allclose(0.0, np.min(N, axis=0))):
+        if (not np.allclose(1.0, np.max(N, axis=0))
+                or not np.allclose(0.0, np.min(N, axis=0))):
             N_scaled = sklearn.preprocessing.MinMaxScaler(
                 feature_range=(0, 1)).fit_transform(N)
 
         return N_scaled
 
     @classmethod
-    def ft_f1(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            cls_inds: t.Optional[np.ndarray] = None,
-            class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_f1(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              cls_inds: t.Optional[np.ndarray] = None,
+              class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Maximum Fisher's discriminant ratio.
 
         It measures theoverlap between the values of the features in
@@ -593,12 +592,12 @@ class MFEComplexity:
 
         mean_global = np.mean(N, axis=0)
 
-        centroids = np.asarray([
-            np.mean(N[inds_cur_cls, :], axis=0) for inds_cur_cls in cls_inds
-        ], dtype=float)
+        centroids = np.asarray(
+            [np.mean(N[inds_cur_cls, :], axis=0) for inds_cur_cls in cls_inds],
+            dtype=float)
 
-        _numer = np.sum(
-            np.square(centroids - mean_global).T * class_freqs, axis=1)
+        _numer = np.sum(np.square(centroids - mean_global).T * class_freqs,
+                        axis=1)
 
         _denom = np.sum(np.square([
             N[inds_cur_cls, :] - centroids[cls_ind, :]
@@ -616,13 +615,12 @@ class MFEComplexity:
         return f1
 
     @classmethod
-    def ft_f1v(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            ovo_comb: t.Optional[np.ndarray] = None,
-            cls_inds: t.Optional[np.ndarray] = None,
-            class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_f1v(cls,
+               N: np.ndarray,
+               y: np.ndarray,
+               ovo_comb: t.Optional[np.ndarray] = None,
+               cls_inds: t.Optional[np.ndarray] = None,
+               class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Directional-vector maximum Fisher's discriminant ratio.
 
         This measure searches for a vector which can separate the two
@@ -670,7 +668,7 @@ class MFEComplexity:
            (Cybernetics), 31(4):629–636, 2001.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
@@ -688,15 +686,14 @@ class MFEComplexity:
             centroids[cls_ind, :] = cur_cls_inst.mean(axis=0)
 
         for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
-            centroid_diff = (
-                centroids[cls_id_1, :] - centroids[cls_id_2, :]).reshape(-1, 1)
+            centroid_diff = (centroids[cls_id_1, :] -
+                             centroids[cls_id_2, :]).reshape(-1, 1)
 
             total_inst_num = class_freqs[cls_id_1] + class_freqs[cls_id_2]
 
-            W_mat = (
-                class_freqs[cls_id_1] * mat_scatter_within[cls_id_1] +
-                class_freqs[cls_id_2] * mat_scatter_within[cls_id_2]
-            ) / total_inst_num
+            W_mat = (class_freqs[cls_id_1] * mat_scatter_within[cls_id_1] +
+                     class_freqs[cls_id_2] *
+                     mat_scatter_within[cls_id_2]) / total_inst_num
 
             # Note: the result of np.linalg.piv 'Moore-Penrose' pseudo-inverse
             # does not match with the result of MASS::ginv 'Moore-Penrose'
@@ -715,12 +712,11 @@ class MFEComplexity:
         return f1v
 
     @classmethod
-    def ft_f2(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            ovo_comb: t.Optional[np.ndarray] = None,
-            cls_inds: t.Optional[np.ndarray] = None) -> float:
+    def ft_f2(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              ovo_comb: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None) -> float:
         """Volume of the overlapping region.
 
         This measure calculates the overlap of the distributions of
@@ -767,7 +763,7 @@ class MFEComplexity:
            2013.
         """
         if ovo_comb is None or cls_inds is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
@@ -803,7 +799,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
             Fitted target attribute.
@@ -836,7 +832,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
@@ -876,7 +872,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
             Fitted target attribute.
@@ -909,7 +905,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
@@ -966,16 +962,15 @@ class MFEComplexity:
         return f4
 
     @classmethod
-    def ft_l1(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            ovo_comb: t.Optional[np.ndarray] = None,
-            cls_inds: t.Optional[np.ndarray] = None,
-            class_freqs: t.Optional[np.ndarray] = None,
-            svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
-            max_iter: t.Union[int, float] = 1e5,
-            random_state: t.Optional[int] = None) -> np.ndarray:
+    def ft_l1(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              ovo_comb: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None,
+              class_freqs: t.Optional[np.ndarray] = None,
+              svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
+              max_iter: t.Union[int, float] = 1e5,
+              random_state: t.Optional[int] = None) -> np.ndarray:
         """Sum of error distance by linear programming.
 
         This measure assesses if the data are linearly separable by
@@ -1039,23 +1034,21 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
 
         if svc_pipeline is None:
-            sub_dic = cls.precompute_complexity_svm(
-                max_iter=max_iter,
-                random_state=random_state)
+            sub_dic = cls.precompute_complexity_svm(max_iter=max_iter,
+                                                    random_state=random_state)
 
             svc_pipeline = sub_dic["svc_pipeline"]
 
         sum_err_dist = np.zeros(ovo_comb.shape[0], dtype=float)
 
         for ind, (cls_1, cls_2) in enumerate(ovo_comb):
-            cls_union = np.logical_or(cls_inds[cls_1, :],
-                                      cls_inds[cls_2, :])
+            cls_union = np.logical_or(cls_inds[cls_1, :], cls_inds[cls_2, :])
 
             N_subset = N[cls_union, :]
             y_subset = cls_inds[cls_1, cls_union]
@@ -1071,9 +1064,8 @@ class MFEComplexity:
             else:
                 insts_dists = np.array([0.0], dtype=float)
 
-            sum_err_dist[ind] = (
-                np.linalg.norm(insts_dists, ord=1) /
-                (class_freqs[cls_1] + class_freqs[cls_2]))
+            sum_err_dist[ind] = (np.linalg.norm(insts_dists, ord=1) /
+                                 (class_freqs[cls_1] + class_freqs[cls_2]))
 
         l1 = 1.0 - 1.0 / (1.0 + sum_err_dist)
         # The measure is computed in the literature using the mean. However, it
@@ -1082,15 +1074,14 @@ class MFEComplexity:
         return l1
 
     @classmethod
-    def ft_l2(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            ovo_comb: t.Optional[np.ndarray] = None,
-            cls_inds: t.Optional[np.ndarray] = None,
-            svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
-            max_iter: t.Union[int, float] = 1e5,
-            random_state: t.Optional[int] = None) -> np.ndarray:
+    def ft_l2(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              ovo_comb: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None,
+              svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
+              max_iter: t.Union[int, float] = 1e5,
+              random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute the OVO subsets error rate of linear classifier.
 
         The linear model used is induced by the Support Vector
@@ -1101,7 +1092,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
             Fitted target attribute.
@@ -1145,22 +1136,20 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
         if svc_pipeline is None:
-            sub_dic = cls.precompute_complexity_svm(
-                max_iter=max_iter,
-                random_state=random_state)
+            sub_dic = cls.precompute_complexity_svm(max_iter=max_iter,
+                                                    random_state=random_state)
 
             svc_pipeline = sub_dic["svc_pipeline"]
 
         l2 = np.zeros(ovo_comb.shape[0], dtype=float)
 
         for ind, (cls_1, cls_2) in enumerate(ovo_comb):
-            cls_union = np.logical_or(cls_inds[cls_1, :],
-                                      cls_inds[cls_2, :])
+            cls_union = np.logical_or(cls_inds[cls_1, :], cls_inds[cls_2, :])
 
             N_subset = N[cls_union, :]
             y_subset = cls_inds[cls_1, cls_union]
@@ -1168,8 +1157,9 @@ class MFEComplexity:
             svc_pipeline.fit(N_subset, y_subset)
             y_pred = svc_pipeline.predict(N_subset)
 
-            error = sklearn.metrics.zero_one_loss(
-                y_true=y_subset, y_pred=y_pred, normalize=True)
+            error = sklearn.metrics.zero_one_loss(y_true=y_subset,
+                                                  y_pred=y_pred,
+                                                  normalize=True)
 
             l2[ind] = error
 
@@ -1179,15 +1169,14 @@ class MFEComplexity:
         return l2
 
     @classmethod
-    def ft_l3(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            ovo_comb: t.Optional[np.ndarray] = None,
-            cls_inds: t.Optional[np.ndarray] = None,
-            svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
-            max_iter: t.Union[int, float] = 1e5,
-            random_state: t.Optional[int] = None) -> np.ndarray:
+    def ft_l3(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              ovo_comb: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None,
+              svc_pipeline: t.Optional[sklearn.pipeline.Pipeline] = None,
+              max_iter: t.Union[int, float] = 1e5,
+              random_state: t.Optional[int] = None) -> np.ndarray:
         """Non-Linearity of a linear classifier.
 
         This index is sensitive to how the data from a class are
@@ -1246,22 +1235,20 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
         if svc_pipeline is None:
-            sub_dic = cls.precompute_complexity_svm(
-                max_iter=max_iter,
-                random_state=random_state)
+            sub_dic = cls.precompute_complexity_svm(max_iter=max_iter,
+                                                    random_state=random_state)
 
             svc_pipeline = sub_dic["svc_pipeline"]
 
         l3 = np.zeros(ovo_comb.shape[0], dtype=float)
 
         for ind, (cls_1, cls_2) in enumerate(ovo_comb):
-            cls_union = np.logical_or(cls_inds[cls_1, :],
-                                      cls_inds[cls_2, :])
+            cls_union = np.logical_or(cls_inds[cls_1, :], cls_inds[cls_2, :])
 
             N_subset = N[cls_union, :]
             y_subset = cls_inds[cls_1, cls_union]
@@ -1284,8 +1271,9 @@ class MFEComplexity:
 
             y_pred = svc_pipeline.predict(N_interpol)
 
-            error = sklearn.metrics.zero_one_loss(
-                y_true=y_interpol, y_pred=y_pred, normalize=True)
+            error = sklearn.metrics.zero_one_loss(y_true=y_interpol,
+                                                  y_pred=y_pred,
+                                                  normalize=True)
 
             l3[ind] = error
 
@@ -1295,14 +1283,13 @@ class MFEComplexity:
         return l3
 
     @classmethod
-    def ft_n1(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> float:
+    def ft_n1(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              metric: str = "minkowski",
+              p: t.Union[int, float] = 2,
+              N_scaled: t.Optional[np.ndarray] = None,
+              norm_dist_mat: t.Optional[np.ndarray] = None) -> float:
         """Compute the fraction of borderline points.
 
         This measure is in [0, 1] range.
@@ -1310,7 +1297,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
             Fitted target attribute.
@@ -1354,16 +1341,18 @@ class MFEComplexity:
             if N_scaled is None:
                 N_scaled = cls._scale_N(N=N)
 
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled, N_scaled, metric=metric, p=p)
+            norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                         N_scaled,
+                                                         metric=metric,
+                                                         p=p)
 
         # Compute the minimum spanning tree using Kruskal's Minimum
         # Spanning Tree algorithm.
         # Note: in the paper, the authors used Prim's algorithm.
         # Our implementation may change it in a future version due to
         # time complexity advantages of Prim's algorithm in this context.
-        mst = scipy.sparse.csgraph.minimum_spanning_tree(
-            csgraph=np.triu(norm_dist_mat, k=1), overwrite=True)
+        mst = scipy.sparse.csgraph.minimum_spanning_tree(csgraph=np.triu(
+            norm_dist_mat, k=1), overwrite=True)
 
         node_id_i, node_id_j = np.nonzero(mst)
 
@@ -1382,16 +1371,15 @@ class MFEComplexity:
         return n1
 
     @classmethod
-    def ft_n2(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            class_freqs: t.Optional[np.ndarray] = None,
-            cls_inds: t.Optional[np.ndarray] = None,
-            N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_n2(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              metric: str = "minkowski",
+              p: t.Union[int, float] = 2,
+              class_freqs: t.Optional[np.ndarray] = None,
+              cls_inds: t.Optional[np.ndarray] = None,
+              N_scaled: t.Optional[np.ndarray] = None,
+              norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Ratio of intra and extra class nearest neighbor distance.
 
         This measure computes the ratio of two sums:
@@ -1458,15 +1446,17 @@ class MFEComplexity:
             _, class_freqs = np.unique(y, return_counts=True)
 
         if cls_inds is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             cls_inds = sub_dic["cls_inds"]
 
         if norm_dist_mat is None:
             if N_scaled is None:
                 N_scaled = cls._scale_N(N=N)
 
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled, N_scaled, metric=metric, p=p)
+            norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                         N_scaled,
+                                                         metric=metric,
+                                                         p=p)
 
         intra_extra = np.zeros(y.size, dtype=float)
 
@@ -1478,8 +1468,8 @@ class MFEComplexity:
             norm_dist_mat_intercls = (
                 norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls])
 
-            norm_dist_mat_intracls[
-                np.diag_indices_from(norm_dist_mat_intracls)] = np.inf
+            norm_dist_mat_intracls[np.diag_indices_from(
+                norm_dist_mat_intracls)] = np.inf
 
             _aux = np.arange(class_freqs[cls_ind])
 
@@ -1499,14 +1489,13 @@ class MFEComplexity:
         return n2
 
     @classmethod
-    def ft_n3(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_n3(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              metric: str = "minkowski",
+              p: t.Union[int, float] = 2,
+              N_scaled: t.Optional[np.ndarray] = None,
+              norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Error rate of the nearest neighbor classifier.
 
         The N3 measure refers to the error rate of a 1-NN classifier
@@ -1561,8 +1550,10 @@ class MFEComplexity:
             if N_scaled is None:
                 N_scaled = cls._scale_N(N=N)
 
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled, N_scaled, metric=metric, p=p)
+            norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                         N_scaled,
+                                                         metric=metric,
+                                                         p=p)
 
         model = sklearn.neighbors.KNeighborsClassifier(
             n_neighbors=1, metric="precomputed").fit(norm_dist_mat, y)
@@ -1577,17 +1568,16 @@ class MFEComplexity:
         return misclassifications
 
     @classmethod
-    def ft_n4(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            n_neighbors: int = 1,
-            random_state: t.Optional[int] = None,
-            cls_inds: t.Optional[np.ndarray] = None,
-            N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_n4(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              metric: str = "minkowski",
+              p: t.Union[int, float] = 2,
+              n_neighbors: int = 1,
+              random_state: t.Optional[int] = None,
+              cls_inds: t.Optional[np.ndarray] = None,
+              N_scaled: t.Optional[np.ndarray] = None,
+              norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the non-linearity of the k-NN Classifier.
 
         The average value of this measure is in [0, 1] range.
@@ -1595,10 +1585,10 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         metric : str, optional
             The distance metric used in the internal kNN classifier. See the
@@ -1657,19 +1647,25 @@ class MFEComplexity:
             N_scaled = cls._scale_N(N=N)
 
         if norm_dist_mat is None:
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled, N_scaled, metric=metric, p=p)
+            norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                         N_scaled,
+                                                         metric=metric,
+                                                         p=p)
 
-        N_interpol, y_interpol = cls._interpolate(
-            N=N_scaled, y=y, cls_inds=cls_inds, random_state=random_state)
+        N_interpol, y_interpol = cls._interpolate(N=N_scaled,
+                                                  y=y,
+                                                  cls_inds=cls_inds,
+                                                  random_state=random_state)
 
-        knn = sklearn.neighbors.KNeighborsClassifier(
-            n_neighbors=n_neighbors,
-            metric="precomputed").fit(norm_dist_mat, y)
+        knn = sklearn.neighbors.KNeighborsClassifier(n_neighbors=n_neighbors,
+                                                     metric="precomputed").fit(
+                                                         norm_dist_mat, y)
 
         y_pred = knn.predict(
-            scipy.spatial.distance.cdist(
-                N_interpol, N_scaled, metric=metric, p=p))
+            scipy.spatial.distance.cdist(N_interpol,
+                                         N_scaled,
+                                         metric=metric,
+                                         p=p))
 
         misclassifications = np.not_equal(y_interpol, y_pred).astype(int)
 
@@ -1679,10 +1675,9 @@ class MFEComplexity:
         return misclassifications
 
     @classmethod
-    def ft_c1(
-            cls,
-            y: np.array,
-            class_freqs: t.Optional[np.ndarray] = None) -> float:
+    def ft_c1(cls,
+              y: np.array,
+              class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute the entropy of class proportions.
 
         This measure is in [0, 1] range.
@@ -1690,7 +1685,7 @@ class MFEComplexity:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         class_freqs : :obj:`np.ndarray`, optional
             The number of examples in each class. The indices corresponds to
@@ -1716,16 +1711,15 @@ class MFEComplexity:
 
         # Note: calling 'ft_nre' just to make explicity the link
         # between this metafeature and 'C1'.
-        c1 = MFEClustering.ft_nre(
-            y=y, class_freqs=class_freqs) / np.log(num_class)
+        c1 = MFEClustering.ft_nre(y=y,
+                                  class_freqs=class_freqs) / np.log(num_class)
 
         return c1
 
     @classmethod
-    def ft_c2(
-            cls,
-            y: np.ndarray,
-            class_freqs: t.Optional[np.ndarray] = None) -> float:
+    def ft_c2(cls,
+              y: np.ndarray,
+              class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute the imbalance ratio.
 
         This measure is in [0, 1] range.
@@ -1733,7 +1727,7 @@ class MFEComplexity:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         class_freqs : :obj:`np.ndarray`, optional
             The number of examples in each class. The indices corresponds to
@@ -1766,17 +1760,16 @@ class MFEComplexity:
         return c2
 
     @classmethod
-    def ft_t1(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            cls_inds: t.Optional[np.ndarray] = None,
-            N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None,
-            nearest_enemy_dist: t.Optional[np.ndarray] = None,
-            nearest_enemy_ind: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_t1(cls,
+              N: np.ndarray,
+              y: np.ndarray,
+              metric: str = "minkowski",
+              p: t.Union[int, float] = 2,
+              cls_inds: t.Optional[np.ndarray] = None,
+              N_scaled: t.Optional[np.ndarray] = None,
+              norm_dist_mat: t.Optional[np.ndarray] = None,
+              nearest_enemy_dist: t.Optional[np.ndarray] = None,
+              nearest_enemy_ind: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Fraction of hyperspheres covering data.
 
         This measure uses a process that builds hyperspheres centered
@@ -1857,7 +1850,6 @@ class MFEComplexity:
                 nearest_enemy_ind: np.ndarray,
                 nearest_enemy_dist: np.ndarray) -> np.ndarray:
             """Get the radius of hyperspheres which cover the given dataset."""
-
             def _recurse_radius_calc(ind_inst: int) -> float:
                 """Recursively calculate hyperspheres to cover dataset."""
                 ind_enemy = nearest_enemy_ind[ind_inst]
@@ -1871,13 +1863,14 @@ class MFEComplexity:
 
                 radius_enemy = _recurse_radius_calc(ind_inst=ind_enemy)
 
-                radius[ind_inst] = abs(
-                    nearest_enemy_dist[ind_inst] - radius_enemy)
+                radius[ind_inst] = abs(nearest_enemy_dist[ind_inst] -
+                                       radius_enemy)
 
                 return radius[ind_inst]
 
-            radius = np.full(
-                nearest_enemy_ind.size, fill_value=-1.0, dtype=float)
+            radius = np.full(nearest_enemy_ind.size,
+                             fill_value=-1.0,
+                             dtype=float)
 
             for ind in np.arange(radius.size):
                 if radius[ind] < 0.0:
@@ -1885,24 +1878,20 @@ class MFEComplexity:
 
             return radius
 
-        def _is_hypersphere_in(
-                center_a: np.ndarray,
-                center_b: np.ndarray,
-                radius_a: float,
-                radius_b: float) -> bool:
+        def _is_hypersphere_in(center_a: np.ndarray, center_b: np.ndarray,
+                               radius_a: float, radius_b: float) -> bool:
             """Checks if a hypersphere `a` is in a hypersphere `b`."""
             upper_a, lower_a = center_a + radius_a, center_a - radius_a
             upper_b, lower_b = center_b + radius_b, center_b - radius_b
             for ind in np.arange(center_a.size):
-                if ((upper_a[ind] > upper_b[ind]) or
-                        (lower_a[ind] < lower_b[ind])):
+                if ((upper_a[ind] > upper_b[ind])
+                        or (lower_a[ind] < lower_b[ind])):
                     return False
 
             return True
 
-        def _agglomerate_hyperspheres(
-                centers: np.ndarray,
-                radius: np.ndarray) -> np.ndarray:
+        def _agglomerate_hyperspheres(centers: np.ndarray,
+                                      radius: np.ndarray) -> np.ndarray:
             """Agglomerate internal hyperspheres into outer hyperspheres.
 
             Returns the number of training instances within each
@@ -1914,11 +1903,10 @@ class MFEComplexity:
 
             for ind_a, ind_sphere_a in enumerate(sorted_sphere_inds[:-1]):
                 for ind_sphere_b in sorted_sphere_inds[:ind_a:-1]:
-                    if _is_hypersphere_in(
-                            center_a=centers[ind_sphere_a, :],
-                            center_b=centers[ind_sphere_b, :],
-                            radius_a=radius[ind_sphere_a],
-                            radius_b=radius[ind_sphere_b]):
+                    if _is_hypersphere_in(center_a=centers[ind_sphere_a, :],
+                                          center_b=centers[ind_sphere_b, :],
+                                          radius_a=radius[ind_sphere_a],
+                                          radius_b=radius[ind_sphere_b]):
 
                         sphere_inst_num[ind_sphere_b] += (
                             sphere_inst_num[ind_sphere_a])
@@ -1936,22 +1924,22 @@ class MFEComplexity:
                 cls_inds = _utils.calc_cls_inds(y, classes)
 
             if norm_dist_mat is None:
-                norm_dist_mat = scipy.spatial.distance.cdist(
-                    N_scaled, N_scaled, metric=metric, p=p)
+                norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                             N_scaled,
+                                                             metric=metric,
+                                                             p=p)
 
-            nearest_enemy_dist, nearest_enemy_ind = (
-                cls._calc_nearest_enemies(
-                    norm_dist_mat=norm_dist_mat,
-                    cls_inds=cls_inds,
-                    return_inds=True))
+            nearest_enemy_dist, nearest_enemy_ind = (cls._calc_nearest_enemies(
+                norm_dist_mat=norm_dist_mat,
+                cls_inds=cls_inds,
+                return_inds=True))
 
         radius = _calc_hyperspheres_radius(
             nearest_enemy_ind=nearest_enemy_ind,
             nearest_enemy_dist=nearest_enemy_dist)
 
-        sphere_inst_count = _agglomerate_hyperspheres(
-            centers=N_scaled,
-            radius=radius)
+        sphere_inst_count = _agglomerate_hyperspheres(centers=N_scaled,
+                                                      radius=radius)
 
         # Note: in the reference paper, just the fraction of
         # remaining hyperspheres to the size of the dataset is
@@ -2011,7 +1999,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         num_attr_pca : int, optional
             Number of features after PCA where a fraction of at least 0.95
@@ -2061,7 +2049,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         num_attr_pca : int, optional
             Number of features after PCA where a fraction of at least 0.95
@@ -2097,16 +2085,15 @@ class MFEComplexity:
         return num_attr_pca / num_attr
 
     @classmethod
-    def ft_lsc(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            cls_inds: t.Optional[np.ndarray] = None,
-            N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None,
-            nearest_enemy_dist: t.Optional[np.ndarray] = None) -> float:
+    def ft_lsc(cls,
+               N: np.ndarray,
+               y: np.ndarray,
+               metric: str = "minkowski",
+               p: t.Union[int, float] = 2,
+               cls_inds: t.Optional[np.ndarray] = None,
+               N_scaled: t.Optional[np.ndarray] = None,
+               norm_dist_mat: t.Optional[np.ndarray] = None,
+               nearest_enemy_dist: t.Optional[np.ndarray] = None) -> float:
         """Local set average cardinality.
 
         The Local-Set (LS) of an example `x_i` in a dataset ``N`` is
@@ -2182,8 +2169,10 @@ class MFEComplexity:
             if N_scaled is None:
                 N_scaled = cls._scale_N(N=N)
 
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled, N_scaled, metric=metric, p=p)
+            norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                         N_scaled,
+                                                         metric=metric,
+                                                         p=p)
 
         if nearest_enemy_dist is None:
             if cls_inds is None:
@@ -2195,23 +2184,20 @@ class MFEComplexity:
                 cls_inds=cls_inds,
                 return_inds=False)
 
-        lsc = (
-            1.0 - np.sum(norm_dist_mat < nearest_enemy_dist) /
-            (y.size ** 2))
+        lsc = (1.0 - np.sum(norm_dist_mat < nearest_enemy_dist) / (y.size**2))
 
         return lsc
 
     @classmethod
-    def ft_density(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            radius: t.Union[int, float] = 0.15,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            cls_inds: t.Optional[np.ndarray] = None,
-            N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> float:
+    def ft_density(cls,
+                   N: np.ndarray,
+                   y: np.ndarray,
+                   radius: t.Union[int, float] = 0.15,
+                   metric: str = "minkowski",
+                   p: t.Union[int, float] = 2,
+                   cls_inds: t.Optional[np.ndarray] = None,
+                   N_scaled: t.Optional[np.ndarray] = None,
+                   norm_dist_mat: t.Optional[np.ndarray] = None) -> float:
         """Average density of the network.
 
         This measure considers the number of edges that are retained in the
@@ -2284,8 +2270,10 @@ class MFEComplexity:
             if N_scaled is None:
                 N_scaled = cls._scale_N(N=N)
 
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled, N_scaled, metric=metric, p=p)
+            norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                         N_scaled,
+                                                         metric=metric,
+                                                         p=p)
 
         # Note: -y.size to discount self-loops
         total_edges = -y.size
@@ -2384,8 +2372,10 @@ class MFEComplexity:
             if N_scaled is None:
                 N_scaled = cls._scale_N(N=N)
 
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled, N_scaled, metric=metric, p=p)
+            norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                         N_scaled,
+                                                         metric=metric,
+                                                         p=p)
 
         # Note: -1 to discount self-loops
         neighbor_edges = np.full(y.size, fill_value=-1, dtype=int)
@@ -2401,8 +2391,8 @@ class MFEComplexity:
         # number of the node neighbors, as the paper seems to claim.
         total_nodes = np.sum(norm_dist_mat < radius, axis=1)
 
-        cls_coef = 1.0 - 2 * np.mean(
-            neighbor_edges / (1e-8 + total_nodes * (total_nodes - 1)))
+        cls_coef = 1.0 - 2 * np.mean(neighbor_edges / (1e-8 + total_nodes *
+                                                       (total_nodes - 1)))
 
         # Note: the R mfe implementation calculates cls_coef as:
         # cls_coef = 1 - transitivity(g), like the code below:
@@ -2419,16 +2409,15 @@ class MFEComplexity:
         return cls_coef
 
     @classmethod
-    def ft_hubs(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            radius: t.Union[int, float] = 0.15,
-            metric: str = "minkowski",
-            p: t.Union[int, float] = 2,
-            cls_inds: t.Optional[np.ndarray] = None,
-            N_scaled: t.Optional[np.ndarray] = None,
-            norm_dist_mat: t.Optional[np.ndarray] = None) -> float:
+    def ft_hubs(cls,
+                N: np.ndarray,
+                y: np.ndarray,
+                radius: t.Union[int, float] = 0.15,
+                metric: str = "minkowski",
+                p: t.Union[int, float] = 2,
+                cls_inds: t.Optional[np.ndarray] = None,
+                N_scaled: t.Optional[np.ndarray] = None,
+                norm_dist_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Hub score.
 
         The hub score scores each node by the number of connections it
@@ -2438,7 +2427,7 @@ class MFEComplexity:
         The values of node hub score are given by the principal eigenvector
         of (A.t * A), where A is the adjacency matrix of the graph.
 
-        This measure is in [0, 1] range.
+        The average value of this measure is in [0, 1] range.
 
         Parameters
         ----------
@@ -2483,8 +2472,8 @@ class MFEComplexity:
 
         Returns
         -------
-        float
-            Complement of the averaged hub score of every node.
+        :obj:`np.ndarray`
+            Complement of the hub score of every node.
 
         References
         ----------
@@ -2502,8 +2491,10 @@ class MFEComplexity:
             if N_scaled is None:
                 N_scaled = cls._scale_N(N=N)
 
-            norm_dist_mat = scipy.spatial.distance.cdist(
-                N_scaled, N_scaled, metric=metric, p=p)
+            norm_dist_mat = scipy.spatial.distance.cdist(N_scaled,
+                                                         N_scaled,
+                                                         metric=metric,
+                                                         p=p)
 
         adj_mat = np.zeros_like(norm_dist_mat, dtype=norm_dist_mat.dtype)
 
@@ -2517,6 +2508,10 @@ class MFEComplexity:
         # undirected. Also, A^t * A = A * A^t, with 'A' = adj_mat.
         _, eigvecs = np.linalg.eigh(np.dot(adj_mat.T, adj_mat))
 
+        # Note: in the reference paper, it is used the average value of
+        # the principal eigenvector. However, to enable summarization,
+        # and just like the R mfe package, here we chose to return all
+        # complement of the hub scores for every node.
         hubs = 1.0 - np.abs(eigvecs[:, -1])
 
         return hubs
