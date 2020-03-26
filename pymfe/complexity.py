@@ -265,16 +265,17 @@ class MFEComplexity:
             N_scaled = kwargs.get("N_scaled")
 
         if N_scaled is not None and "norm_dist_mat" not in kwargs:
-            norm_dist_mat, dist_min, dist_ptp = cls._calc_norm_dist_mat(
-                N=N,
-                metric=metric,
-                p=p,
-                N_scaled=N_scaled,
-                return_scalers=True)
+            norm_dist_mat, orig_dist_mat_min, orig_dist_mat_ptp = (
+                cls._calc_norm_dist_mat(
+                    N=N,
+                    metric=metric,
+                    p=p,
+                    N_scaled=N_scaled,
+                    return_scalers=True))
 
             precomp_vals["norm_dist_mat"] = norm_dist_mat
-            precomp_vals["orig_dist_mat_min"] = dist_min
-            precomp_vals["orig_dist_mat_ptp"] = dist_ptp
+            precomp_vals["orig_dist_mat_min"] = orig_dist_mat_min
+            precomp_vals["orig_dist_mat_ptp"] = orig_dist_mat_ptp
 
         return precomp_vals
 
@@ -388,14 +389,15 @@ class MFEComplexity:
         norm_dist_mat = scipy.spatial.distance.cdist(
             N_scaled, N_scaled, metric=metric, p=p)
 
-        dist_min = np.min(norm_dist_mat)
-        dist_ptp = np.ptp(norm_dist_mat)
+        orig_dist_mat_min = np.min(norm_dist_mat)
+        orig_dist_mat_ptp = np.ptp(norm_dist_mat)
 
-        if normalize and np.not_equal(0.0, dist_ptp):
-            norm_dist_mat = (norm_dist_mat - dist_min) / dist_ptp
+        if normalize and np.not_equal(0.0, orig_dist_mat_ptp):
+            norm_dist_mat = (
+                norm_dist_mat - orig_dist_mat_min) / orig_dist_mat_ptp
 
         if return_scalers:
-            return norm_dist_mat, dist_min, dist_ptp
+            return norm_dist_mat, orig_dist_mat_min, orig_dist_mat_ptp
 
         return norm_dist_mat
 
@@ -1611,8 +1613,8 @@ class MFEComplexity:
               cls_inds: t.Optional[np.ndarray] = None,
               N_scaled: t.Optional[np.ndarray] = None,
               norm_dist_mat: t.Optional[np.ndarray] = None,
-              dist_min: t.Optional[float] = None,
-              dist_ptp: t.Optional[float] = None) -> np.ndarray:
+              orig_dist_mat_min: t.Optional[float] = None,
+              orig_dist_mat_ptp: t.Optional[float] = None) -> np.ndarray:
         """Compute the non-linearity of the k-NN Classifier.
 
         The average value of this measure is in [0, 1] range.
@@ -1659,13 +1661,13 @@ class MFEComplexity:
             Square matrix with the pairwise distances between each
             instance in ``N_scaled``, i.e., between the normalized
             instances. Used to take advantage of precomputations.
-            Used if and only if ``dist_min`` AND ``dist_ptp`` are
-            also given (non None).
+            Used if and only if ``orig_dist_mat_min`` AND
+            ``orig_dist_mat_ptp`` are also given (non None).
 
-        dist_min : :obj:`float`, optional
+        orig_dist_mat_min : :obj:`float`, optional
             Minimal distance between the original instances in ``N``.
 
-        dist_ptp : :obj:`float`, optional
+        orig_dist_mat_ptp : :obj:`float`, optional
             Range (max - min) of distances between the original instances
             in ``N``.
 
@@ -1689,13 +1691,15 @@ class MFEComplexity:
         if N_scaled is None:
             N_scaled = cls._scale_N(N=N)
 
-        if norm_dist_mat is None or dist_min is None or dist_ptp is None:
-            norm_dist_mat, dist_min, dist_ptp = cls._calc_norm_dist_mat(
-                N=N,
-                metric=metric,
-                p=p,
-                N_scaled=N_scaled,
-                return_scalers=True)
+        if (norm_dist_mat is None or orig_dist_mat_min is None or
+                orig_dist_mat_ptp is None):
+            norm_dist_mat, orig_dist_mat_min, orig_dist_mat_ptp = (
+                cls._calc_norm_dist_mat(
+                    N=N,
+                    metric=metric,
+                    p=p,
+                    N_scaled=N_scaled,
+                    return_scalers=True))
 
         N_interpol, y_interpol = cls._interpolate(N=N_scaled,
                                                   y=y,
@@ -1715,8 +1719,8 @@ class MFEComplexity:
         # Note: normalizing test data distances with original data
         # information in order to provide unbiased predictions (i.e.
         # avoid data leakage.)
-        if np.not_equal(0.0, dist_ptp):
-            test_dist = (test_dist - dist_min) / dist_ptp
+        if np.not_equal(0.0, orig_dist_mat_ptp):
+            test_dist = (test_dist - orig_dist_mat_min) / orig_dist_mat_ptp
 
         y_pred = knn.predict(test_dist)
 
@@ -1821,8 +1825,8 @@ class MFEComplexity:
               cls_inds: t.Optional[np.ndarray] = None,
               N_scaled: t.Optional[np.ndarray] = None,
               norm_dist_mat: t.Optional[np.ndarray] = None,
-              dist_min: t.Optional[float] = None,
-              dist_ptp: t.Optional[float] = None) -> np.ndarray:
+              orig_dist_mat_min: t.Optional[float] = None,
+              orig_dist_mat_ptp: t.Optional[float] = None) -> np.ndarray:
         """Fraction of hyperspheres covering data.
 
         This measure uses a process that builds hyperspheres centered
@@ -1871,13 +1875,13 @@ class MFEComplexity:
             Square matrix with the pairwise distances between each
             instance in ``N_scaled``, i.e., between the normalized
             instances. Used to take advantage of precomputations.
-            Used if and only if ``dist_min`` and ``dist_ptp`` are
-            also given (non None).
+            Used if and only if ``orig_dist_mat_min`` and
+            ``orig_dist_mat_ptp`` are also given (non None).
 
-        dist_min : :obj:`float`, optional
+        orig_dist_mat_min : :obj:`float`, optional
             Minimal distance between the original instances in ``N``.
 
-        dist_ptp : :obj:`float`, optional
+        orig_dist_mat_ptp : :obj:`float`, optional
             Range (max - min) of distances between the original instances
             in ``N``.
 
@@ -1982,7 +1986,8 @@ class MFEComplexity:
         if cls_inds is None:
             cls_inds = _utils.calc_cls_inds(y)
 
-        if norm_dist_mat is None or dist_min is None or dist_ptp is None:
+        if (norm_dist_mat is None or orig_dist_mat_min is None or
+                orig_dist_mat_ptp is None):
             orig_dist_mat = cls._calc_norm_dist_mat(
                 N=N,
                 metric=metric,
@@ -1991,7 +1996,8 @@ class MFEComplexity:
                 normalize=False)
 
         else:
-            orig_dist_mat = norm_dist_mat * dist_ptp + dist_min
+            orig_dist_mat = (
+                norm_dist_mat * orig_dist_mat_ptp + orig_dist_mat_min)
 
         # Note: using the original pairwise distances between instances,
         # instead of the normalized ones, to preserve geometrical/spatial
