@@ -66,7 +66,7 @@ class MFEClustering:
         Parameters
         ----------
         y : :obj:`np.ndarray`, optional
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         **kwargs
             Additional arguments. May have previously precomputed before
@@ -117,7 +117,7 @@ class MFEClustering:
             Numerical fitted data.
 
         y : :obj:`np.ndarray`, optional
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
@@ -214,7 +214,7 @@ class MFEClustering:
             Numerical fitted data.
 
         y : :obj:`np.ndarray`, optional
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         n_neighbors : int, optional
             Number of nearest neighbors returned for each instance.
@@ -270,7 +270,7 @@ class MFEClustering:
             Numerical fitted data.
 
         y : :obj:`np.ndarray`, optional
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
@@ -513,7 +513,7 @@ class MFEClustering:
             Attributes from fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
@@ -586,7 +586,7 @@ class MFEClustering:
             Attributes from fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         References
         ----------
@@ -615,7 +615,7 @@ class MFEClustering:
             Attributes from fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
@@ -690,7 +690,7 @@ class MFEClustering:
             Attributes from fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
@@ -748,7 +748,7 @@ class MFEClustering:
             Attributes from fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
@@ -791,7 +791,7 @@ class MFEClustering:
             Attributes from fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         Returns
         -------
@@ -818,7 +818,7 @@ class MFEClustering:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         class_freqs : :obj:`np.ndarray`, optional
             Absolute class frequencies. Used to exploit precomputations.
@@ -855,7 +855,7 @@ class MFEClustering:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute.
+            Instance cluster index (or target attribute).
 
         size : int, optional
             Maximum (exclusive) size of classes to be considered.
