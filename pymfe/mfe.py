@@ -7,6 +7,8 @@ import time
 
 import texttable
 import numpy as np
+import sklearn.utils
+import sklearn.exceptions
 
 import pymfe._internal as _internal
 
@@ -1272,6 +1274,13 @@ class MFE:
         extractions. Therefore, the current model (if any) will not be
         affected by this method by any means.
         """
+        if "model-based" not in self.groups:
+            raise ValueError("The current MFE model does not have the "
+                             "'model-based' metafeature group configured ("
+                             "found groups {}.) Please include it in the "
+                             "MFE model creation before using 'extract_from"
+                             "_model' method.".format(self.groups))
+
         model_argument = _internal.type_translator.get(type(model), None)
 
         if model_argument is None:
@@ -1279,6 +1288,14 @@ class MFE:
                             "only supporting classes: {}.".format(
                                 type(model),
                                 list(_internal.type_translator.keys())))
+
+        try:
+            sklearn.utils.validation.check_is_fitted(model)
+
+        except sklearn.exceptions.NotFittedError:
+            raise RuntimeError("Given 'model' does not have any fitted data. "
+                               "Please use its 'fit' method before using the "
+                               "model with 'extract_from_model' method.")
 
         if arguments_fit is None:
             arguments_fit = {}
