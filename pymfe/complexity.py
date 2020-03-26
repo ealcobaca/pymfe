@@ -633,9 +633,6 @@ class MFEComplexity:
             classes, class_freqs = np.unique(y, return_counts=True)
 
         if cls_inds is None:
-            if classes is None:
-                classes = np.unique(y)
-
             cls_inds = _utils.calc_cls_inds(y, classes)
 
         mean_global = np.mean(N, axis=0)
@@ -1494,9 +1491,6 @@ class MFEComplexity:
             classes, class_freqs = np.unique(y, return_counts=True)
 
         if cls_inds is None:
-            if classes is None:
-                classes = np.unique(y)
-
             cls_inds = _utils.calc_cls_inds(y, classes)
 
         if norm_dist_mat is None:
@@ -1691,8 +1685,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if cls_inds is None:
-            classes = np.unique(y)
-            cls_inds = _utils.calc_cls_inds(y, classes)
+            cls_inds = _utils.calc_cls_inds(y)
 
         if N_scaled is None:
             N_scaled = cls._scale_N(N=N)
@@ -1988,8 +1981,7 @@ class MFEComplexity:
             N_scaled = cls._scale_N(N=N)
 
         if cls_inds is None:
-            classes = np.unique(y)
-            cls_inds = _utils.calc_cls_inds(y, classes)
+            cls_inds = _utils.calc_cls_inds(y)
 
         if norm_dist_mat is None or dist_min is None or dist_ptp is None:
             orig_dist_mat = cls._calc_norm_dist_mat(
@@ -2249,8 +2241,7 @@ class MFEComplexity:
 
         if nearest_enemy_dist is None:
             if cls_inds is None:
-                classes = np.unique(y)
-                cls_inds = _utils.calc_cls_inds(y, classes)
+                cls_inds = _utils.calc_cls_inds(y)
 
             nearest_enemy_dist = cls._calc_nearest_enemies(
                 norm_dist_mat=norm_dist_mat,
@@ -2336,8 +2327,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if cls_inds is None:
-            classes = np.unique(y)
-            cls_inds = _utils.calc_cls_inds(y, classes)
+            cls_inds = _utils.calc_cls_inds(y)
 
         if norm_dist_mat is None:
             norm_dist_mat = cls._calc_norm_dist_mat(
@@ -2433,8 +2423,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if cls_inds is None:
-            classes = np.unique(y)
-            cls_inds = _utils.calc_cls_inds(y, classes)
+            cls_inds = _utils.calc_cls_inds(y)
 
         if norm_dist_mat is None:
             norm_dist_mat = cls._calc_norm_dist_mat(
@@ -2547,8 +2536,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if cls_inds is None:
-            classes = np.unique(y)
-            cls_inds = _utils.calc_cls_inds(y, classes)
+            cls_inds = _utils.calc_cls_inds(y)
 
         if norm_dist_mat is None:
             norm_dist_mat = cls._calc_norm_dist_mat(
