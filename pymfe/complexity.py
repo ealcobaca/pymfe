@@ -363,11 +363,15 @@ class MFEComplexity:
             metric: str,
             p: t.Union[int, float] = 2,
             N_scaled: t.Optional[np.ndarray] = None,
+            normalize: bool = True,
             return_scalers: bool = False,
     ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, ...]]:
         """Calculate a pairwise normalized distance matrix.
 
         All distances are normalized in [0, 1] range.
+
+        If ``normalize`` is False, then the unnormalized pairwise
+        distance matrix is returned.
 
         If ``return_scalers`` is True, this method also returns
         the global minimal distance `Min`, and the range (max - min)
@@ -388,7 +392,8 @@ class MFEComplexity:
         dist_min = np.min(norm_dist_mat)
         dist_ptp = np.ptp(norm_dist_mat)
 
-        norm_dist_mat = (norm_dist_mat - dist_min) / dist_ptp
+        if normalize and not np.equal(0.0, dist_ptp):
+            norm_dist_mat = (norm_dist_mat - dist_min) / dist_ptp
 
         if return_scalers:
             return norm_dist_mat, dist_min, dist_ptp
@@ -642,10 +647,10 @@ class MFEComplexity:
         _numer = np.sum(np.square(centroids - mean_global).T * class_freqs,
                         axis=1)
 
-        _denom = np.sum(np.square([
-            N[inds_cur_cls, :] - centroids[cls_ind, :]
+        _denom = np.sum([
+            sum(np.square(N[inds_cur_cls, :] - centroids[cls_ind, :]))
             for cls_ind, inds_cur_cls in enumerate(cls_inds)
-        ]), axis=(0, 1))
+        ], axis=0)
 
         attr_discriminant_ratio = _numer / _denom
 
@@ -1823,8 +1828,8 @@ class MFEComplexity:
               cls_inds: t.Optional[np.ndarray] = None,
               N_scaled: t.Optional[np.ndarray] = None,
               norm_dist_mat: t.Optional[np.ndarray] = None,
-              nearest_enemy_dist: t.Optional[np.ndarray] = None,
-              nearest_enemy_ind: t.Optional[np.ndarray] = None) -> np.ndarray:
+              dist_min: t.Optional[float] = None,
+              dist_ptp: t.Optional[float] = None) -> np.ndarray:
         """Fraction of hyperspheres covering data.
 
         This measure uses a process that builds hyperspheres centered
@@ -1873,16 +1878,15 @@ class MFEComplexity:
             Square matrix with the pairwise distances between each
             instance in ``N_scaled``, i.e., between the normalized
             instances. Used to take advantage of precomputations.
-            Used only if the arguments ``nearest_enemy_dist`` or
-            ``nearest_enemy_ind`` are None.
+            Used if and only if ``dist_min`` and ``dist_ptp`` are
+            also given (non None).
 
-        nearest_enemy_dist : :obj:`np.ndarray`, optional
-            Distance of each instance to its nearest enemy (instances
-            of a distinct class.)
+        dist_min : :obj:`float`, optional
+            Minimal distance between the original instances in ``N``.
 
-        nearest_enemy_ind : :obj:`np.ndarray`, optional
-            Index of the nearest enemy (instances of a distinct class)
-            for each instance.
+        dist_ptp : :obj:`float`, optional
+            Range (max - min) of distances between the original instances
+            in ``N``.
 
         Returns
         -------
@@ -1977,19 +1981,30 @@ class MFEComplexity:
         if N_scaled is None:
             N_scaled = cls._scale_N(N=N)
 
-        if nearest_enemy_dist is None or nearest_enemy_ind is None:
-            if cls_inds is None:
-                classes = np.unique(y)
-                cls_inds = _utils.calc_cls_inds(y, classes)
+        if cls_inds is None:
+            classes = np.unique(y)
+            cls_inds = _utils.calc_cls_inds(y, classes)
 
-            if norm_dist_mat is None:
-                norm_dist_mat = cls._calc_norm_dist_mat(
-                    N=N, metric=metric, p=p, N_scaled=N_scaled)
+        if norm_dist_mat is None or dist_min is None or dist_ptp is None:
+            orig_dist_mat = cls._calc_norm_dist_mat(
+                N=N,
+                metric=metric,
+                p=p,
+                N_scaled=N_scaled,
+                normalize=False)
 
-            nearest_enemy_dist, nearest_enemy_ind = (cls._calc_nearest_enemies(
-                norm_dist_mat=norm_dist_mat,
-                cls_inds=cls_inds,
-                return_inds=True))
+        else:
+            orig_dist_mat = norm_dist_mat * dist_ptp + dist_min
+
+        # Note: using the original pairwise distances between instances,
+        # instead of the normalized ones, to preserve geometrical/spatial
+        # coherence between the sphere centers, radius, and placements.
+        # That is why we are not using neither the precomputed
+        # 'nearest_enemy_dist' nor 'nearest_enemy_ind' values here.
+        nearest_enemy_dist, nearest_enemy_ind = (cls._calc_nearest_enemies(
+            norm_dist_mat=orig_dist_mat,
+            cls_inds=cls_inds,
+            return_inds=True))
 
         radius = _calc_hyperspheres_radius(
             nearest_enemy_ind=nearest_enemy_ind,
