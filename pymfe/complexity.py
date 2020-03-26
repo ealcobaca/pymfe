@@ -150,7 +150,6 @@ class MFEComplexity:
 
         if N is not None and "num_attr_pca" not in kwargs:
             pca = sklearn.decomposition.PCA(n_components=tx_n_components,
-                                            copy=False,
                                             random_state=random_state)
 
             pca.fit(N)
@@ -282,7 +281,7 @@ class MFEComplexity:
     @classmethod
     def precompute_nearest_enemy(cls,
                                  N: np.ndarray,
-                                 y: np.ndarray,
+                                 y: t.Optional[np.ndarray] = None,
                                  metric: str = "minkowski",
                                  p: t.Union[int, float] = 2,
                                  **kwargs) -> t.Dict[str, np.ndarray]:
