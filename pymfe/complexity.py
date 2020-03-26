@@ -365,7 +365,7 @@ class MFEComplexity:
             N_scaled: t.Optional[np.ndarray] = None,
             normalize: bool = True,
             return_scalers: bool = False,
-    ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, ...]]:
+    ) -> np.ndarray:
         """Calculate a pairwise normalized distance matrix.
 
         All distances are normalized in [0, 1] range.
@@ -392,7 +392,7 @@ class MFEComplexity:
         dist_min = np.min(norm_dist_mat)
         dist_ptp = np.ptp(norm_dist_mat)
 
-        if normalize and not np.equal(0.0, dist_ptp):
+        if normalize and np.not_equal(0.0, dist_ptp):
             norm_dist_mat = (norm_dist_mat - dist_min) / dist_ptp
 
         if return_scalers:
@@ -1723,7 +1723,8 @@ class MFEComplexity:
         # Note: normalizing test data distances with original data
         # information in order to provide unbiased predictions (i.e.
         # avoid data leakage.)
-        test_dist = (test_dist - dist_min) / dist_ptp
+        if np.not_equal(0.0, dist_ptp):
+            test_dist = (test_dist - dist_min) / dist_ptp
 
         y_pred = knn.predict(test_dist)
 
