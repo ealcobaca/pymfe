@@ -325,3 +325,38 @@ class TestComplexity:
 
         assert (ind_less_overlap == np.argmin(feat_overlap_num) and
                 np.allclose(feat_overlap_num, expected_val))
+
+    def test_empty_minmin(self):
+        arr = np.empty(shape=(0, 4))
+        res = MFEComplexity._calc_minmin(arr, arr)
+        assert res.size == arr.shape[1] and np.all(np.isinf(res))
+
+    def test_empty_maxmax(self):
+        arr = np.empty(shape=(0, 4))
+        res = MFEComplexity._calc_maxmax(arr, arr)
+        assert res.size == arr.shape[1] and np.all(np.isinf(res))
+
+    @pytest.mark.parametrize("orig_dist_mat_min, orig_dist_mat_ptp", [
+        (True, True),
+        (True, False),
+        (False, True),
+        (False, False),
+    ])
+    def test_t1_arguments(self, orig_dist_mat_min, orig_dist_mat_ptp):
+        exp_val = [0.015151516, 0.024628395]
+        X, y = load_xy(2)
+
+        extractor = MFE(groups="complexity", features="t1")
+        extractor.fit(X.values, y.values, transform_num=False)
+
+        args = {"t1": {}}
+
+        if not orig_dist_mat_min:
+            args["t1"].update({"orig_dist_mat_min": None})
+
+        if not orig_dist_mat_ptp:
+            args["t1"].update({"orig_dist_mat_ptp": None})
+
+        _, res = extractor.extract(**args)
+
+        assert np.allclose(res, exp_val)
