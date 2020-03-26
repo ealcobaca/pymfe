@@ -1715,10 +1715,10 @@ class MFEComplexity:
                                                          norm_dist_mat, y)
 
         test_dist = scipy.spatial.distance.cdist(
-                N_interpol,
-                N_scaled,
-                metric=metric,
-                p=p)
+            N_interpol,
+            N_scaled,
+            metric=metric,
+            p=p)
 
         # Note: normalizing test data distances with original data
         # information in order to provide unbiased predictions (i.e.
@@ -1923,6 +1923,11 @@ class MFEComplexity:
                     radius[ind_enemy] = radius[ind_inst] = (
                         0.5 * nearest_enemy_dist[ind_inst])
                     return radius[ind_inst]
+
+                # Note: set the current instance radius to '0' before
+                # recursive call to prevent (uncommon cases of) infinite
+                # recursion
+                radius[ind_inst] = 0.0
 
                 radius_enemy = _recurse_radius_calc(ind_inst=ind_enemy)
 
