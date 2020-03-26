@@ -399,6 +399,20 @@ class TestArchitecture:
         with pytest.raises(KeyError):
             MFE().extract_from_model(model, arguments_fit={"dt_model": model})
 
+    def test_extract_from_model_invalid3(self):
+        model = sklearn.tree.DecisionTreeClassifier()
+
+        with pytest.raises(RuntimeError):
+            MFE().extract_from_model(model)
+
+    def test_extract_from_model_invalid4(self):
+        X, y = load_xy(2)
+
+        model = sklearn.tree.DecisionTreeClassifier().fit(X, y)
+
+        with pytest.raises(ValueError):
+            MFE(groups="general").extract_from_model(model)
+
 class TestMemoryError:
     """Test memory error related methods."""
 
