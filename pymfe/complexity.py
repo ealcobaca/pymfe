@@ -78,16 +78,16 @@ class MFEComplexity:
         :obj:`dict`
             With following precomputed items:
                 - ``ovo_comb`` (list): List of all class OVO combination,
-                  i.e., all combinations of distinct class indices by pairs
-                  ([(0, 1), (0, 2) ...].)
+                    i.e., all combinations of distinct class indices by pairs
+                    ([(0, 1), (0, 2) ...].)
                 - ``cls_inds`` (:obj:`np.ndarray`): Boolean array which
-                  indicates whether each example belongs to each class. The
-                  rows corresponds to the distinct classes, and the instances
-                  are represented by the columns.
+                    indicates whether each example belongs to each class. The
+                    rows corresponds to the distinct classes, and the instances
+                    are represented by the columns.
                 - ``classes`` (:obj:`np.ndarray`): distinct classes in the
-                  fitted target attribute.
+                    fitted target attribute.
                 - ``class_freqs`` (:obj:`np.ndarray`): The number of examples
-                  in each class. The indices corresponds to the classes.
+                    in each class. The indices corresponds to the classes.
         """
         precomp_vals = {}  # type: t.Dict[str, t.Any]
 
@@ -142,9 +142,9 @@ class MFEComplexity:
         :obj:`dict`
             With following precomputed items:
                 - ``num_attr_pca`` (int): Number of features after PCA
-                  analysis with at least ``tx_n_components`` fraction of
-                  data variance explained by the selected principal
-                  components.
+                    analysis with at least ``tx_n_components`` fraction of
+                    data variance explained by the selected principal
+                    components.
         """
         precomp_vals = {}
 
@@ -167,7 +167,7 @@ class MFEComplexity:
             max_iter: t.Union[int, float] = 1e5,
             random_state: t.Optional[int] = None,
             **kwargs) -> t.Dict[str, sklearn.pipeline.Pipeline]:
-        """TODO.
+        """Init a Support Vector Classifier pipeline (with data standardization.)
 
         Parameters
         ----------
@@ -191,8 +191,10 @@ class MFEComplexity:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``svc_pipeline`` (sklearn.pipeline.Pipeline):
-                TODO.
+                - ``svc_pipeline`` (sklearn.pipeline.Pipeline): support
+                    vector classifier learning pipeline, with data
+                    standardization (mean = 0 and variance = 1) before the
+                    learning model.
         """
         precomp_vals = {}
 
@@ -252,8 +254,17 @@ class MFEComplexity:
                     each feature normalized  in [0, 1] range. Used only if
                     ``norm_dist_mat`` is None.
                 - ``norm_dist_mat`` (:obj:`np.ndarray`): square matrix with
-                    the pairwise distances between each instance in
-                    ``N_scaled``, i.e., between the normalized instances.
+                    the normalized pairwise distances between each instance
+                    in ``N_scaled``, i.e., between the normalized instances.
+                    (note that this matrix is the normalized pairwise
+                    distances between the normalized instances, i.e., there
+                    is two normalization processes involved.)
+                - ``orig_dist_mat_min`` (float): minimal value from the
+                    original pairwise distance matrix. Can be used to
+                    preprocess test data before predictions.
+                - ``orig_dist_mat_min`` (float): range (max - min) value from
+                    the original pairwise distance matrix. Can be used to
+                    preprocess test data before predictions.
         """
         precomp_vals = {}
 
@@ -320,11 +331,19 @@ class MFEComplexity:
         :obj:`dict`
             With following precomputed items:
                 - ``nearest_enemy_dist`` (:obj:`np.ndarray`): distance of each
-                    instance to its nearest enemy (instances
-                    of a distinct class.)
+                    instance to its nearest enemy (instances of a distinct
+                    class.)
                 - ``nearest_enemy_ind`` (:obj:`np.ndarray`): index of the
                     nearest enemy (instances of a distinct class) for each
                     instance.
+
+            This precomputation method also depends on values precomputed in
+            other precomputation methods, ``precompute_complexity`` and
+            ``precompute_norm_dist_mat``. Therefore, the return values of
+            those methods can also be returned in case they are not called
+            before. Check the documentation of each method to verify which
+            values either methods returns to a precise description for the
+            additional values that may be returned by this method.
         """
         precomp_vals = {}
 
@@ -1056,7 +1075,13 @@ class MFEComplexity:
             data type. Used only if ``svc_pipeline`` is None.
 
         svc_pipeline : :obj:`sklearn.pipeline.Pipeline`, optional
-            TODO.
+            Support Vector Classifier learning pipeline. Traditionally, the
+            pipeline used is a data standardization (mean = 0 and variance = 1)
+            before the learning model, which is a Support Vector Classifier
+            (linear kernel.) However, any variation of this pipeline can also
+            be used. Note that this metafeature is formulated using a linear
+            classifier. If this argument is none, the described pipeline
+            (standardization + SVC) is used by default.
 
         random_state : int, optional
             Random seed for dual coordinate descent while fitting the
@@ -1154,7 +1179,13 @@ class MFEComplexity:
             corresponds to the instances.
 
         svc_pipeline : :obj:`sklearn.pipeline.Pipeline`, optional
-            TODO.
+            Support Vector Classifier learning pipeline. Traditionally, the
+            pipeline used is a data standardization (mean = 0 and variance = 1)
+            before the learning model, which is a Support Vector Classifier
+            (linear kernel.) However, any variation of this pipeline can also
+            be used. Note that this metafeature is formulated using a linear
+            classifier. If this argument is none, the described pipeline
+            (standardization + SVC) is used by default.
 
         max_iter : float or int, optional
             Maximum number of iterations allowed for the support vector
@@ -1253,7 +1284,13 @@ class MFEComplexity:
             corresponds to the instances.
 
         svc_pipeline : :obj:`sklearn.pipeline.Pipeline`, optional
-            TODO.
+            Support Vector Classifier learning pipeline. Traditionally, the
+            pipeline used is a data standardization (mean = 0 and variance = 1)
+            before the learning model, which is a Support Vector Classifier
+            (linear kernel.) However, any variation of this pipeline can also
+            be used. Note that this metafeature is formulated using a linear
+            classifier. If this argument is none, the described pipeline
+            (standardization + SVC) is used by default.
 
         max_iter : float or int, optional
             Maximum number of iterations allowed for the support vector
