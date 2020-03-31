@@ -6,14 +6,9 @@ import numpy as np
 
 from pymfe import _internal
 from pymfe.mfe import MFE
-from tests.utils import load_xy
+from . import utils
 
 GNAME = "framework-testing"
-
-
-def raise_memory_error() -> np.ndarray:
-    """Try to create a huge array, raising a MemoryError."""
-    return np.zeros(int(1e+20), dtype=np.float64)
 
 
 def summary_exception(values: np.ndarray,
@@ -29,7 +24,7 @@ def summary_memory_error(values: np.ndarray,
                          raise_mem_err: bool = False) -> int:
     """Returns the length of ``values`` or raise a MemoryError exception."""
     if raise_mem_err:
-        raise_memory_error()
+        utils.raise_memory_error()
 
     return len(values)
 
@@ -65,7 +60,7 @@ class MFETestClass:
                                  **kwargs) -> t.Optional[np.ndarray]:
         """Posprocess: memory error."""
         if raise_mem_err:
-            return raise_memory_error()
+            return utils.raise_memory_error()
 
     @classmethod
     def precompute_return_empty(cls, **kwargs) -> t.Dict[str, t.Any]:
@@ -106,7 +101,7 @@ class MFETestClass:
         precomp_vals = {}
 
         if raise_mem_err:
-            precomp_vals["huge_array"] = raise_memory_error()
+            precomp_vals["huge_array"] = utils.raise_memory_error()
 
         return precomp_vals
 
@@ -135,7 +130,7 @@ class MFETestClass:
                         **kwargs) -> np.ndarray:
         """Metafeature: memory error."""
         if raise_mem_err:
-            return raise_memory_error()
+            return utils.raise_memory_error()
 
         return np.array([1, 2, 3])
 
@@ -182,40 +177,12 @@ class TestArchitecture:
 
         assert all(map(lambda l: len(l) > 0, results))
 
-    def test_postprocessing_invalid_1(self):
-        """Test exception handling in invalid postprocessing."""
-        results = [], [], []
-
-        with pytest.warns(UserWarning):
-            _internal.post_processing(results=results,
-                                      groups=tuple(),
-                                      custom_class_=MFETestClass,
-                                      raise_exception=True)
-
-    def test_postprocessing_invalid_2(self):
-        """Test incorrect return value in postprocessing methods."""
-        results = [], [], []
-
-        with pytest.warns(UserWarning):
-            _internal.post_processing(results=results,
-                                      groups=tuple(),
-                                      custom_class_=MFETestClass,
-                                      number_of_lists=2)
-
     def test_preprocessing_valid(self):
         """Test valid precomputation and its automatic detection."""
         precomp_args = _internal.process_precomp_groups(
             precomp_groups=tuple(), groups=tuple(), custom_class_=MFETestClass)
 
         assert len(precomp_args) > 0
-
-    def test_preprocessing_invalid(self):
-        """Test exception handling of precomputation."""
-        with pytest.warns(UserWarning):
-            _internal.process_precomp_groups(precomp_groups=tuple(),
-                                             groups=tuple(),
-                                             custom_class_=MFETestClass,
-                                             raise_exception=True)
 
     def test_feature_detection(self):
         """Test automatic dectection of metafeature extraction method."""
@@ -226,44 +193,6 @@ class TestArchitecture:
             custom_class_=MFETestClass)
 
         assert len(name) == 4 and len(mtd) == 4 and len(groups) == 1
-
-    def test_feature_warning1(self):
-        """Test exception handling of feature extraction."""
-        name, mtd, groups = map(
-            np.asarray,
-            _internal.process_features(features="raise_exception",
-                                       groups=tuple(),
-                                       suppress_warnings=True,
-                                       custom_class_=MFETestClass))
-
-        with pytest.warns(RuntimeWarning):
-            _internal.get_feat_value(mtd_name=name[0],
-                                     mtd_args={
-                                         "X": np.array([]),
-                                         "y": np.ndarray([]),
-                                         "raise_exception": True
-                                     },
-                                     mtd_callable=mtd[0][1],
-                                     suppress_warnings=False)
-
-    def test_feature_warning2(self):
-        """Test memory error handling of feature extraction."""
-        name, mtd, groups = map(
-            np.asarray,
-            _internal.process_features(features="memory_error",
-                                       groups=tuple(),
-                                       suppress_warnings=True,
-                                       custom_class_=MFETestClass))
-
-        with pytest.warns(RuntimeWarning):
-            _internal.get_feat_value(mtd_name=name[0],
-                                     mtd_args={
-                                         "X": np.array([]),
-                                         "y": np.ndarray([]),
-                                         "raise_mem_err": True
-                                     },
-                                     mtd_callable=mtd[0][1],
-                                     suppress_warnings=False)
 
     def test_get_groups(self):
         model = MFE()
@@ -327,7 +256,7 @@ class TestArchitecture:
     ])
     def test_parse_valid_metafeatures(self, groups):
         """Check the length of valid metafeatures per group."""
-        X, y = load_xy(0)
+        X, y = utils.load_xy(0)
 
         mfe = MFE(groups="all",
                   summary=None,
@@ -344,13 +273,13 @@ class TestArchitecture:
         assert not set(names).symmetric_difference(target_mtf)
 
     def test_no_cat_transformation(self):
-        X, y = load_xy(1)
+        X, y = utils.load_xy(1)
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat=None)
         assert mfe._custom_args_ft["N"].size == 0
 
     def test_one_hot_encoding_01(self):
-        X, y = load_xy(1)
+        X, y = utils.load_xy(1)
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat="one-hot")
 
@@ -359,7 +288,7 @@ class TestArchitecture:
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
     def test_one_hot_encoding_02(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat="one-hot")
 
@@ -368,8 +297,45 @@ class TestArchitecture:
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
 
-class TestMemoryError:
-    """Test memory error related methods."""
+class TestArchitectureWarnings:
+    def test_feature_warning1(self):
+        """Test exception handling of feature extraction."""
+        name, mtd, groups = map(
+            np.asarray,
+            _internal.process_features(features="raise_exception",
+                                       groups=tuple(),
+                                       suppress_warnings=True,
+                                       custom_class_=MFETestClass))
+
+        with pytest.warns(RuntimeWarning):
+            _internal.get_feat_value(mtd_name=name[0],
+                                     mtd_args={
+                                         "X": np.array([]),
+                                         "y": np.ndarray([]),
+                                         "raise_exception": True
+                                     },
+                                     mtd_callable=mtd[0][1],
+                                     suppress_warnings=False)
+
+    def test_feature_warning2(self):
+        """Test memory error handling of feature extraction."""
+        name, mtd, groups = map(
+            np.asarray,
+            _internal.process_features(features="memory_error",
+                                       groups=tuple(),
+                                       suppress_warnings=True,
+                                       custom_class_=MFETestClass))
+
+        with pytest.warns(RuntimeWarning):
+            _internal.get_feat_value(mtd_name=name[0],
+                                     mtd_args={
+                                         "X": np.array([]),
+                                         "y": np.ndarray([]),
+                                         "raise_mem_err": True
+                                     },
+                                     mtd_callable=mtd[0][1],
+                                     suppress_warnings=False)
+
     def test_mem_err_precompute(self):
         with pytest.warns(UserWarning):
             _internal.process_precomp_groups(precomp_groups=tuple(),
@@ -386,3 +352,31 @@ class TestMemoryError:
                                       groups=tuple(),
                                       custom_class_=MFETestClass,
                                       raise_mem_err=True)
+
+    def test_postprocessing_invalid1(self):
+        """Test exception handling in invalid postprocessing."""
+        results = [], [], []
+
+        with pytest.warns(UserWarning):
+            _internal.post_processing(results=results,
+                                      groups=tuple(),
+                                      custom_class_=MFETestClass,
+                                      raise_exception=True)
+
+    def test_postprocessing_invalid2(self):
+        """Test incorrect return value in postprocessing methods."""
+        results = [], [], []
+
+        with pytest.warns(UserWarning):
+            _internal.post_processing(results=results,
+                                      groups=tuple(),
+                                      custom_class_=MFETestClass,
+                                      number_of_lists=2)
+
+    def test_preprocessing_invalid(self):
+        """Test exception handling of precomputation."""
+        with pytest.warns(UserWarning):
+            _internal.process_precomp_groups(precomp_groups=tuple(),
+                                             groups=tuple(),
+                                             custom_class_=MFETestClass,
+                                             raise_exception=True)
