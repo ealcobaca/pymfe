@@ -1,10 +1,12 @@
-""" Utils Module.
+"""Utils Module.
 
-    Useful functions to help in the tests.
+Useful functions to help in the tests.
 """
+import typing as t
 
 import arff
 import pandas as pd
+import numpy as np
 
 DATA_ID = [
     "tests/test_datasets/mix_aids.arff",
@@ -19,9 +21,8 @@ DATA_ = [
 ]
 
 
-def load_xy(dt_id):
-    """Returns a dataset loaded from arff file.
-    """
+def load_xy(dt_id: int):
+    """Returns a dataset loaded from arff file."""
     if DATA_[dt_id] is None:
         with open(DATA_ID[dt_id], "r") as data_file:
             data = arff.load(data_file)
@@ -31,3 +32,9 @@ def load_xy(dt_id):
             DATA_[dt_id] = (X, y)
 
     return DATA_[dt_id]
+
+
+def raise_memory_error(
+        size: t.Union[int, float] = 1e+20) -> np.ndarray:
+    """Try to create a huge array, raising a MemoryError."""
+    return np.zeros(int(size), dtype=np.float64)
