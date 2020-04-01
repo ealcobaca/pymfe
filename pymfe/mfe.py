@@ -323,14 +323,14 @@ class MFE:
         self.hypparam_model_dt = (hypparam_model_dt.copy()
                                   if hypparam_model_dt else None)
 
+        #"""Total time elapsed for precomputations."""
         self.time_precomp = -1.0
-        """Total time elapsed for precomputations."""
 
+        # """Total time elapsed for metafeature extraction."""
         self.time_extract = -1.0
-        """Total time elapsed for metafeature extraction."""
 
+        # """Total time elapsed in total (precomp + extract.)"""
         self.time_total = -1.0
-        """Total time elapsed in total (precomp + extract.)"""
 
     def _call_summary_methods(
             self,
