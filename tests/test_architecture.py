@@ -298,7 +298,7 @@ class TestArchitecture:
 
     @pytest.mark.parametrize("confidence", (0.95, 0.99))
     def test_extract_with_confidence(self, confidence):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         mtf_names, mtf_vals, mtf_conf_int = MFE(
             groups="all",
@@ -324,14 +324,14 @@ class TestArchitecture:
             MFE().extract_with_confidence()
 
     def test_extract_with_confidence_invalid2(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         with pytest.raises(ValueError):
             MFE().fit(
                 X.values, y.values).extract_with_confidence(confidence=-0.0001)
 
     def test_extract_with_confidence_invalid3(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         with pytest.raises(ValueError):
             MFE().fit(
@@ -339,7 +339,7 @@ class TestArchitecture:
 
     @pytest.mark.parametrize("return_avg_val", (True, False))
     def test_extract_with_confidence_time(self, return_avg_val):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         res = MFE(
             features=["mean", "nr_inst", "unknown"],
@@ -353,7 +353,7 @@ class TestArchitecture:
         assert (len(mtf_names) == len(mtf_vals) == len(mtf_time) == len(mtf_conf_int))
 
     def test_extract_with_confidence_random_state1(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         _, mtf_vals_1, mtf_conf_int_1 = MFE(
             features=["mean", "sd"], random_state=16).fit(
@@ -369,7 +369,7 @@ class TestArchitecture:
                 np.allclose(mtf_conf_int_1, mtf_conf_int_2))
 
     def test_extract_with_confidence_random_state2(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         _, mtf_vals_1, mtf_conf_int_1 = MFE(
             features=["mean", "sd"], random_state=16).fit(
@@ -385,7 +385,7 @@ class TestArchitecture:
                 np.any(~np.isclose(mtf_conf_int_1, mtf_conf_int_2)))
 
     def test_extract_with_confidence_random_state3(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         np.random.seed(1234)
         _, mtf_vals_1, mtf_conf_int_1 = MFE(
