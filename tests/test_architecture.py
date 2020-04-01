@@ -298,7 +298,7 @@ class TestArchitecture:
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
     def test_extract_from_model(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
             X.values, y.values)
@@ -313,7 +313,7 @@ class TestArchitecture:
                 and np.allclose(mtf_vals, mtf_vals2))
 
     def test_extract_from_model_invalid1(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         model = sklearn.tree.DecisionTreeRegressor().fit(X.values, y.values)
 
@@ -321,7 +321,7 @@ class TestArchitecture:
             MFE().extract_from_model(model)
 
     def test_extract_from_model_invalid2(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
             X.values, y.values)
@@ -336,7 +336,7 @@ class TestArchitecture:
             MFE().extract_from_model(model)
 
     def test_extract_from_model_invalid4(self):
-        X, y = load_xy(2)
+        X, y = utils.load_xy(2)
 
         model = sklearn.tree.DecisionTreeClassifier().fit(X, y)
 
