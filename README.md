@@ -155,3 +155,4 @@ We would like to thank every [Contributor](https://github.com/ealcobaca/pymfe/gr
 1. Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406.
 2. Pinto, F., Soares, C., & Mendes-Moreira, J. (2016, April). Towards automatic generation of metafeatures. In Pacific-Asia Conference on Knowledge Discovery and Data Mining (pp. 215-226). Springer, Cham.
 3. Brazdil, P., Carrier, C. G., Soares, C., & Vilalta, R. (2008). Metalearning: Applications to data mining. Springer Science & Business Media.
+4. Lorena, Ana & Garcia, Luís Paulo & Lehmann, Jens & de Souto, Marcilio & Ho, Tin. (2019). How Complex Is Your Classification Problem?: A Survey on Measuring Classification Complexity. ACM Computing Surveys. 52. 1-34. 10.1145/3347711.
