@@ -1305,7 +1305,8 @@ class MFE:
 
         if model_argument in arguments_fit:
             raise KeyError("Illegal argument '{}' in 'arguments_fit' (used "
-                           "internally by '.extract_from_model' method.)")
+                           "internally by '.extract_from_model' method.)"
+                           "".format(model_argument))
 
         _fts = set(self.features).intersection(
             MFE.valid_metafeatures(groups="model-based"))
