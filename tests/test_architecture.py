@@ -352,6 +352,19 @@ class TestArchitecture:
 
         assert (len(mtf_names) == len(mtf_vals) == len(mtf_time) == len(mtf_conf_int))
 
+    def test_extract_with_confidence_multiple_conf_level(self):
+        X, y = utils.load_xy(2)
+
+        confidence = [0.8, 0.9, 0.7]
+
+        mtf_conf_int = MFE(
+            features=["mean", "nr_inst", "unknown"]).fit(
+                X=X.values, y=y.values).extract_with_confidence(
+                    sample_num=2,
+                    confidence=confidence)[2]
+
+        assert 2 * len(confidence) == mtf_conf_int.shape[1]
+
     def test_extract_with_confidence_random_state1(self):
         X, y = utils.load_xy(2)
 
