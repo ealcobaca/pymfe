@@ -1295,7 +1295,7 @@ class MFE:
     def extract_with_confidence(
             self,
             sample_num: int = 128,
-            confidence: float = 0.95,
+            confidence: t.Union[float, t.Sequence[float]] = 0.95,
             return_avg_val: bool = True,
             arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
             arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
@@ -1316,8 +1316,11 @@ class MFE:
             Number of samples from the fitted data using bootstrap. Each
             metafeature will be extracted ``sample_num`` times.
 
-        confidence : float, optional
-            Confidence of the interval. Must be in (0, 1) range.
+        confidence : float or sequence of floats, optional
+            Confidence level of the interval. Must be in (0.0, 1.0) range.
+            If a sequence of confidence levels is given, a confidence
+            interval will be extracted for all values. Each confidence
+            interval will be calculated as [confidence/2, 1 - confidence/2].
 
         return_avg_vals : bool, optional
             If True, return the average value for both the metafeature
@@ -1350,14 +1353,24 @@ class MFE:
         tuple of :obj:`np.ndarray`
             The same return value format of the ``extract`` method, appended
             with the confidence intervals as a new sequence of values in the
-            form (interval_low, interval_high) for each corresponding
-            metafeature, and with shape (`metafeature_num`, 2) (i.e., the rows
-            represents each metafeature and the columns each interval limit.)
+            form (interval_low_1, interval_low_2, ..., interval_high_(n-1),
+            interval_high_n) for each corresponding metafeature, and with shape
+            (`metafeature_num`, 2 * C), where `C` is the number of confidence
+            levels given in ``confidence`` (i.e., the rows represents each
+            metafeature and the columns each interval limit). This means that
+            all interval lower limits are given first, and all the interval
+            upper limits are grouped together afterwards. The sequence order
+            of the interval limits follows the same sequence order of the
+            confidence levels given in ``confidence``. For instance, if
+            `confidence=[0.80, 0.90, 0.99]`, then the confidence intervals
+            will be returned in the following order (for all metafeatures):
+            (lower_0.80, lower_0.90, lower_0.99, upper_0.80, upper_0.90,
+            upper_0.99).
 
             if ``return_avg_val`` is True, the metafeature values and the
             time elapsed for extraction for each item (if any ``measure_time``
             options was chosen) will be the average value between all
-            extractions. Otherwise, all extract metafeature values will be
+            extractions. Otherwise, all extracted metafeature values will be
             returned as a 2D numpy array (where each columns is from a distinct
             sampled dataset, and each row is a distinct metafeature), and the
             time elapsed will be the sum of all extractions for the
@@ -1366,7 +1379,7 @@ class MFE:
         Raises
         ------
         ValueError
-            If ``confidence`` is not in (0, 1) range.
+            If ``confidence`` is not in (0.0, 1.0) range.
 
         Notes
         -----
@@ -1374,9 +1387,11 @@ class MFE:
         dataset is instantiated within this method and, therefore, this
         method does not affect the current model (if any) by any means.
         """
-        if not 0 < confidence < 1.0:
-            raise ValueError("'confidence' must be in (0, 1) range (got {}.)"
-                             .format(confidence))
+        _confidence = np.asarray(confidence, dtype=float)
+
+        if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
+            raise ValueError("'_confidence' must be in (0.0, 1.0) range (got "
+                             "{}.)".format(_confidence))
 
         if self.random_state is not None:
             np.random.seed(self.random_state)
@@ -1392,7 +1407,7 @@ class MFE:
         _random_state = self.random_state if self.random_state else 1234
 
         if verbose > 0:
-            print("Started metafeature extract with confidence interval.")
+            print("Started metafeature extract with _confidence interval.")
             print("Random seed:")
             print(" {} For extractor model: {}{}".format(
                 _internal.VERBOSE_BLOCK_END_SYMBOL,
@@ -1417,12 +1432,12 @@ class MFE:
             arguments_extract=arguments_extract)
 
         if verbose > 0:
-            print("Finished metafeature extract with confidence interval.")
-            print("Now getting confidence intervals...", end=" ")
+            print("Finished metafeature extract with _confidence interval.")
+            print("Now getting _confidence intervals...", end=" ")
 
-        _half_sig_level = 0.5 * (1.0 - confidence)
-        interval = [_half_sig_level, 1.0 - _half_sig_level]
-        mtf_conf_int = np.quantile(a=mtf_vals, q=interval, axis=1).T
+        _half_sig_level = 0.5 * (1.0 - _confidence)
+        quantiles = np.hstack((_half_sig_level, 1.0 - _half_sig_level))
+        mtf_conf_int = np.quantile(a=mtf_vals, q=quantiles, axis=1).T
 
         if verbose > 0:
             print("Done.")
