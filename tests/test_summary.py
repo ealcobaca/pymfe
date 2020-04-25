@@ -1,4 +1,5 @@
 """Test module for General class metafeatures."""
+import typing as t
 import pytest
 
 import pymfe._internal
@@ -99,8 +100,8 @@ def test_nansummary(summary_func):
     summary_nan = pymfe._summary.SUMMARY_METHODS[summary_func]
     summary_reg = pymfe._summary.SUMMARY_METHODS[summary_func[3:]]
 
-    assert np.allclose(
-        summary_nan(list(values)), summary_reg(list(clean_values)))
+    assert np.allclose(summary_nan(list(values)),
+                       summary_reg(list(clean_values)))
 
 
 def test_nancount():
@@ -126,3 +127,100 @@ def test_nancount():
     assert np.allclose(
         summary_nan(list(values)),
         summary_reg(list(values)) - np.count_nonzero(np.isnan(values)))
+
+
+@pytest.mark.parametrize("p", [-1, 0, 1, 2, 3, 4])
+def test_powersum_scalar(p: t.Union[int, float]):
+    values = np.array([0, 0, -1, 10, -10, -5, 8, 2.5, 0.1, -0.2], dtype=float)
+
+    res_a = pymfe._summary.sum_powersum(values, p)
+    res_b = np.sum(np.power(values, p))
+
+    assert np.isclose(res_a, res_b)
+
+
+@pytest.mark.parametrize("p", [-1, 0, 1, 2, 3, 4])
+def test_nanpowersum_scalar(p: t.Union[int, float]):
+    values = np.array(
+        [0, np.nan, -1, np.nan, -10, -5, 8, 2.5, 0.1, -0.2, np.nan],
+        dtype=float)
+
+    res_a = pymfe._summary.sum_nanpowersum(values, p)
+    res_b = np.nansum(np.power(pymfe._summary._remove_nan(values), p))
+
+    assert np.isclose(res_a, res_b)
+
+
+@pytest.mark.parametrize("p", [[2], [-1, 0], [1, 2, 3, 4]])
+def test_powersum_array(p: t.Sequence[t.Union[int, float]]):
+    values = np.array([0, 0, -1, 10, -10, -5, 8, 2.5, 0.1, -0.2], dtype=float)
+
+    res_a = pymfe._summary.sum_powersum(values, p)
+    res_b = [np.sum(np.power(values, cur_p)) for cur_p in p]
+
+    assert len(res_a) == len(p) and np.allclose(res_a, res_b)
+
+
+@pytest.mark.parametrize("p", [[2], [-1, 0], [1, 2, 3, 4]])
+def test_nanpowersum_array(p: t.Sequence[t.Union[int, float]]):
+    values = np.array(
+        [0, np.nan, -1, np.nan, -10, -5, 8, 2.5, 0.1, -0.2, np.nan],
+        dtype=float)
+
+    res_a = pymfe._summary.sum_nanpowersum(values, p)
+    res_b = [
+        np.nansum(np.power(pymfe._summary._remove_nan(values), cur_p))
+        for cur_p in p
+    ]
+
+    assert len(res_a) == len(p) and np.allclose(res_a, res_b)
+
+
+@pytest.mark.parametrize("p", [-1, 0, 1, 2, 3, 4])
+def test_pnorm_scalar(p: t.Union[int, float]):
+    values = np.array([0, 0, -1, 10, -10, -5, 8, 2.5, 0.1, -0.2], dtype=float)
+
+    res_a = pymfe._summary.sum_pnorm(values, p)
+    res_b = np.linalg.norm(values, p) if p >= 0 else np.nan
+
+    assert np.isclose(res_a, res_b, equal_nan=True)
+
+
+@pytest.mark.parametrize("p", [-1, 0, 1, 2, 3, 4])
+def test_nanpnorm_scalar(p: t.Union[int, float]):
+    values = np.array(
+        [0, np.nan, -1, np.nan, -10, -5, 8, 2.5, 0.1, -0.2, np.nan],
+        dtype=float)
+
+    res_a = pymfe._summary.sum_nanpnorm(values, p)
+    res_b = np.linalg.norm(pymfe._summary._remove_nan(values),
+                           p) if p >= 0 else np.nan
+
+    assert np.isclose(res_a, res_b, equal_nan=True)
+
+
+@pytest.mark.parametrize("p", [[2], [-1, 0], [1, 2, 3, 4]])
+def test_pnorm_array(p: t.Sequence[t.Union[int, float]]):
+    values = np.array([0, 0, -1, 10, -10, -5, 8, 2.5, 0.1, -0.2], dtype=float)
+
+    res_a = pymfe._summary.sum_pnorm(values, p)
+    res_b = [
+        np.linalg.norm(values, cur_p) if cur_p >= 0 else np.nan for cur_p in p
+    ]
+
+    assert len(res_a) == len(p) and np.allclose(res_a, res_b, equal_nan=True)
+
+
+@pytest.mark.parametrize("p", [[2], [-1, 0], [1, 2, 3, 4]])
+def test_nanpnorm_array(p: t.Sequence[t.Union[int, float]]):
+    values = np.array(
+        [0, np.nan, -1, np.nan, -10, -5, 8, 2.5, 0.1, -0.2, np.nan],
+        dtype=float)
+
+    res_a = pymfe._summary.sum_nanpnorm(values, p)
+    res_b = [
+        np.linalg.norm(pymfe._summary._remove_nan(values), cur_p)
+        if cur_p >= 0 else np.nan for cur_p in p
+    ]
+
+    assert len(res_a) == len(p) and np.allclose(res_a, res_b, equal_nan=True)
