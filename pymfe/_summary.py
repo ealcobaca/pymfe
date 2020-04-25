@@ -10,7 +10,7 @@ import collections
 import scipy.stats
 import numpy as np
 
-TypeNumeric = t.TypeVar("TypeNumeric", int, float, np.number)
+TypeNumeric = t.Union[int, float, np.number]
 """Type annotation for a numeric type (int, float, np.number)."""
 
 TypeValList = t.Sequence[TypeNumeric]
@@ -19,6 +19,9 @@ TypeValList = t.Sequence[TypeNumeric]
 
 def _remove_nan(values: TypeValList) -> TypeValList:
     """Remove nan values in ``values``."""
+    if not isinstance(values, np.ndarray):
+        values = np.asarray(values, dtype=float)
+
     return values[~np.isnan(values)]
 
 
