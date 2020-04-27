@@ -336,7 +336,6 @@ class MFE:
             self,
             feature_values: t.Sequence[_internal.TypeNumeric],
             feature_name: str,
-            remove_nan: bool = True,
             verbose: int = 0,
             suppress_warnings: bool = False,
             **kwargs
@@ -353,13 +352,6 @@ class MFE:
         feature_name : :obj:`str`
             Name of the feature method used for produce the ``feature_value.``
 
-        remove_nan : :obj:`bool`, optional
-            If True, all non-numeric values are removed from ``feature_values``
-            before calling each summary method. Note that the summary method
-            itself may still remove non-numeric values and, in this case, the
-            user must suppress these warnings using some built-in argument of
-            the summary method using the kwargs argument, if possible.
-
         verbose : :obj:`int`, optional
             Select the verbosity level of the summarization process.
             If == 1, then print just the ending message, without a line break.
@@ -369,9 +361,8 @@ class MFE:
 
         suppress_warnings : :obj:`bool`, optional
             If True, ignore all warnings invoked before and after summary
-            method calls. Note that, as seen in the ``remove_nan`` argument,
-            the summary callables may still invoke warnings by itself and the
-            user need to ignore them, if possible, via kwargs.
+            method calls. The summary callables may still invoke warnings by
+            itself and the user need to ignore them, if possible, via kwargs.
 
         kwargs:
             User-defined arguments for the summary callables.
@@ -432,7 +423,7 @@ class MFE:
 
             summarized_val, time_sm = _internal.timeit(
                 _internal.summarize, feature_values, sm_mtd_callable,
-                sm_mtd_args_pack, remove_nan)
+                sm_mtd_args_pack)
 
             if not suppress_warnings:
                 _internal.check_summary_warnings(
@@ -470,7 +461,6 @@ class MFE:
 
     def _call_feature_methods(
             self,
-            remove_nan: bool = True,
             verbose: int = 0,
             # enable_parallel: bool = False,
             suppress_warnings: bool = False,
@@ -534,7 +524,6 @@ class MFE:
                 sm_ret = self._call_summary_methods(
                     feature_values=features,
                     feature_name=ft_name_without_prefix,
-                    remove_nan=remove_nan,
                     verbose=verbose,
                     suppress_warnings=suppress_warnings,
                     **kwargs)
@@ -1048,7 +1037,6 @@ class MFE:
 
     def extract(
             self,
-            remove_nan: bool = True,
             verbose: int = 0,
             enable_parallel: bool = False,
             suppress_warnings: bool = False,
@@ -1057,13 +1045,6 @@ class MFE:
 
         Parameters
         ----------
-        remove_nan : :obj:`bool`, optional
-            If True, remove any non-numeric values features before summarizing
-            values from all feature extraction methods. Note that the summary
-            methods may still remove non-numeric values by itself. In this
-            case, the user must modify this behavior using built-in summary
-            method arguments via kwargs, if possible.
-
         verbose : :obj:`int`, optional
             Defines the verbosity level related to the metafeature extraction.
             If == 1, show just the current progress, without line breaks.
@@ -1082,9 +1063,7 @@ class MFE:
             If True, do not show warnings about unknown user custom parameters
             for feature extraction and summary methods passed via kwargs. Note
             that both feature extraction and summary methods may still raise
-            warnings by itself. In this case, just like the ``remove_nan``
-            situation, the user must suppress them by built-in args from these
-            methods via kwargs, if possible.
+            warnings by itself.
 
         kwargs:
             Used to pass custom arguments for both feature-extraction and
@@ -1161,7 +1140,6 @@ class MFE:
         _time_start = time.time()
 
         results = self._call_feature_methods(
-            remove_nan=remove_nan,
             verbose=verbose,
             enable_parallel=enable_parallel,
             suppress_warnings=suppress_warnings,

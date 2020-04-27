@@ -497,7 +497,6 @@ def summarize(
         features: t.Union[np.ndarray, t.Sequence],
         callable_sum: t.Callable,
         callable_args: t.Optional[t.Dict[str, t.Any]] = None,
-        remove_nan: bool = True,
         ) -> t.Union[t.Sequence, TypeNumeric]:
     """Returns ``feature`` values summarized by ``callable_sum``.
 
@@ -514,10 +513,6 @@ def summarize(
             need to check out the documentation of the method which implemen-
             ts it.
 
-        remove_nan (:obj:`bool`, optional): check and remove all elements
-            in `features` which are not numeric. Note that :obj:`np.inf`
-            is still considered numeric (:obj:`float` type).
-
     Returns:
         float: value of summarized feature values, if possible. May return
             :obj:`np.nan` if summary function call invokes TypeError, Value-
@@ -528,11 +523,6 @@ def summarize(
         TypeError: if ``features``  is not a sequence.
     """
     processed_feat = np.array(features)
-
-    if remove_nan:
-        numeric_vals = list(map(isnumeric, features))
-        processed_feat = processed_feat[numeric_vals]
-        processed_feat = processed_feat.astype(np.float32)
 
     if callable_args is None:
         callable_args = {}
@@ -1333,7 +1323,6 @@ def isnumeric(
     Args:
         value (:obj:`Any`): any object to be checked as numeric or a collec-
             tion of numerics.
-
         check_subtype (:obj:`bool`, optional): if True, check elements of
             ``value`` if it is an iterable object. Otherwise, only checks
             ``value`` type, ignoring the fact that it can be an iterable ob-
