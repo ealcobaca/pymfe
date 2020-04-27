@@ -1412,7 +1412,7 @@ class MFE:
         if include_references:
             aux = docstring.split("References\n        ----------\n")
             if len(aux) >= 2:
-                split = aux[1].split(f".. [")
+                split = aux[1].split(".. [")
                 if len(split) >= 2:
                     del split[0]
                     for spl in split:
