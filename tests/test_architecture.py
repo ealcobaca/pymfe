@@ -283,11 +283,20 @@ class TestArchitecture:
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat="one-hot")
 
-        exp_value = np.sum([np.unique(attr).size for attr in X.values.T])
+        exp_value = np.sum([np.unique(attr).size - 1 for attr in X.values.T])
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
     def test_one_hot_encoding_02(self):
+        X, y = utils.load_xy(1)
+        mfe = MFE()
+        mfe.fit(X.values, y.values, transform_cat="one-hot-full")
+
+        exp_value = np.sum([np.unique(attr).size for attr in X.values.T])
+
+        assert mfe._custom_args_ft["N"].shape[1] == exp_value
+
+    def test_one_hot_encoding_03(self):
         X, y = utils.load_xy(2)
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat="one-hot")
