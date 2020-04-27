@@ -46,6 +46,8 @@ def sum_histogram(values: TypeValList,
     Raises:
         TypeError: if ``values`` contains non-numeric data.
     """
+    if len(values) == 0:
+        return np.full(bins, fill_value=np.nan)
 
     freqs, _ = np.histogram(values, bins=bins)
 
@@ -169,6 +171,9 @@ def sum_skewness(values: TypeValList,
     Raises:
         ValueError: if ``method`` is not 1, 2 nor 3.
     """
+    if len(values) == 0:
+        return np.nan
+
     if method not in (1, 2, 3):
         raise ValueError('Invalid method "{}" for '
                          "extracting the skewness".format(method))
@@ -231,6 +236,9 @@ def sum_kurtosis(values: TypeValList,
     Raises:
         ValueError: if ``method`` is not 1, 2 nor 3.
     """
+    if len(values) == 0:
+        return np.nan
+
     if method not in (1, 2, 3):
         raise ValueError('Invalid method "{}" for '
                          "extracting the kurtosis".format(method))
