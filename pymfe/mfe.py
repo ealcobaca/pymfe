@@ -822,6 +822,9 @@ class MFE:
             data_num = _internal.rescale_data(
                 data=data_num, option=rescale, args=rescale_args)
 
+        if data_num.dtype != float:
+            data_num = data_num.astype(float)
+
         return data_num
 
     def fit(self,
