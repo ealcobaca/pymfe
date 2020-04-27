@@ -216,3 +216,20 @@ def test_nanpnorm_array(p: t.Sequence[t.Union[int, float]]):
     ]
 
     assert len(res_a) == len(p) and np.allclose(res_a, res_b, equal_nan=True)
+
+
+@pytest.mark.parametrize(
+    "summary",
+    ("mean", "nanmean", "sd", "nansd", "var", "nanvar", "histogram",
+     "nanhistogram", "iq_range", "naniq_range", "kurtosis", "nankurtosis",
+     "max", "nanmax", "median", "nanmedian", "min", "nanmin", "quantiles",
+     "nanquantiles", "range", "nanrange", "skewness", "nanskewness", "sum",
+     "nansum", "powersum", "pnorm", "nanpowersum", "nanpnorm"))
+def test_summary_empty_slice(summary: str):
+    X = np.asarray([1, 2, 3], dtype=str)
+
+    extractor = pymfe.mfe.MFE(features="mean",
+                              summary=summary).fit(X, transform_cat=None)
+    res = extractor.extract(suppress_warnings=True)
+
+    assert np.all(np.isnan(res[1]))
