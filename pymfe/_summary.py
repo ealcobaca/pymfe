@@ -94,11 +94,14 @@ def sum_quantiles(values: TypeValList,
         ValueError: if ``package`` value is neither ``numpy`` or ``scipy``, or
             ``numpy_interpolation`` argument has not a valid value.
     """
-    valid_packges = ("numpy", "scipy")
+    if len(values) == 0:
+        return np.full(5, fill_value=np.nan)
 
-    if package not in valid_packges:
+    valid_packages = ("numpy", "scipy")
+
+    if package not in valid_packages:
         raise ValueError('"package" must be in {} '
-                         "(got {}).".format(valid_packges, package))
+                         "(got {}).".format(valid_packages, package))
 
     if package == "numpy":
         return np.quantile(values, (0.00, 0.25, 0.50, 0.75, 1.00),
@@ -117,6 +120,9 @@ def sum_nanquantiles(values: TypeValList,
     The quantiles calculated corresponds to the minimum, maximum,
     median value, and third and fourth quartiles.
     """
+    if len(values) == 0:
+        return np.full(5, fill_value=np.nan)
+
     return np.nanquantile(values, (0.00, 0.25, 0.50, 0.75, 1.00),
                           interpolation=numpy_interpolation)
 
@@ -336,6 +342,12 @@ def _apply_power_func(
         p: t.Union[int, float, t.Iterable[t.Union[int, float]]],
 ) -> t.Union[float, np.ndarray]:
     """Apply a power function to ``values`` using ``p_func``."""
+    if len(values) == 0:
+        if np.isscalar(p):
+            return np.nan
+
+        return np.full(len(p), fill_value=np.nan)
+
     if not isinstance(values, np.ndarray) or values.dtype != float:
         values = np.asarray(values, dtype=float)
 
@@ -363,7 +375,7 @@ def sum_nanpowersum(
         values: TypeValList,
         p: t.Union[int, float, t.Iterable[t.Union[int, float]]] = 2,
 ) -> t.Union[float, np.ndarray]:
-    """Calculate the power sum of ``values`` without nan values."""
+    """Calculate the power sum of ``values`` ignoring nan values."""
     return sum_powersum(_remove_nan(values=values), p=p)
 
 
@@ -383,8 +395,24 @@ def sum_nanpnorm(
         values: TypeValList,
         p: t.Union[int, float, t.Iterable[t.Union[int, float]]] = 2,
 ) -> t.Union[float, np.ndarray]:
-    """Calculate the p-norm of ``values`` without nan values."""
+    """Calculate the p-norm of ``values`` ignoring nan values."""
     return sum_pnorm(_remove_nan(values=values), p=p)
+
+
+def sum_sum(values: TypeValList) -> float:
+    """Calculate the sum of ``values``."""
+    if len(values) == 0:
+        return np.nan
+
+    return sum(values)
+
+
+def sum_nansum(values: TypeValList) -> float:
+    """Calculate the sum of ``values`` ignoring nan values."""
+    if len(values) == 0:
+        return np.nan
+
+    return np.nansum(values)
 
 
 SUMMARY_METHODS = collections.OrderedDict((
@@ -414,8 +442,8 @@ SUMMARY_METHODS = collections.OrderedDict((
     ("nanrange", sum_nanptp),
     ("skewness", sum_skewness),
     ("nanskewness", sum_nanskewness),
-    ("sum", sum),
-    ("nansum", np.nansum),
+    ("sum", sum_sum),
+    ("nansum", sum_nansum),
     ("powersum", sum_powersum),
     ("pnorm", sum_pnorm),
     ("nanpowersum", sum_nanpowersum),
