@@ -149,6 +149,7 @@ VALID_TIMEOPT = (
 VALID_TRANSFORM_CAT = (
     "gray",
     "one-hot",
+    "one-hot-full",
 )
 
 _RESCALE_SCALERS = {
@@ -1429,14 +1430,18 @@ def transform_cat_gray(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     return np.asarray(patsy.dmatrix(formula, named_data))
 
 
-def transform_cat_onehot(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
+def transform_cat_onehot(
+        data_categoric: np.ndarray,
+        use_all_columns: bool = True) -> t.Optional[np.ndarray]:
     """Transform categorical data using one-hot encoding."""
     if data_categoric.size == 0:
         return None
 
     _, num_col = data_categoric.shape
 
-    ohe = sklearn.preprocessing.OneHotEncoder(sparse=False)
+    _drop = None if use_all_columns else "first"
+
+    ohe = sklearn.preprocessing.OneHotEncoder(drop=_drop, sparse=False)
 
     one_cat_attrs = np.hstack([
         ohe.fit_transform(data_categoric[:, attr_ind, np.newaxis])
