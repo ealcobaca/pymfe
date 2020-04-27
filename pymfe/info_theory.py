@@ -293,11 +293,14 @@ class MFEInfoTheory:
         if attr_ent is not None:
             return attr_ent
 
+        if C.size == 0:
+            return np.array([])
+
         try:
             return np.apply_along_axis(func1d=cls._calc_entropy, axis=0, arr=C)
 
         except ValueError:
-            return np.array([np.nan])
+            return np.array([])
 
     @classmethod
     def ft_class_conc(cls, C: np.ndarray, y: np.ndarray) -> np.ndarray:
