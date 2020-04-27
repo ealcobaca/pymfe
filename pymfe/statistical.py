@@ -421,7 +421,7 @@ class MFEStatistical:
             abs_corr_mat = np.abs(np.corrcoef(N, rowvar=False))
 
         if not isinstance(abs_corr_mat, np.ndarray) and np.isnan(abs_corr_mat):
-            return np.array([np.nan])
+            return np.array([])
 
         res_num_rows, _ = abs_corr_mat.shape
 
@@ -558,7 +558,7 @@ class MFEStatistical:
             eigvals = np.linalg.eigvals(cov_mat)
 
         except (np.linalg.LinAlgError, ValueError):
-            return np.array([np.nan])
+            return np.array([])
 
         return eigvals
 
