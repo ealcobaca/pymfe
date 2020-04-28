@@ -522,18 +522,22 @@ def summarize(
         AttributeError: if ``callable_sum`` is invalid.
         TypeError: if ``features``  is not a sequence.
     """
-    processed_feat = np.array(features)
-
     if callable_args is None:
         callable_args = {}
 
     try:
-        metafeature = callable_sum(processed_feat, **callable_args)
+        metafeature = callable_sum(features, **callable_args)
 
     except (TypeError, ValueError, ZeroDivisionError, MemoryError):
         metafeature = np.nan
 
     return metafeature
+
+
+def array_is_returned(mtd_callable: t.Callable) -> bool:
+    """Check if a callable return a scalar or an array."""
+    ret_type = t.get_type_hints(mtd_callable).get("return", float)
+    return hasattr(ret_type, "__len__")
 
 
 def get_feat_value(
@@ -570,14 +574,15 @@ def get_feat_value(
     try:
         features = mtd_callable(**mtd_args)
 
-    except (TypeError, ValueError, ZeroDivisionError, MemoryError) as type_e:
+    except (TypeError, ValueError, ZeroDivisionError,
+            MemoryError, np.linalg.LinAlgError) as type_e:
         if not suppress_warnings:
             warnings.warn(
                 "Can't extract feature '{0}'.\n Exception message: {1}.\n"
                 " Will set it as 'np.nan' for all summary functions."
                 .format(mtd_name, repr(type_e)), RuntimeWarning)
 
-        features = np.nan
+        features = np.empty(0) if array_is_returned(mtd_callable) else np.nan
 
     return features
 
