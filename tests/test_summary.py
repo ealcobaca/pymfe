@@ -218,6 +218,16 @@ def test_nanpnorm_array(p: t.Sequence[t.Union[int, float]]):
     assert len(res_a) == len(p) and np.allclose(res_a, res_b, equal_nan=True)
 
 
+def test_sum_sum():
+    values = [0, 0, -1, 10, -10, -5, 8, 2.5, 0.1, -0.2]
+    assert np.isclose(sum(values), pymfe._summary.sum_sum(values))
+
+
+def test_sum_nansum():
+    values = [0, np.nan, -1, np.nan, -10, -5, 8, 2.5, 0.1, -0.2, np.nan]
+    assert np.isclose(np.nansum(values), pymfe._summary.sum_nansum(values))
+
+
 @pytest.mark.parametrize(
     "summary",
     ("mean", "nanmean", "sd", "nansd", "var", "nanvar", "histogram",
