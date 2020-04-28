@@ -420,10 +420,6 @@ class MFEStatistical:
         if abs_corr_mat is None:
             abs_corr_mat = np.abs(np.corrcoef(N, rowvar=False))
 
-        if not isinstance(abs_corr_mat, np.ndarray) and np.isnan(abs_corr_mat):
-            raise ValueError("Can't extract the correlation coefficient of "
-                             "numerical data.")
-
         res_num_rows, _ = abs_corr_mat.shape
 
         inf_triang_vals = abs_corr_mat[np.tril_indices(res_num_rows, k=-1)]
