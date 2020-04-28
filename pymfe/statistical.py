@@ -421,7 +421,8 @@ class MFEStatistical:
             abs_corr_mat = np.abs(np.corrcoef(N, rowvar=False))
 
         if not isinstance(abs_corr_mat, np.ndarray) and np.isnan(abs_corr_mat):
-            raise ValueError("Can't extract the correlation coefficient of data.")
+            raise ValueError("Can't extract the correlation coefficient of "
+                             "numerical data.")
 
         res_num_rows, _ = abs_corr_mat.shape
 
