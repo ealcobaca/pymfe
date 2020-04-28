@@ -354,7 +354,7 @@ def _apply_power_func(
         if np.isscalar(p):
             return np.nan
 
-        return np.full(len(p), fill_value=np.nan)
+        return np.full(len(p), fill_value=np.nan)  # type: ignore
 
     if not isinstance(values, np.ndarray) or values.dtype != float:
         values = np.asarray(values, dtype=float)
