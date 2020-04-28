@@ -171,9 +171,6 @@ def sum_skewness(values: TypeValList,
     Raises:
         ValueError: if ``method`` is not 1, 2 nor 3.
     """
-    if len(values) == 0:
-        return np.nan
-
     if method not in (1, 2, 3):
         raise ValueError('Invalid method "{}" for '
                          "extracting the skewness".format(method))
@@ -236,9 +233,6 @@ def sum_kurtosis(values: TypeValList,
     Raises:
         ValueError: if ``method`` is not 1, 2 nor 3.
     """
-    if len(values) == 0:
-        return np.nan
-
     if method not in (1, 2, 3):
         raise ValueError('Invalid method "{}" for '
                          "extracting the kurtosis".format(method))
