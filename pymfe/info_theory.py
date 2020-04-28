@@ -203,7 +203,7 @@ class MFEInfoTheory:
     @classmethod
     def ft_attr_conc(cls,
                      C: np.ndarray,
-                     max_attr_num: t.Optional[int] = None,
+                     max_attr_num: t.Optional[int] = 12,
                      random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute concentration coef. of each pair of distinct attributes.
 
