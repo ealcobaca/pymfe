@@ -576,13 +576,16 @@ def get_feat_value(
 
     except (TypeError, ValueError, ZeroDivisionError,
             MemoryError, np.linalg.LinAlgError) as type_e:
+        is_array = array_is_returned(mtd_callable)
+
         if not suppress_warnings:
             warnings.warn(
-                "Can't extract feature '{0}'.\n Exception message: {1}.\n"
-                " Will set it as 'np.nan' for all summary functions."
-                .format(mtd_name, repr(type_e)), RuntimeWarning)
+                "Can't extract feature '{0}'.\n Exception message: {1}.{2}"
+                .format(mtd_name, repr(type_e), "\n Will set it as 'np.nan' "
+                        "for all summary functions." if is_array else ""),
+                RuntimeWarning)
 
-        features = np.empty(0) if array_is_returned(mtd_callable) else np.nan
+        features = np.empty(0) if is_array else np.nan
 
     return features
 
