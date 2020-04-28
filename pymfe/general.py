@@ -176,9 +176,6 @@ class MFEGeneral:
            Principles of Data Mining and Knowledge Discovery (PKDD),
            pages 418 – 423, 1999.
         """
-        if y.size == 0:
-            return np.array([np.nan])
-
         if class_freqs is None:
             _, class_freqs = np.unique(y, return_counts=True)
 
