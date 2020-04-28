@@ -1443,12 +1443,21 @@ def transform_cat_onehot(
 
     ohe = sklearn.preprocessing.OneHotEncoder(drop=_drop, sparse=False)
 
-    one_cat_attrs = np.hstack([
-        ohe.fit_transform(data_categoric[:, attr_ind, np.newaxis])
-        for attr_ind in np.arange(num_col)
-    ])
+    one_cat_attrs = []  # type: t.List[np.ndarray]
 
-    return one_cat_attrs
+    for attr_ind in np.arange(num_col):
+        cur_attr = data_categoric[:, attr_ind, np.newaxis]
+
+        if not use_all_columns and np.unique(cur_attr).size <= 1:
+            raise ValueError("This type of one-hot encoding does not "
+                             "support features with 1 or less distinct "
+                             "values. Drop the {}th categorical feature "
+                             "or select another encoding strategy.".format(
+                                 attr_ind + 1))
+
+        one_cat_attrs.append(ohe.fit_transform(cur_attr))
+
+    return np.hstack(one_cat_attrs)
 
 
 def _equal_freq_discretization(data: np.ndarray,
