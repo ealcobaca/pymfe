@@ -228,44 +228,56 @@ def test_sum_nansum():
     assert np.isclose(np.nansum(values), pymfe._summary.sum_nansum(values))
 
 
-@pytest.mark.parametrize(
-    "summary, sum_args", (
-        ("mean", None),
-        ("nanmean", None),
-        ("sd", None),
-        ("nansd", None),
-        ("var", None),
-        ("nanvar", None),
-        ("histogram", None),
-        ("nanhistogram", None),
-        ("iq_range", None),
-        ("naniq_range", None),
-        ("kurtosis", None),
-        ("nankurtosis", None),
-        ("max", None),
-        ("nanmax", None),
-        ("median", None),
-        ("nanmedian", None),
-        ("min", None),
-        ("nanmin", None),
-        ("quantiles", None),
-        ("nanquantiles", None),
-        ("range", None),
-        ("nanrange", None),
-        ("skewness", None),
-        ("nanskewness", None),
-        ("sum", None),
-        ("nansum", None),
-        ("powersum", None),
-        ("powersum", {"p": [-1, 0, 1, 2]}),
-        ("pnorm", None),
-        ("pnorm", {"p": [-1, 0, 1, 2]}),
-        ("nanpowersum", None),
-        ("nanpowersum", {"p": [-1, 0, 1, 2]}),
-        ("nanpnorm", None),
-        ("nanpnorm", {"p": [-1, 0, 1, 2]}),
+@pytest.mark.parametrize("summary, sum_args, exp_len", (
+    ("mean", None, 1),
+    ("nanmean", None, 1),
+    ("sd", None, 1),
+    ("nansd", None, 1),
+    ("var", None, 1),
+    ("nanvar", None, 1),
+    ("histogram", {
+        "bins": 7
+    }, 7),
+    ("nanhistogram", {
+        "bins": 7
+    }, 7),
+    ("iq_range", None, 1),
+    ("naniq_range", None, 1),
+    ("kurtosis", None, 1),
+    ("nankurtosis", None, 1),
+    ("max", None, 1),
+    ("nanmax", None, 1),
+    ("median", None, 1),
+    ("nanmedian", None, 1),
+    ("min", None, 1),
+    ("nanmin", None, 1),
+    ("quantiles", None, 5),
+    ("nanquantiles", None, 5),
+    ("range", None, 1),
+    ("nanrange", None, 1),
+    ("skewness", None, 1),
+    ("nanskewness", None, 1),
+    ("sum", None, 1),
+    ("nansum", None, 1),
+    ("powersum", None, 1),
+    ("powersum", {
+        "p": [-1, 0, 1, 2]
+    }, 4),
+    ("pnorm", None, 1),
+    ("pnorm", {
+        "p": [-1, 0, 1, 2]
+    }, 4),
+    ("nanpowersum", None, 1),
+    ("nanpowersum", {
+        "p": [-1, 0, 1, 2]
+    }, 4),
+    ("nanpnorm", None, 1),
+    ("nanpnorm", {
+        "p": [-1, 0, 1, 2]
+    }, 4),
 ))
-def test_summary_empty_slice(summary: str, sum_args: t.Dict[str, t.Any]):
+def test_summary_empty_slice(summary: str, sum_args: t.Dict[str, t.Any],
+                             exp_len: int):
     if sum_args is None:
         sum_args = {}
 
@@ -273,6 +285,7 @@ def test_summary_empty_slice(summary: str, sum_args: t.Dict[str, t.Any]):
 
     extractor = pymfe.mfe.MFE(features="mean",
                               summary=summary).fit(X, transform_cat=None)
-    res = extractor.extract(suppress_warnings=True, **{summary: sum_args})
 
-    assert np.all(np.isnan(res[1]))
+    res = extractor.extract(suppress_warnings=True, **{summary: sum_args})[1]
+
+    assert len(res) == exp_len and np.all(np.isnan(res))
