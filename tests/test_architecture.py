@@ -305,6 +305,16 @@ class TestArchitecture:
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
+    def test_one_hot_encoding_04(self):
+        X, y = utils.load_xy(2)
+        mfe = MFE()
+
+        X = np.hstack((X.values, np.ones((y.size, 1), dtype=str)))
+        y = y.values
+
+        with pytest.raises(ValueError):
+            mfe.fit(X=X, y=y, transform_cat="one-hot")
+
 
 class TestArchitectureWarnings:
     def test_feature_warning1(self):
