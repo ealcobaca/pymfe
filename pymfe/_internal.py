@@ -1426,7 +1426,15 @@ def transform_cat_gray(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
 
     formula = "~ 0 + {}".format(" + ".join(dummy_attr_names))
 
-    return np.asarray(patsy.dmatrix(formula, named_data))
+    try:
+        enc_data = patsy.dmatrix(formula, named_data, NA_action="raise")
+        return np.asarray(enc_data, dtype=float)
+
+    except patsy.PatsyError:
+        raise ValueError("Categorical data encoding of type 'gray' has no "
+                         "support for missing values. Please handle the "
+                         "missing data manually before fitting it into the "
+                         "MFE model.")
 
 
 def transform_cat_onehot(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:

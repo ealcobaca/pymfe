@@ -735,12 +735,11 @@ class MFE:
         data_cat = self.X[:, self._attr_indexes_cat]
 
         if transform_num:
-            data_num_discretized = _internal.transform_num(
+            data_num_disc = _internal.transform_num(
                 self.X[:, self._attr_indexes_num], num_bins=num_bins)
 
-            if data_num_discretized is not None:
-                data_cat = np.concatenate((data_cat, data_num_discretized),
-                                          axis=1)
+            if data_num_disc is not None and data_num_disc.size > 0:
+                data_cat = np.hstack((data_cat, data_num_disc))
 
         return data_cat
 
@@ -807,16 +806,15 @@ class MFE:
 
         if transform_cat:
             if transform_cat == "gray":
-                categorical_dummies = _internal.transform_cat_gray(
+                cat_dummies = _internal.transform_cat_gray(
                     self.X[:, self._attr_indexes_cat])
 
             else:
-                categorical_dummies = _internal.transform_cat_onehot(
+                cat_dummies = _internal.transform_cat_onehot(
                     self.X[:, self._attr_indexes_cat])
 
-            if categorical_dummies is not None:
-                data_num = np.concatenate((data_num, categorical_dummies),
-                                          axis=1).astype(float)
+            if cat_dummies is not None and cat_dummies.size > 0:
+                data_num = np.hstack((data_num, cat_dummies)).astype(float)
 
         if rescale:
             data_num = _internal.rescale_data(
@@ -949,7 +947,6 @@ class MFE:
         TypeError
             If X or y (or both) is neither a :obj:`list` or a :obj:`np.ndarray`
             object.
-
         """
         if verbose >= 2:
             print("Fitting data into model... ", end="")
@@ -1383,7 +1380,7 @@ class MFE:
         if include_references:
             aux = docstring.split("References\n        ----------\n")
             if len(aux) >= 2:
-                split = aux[1].split(f".. [")
+                split = aux[1].split(".. [")
                 if len(split) >= 2:
                     del split[0]
                     for spl in split:
