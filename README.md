@@ -54,7 +54,7 @@ python3 setup.py install
 
 ## Example of use
 
-The simplest way to extract meta-features is instantiating the `MFE` class. The parameters are the measures, the group of measures and the summarization functions to be extracted. The default parameter is extract all the measures. The `fit` function can be called by passing the `X` and `y`. The `extract` function is used to extract the related measures. A simple example for supervised tasks is given next:
+The simplest way to extract meta-features is by instantiating the `MFE` class. The parameters are the measures, the group of measures, and the summarization functions to be extracted. The default parameter is to extract all the measures. The `fit` function can be called by passing the `X` and `y`. The `extract` function is used to extract the related measures. A simple example using `pymfe` for supervised tasks is given next:
 
 ```python
 # Load a dataset
@@ -84,7 +84,7 @@ ft = mfe.extract()
 print(ft)
 ```
 
-For unsupervised tasks, you can simply omit the target attribute while fitting the data into the MFE model. The `pymfe` package automatically finds and extract only the metafeatures suitable for this type of task. Examples are given next:
+You can simply omit the target attribute for unsupervised tasks while fitting the data into the MFE model. The `pymfe` package automatically finds and extracts only the metafeatures suitable for this type of task. Examples are given next:
 
 ```python
 # Load a dataset
@@ -138,7 +138,7 @@ ft = mfe.extract(
 print(ft)
 ```
 
-If you want to extract metafeatures from a pre-fitted machine learning model (from `sklearn package`), you can use the `extract_from_model` method, without the need for use the training data:
+If you want to extract metafeatures from a pre-fitted machine learning model (from `sklearn package`), you can use the `extract_from_model` method without needing to use the training data:
 
 ```python
 import sklearn.tree
