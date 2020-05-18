@@ -243,6 +243,13 @@ class TestModelBased:
 
         mfe.fit(X.values, y.values, precomp_groups=precomp_group)
 
+        if precomp_group is None:
+            # Note: the precomputation of 'model-based' group is always
+            # forced due to the need of the 'dt_model' value
+            mfe._precomp_args_ft = {
+                "dt_model": mfe._precomp_args_ft.get("dt_model")
+            }
+
         value = mfe.extract()[1]
 
         if exp_value is np.nan:

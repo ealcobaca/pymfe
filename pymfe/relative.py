@@ -63,28 +63,28 @@ class MFERelativeLandmarking:
 
         Parameters
         ----------
-        mtf_names : :obj:`str`
+        mtf_names : str
             Name of each generated metafeature (after extraction and
             summarization).
 
-        mtf_vals : :obj:`str`
+        mtf_vals : str
             Value of each generated metafeature (after extraction and
             summarization).
 
-        mtf_time : :obj:`str`
+        mtf_time : str
             Time elapsed to generate each metafeature (after extraction
             and summarization).
 
-        class_indexes : :obj:`List` of :obj:`int`
+        class_indexes : :obj:`list` of int
             List of indexes corresponding to metafeatures associated to
             metafeature groups present in this postprocessing method name
             (``Landmarking`` and ``Relative``.)
 
-        groups : :obj:`Tuple` of :obj:`str`
+        groups : :obj:`tuple` of str
             User-selected and automatic inserted (due to group dependencies)
             groups of metafeatures.
 
-        inserted_group_dep : :obj:`Tuple` of :obj:`str`
+        inserted_group_dep : :obj:`tuple` of str
             Tuple with all automatic inserted metafeature groups due to
             dependency between groups.
 
