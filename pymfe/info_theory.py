@@ -173,7 +173,7 @@ class MFEInfoTheory:
                         vec_x: np.ndarray,
                         vec_y: np.ndarray,
                         epsilon: float = 1.0e-8) -> float:
-        """Compute joint entropy between vectorx `x` and ``y``."""
+        """Compute joint entropy between ``vec_x`` and ``vec_y``."""
         joint_prob_mat = pd.crosstab(
             vec_y, vec_x, normalize=True).values + epsilon
 
@@ -187,7 +187,8 @@ class MFEInfoTheory:
                    vec_x: np.ndarray,
                    vec_y: np.ndarray,
                    epsilon: float = 1.0e-8) -> float:
-        """Concentration coefficient between two arrays ``vec_x`` and ``vec_y``.
+        """Concentration coefficient between two arrays ``vec_x`` and
+        ``vec_y``.
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
         """
