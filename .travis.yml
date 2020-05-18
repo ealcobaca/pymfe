@@ -34,4 +34,4 @@ notifications:
         on_failure: never
 
 after_success:
-  - codecov
+    - bash <(curl -s https://codecov.io/bash)
