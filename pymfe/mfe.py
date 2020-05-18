@@ -1548,7 +1548,7 @@ class MFE:
 
         if arguments_extract is None:
             arguments_extract = {}
-            
+
         if model_argument in arguments_fit:
             raise KeyError("Illegal argument '{}' in 'arguments_fit' (used "
                            "internally by '.extract_from_model' method.)"
@@ -1586,7 +1586,6 @@ class MFE:
             print("Finished extracting metafeatures from model.")
 
         return res
-
 
     @classmethod
     def valid_groups(cls) -> t.Tuple[str, ...]:
