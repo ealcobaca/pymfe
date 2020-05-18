@@ -33,9 +33,9 @@ class MFEModelBased:
        argument, without any previous verification of argument value or its
        type, via kwargs argument of ``extract`` method of MFE class.
 
-     4. The return value of all feature extraction methods should be a single
-        value or a generic Sequence (preferably a :obj:`np.ndarray`)
-        type with numeric values.
+    4. The return value of all feature extraction methods should be a single
+       value or a generic Sequence (preferably a :obj:`np.ndarray`)
+       type with numeric values.
 
     There is another type of method adopted for automatic detection. It is
     adopted the prefix ``precompute_`` for automatic detection of these
@@ -180,13 +180,16 @@ class MFEModelBased:
         :obj:`np.ndarray`
             DT model properties table calculated with ``extract_table`` method.
             Check its documentation for more information.
-                - Each line represents a node.
-                - Column 0: It is the id of the attribute splitted in that
-                  node.
-                - Columns 1: It is the number of examples that fall on that
-                  node.
-                - Columns 2: It is 0 if the node is not a leaf, otherwise is
-                  the class number represented by that leaf node.
+
+        Notes
+        -----
+            Each line in the returned array represents a node where:
+              - Column 0: It is the id of the attribute splitted in that
+                node.
+              - Columns 1: It is the number of examples that fall on that
+                node.
+              - Columns 2: It is 0 if the node is not a leaf, otherwise is
+                the class number represented by that leaf node.
         """
         if leaf_nodes is None:
             leaf_nodes = cls._get_leaf_node_array(dt_model)
