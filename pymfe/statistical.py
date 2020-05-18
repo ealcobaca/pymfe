@@ -504,7 +504,7 @@ class MFEStatistical:
 
         Returns
         -------
-        int | float
+        int or float
             Number of canonical correlations between each attribute and
             class, if ``ft_can_cor`` is executed successfully. Returns
             :obj:`np.nan` otherwise.
