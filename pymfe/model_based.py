@@ -50,12 +50,12 @@ class MFEModelBased:
     computed in module ``statistical`` can freely be used for any
     precomputation or feature extraction method of module ``landmarking``).
     """
-
     @classmethod
     def precompute_model_based_class(
             cls,
             N: np.ndarray,
             y: t.Optional[np.ndarray] = None,
+            dt_model: t.Optional[sklearn.tree.DecisionTreeClassifier] = None,
             random_state: t.Optional[int] = None,
             hypparam_model_dt: t.Optional[t.Dict[str, t.Any]] = None,
             **kwargs) -> t.Dict[str, t.Any]:
@@ -64,16 +64,21 @@ class MFEModelBased:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+            Target attribute.
+
+        dt_model : :obj:`np.ndarray`, optional
+            Decision tree fitted with the given data `N` and `y`. This
+            argument can be used to use a previously fitted custom model.
 
         random_state : int, optional
             If int, random_state is the seed used by the random number
             generator; If RandomState instance, random_state is the random
             number generator; If None, the random number generator is the
-            RandomState instance used by np.random.
+            RandomState instance used by np.random. Used only if argument
+            ``dt_model`` is None.
 
         kwargs:
             Additional arguments. May have previously precomputed before this
@@ -85,38 +90,64 @@ class MFEModelBased:
         :obj:`dict`
             With following precomputed items:
                 - ``dt_model`` (:obj:`sklearn.tree.DecisionTreeClassifier`):
-                  decision tree classifier.
+                  decision tree classifier either fitted with the given data
+                  ``N`` and ``y`` (if ``dt_model`` is None), or the given
+                  ``dt_model``.
                 - ``dt_info_table`` (:obj:`np.ndarray`): some tree properties
                   table.
-                - ``dt_nodes_depth`` (:obj:`np.ndarray`): the depth of each
+                - ``dt_node_depths`` (:obj:`np.ndarray`): the depth of each
                   tree node ordered by node (e.g., index one contain the node
                   one depth, the index two the node two depth and so on.)
         """
         precomp_vals = {}  # type: t.Dict[str, t.Any]
 
-        if (N is not None and y is not None and not {
-                "dt_model", "dt_info_table", "dt_nodes_depth", "leaf_nodes",
-                "non_leaf_nodes"
-        }.issubset(kwargs)):
+        if dt_model is not None:
+            precomp_vals["dt_model"] = dt_model
+
+        if ((dt_model is not None or
+             (N is not None and N.size > 0 and y is not None)) and not {
+                 "dt_model", "dt_info_table", "dt_node_depths", "leaf_nodes",
+                 "non_leaf_nodes"
+             }.issubset(kwargs)):
             if hypparam_model_dt is None:
                 hypparam_model_dt = {}
 
-            dt_model = cls._fit_dt_model(
-                N=N, y=y, random_state=random_state, **hypparam_model_dt)
+            if dt_model is None:
+                dt_model = cls._fit_dt_model(N=N,
+                                             y=y,
+                                             random_state=random_state,
+                                             **hypparam_model_dt)
 
-            leaf_nodes = dt_model.tree_.feature < 0
+            leaf_nodes = cls._get_leaf_node_array(dt_model)
+            nonleaf_nodes = cls._get_nonleaf_node_array(dt_model)
 
-            dt_info_table = cls._extract_table(
-                dt_model=dt_model, leaf_nodes=leaf_nodes)
-            dt_nodes_depth = cls._calc_dt_node_depths(dt_model)
+            dt_info_table = cls.extract_table(dt_model=dt_model,
+                                              leaf_nodes=leaf_nodes)
+            dt_node_depths = cls._calc_dt_node_depths(dt_model)
 
             precomp_vals["leaf_nodes"] = np.flatnonzero(leaf_nodes)
-            precomp_vals["non_leaf_nodes"] = np.flatnonzero(~leaf_nodes)
+            precomp_vals["non_leaf_nodes"] = np.flatnonzero(nonleaf_nodes)
             precomp_vals["dt_model"] = dt_model
             precomp_vals["dt_info_table"] = dt_info_table
-            precomp_vals["dt_nodes_depth"] = dt_nodes_depth
+            precomp_vals["dt_node_depths"] = dt_node_depths
+            precomp_vals["tree_shape"] = cls.ft_tree_shape(
+                dt_model=dt_model,
+                leaf_nodes=leaf_nodes,
+                dt_node_depths=dt_node_depths)
 
         return precomp_vals
+
+    @staticmethod
+    def _get_leaf_node_array(
+            dt_model: sklearn.tree.DecisionTreeClassifier) -> np.ndarray:
+        """Get a boolean array with value True if a node is a leaf."""
+        return dt_model.tree_.feature < 0
+
+    @staticmethod
+    def _get_nonleaf_node_array(
+            dt_model: sklearn.tree.DecisionTreeClassifier) -> np.ndarray:
+        """Get a boolean array with value True if a node is non-leaf."""
+        return dt_model.tree_.feature >= 0
 
     @classmethod
     def _fit_dt_model(cls,
@@ -130,8 +161,9 @@ class MFEModelBased:
         return dt_model.fit(X=N, y=y)
 
     @classmethod
-    def _extract_table(cls, dt_model: sklearn.tree.DecisionTreeClassifier,
-                       leaf_nodes: np.ndarray) -> np.ndarray:
+    def extract_table(cls,
+                      dt_model: sklearn.tree.DecisionTreeClassifier,
+                      leaf_nodes: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Bookkeep some information table from the ``dt_model`` into an array.
 
         Parameters
@@ -139,10 +171,15 @@ class MFEModelBased:
         dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
             The DT model.
 
+        leaf_nodes : :obj:`np.ndarray`, optional
+            Boolean array with value True if a node is a leaf. If given, can
+            improve performance.
+
         Returns
         -------
         :obj:`np.ndarray`
-            DT model properties table.
+            DT model properties table calculated with ``extract_table`` method.
+            Check its documentation for more information.
                 - Each line represents a node.
                 - Column 0: It is the id of the attribute splitted in that
                   node.
@@ -151,6 +188,9 @@ class MFEModelBased:
                 - Columns 2: It is 0 if the node is not a leaf, otherwise is
                   the class number represented by that leaf node.
         """
+        if leaf_nodes is None:
+            leaf_nodes = cls._get_leaf_node_array(dt_model)
+
         dt_info_table = np.zeros((dt_model.tree_.node_count, 3),
                                  dtype=int)  # type: np.ndarray
 
@@ -177,7 +217,6 @@ class MFEModelBased:
         :obj:`np.ndarray`
             The depth of each node.
         """
-
         def node_depth(node_ind: int, cur_depth: int) -> None:
             if not 0 <= node_ind < depths.size:
                 return
@@ -206,7 +245,7 @@ class MFEModelBased:
 
         Returns
         -------
-        :obj:`int`
+        int
             Number of leaf nodes in the DT model.
 
         References
@@ -220,13 +259,20 @@ class MFEModelBased:
         return dt_model.tree_.n_leaves
 
     @classmethod
-    def ft_tree_depth(cls, dt_nodes_depth: np.ndarray) -> np.ndarray:
+    def ft_tree_depth(
+            cls,
+            dt_model: sklearn.tree.DecisionTreeClassifier,
+            dt_node_depths: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the depth of every node in the DT model.
 
         Parameters
         ----------
-        dt_nodes_depth : :obj:`np.ndarray`
-            Depth of each node in the DT model.
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
+            The DT model.
+
+        dt_node_depths : :obj:`np.ndarray`, optional
+            Depth of each node in the DT model. Argument used to take
+            advantage of precomputations.
 
         Returns
         -------
@@ -241,11 +287,17 @@ class MFEModelBased:
            Collaboration Aspects of Data Mining, Decision Support and
            Meta-Learning(IDDM), pages 111 – 122, 2002a.
         """
-        return dt_nodes_depth
+        if dt_node_depths is None:
+            dt_node_depths = cls._calc_dt_node_depths(dt_model)
+
+        return dt_node_depths
 
     @classmethod
-    def ft_leaves_branch(cls, leaf_nodes: np.ndarray,
-                         dt_nodes_depth: np.ndarray) -> np.ndarray:
+    def ft_leaves_branch(
+            cls,
+            dt_model: sklearn.tree.DecisionTreeClassifier,
+            leaf_nodes: t.Optional[np.ndarray] = None,
+            dt_node_depths: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the size of branches in the DT model.
 
         The size of branches consists in the depth of all leaves of the
@@ -253,11 +305,16 @@ class MFEModelBased:
 
         Parameters
         ----------
-        leaf_nodes : :obj:`np.ndarray`
-            Array referencing the leaf nodes of the DT model.
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
+            The DT model.
 
-        dt_nodes_depth : :obj:`np.ndarray`
-            Tree depth from ``dt_nodes_depth`` method.
+        leaf_nodes : :obj:`np.ndarray`, optional
+            Boolean array with value True if a node is a leaf. Argument used
+            to take advantage of precomputations.
+
+        dt_node_depths : :obj:`np.ndarray`, optional
+            Depth of every DT model node. Argument used to take advantage
+            of precomputations.
 
         Returns
         -------
@@ -272,11 +329,20 @@ class MFEModelBased:
            Collaboration Aspects of Data Mining, Decision Support and
            Meta-Learning(IDDM), pages 111 – 122, 2002a.
         """
-        return dt_nodes_depth[leaf_nodes]
+        if leaf_nodes is None:
+            leaf_nodes = cls._get_leaf_node_array(dt_model)
+
+        if dt_node_depths is None:
+            dt_node_depths = cls._calc_dt_node_depths(dt_model)
+
+        return dt_node_depths[leaf_nodes]
 
     @classmethod
-    def ft_leaves_corrob(cls, leaf_nodes: np.ndarray,
-                         dt_info_table: np.ndarray) -> np.ndarray:
+    def ft_leaves_corrob(
+            cls,
+            dt_model: sklearn.tree.DecisionTreeClassifier,
+            leaf_nodes: t.Optional[np.ndarray] = None,
+            dt_info_table: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the leaves corroboration of the DT model.
 
         The Leaves corroboration is the proportion of examples that
@@ -284,11 +350,17 @@ class MFEModelBased:
 
         Parameters
         ----------
-        leaf_nodes : :obj:`np.ndarray`
-            Array referencing the leaf nodes of the DT model.
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
+            The DT model.
 
-        dt_info_table : :obj:`np.ndarray`
-            DT model properties table.
+        leaf_nodes : :obj:`np.ndarray`, optional
+            Boolean array with value True if a node is a leaf. Argument used to
+            take advantage of precomputations.
+
+        dt_info_table : :obj:`np.ndarray`, optional
+            DT model properties table calculated with ``extract_table`` method.
+            Check its documentation for more information. Argument used to take
+            advantage of precomputations.
 
         Returns
         -------
@@ -301,6 +373,12 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
+        if leaf_nodes is None:
+            leaf_nodes = cls._get_leaf_node_array(dt_model)
+
+        if dt_info_table is None:
+            dt_info_table = cls.extract_table(dt_model)
+
         num_samples_leaves = dt_info_table[leaf_nodes, 1]  # type: np.ndarray
 
         # Note: the 0th node is the tree root and, therefore,
@@ -310,8 +388,12 @@ class MFEModelBased:
         return num_samples_leaves / num_samples_total
 
     @classmethod
-    def ft_tree_shape(cls, leaf_nodes: np.ndarray,
-                      dt_nodes_depth: np.ndarray) -> np.ndarray:
+    def ft_tree_shape(
+            cls,
+            dt_model: sklearn.tree.DecisionTreeClassifier,
+            tree_shape: t.Optional[np.ndarray] = None,
+            leaf_nodes: t.Optional[np.ndarray] = None,
+            dt_node_depths: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the tree shape for every leaf node.
 
         The tree shape is the probability of arrive in each leaf given a
@@ -319,11 +401,21 @@ class MFEModelBased:
 
         Parameters
         ----------
-        leaf_nodes : :obj:`np.ndarray`
-            Array referencing the leaf nodes of the DT model.
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
+            The DT model.
 
-        dt_nodes_depth : :obj:`np.ndarray`
-            Tree depth from ``dt_nodes_depth`` method.
+        tree_shape : :obj:`np.ndarray`, optional
+            This method's output. Argument used to take advantage of
+            precomputations.
+
+        leaf_nodes : :obj:`np.ndarray`, optional
+            Boolean array with value True if a node is a leaf. Used only
+            if ``tree_shape`` is None. Argument used to take advantage
+            of precomputations.
+
+        dt_node_depths : :obj:`np.ndarray`, optional
+            Depth of every DT model node. Used only if ``tree_shape`` is
+            None. Argument used to take advantage of precomputations.
 
         Returns
         -------
@@ -336,14 +428,27 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
-        leaf_depths = dt_nodes_depth[leaf_nodes]
+        if tree_shape is not None:
+            return tree_shape
+
+        if leaf_nodes is None:
+            leaf_nodes = cls._get_leaf_node_array(dt_model)
+
+        if dt_node_depths is None:
+            dt_node_depths = cls._calc_dt_node_depths(dt_model)
+
+        leaf_depths = dt_node_depths[leaf_nodes]
         prob_random_arrival = np.power(2.0, -leaf_depths)
         return -prob_random_arrival * np.log2(prob_random_arrival)
 
     @classmethod
     def ft_leaves_homo(
-            cls, leaf_nodes: np.ndarray, dt_nodes_depth: np.ndarray,
-            dt_model: sklearn.tree.DecisionTreeClassifier) -> np.ndarray:
+            cls,
+            dt_model: sklearn.tree.DecisionTreeClassifier,
+            tree_shape: t.Optional[np.ndarray] = None,
+            leaf_nodes: t.Optional[np.ndarray] = None,
+            dt_node_depths: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Compute the DT model Homogeneity for every leaf node.
 
         The DT model homogeneity is calculated by the number of leaves
@@ -352,11 +457,21 @@ class MFEModelBased:
 
         Parameters
         ----------
-        dt_info_table : :obj:`np.ndarray`
-            DT model properties table.
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
+            The DT model.
 
-        dt_nodes_depth : :obj:`np.ndarray`
-            Tree depth from ``dt_nodes_depth`` method.
+        tree_shape : :obj:`np.ndarray`, optional
+            Tree shape as calculated in ``ft_tree_shape``. Argument used
+            to take advantage from precomputations.
+
+        leaf_nodes : :obj:`np.ndarray`, optional
+            Boolean array with value True if a node is a leaf. Used only
+            if ``tree_shape`` is None. Argument used to take advantage of
+            precomputations.
+
+        dt_node_depths : :obj:`np.ndarray`, optional
+            Depth of every DT model node. Used only if ``tree_shape`` is
+            None. Argument used to take advantage of precomputations.
 
         Returns
         -------
@@ -369,17 +484,27 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
-        num_leaves = cls.ft_leaves(dt_model)
+        if tree_shape is None:
+            if leaf_nodes is None:
+                leaf_nodes = cls._get_leaf_node_array(dt_model)
 
-        tree_shape = cls.ft_tree_shape(leaf_nodes,
-                                       dt_nodes_depth)  # type: np.ndarray
+            if dt_node_depths is None:
+                dt_node_depths = cls._calc_dt_node_depths(dt_model)
+
+            tree_shape = cls.ft_tree_shape(dt_model=dt_model,
+                                           leaf_nodes=leaf_nodes,
+                                           dt_node_depths=dt_node_depths)
+
+        num_leaves = cls.ft_leaves(dt_model)
 
         return num_leaves / tree_shape
 
     @classmethod
     def ft_leaves_per_class(
-            cls, dt_info_table: np.ndarray,
-            dt_model: sklearn.tree.DecisionTreeClassifier) -> np.ndarray:
+            cls,
+            dt_model: sklearn.tree.DecisionTreeClassifier,
+            dt_info_table: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Compute the proportion of leaves per class in DT model.
 
         This quantity is computed by the proportion of leaves of the DT model
@@ -387,8 +512,13 @@ class MFEModelBased:
 
         Parameters
         ----------
-        dt_info_table : :obj:`np.ndarray`
-            DT model properties table.
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
+            The DT model.
+
+        dt_info_table : :obj:`np.ndarray`, optional
+            DT model properties table calculated with ``extract_table`` method.
+            Check its documentation for more information. Argument used to take
+            advantage of precomputations.
 
         Returns
         -------
@@ -403,6 +533,9 @@ class MFEModelBased:
            Extraction, Social Media and Web Search FRUCT Conference
            (AINL-ISMWFRUCT), pages 11 – 18, 2015.
         """
+        if dt_info_table is None:
+            dt_info_table = cls.extract_table(dt_model=dt_model)
+
         node_class_ids = dt_info_table[:, 2]
 
         _, class_id_freqs = np.unique(node_class_ids, return_counts=True)
@@ -421,7 +554,7 @@ class MFEModelBased:
 
         Returns
         -------
-        :obj:`int`
+        int
             Number of non-leaf nodes.
 
         References
@@ -446,7 +579,7 @@ class MFEModelBased:
 
         Returns
         -------
-        :obj:`float`
+        float
             Ratio of the number of non-leaf nodes per number of attributes.
 
         References
@@ -455,9 +588,9 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
-        num_non_leaf_nodes = cls.ft_nodes(dt_model)
+        num_non_leaf_node = cls.ft_nodes(dt_model)
 
-        return num_non_leaf_nodes / dt_model.tree_.n_features
+        return num_non_leaf_node / dt_model.tree_.n_features
 
     @classmethod
     def ft_nodes_per_inst(
@@ -472,7 +605,7 @@ class MFEModelBased:
 
         Returns
         -------
-        :obj:`float`
+        float
             Ratio of the number of non-leaf nodes per instances.
 
         References
@@ -481,23 +614,31 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
-        num_non_leaf_nodes = cls.ft_nodes(dt_model)
+        num_non_leaf_node = cls.ft_nodes(dt_model)
         num_inst = dt_model.tree_.n_node_samples[0]
 
-        return num_non_leaf_nodes / num_inst
+        return num_non_leaf_node / num_inst
 
     @classmethod
-    def ft_nodes_per_level(cls, dt_nodes_depth: np.ndarray,
-                           non_leaf_nodes: np.ndarray) -> np.ndarray:
+    def ft_nodes_per_level(
+            cls,
+            dt_model: sklearn.tree.DecisionTreeClassifier,
+            dt_node_depths: t.Optional[np.ndarray] = None,
+            non_leaf_nodes: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the ratio of number of nodes per tree level in DT model.
 
         Parameters
         ----------
-        dt_nodes_depth : :obj:`np.ndarray`
-            Tree depth from ``dt_nodes_depth`` method.
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
+            The DT model.
 
-        non_leaf_nodes : :obj:`np.ndarray`
-            Array referencing the non-leaf nodes of the DT model.
+        dt_node_depths : :obj:`np.ndarray`, optional
+            Depth of every DT model node. Argument used to take advantage of
+            precomputations.
+
+        non_leaf_nodes : :obj:`np.ndarray`, optional
+            Boolean array with value True if a node is non-leaf. Argument used
+            to take advantage of precomputations.
 
         Returns
         -------
@@ -512,15 +653,24 @@ class MFEModelBased:
            Collaboration Aspects of Data Mining, Decision Support and
            Meta-Learning(IDDM), pages 111 – 122, 2002a.
         """
-        non_leaf_depths = dt_nodes_depth[non_leaf_nodes]
+        if non_leaf_nodes is None:
+            non_leaf_nodes = cls._get_nonleaf_node_array(dt_model)
+
+        if dt_node_depths is None:
+            dt_node_depths = cls._calc_dt_node_depths(dt_model)
+
+        non_leaf_depths = dt_node_depths[non_leaf_nodes]
 
         _, node_num_per_level = np.unique(non_leaf_depths, return_counts=True)
 
         return node_num_per_level
 
     @classmethod
-    def ft_nodes_repeated(cls, dt_info_table: np.ndarray,
-                          non_leaf_nodes: np.ndarray) -> np.ndarray:
+    def ft_nodes_repeated(
+            cls,
+            dt_model: sklearn.tree.DecisionTreeClassifier,
+            dt_info_table: t.Optional[np.ndarray] = None,
+            non_leaf_nodes: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the number of repeated nodes in DT model.
 
         The number of repeated nodes is the number of repeated attributes
@@ -528,11 +678,17 @@ class MFEModelBased:
 
         Parameters
         ----------
-        dt_info_table : :obj:`np.ndarray`
-            DT model properties table.
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
+            The DT model.
 
-        non_leaf_nodes : :obj:`np.ndarray`
-            Array referencing the non-leaf nodes of the DT model.
+        dt_info_table : :obj:`np.ndarray`, optional
+            DT model properties table calculated with ``extract_table`` method.
+            Check its documentation for more information. Argument used to
+            take advantage of precomputations.
+
+        non_leaf_nodes : :obj:`np.ndarray`, optional
+            Boolean array with value True if a node is non-leaf. Argument used
+            to take advantage of precomputations.
 
         Returns
         -------
@@ -545,6 +701,12 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
+        if non_leaf_nodes is None:
+            non_leaf_nodes = cls._get_nonleaf_node_array(dt_model)
+
+        if dt_info_table is None:
+            dt_info_table = cls.extract_table(dt_model)
+
         nodes_attr_ids = dt_info_table[non_leaf_nodes, 0]
 
         _, attr_counts = np.unique(nodes_attr_ids, return_counts=True)
@@ -579,17 +741,25 @@ class MFEModelBased:
         return dt_model.feature_importances_
 
     @classmethod
-    def ft_tree_imbalance(cls, leaf_nodes: np.ndarray,
-                          dt_nodes_depth: np.ndarray) -> np.ndarray:
+    def ft_tree_imbalance(
+            cls,
+            dt_model: sklearn.tree.DecisionTreeClassifier,
+            leaf_nodes: t.Optional[np.ndarray] = None,
+            dt_node_depths: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the tree imbalance for each leaf node.
 
         Parameters
         ----------
-        leaf_nodes : :obj:`np.ndarray`
-            Array referencing the leaf nodes of the DT model.
+        dt_model : :obj:`sklearn.tree.DecisionTreeClassifier`
+            The DT model.
 
-        dt_nodes_depth : :obj:`np.ndarray`
-            Tree depth from ``dt_nodes_depth`` method.
+        leaf_nodes : :obj:`np.ndarray`, optional
+            Boolean array with value True if a node is a leaf. Argument
+            used to take advantage of precomputations.
+
+        dt_node_depths : :obj:`np.ndarray`, optional
+            Depth of every DT model node. Argument used to take advantage
+            of precomputations.
 
         Returns
         -------
@@ -602,8 +772,15 @@ class MFEModelBased:
             A higher-order approachto meta-learning. In 10th International
             Conference Inductive Logic Programming (ILP), pages 33 – 42, 2000.
         """
-        leaf_depths = dt_nodes_depth[leaf_nodes]
+        if leaf_nodes is None:
+            leaf_nodes = cls._get_leaf_node_array(dt_model)
+
+        if dt_node_depths is None:
+            dt_node_depths = cls._calc_dt_node_depths(dt_model)
+
+        leaf_depths = dt_node_depths[leaf_nodes]
         prob_random_arrival = np.power(2.0, -leaf_depths)
         aux = np.power(2.0, -np.multiply(
             *np.unique(prob_random_arrival, return_counts=True)))  # np.ndarray
+
         return -aux * np.log2(aux)

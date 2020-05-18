@@ -3,6 +3,7 @@ import pytest
 import typing as t
 
 import numpy as np
+import sklearn.tree
 
 from pymfe import _internal
 from pymfe.mfe import MFE
@@ -296,6 +297,51 @@ class TestArchitecture:
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
+    def test_extract_from_model(self):
+        X, y = utils.load_xy(2)
+
+        model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
+            X.values, y.values)
+
+        mtf_name, mtf_vals = MFE(random_state=1234).extract_from_model(model)
+
+        extractor = MFE(groups="model-based", random_state=1234)
+        extractor.fit(X=X.values, y=y.values, transform_num=False)
+        mtf_name2, mtf_vals2 = extractor.extract()
+
+        assert (np.all(mtf_name == mtf_name2)
+                and np.allclose(mtf_vals, mtf_vals2))
+
+    def test_extract_from_model_invalid1(self):
+        X, y = utils.load_xy(2)
+
+        model = sklearn.tree.DecisionTreeRegressor().fit(X.values, y.values)
+
+        with pytest.raises(TypeError):
+            MFE().extract_from_model(model)
+
+    def test_extract_from_model_invalid2(self):
+        X, y = utils.load_xy(2)
+
+        model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
+            X.values, y.values)
+
+        with pytest.raises(KeyError):
+            MFE().extract_from_model(model, arguments_fit={"dt_model": model})
+
+    def test_extract_from_model_invalid3(self):
+        model = sklearn.tree.DecisionTreeClassifier()
+
+        with pytest.raises(RuntimeError):
+            MFE().extract_from_model(model)
+
+    def test_extract_from_model_invalid4(self):
+        X, y = utils.load_xy(2)
+
+        model = sklearn.tree.DecisionTreeClassifier().fit(X, y)
+
+        with pytest.raises(ValueError):
+            MFE(groups="general").extract_from_model(model)
 
 class TestArchitectureWarnings:
     def test_feature_warning1(self):
