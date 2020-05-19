@@ -1464,9 +1464,7 @@ def _equal_freq_discretization(data: np.ndarray,
                                num_bins: int,
                                tol: float = 1e-8) -> np.ndarray:
     """Discretize a 1-D numeric array into an equal-frequency histogram."""
-    perc_interval = 100.0 / num_bins
-    perc_range = np.arange(perc_interval, 100, perc_interval)
-    hist_divs = np.percentile(data, perc_range)
+    hist_divs = np.quantile(data, np.linspace(0, 1, num_bins + 1)[:-1])
 
     # Sometimes the 'hist_divs' is not appropriated.
     # For example when all values are constants. It implies in 'hist_divs'
@@ -1474,13 +1472,15 @@ def _equal_freq_discretization(data: np.ndarray,
     # To avoid partitions with the same value, we check if all partitions are
     # different. Unfortunately, it leads to a non-equal frequency
     # discretization.
-    aux = len(hist_divs)
-    diffs = np.append(True, np.diff(hist_divs))
-    hist_divs = hist_divs[diffs > tol]
-    if aux != len(hist_divs):
+    prev_size = hist_divs.size
+
+    hist_divs = hist_divs[np.append(True, np.diff(hist_divs) > tol)]
+
+    if prev_size != hist_divs.size:
         warnings.warn("It is not possible make equal discretization")
 
     hist_divs = np.unique(hist_divs)
+
     return np.digitize(x=data, bins=hist_divs, right=True)
 
 
