@@ -61,7 +61,7 @@ class MFEInfoTheory:
         Parameters
         ----------
         y : :obj:`np.ndarray`, optional
-            The target attribute vector.
+            Target attribute.
 
         kwargs:
             Additional arguments. May have previously precomputed before this
@@ -96,10 +96,10 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         class_freqs : :obj:`np.ndarray`, optional
             Absolute frequency of each distinct class in ``y``.
@@ -113,7 +113,7 @@ class MFEInfoTheory:
         -------
         :obj:`dict`
             With following precomputed items:
-                - ``class_ent`` (:obj:`float`): Shannon's Entropy of ``y``, if
+                - ``class_ent`` (float): Shannon's Entropy of ``y``, if
                   it is not :obj:`NoneType`.
                 - ``attr_ent`` (:obj:`np.ndarray`): Shannon's Entropy of each
                   attribute in ``C``, if it is not :obj:`NoneType`.
@@ -176,7 +176,7 @@ class MFEInfoTheory:
                         vec_x: np.ndarray,
                         vec_y: np.ndarray,
                         epsilon: float = 1.0e-8) -> float:
-        """Compute joint entropy between vectorx ``x`` and ``y``."""
+        """Compute joint entropy between ``vec_x`` and ``vec_y``."""
         joint_prob_mat = pd.crosstab(
             vec_y, vec_x, normalize=True).values + epsilon
 
@@ -190,7 +190,8 @@ class MFEInfoTheory:
                    vec_x: np.ndarray,
                    vec_y: np.ndarray,
                    epsilon: float = 1.0e-8) -> float:
-        """Concentration coefficient between two arrays ``vec_x`` and ``vec_y``.
+        """Concentration coefficient between two arrays ``vec_x`` and
+        ``vec_y``.
 
         Used for methods ``ft_class_conc`` and ``ft_attr_conc``.
         """
@@ -213,7 +214,7 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         max_attr_num : int, optional
             Maximum number of attributes considered. If ``C`` has more
@@ -269,14 +270,14 @@ class MFEInfoTheory:
 
             H(x) = - sum_{val in phi_x}(P(x = val) * log2(P(x = val))
 
-        Where ``phi_x`` is a set of all possible distinct values in vector
-        ``x`` and P(x = val) is the probability of x assume some value ``val``
-        in phi_x.
+        Where `phi_x` is a set of all possible distinct values in vector
+        `x` and P(x = val) is the probability of x assume some value `val`
+        in `phi_x`.
 
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         attr_ent : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
@@ -305,10 +306,10 @@ class MFEInfoTheory:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         Returns
         -------
@@ -336,14 +337,14 @@ class MFEInfoTheory:
 
             H(y) = - sum_{val in phi_y}(P(y = val) * log2(P(y = val))
 
-        Where ``phi_y`` is a set of all possible distinct values in vector
-        ``y`` and P(y = val) is the probability of y assume some value ``val``
-        in phi_y.
+        Where `phi_y` is a set of all possible distinct values in vector
+        ``y`` and P(y = val) is the probability of y assume some value `val`
+        in `phi_y`.
 
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         class_ent : float, optional
             Entropy of the target attribute ``y``. Used to explot
@@ -357,7 +358,7 @@ class MFEInfoTheory:
 
         Returns
         -------
-        :obj:`float`
+        float
             Entropy of the target attribute.
 
         References
@@ -385,16 +386,16 @@ class MFEInfoTheory:
             E = attr_num * (H(y) / sum_x(MI(x, y)))
 
         Where H(y) is the Shannon's Entropy of the target attribute and MI(x,y)
-        is the Mutual Information between the predictive attribute ``x`` and
+        is the Mutual Information between the predictive attribute `x` and
         target attribute ``y``.
 
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         class_ent : float, optional
             Entropy of the target attribute ``y``. Used to explot
@@ -415,7 +416,7 @@ class MFEInfoTheory:
 
         Returns
         -------
-        :obj:`float`
+        float
             Estimated number of equivalent predictive attributes.
 
         References
@@ -441,27 +442,27 @@ class MFEInfoTheory:
                      joint_ent: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the joint entropy between each attribute and class.
 
-        The Joint Entropy H between a predictive attribute x and target attri-
-        bute ``y`` is defined as:
+        The Joint Entropy H between a predictive attribute x and target
+        attribute ``y`` is defined as:
 
             H(x, y) = - sum_{phi_x}(sum_{phi_y}(p_i_j * log2(p_i_j)))
 
-        Where ``phi_x`` and ``phi_y`` are sets of possible distinct values for,
-        respectively, ``x`` and ``y`` and ``p_i_j`` is defined as:
+        Where `phi_x` and `phi_y` are sets of possible distinct values for,
+        respectively, `x` and ``y`` and `p_i_j` is defined as:
 
             p_i_j = P(x = phi_x_i, y = phi_y_j)
 
-        That is, ``p_i_j`` is the joint probability of ``x`` to assume a speci-
-        fic value ``i`` in the set ``phi_x`` simultaneously with ``y`` assuming
-        a specific value ``j`` in the set ``phi_y``.
+        That is, `p_i_j` is the joint probability of `x` to assume a specific
+        value `i` in the set `phi_x` simultaneously with ``y`` assuming a
+        specific value `j` in the set `phi_y`.
 
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         joint_ent : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
@@ -496,23 +497,23 @@ class MFEInfoTheory:
                    class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
         """Compute the mutual information between each attribute and target.
 
-        The mutual Information MI between an independent attribute ``x`` and
+        The mutual Information MI between an independent attribute `x` and
         target attribute ``y`` is defined as:
 
             MI(x, y) = H(x) + H(y) - H(x, y)
 
-        Where H(x) and H(y) are, respectively, the Shannon's Entropy (see do-
-        dumentation of `ft_attr_ent`` or ``ft_class_ent`` for more informati-
-        on) for ``x`` and ``y`` and H(x, y) is the joint entropy between ``x``
-        and ``y`` (see ``ft_joint_ent`` documentation more details).
+        Where H(x) and H(y) are, respectively, the Shannon's Entropy (see the
+        documentation of ``ft_attr_ent`` or ``ft_class_ent`` for more
+        information) for `x` and ``y`` and H(x, y) is the joint entropy of
+        `x` and ``y`` (see ``ft_joint_ent`` documentation more details.)
 
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         mut_inf : :obj:`np.ndarray`, optional
             This argument is this method own return value, meant to exploit
@@ -524,7 +525,7 @@ class MFEInfoTheory:
             :obj:`NoneType`, this argument is calculated using ``ft_attr_ent``
             method.
 
-        class_ent : :obj:`float`, optional
+        class_ent : float, optional
             Entropy of the target attribute ``y``. Used to explot
             precomputations. If :obj:`NoneType`, this argument is calculated
             using the method ``ft_class_ent``.
@@ -571,22 +572,22 @@ class MFEInfoTheory:
                     mut_inf: t.Optional[np.ndarray] = None) -> float:
         """Compute the noisiness of attributes.
 
-        Let ``y`` be a target attribute and ``x`` one predictive attribute in
+        Let ``y`` be a target attribute and `x` one predictive attribute in
         a dataset ``N``. Noisiness ``N`` is defined as:
 
             N = (sum_x(attr_entropy(x)) - sum_x(MI(x, y))) / sum_x(MI(x, y))
 
         where MI(x, y) is the mutual information between target attribute ``y``
-        and predictive attribute ``x``, and all ``sum`` is performed for all
-        distinct ``x`` in ``N``.
+        and predictive attribute `x`, and all `sum` is performed over each
+        distinct attribute `x` in ``N``.
 
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Categorical attributes from fitted data.
+            Categorical fitted data.
 
         y : :obj:`np.ndarray`
-            The target attribute vector.
+            Target attribute.
 
         attr_ent : :obj:`np.ndarray`, optional
             Values of each attribute entropy in ``N``. This argument purpose is
@@ -603,7 +604,7 @@ class MFEInfoTheory:
 
         Returns
         -------
-        :obj:`float`
+        float
             Estimated noisiness of the predictive attributes.
 
         References
