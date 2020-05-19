@@ -65,7 +65,7 @@ class MFEStatistical:
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
+        y : :obj:`np.ndarray`
             The target attribute from fitted data.
 
         kwargs:
@@ -102,10 +102,10 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`, optional
-            Numerical attributes from fitted data.
+            Numerical fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute.
 
         kwargs:
             Additional arguments. May have previously precomputed before this
@@ -145,7 +145,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`, optional
-            Numerical attributes from fitted data.
+            Numerical fitted data.
 
         ddof : int, optional
             Degrees of freedom of covariance matrix.
@@ -260,12 +260,12 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute.
 
-        can_cors: :obj:`np.ndarray`, optional
+        can_cors : :obj:`np.ndarray`, optional
             Canonical correlations between ``N`` and the one-hot encoded
             version of ``y``. Argument used to take advantage of
             precomputations.
@@ -305,12 +305,12 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute.
 
-        norm_ord : :obj:`numeric`
+        norm_ord : :obj:`numeric`, optional
             Minkowski Distance parameter. Minkowski Distance has the following
             popular cases for this argument value
 
@@ -342,7 +342,7 @@ class MFEStatistical:
 
         Returns
         -------
-        :obj:`float`
+        float
             Gravity of the numeric dataset.
 
         Raises
@@ -393,7 +393,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         abs_corr_mat : :obj:`np.ndarray`, optional
             Absolute correlation matrix of ``N``. Argument used to exploit
@@ -440,9 +440,9 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        ddof : :obj:`int`, optional
+        ddof : int, optional
             Degrees of freedom for covariance matrix.
 
         cov_mat : :obj:`np.ndarray`, optional
@@ -492,10 +492,10 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute.
 
         can_cors : :obj:`np.ndarray`, optional
             Canonical correlations between ``N`` and the one-hot encoded
@@ -504,7 +504,7 @@ class MFEStatistical:
 
         Returns
         -------
-        :obj:`int` | :obj:`float`
+        int or float
             Number of canonical correlations between each attribute and
             class, if ``ft_can_cor`` is executed successfully. Returns
             :obj:`np.nan` otherwise.
@@ -531,9 +531,9 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        ddof : :obj:`int`, optional
+        ddof : int, optional
             Degrees of freedom for covariance matrix.
 
         cov_mat : :obj:`np.ndarray`, optional
@@ -572,13 +572,13 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        allow_zeros : :obj:`bool`
+        allow_zeros : :obj:`bool`, optional
             If True, then the geometric mean of all attributes with zero values
             is set to zero. Otherwise, is set to :obj:`np.nan` these values.
 
-        epsilon : :obj:`float`
+        epsilon : float, optional
             A small value which all values with absolute value lesser than it
             is considered zero-valued. Used only if ``allow_zeros`` is False.
 
@@ -623,9 +623,9 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        epsilon : :obj:`float`, optional
+        epsilon : float, optional
             A tiny value to prevent division by zero.
 
         Returns
@@ -652,7 +652,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         Returns
         -------
@@ -675,7 +675,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         method : int, optional
             Defines the strategy used for estimate data kurtosis. Used for
@@ -685,24 +685,24 @@ class MFEStatistical:
             +--------+-----------------------------------------------+
             |Option  | Formula                                       |
             +--------+-----------------------------------------------+
-            |1       | Kurt_1 = m_4 / m_2**2 - 3                     |
-            |        | (default of ``scipy.stats``)                  |
+            |1       | Kurt_1 = (m_4 / m_2**2 - 3)                   |
+            |        | (default of `scipy.stats` package)            |
             +--------+-----------------------------------------------+
-            |2       | Kurt_2 = ((n+1) * Kurt_1 + 6) * (n-1) / f_2   |
+            |2       | Kurt_2 = (((n+1) * Kurt_1 + 6) * (n-1) / f_2),|
             |        | f_2 = ((n-2)*(n-3))                           |
             +--------+-----------------------------------------------+
-            |3       | Kurt_3 = m_4 / s**4 - 3                       |
-            |        |        = (Kurt_1+3) * (1 - 1/n)**2 - 3        |
+            |3       | Kurt_3 = (m_4 / s**4 - 3)                     |
+            |        |        = ((Kurt_1+3) * (1 - 1/n)**2 - 3)      |
             +--------+-----------------------------------------------+
 
-            Where ``n`` is the number of elements in ``values``, ``s`` is
-            the standard deviation of ``values`` and ``m_i`` is the ith
-            statistical momentum of ``values``.
+            Where `n` is the number of instances in ``N``, `s` is the standard
+            deviation of each attribute in ``N``, and `m_i` is the ith
+            statistical momentum of each attribute in ``N``.
 
             Note that if the selected method is unable to be calculated due
             to division by zero, then the first method is used instead.
 
-        bias : bool
+        bias : bool, optional
             If False, then the calculations are corrected for statistical bias.
 
         Returns
@@ -732,9 +732,9 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        factor : :obj:`float`
+        factor : float, optional
             Multiplication factor for output correction. The default ``factor``
             is 1.4826 since it is an approximated result of MAD of a normally
             distributed data (with any mean and standard deviation of 1.0), so
@@ -760,7 +760,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         Returns
         -------
@@ -783,7 +783,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         Returns
         -------
@@ -806,7 +806,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         Returns
         -------
@@ -829,7 +829,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         Returns
         -------
@@ -861,7 +861,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         threshold : float, optional
             A value of the threshold, where correlation is assumed to be strong
@@ -869,7 +869,7 @@ class MFEStatistical:
 
         normalize : bool, optional
             If True, the result is normalized by a factor of 2/(d*(d-1)), where
-            ``d`` is number of attributes (columns) in ``N``.
+            `d` is number of attributes (columns) in ``N``.
 
         abs_corr_mat : :obj:`np.ndarray`, optional
             Absolute correlation matrix of ``N``. Argument used to exploit
@@ -877,7 +877,7 @@ class MFEStatistical:
 
         Returns
         -------
-        :obj:`int` | :obj:`float`
+        int | float
             If ``normalize`` is False, this method returns the number of
             highly correlated pair of distinct attributes. Otherwise,
             return the proportion of highly correlated attributes.
@@ -912,24 +912,24 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         method : str, optional
             Select the normality test to be executed. This argument must assume
             one of the options shown below:
 
-            - shapiro-wilk: directly from `shapiro`_: the Shapiro-Wilk
-              test tests the null hypothesis that the data was drawn from a
-              normal distribution.
+            - shapiro-wilk: from `scipy.stats.shapiro` documentation: the
+              Shapiro-Wilk test tests the null hypothesis that the data was
+              drawn from a normal distribution.
 
-            - dagostino-pearson: directly from `normaltest`_: It is based
-              on D'Agostino and Pearson's, test that combines skew and kurtosis
-              to produce an omnibus test of normality.
+            - dagostino-pearson: from `scipy.stats.normaltest` documentation:
+              It is based on D'Agostino and Pearson's, test that combines skew
+              and kurtosis to produce an omnibus test of normality.
 
-            - anderson-darling: directly from `anderson`_: The
-              Ander-son-Darling tests the null hypothesis that a sample is
+            - anderson-darling: from `scipy.stats.anderson` documentation: The
+              Anderson-Darling tests the null hypothesis that a sample is
               drawn from a population that follows a particular distribution.
-              In this method context, that ``particular distribution`` is fixed
+              In this method context, that `particular distribution` is fixed
               in the normal/gaussian.
 
             - all: perform all tests cited above. To consider an attribute
@@ -941,14 +941,14 @@ class MFEStatistical:
             normality tests.
 
         failure : str, optional
-            Used only if ``method`` argument value is ``all``. This argument
-            must assumed one value between ``soft`` or ``hard``. If ``soft``,
-            then if a single test can`t have its null hypothesis
-            (of the normal/Gaussian distribution of the attribute data)
-            rejected for some attribute, then that attribute is considered
-            normally distributed. If ``hard``, then is necessary the rejection
-            of the null hypothesis of every single normality test to consider
-            the attribute normally distributed.
+            Used only if ``method`` argument value is `all`. This argument
+            must assumed one value between `soft` or `hard`. If `soft`, then if
+            a single test have its null hypothesis (which all states the data
+            follows a Guassian distribution) rejected for some attribute, then
+            that attribute is already considered normally distributed. If value
+            is `hard`, then is necessary the rejection of the null hypothesis
+            of every single normality test to consider the attribute normally
+            distributed.
 
         max_samples : int, optional
             Max samples used while performing the normality tests.
@@ -960,7 +960,7 @@ class MFEStatistical:
 
         Returns
         -------
-        :obj:`int`
+        int
             The number of normally distributed attributes based on the
             ``method``. If ``max_samples`` is non-positive, :obj:`np.nan`
             is returned instead.
@@ -969,12 +969,6 @@ class MFEStatistical:
         ------
         ValueError
             If ``method`` or ``failure`` is not a valid option.
-
-        Notes
-        -----
-            .. _shapiro: :obj:`scipy.stats.shapiro` documentation.
-            .. _normaltest: :obj:`scipy.stats.normaltest` documentation.
-            .. _anderson: :obj:`scipy.stats.anderson` documentation.
 
         References
         ----------
@@ -1052,14 +1046,14 @@ class MFEStatistical:
         An attribute has outlier if some value is outside the closed interval
         [first_quartile - WHIS * IQR, third_quartile + WHIS * IQR], where IQR
         is the Interquartile Range (third_quartile - first_quartile), and WHIS
-        value is typically ``1.5``.
+        value is typically `1.5`.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        whis : float
+        whis : float, optional
             A factor to multiply IQR and set up non-outlier interval
             (as stated above). Higher values make the interval more
             significant, thus increasing the tolerance against outliers, where
@@ -1068,7 +1062,7 @@ class MFEStatistical:
 
         Returns
         -------
-        :obj:`int`
+        int
             Number of attributes with at least one outlier.
 
         References
@@ -1098,7 +1092,7 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         Returns
         -------
@@ -1120,9 +1114,9 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        ddof : float
+        ddof : float, optional
             Degrees of freedom for standard deviation.
 
         Returns
@@ -1157,10 +1151,10 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute.
 
         ddof : int, optional
             Degrees of freedom for covariance matrix, calculated during this
@@ -1177,7 +1171,7 @@ class MFEStatistical:
 
         Returns
         -------
-        :obj:`float`
+        float
             Homogeneity of covariances test result.
 
         Notes
@@ -1274,11 +1268,11 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        method : :obj:`int`, optional
+        method : int, optional
             Defines the strategy used for estimate data skewness. This argument
-            is used fo compatibility with R package ``e1071``. The options must
+            is used fo compatibility with R package `e1071`. The options must
             be one of the following:
 
             +--------+-----------------------------------------------+
@@ -1292,9 +1286,9 @@ class MFEStatistical:
             |3       | Skew_3 = m_3 / s**3 = Skew_1 ((n-1)/n)**(3/2) |
             +--------+-----------------------------------------------+
 
-            Where ``n`` is the number of elements in dataset, ``m_i`` is the
-            ith momentum of the attribute, and ``s`` is the standard deviation
-            of the attribute.
+            Where `n` is the number of instances in ``N``, `s` is the standard
+            deviation of each attribute in ``N``, and `m_i` is the ith
+            statistical momentum of each attribute in ``N``.
 
             Note that if the selected method is unable to be calculated due to
             division by zero, then the first method will be used instead.
@@ -1326,22 +1320,22 @@ class MFEStatistical:
     def ft_sparsity(cls, X: np.ndarray, normalize: bool = True) -> np.ndarray:
         """Compute (possibly normalized) sparsity metric for each attribute.
 
-        Sparsity ``S`` of a vector ``v`` of numeric values is defined as
+        Sparsity `S` of a vector `v` of numeric values is defined as
 
             S(v) = (1.0 / (n - 1.0)) * ((n / phi(v)) - 1.0),
 
         where
-            - ``n`` is the number of instances in dataset ``X``.
-            - ``phi(v)`` is the number of distinct values in ``v``.
+            - `n` is the number of instances in dataset ``X``.
+            - `phi(v)` is the number of distinct values in `v`.
 
         Parameters
         ----------
         X : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
         normalize : bool, optional
             If True, then the output will be S(v) as shown above. Otherwise,
-            the output is not be multiplied by the ``(1.0 / (n - 1.0))`` factor
+            the output is not be multiplied by the `(1.0 / (n - 1.0))` factor
             (i.e. new output is defined as S'(v) = ((n / phi(v)) - 1.0)).
 
         Returns
@@ -1372,10 +1366,10 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        pcut : float
-            Percentage of cut from both the ``lower`` and ``higher`` values.
+        pcut : float, optional
+            Percentage of cut from both the `lower` and `higher` values.
             This value should be in interval [0.0, 0.5), where if 0.0 the
             return value is the default mean calculation. If this argument is
             not in mentioned interval, then the return value is :obj:`np.nan`
@@ -1405,9 +1399,9 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        ddof : float
+        ddof : float, optional
             Degrees of freedom for variance.
 
         Returns
@@ -1438,11 +1432,11 @@ class MFEStatistical:
 
             L = prod(1.0 / (1.0 + can_cor_eig_i))
 
-        Where ``can_cor_eig_i`` is the ith eigenvalue related to the ith
-        canonical correlation ``can_cor_i`` between the attributes in ``N``
+        Where `can_cor_eig_i` is the ith eigenvalue related to the ith
+        canonical correlation `can_cor_i` between the attributes in ``N``
         and the binarized (one-hot encoded) version of ``y``.
 
-        The relationship between ``can_cor_eig_i`` and ``can_cor_i`` is
+        The relationship between `can_cor_eig_i` and `can_cor_i` is
         given by:
 
             can_cor_i = sqrt(can_cor_eig_i / (1 + can_cor_eig_i))
@@ -1454,16 +1448,16 @@ class MFEStatistical:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Fitted numerical data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute.
 
         can_cor_eigvals : :obj:`np.ndarray`, optional
             Eigenvalues associated with the canonical correlations of
             ``N`` and one-hot encoded ``y``. This argument is used to
             exploit precomputations. The relationship between the ith
-            canonical correlation ``can_cor_i`` and its eigenvalue is:
+            canonical correlation `can_cor_i` and its eigenvalue is:
 
                 can_cor_i = sqrt(can_cor_eigval_i / (1 + can_cor_eigval_i))
 
@@ -1478,7 +1472,7 @@ class MFEStatistical:
 
         Returns
         -------
-        :obj:`float`
+        float
             Wilk's lambda value.
 
         References

@@ -7,6 +7,8 @@ import time
 
 import texttable
 import numpy as np
+import sklearn.utils
+import sklearn.exceptions
 
 import pymfe._internal as _internal
 
@@ -837,6 +839,7 @@ class MFE:
             wildcard: str = "all",
             suppress_warnings: bool = False,
             verbose: int = 0,
+            **kwargs,
             ) -> "MFE":
         """Fits dataset into an MFE model.
 
@@ -938,6 +941,17 @@ class MFE:
             higher, then log every step of the fitted data transformations and
             the precomputation steps.
 
+        **kwargs:
+            Extra custom arguments to the precomputation methods. Keep in
+            mind that those values may even replace internal custom parameters,
+            if the name matches. Use this resource carefully.
+
+            Hint: you can check which are the internal custom arguments by
+            verifying the values in '._custom_args_ft' attribute after the
+            model is fitted.
+
+            This argument format is {'parameter_name': parameter_value}.
+
         Returns
         -------
         self
@@ -1017,7 +1031,7 @@ class MFE:
             wildcard=wildcard,
             suppress_warnings=suppress_warnings,
             verbose=verbose,
-            **self._custom_args_ft)
+            **{**self._custom_args_ft, **kwargs})
 
         self.time_precomp = time.time() - _time_start
 
@@ -1100,7 +1114,7 @@ class MFE:
         Returns
         -------
         :obj:`tuple`(:obj:`list`, :obj:`list`)
-            A tuple containing two lists.
+            A tuple containing two lists (if ``measure_time`` is None.)
 
             The first field is the identifiers of each summarized value in the
             form ``feature_name.summary_mtd_name`` (i.e., the feature
@@ -1118,6 +1132,10 @@ class MFE:
                 is the return value for the feature ``attr_end`` summarized by
                 both ``mean`` and ``sd`` (standard deviation), giving the valu-
                 es ``0.983`` and ``0.344``, respectively.
+
+            if ``measure_time`` is given during the model instantiation, a
+            third list will be returned with the time spent during the
+            calculations for the corresponding (by index) metafeature.
 
         Raises
         ------
@@ -1206,6 +1224,122 @@ class MFE:
             return res_names, res_vals, res_times
 
         return res_names, res_vals
+
+    def extract_from_model(
+            self,
+            model: t.Any,
+            arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
+            arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
+            verbose: int = 0,
+    ) -> t.Tuple[t.Sequence, ...]:
+        """Extract model-based metafeatures from given model.
+
+        The random seed used by the new internal model is the same random
+        seed set in the current model (if any.)
+
+        The metafeatures extracted will be all metafeatures selected
+        originally in the current model that are also in the 'model-based'
+        group.
+
+        The extracted values will be summarized also with the summary
+        functions selected originally in this model.
+
+        Parameters
+        ----------
+        model : any
+            Pre-fitted machine learning model.
+
+        arguments_fit : :obj:`dict`, optional
+            Custom arguments to fit the extractor model. See `.fit` method
+            documentation for more information.
+
+        arguments_extract : :obj:`dict`, optional
+            Custom arguments to extract the metafeatures. See `.extract`
+            method documentation for more information.
+
+        verbose : int, optional
+            Select the level of verbosity of this method. Please note that
+            the verbosity level of each step (`fit` and `extract`) need to
+            be given separately using, respectively, `arguments_fit` and
+            `arguments_extract` arguments.
+
+        Returns
+        -------
+        :obj:`tuple`(:obj:`list`, :obj:`list`)
+            See `.extract` method return value for more information.
+
+        Notes
+        -----
+        Internally, a new MFE model is created to perform the metafeature
+        extractions. Therefore, the current model (if any) will not be
+        affected by this method by any means.
+        """
+        if "model-based" not in self.groups:
+            raise ValueError("The current MFE model does not have the "
+                             "'model-based' metafeature group configured ("
+                             "found groups {}.) Please include it in the "
+                             "MFE model creation before using 'extract_from"
+                             "_model' method.".format(self.groups))
+
+        model_argument = _internal.type_translator.get(type(model), None)
+
+        if model_argument is None:
+            raise TypeError("'model' from type '{}' not supported. Currently "
+                            "only supporting classes: {}.".format(
+                                type(model),
+                                list(_internal.type_translator.keys())))
+
+        try:
+            sklearn.utils.validation.check_is_fitted(model)
+
+        except sklearn.exceptions.NotFittedError:
+            raise RuntimeError("Given 'model' does not have any fitted data. "
+                               "Please use its 'fit' method before using the "
+                               "model with 'extract_from_model' method.")
+
+        if arguments_fit is None:
+            arguments_fit = {}
+
+        if arguments_extract is None:
+            arguments_extract = {}
+
+        if model_argument in arguments_fit:
+            raise KeyError("Illegal argument '{}' in 'arguments_fit' (used "
+                           "internally by '.extract_from_model' method.)"
+                           "".format(model_argument))
+
+        _fts = set(self.features).intersection(
+            MFE.valid_metafeatures(groups="model-based"))
+
+        if verbose >= 1:
+            print("Selected features from 'model-based' group:")
+
+            for ft_name in _fts:
+                print(" {} {}".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL, ft_name))
+
+            print("Total of {} 'model-based' metafeature method candidates."
+                  .format(len(_fts)))
+
+            print("Started extraction from model.")
+
+        _extractor = MFE(
+            features=_fts,
+            groups="model-based",
+            summary=self.summary,
+            measure_time=self.timeopt,
+            random_state=self.random_state).fit(
+                X=[1],
+                y=None, transform_num=False,
+                **{model_argument: model},
+                **arguments_fit)
+
+        res = _extractor.extract(**arguments_extract)
+
+        if verbose >= 1:
+            print("Finished extracting metafeatures from model.")
+
+        return res
 
     @classmethod
     def valid_groups(cls) -> t.Tuple[str, ...]:
