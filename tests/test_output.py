@@ -1,5 +1,6 @@
 """Test module for MFE class output details."""
 import pytest
+import sklearn.tree
 
 import pymfe._internal as _internal
 from pymfe.mfe import MFE
@@ -76,7 +77,7 @@ class TestOutput:
 
         captured = capsys.readouterr().out
 
-        assert (not msg_expected) or captured
+        assert ((not msg_expected) and (not captured)) or (msg_expected and captured)
 
     def test_verbosity_2(self, capsys):
         X, y = load_xy(0)
@@ -99,4 +100,19 @@ class TestOutput:
 
         captured = capsys.readouterr().out
 
-        assert (not msg_expected) or captured
+        assert ((not msg_expected) and (not captured)) or (msg_expected and captured)
+
+    @pytest.mark.parametrize("verbosity, msg_expected", [
+        (0, False),
+        (1, True),
+    ])
+    def test_verbosity_from_model(self, verbosity, msg_expected, capsys):
+        X, y = load_xy(2)
+
+        model = sklearn.tree.DecisionTreeClassifier().fit(X.values, y.values)
+
+        MFE().extract_from_model(model, verbose=verbosity)
+
+        captured = capsys.readouterr().out
+
+        assert ((not msg_expected) and (not captured)) or (msg_expected and captured)

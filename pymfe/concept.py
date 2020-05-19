@@ -62,9 +62,9 @@ class MFEConcept:
         Parameters
         ----------
         N : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+            Numerical fitted data.
 
-        concept_dist_metric : str
+        concept_dist_metric : str, optional
             Metric used to compute distance between each pair of examples. See
             cdist from scipy for more options.
 
@@ -111,10 +111,10 @@ class MFEConcept:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute.
 
         conceptvar_alpha : float, optional
             The alpha value to adjust the weight. The higher the alpha less
@@ -184,7 +184,7 @@ class MFEConcept:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         wg_dist_alpha : float, optional
             The alpha value to adjust the weight. The higher the alpha less
@@ -249,10 +249,10 @@ class MFEConcept:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Target attribute.
 
         impconceptvar_alpha : float, optional
             The alpha value to adjust the weight. The higher the alpha less
@@ -313,7 +313,7 @@ class MFEConcept:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         cohesiveness_alpha : float, optional
             The alpha value to adjust the weight. The higher the alpha less
