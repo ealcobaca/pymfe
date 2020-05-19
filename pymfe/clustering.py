@@ -358,14 +358,14 @@ class MFEClustering:
 
             cls_inds = _utils.calc_cls_inds(y=y, classes=classes)
 
-        interclass_dists = np.array([
+        interclass_dists = [
             cls._calc_normalized_interclass_dist(
                 N[cls_inds[id_cls_a, :], :],
                 N[cls_inds[id_cls_b, :], :],
                 dist_metric=dist_metric)
             for id_cls_a, id_cls_b in itertools.combinations(
                 np.arange(cls_inds.shape[0]), 2)
-        ])
+        ]
 
         return interclass_dists
 
@@ -567,7 +567,12 @@ class MFEClustering:
                 classes=classes,
                 cls_inds=cls_inds).max()
 
-        vdu = pairwise_norm_interclass_dist.min() / intraclass_dists.max()
+        _min_interclass_dist = np.inf
+
+        for vals in pairwise_norm_interclass_dist:
+            _min_interclass_dist = min(_min_interclass_dist, np.min(vals))
+
+        vdu = _min_interclass_dist / intraclass_dists.max()
 
         return vdu
 
@@ -668,7 +673,12 @@ class MFEClustering:
 
         norm_factor = 2.0 / (class_num * (class_num - 1.0))
 
-        return pairwise_norm_interclass_dist.sum() * norm_factor
+        _sum_interclass_dist = 0.0
+
+        for vals in pairwise_norm_interclass_dist:
+            _sum_interclass_dist += np.sum(vals)
+
+        return _sum_interclass_dist * norm_factor
 
     @classmethod
     def ft_sil(cls,

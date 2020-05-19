@@ -57,7 +57,6 @@ class MFEComplexity:
     computed in module ``statistical`` can freely be used for any
     precomputation or feature extraction method of module ``landmarking``).
     """
-
     @classmethod
     def precompute_complexity(cls, y: t.Optional[np.ndarray] = None,
                               **kwargs) -> t.Dict[str, t.Any]:
@@ -170,25 +169,39 @@ class MFEComplexity:
         return np.asarray(list(ovo_comb), dtype=int)
 
     @staticmethod
-    def _calc_minmax(N: np.ndarray, cls_1: np.ndarray,
-                     cls_2: np.ndarray) -> np.ndarray:
+    def _calc_minmax(N_cls_1: np.ndarray, N_cls_2: np.ndarray) -> np.ndarray:
         """Compute the minimum of the maximum values per class for all feat.
 
         The index i indicate the minmax of feature i.
         """
-        minmax = np.min(
-            (np.max(N[cls_1, :], axis=0), np.max(N[cls_2, :], axis=0)), axis=0)
+        if N_cls_1.size == 0 or N_cls_2.size == 0:
+            # Note: if there is no two classes, the 'overlapping region'
+            # becomes ill defined. Thus, returning '-np.inf' alongside
+            # '_calc_maxmin()' returning '+np.inf' guarantees that no
+            # example will remain into the (undefined) 'overlapping region.'
+            return -np.inf
+
+        minmax = np.min((np.max(N_cls_1, axis=0), np.max(N_cls_2, axis=0)),
+                        axis=0)
+
         return minmax
 
     @staticmethod
-    def _calc_maxmin(N: np.ndarray, cls_1: np.ndarray,
-                     cls_2: np.ndarray) -> np.ndarray:
+    def _calc_maxmin(N_cls_1: np.ndarray, N_cls_2: np.ndarray) -> np.ndarray:
         """Compute the maximum of the minimum values per class for all feat.
 
         The index i indicate the maxmin of the ith feature.
         """
-        maxmin = np.max(
-            (np.min(N[cls_1, :], axis=0), np.min(N[cls_2, :], axis=0)), axis=0)
+        if N_cls_1.size == 0 or N_cls_2.size == 0:
+            # Note: if there is no two classes, the 'overlapping region'
+            # becomes ill defined. Thus, returning '+np.inf' alongside
+            # '_calc_minmax()' returning '-np.inf' guarantees that no
+            # example will remain into the (undefined) 'overlapping region.'
+            return np.inf
+
+        maxmin = np.max((np.min(N_cls_1, axis=0), np.min(N_cls_2, axis=0)),
+                        axis=0)
+
         return maxmin
 
     @staticmethod
@@ -261,13 +274,13 @@ class MFEComplexity:
         f3 = np.zeros(ovo_comb.shape[0], dtype=float)
 
         for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
-            cls_1 = cls_inds[cls_id_1, :]
-            cls_2 = cls_inds[cls_id_2, :]
+            N_cls_1 = N[cls_inds[cls_id_1, :], :]
+            N_cls_2 = N[cls_inds[cls_id_2, :], :]
 
             ind_less_overlap, feat_overlap_num, _ = cls._calc_overlap(
                 N=N,
-                minmax=cls._calc_minmax(N=N, cls_1=cls_1, cls_2=cls_2),
-                maxmin=cls._calc_maxmin(N=N, cls_1=cls_1, cls_2=cls_2))
+                minmax=cls._calc_minmax(N_cls_1, N_cls_2),
+                maxmin=cls._calc_maxmin(N_cls_1, N_cls_2))
 
             f3[ind] = (feat_overlap_num[ind_less_overlap] /
                        (class_freqs[cls_id_1] + class_freqs[cls_id_2]))
@@ -275,7 +288,7 @@ class MFEComplexity:
         # The measure is computed in the literature using the mean. However, it
         # is formulated here as a meta-feature. Therefore, the post-processing
         # should be used to get the mean and other measures as well.
-        return np.asarray(f3)
+        return f3
 
     @classmethod
     def ft_f4(
@@ -332,42 +345,53 @@ class MFEComplexity:
         f4 = np.zeros(ovo_comb.shape[0], dtype=float)
 
         for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
-            cls_subset_intersec = np.logical_or(cls_inds[cls_id_1, :],
-                                                cls_inds[cls_id_2, :])
+            cls_subset_union = np.logical_or(cls_inds[cls_id_1, :],
+                                             cls_inds[cls_id_2, :])
 
-            cls_1 = cls_inds[cls_id_1, cls_subset_intersec]
-            cls_2 = cls_inds[cls_id_2, cls_subset_intersec]
-            N_subset = N[cls_subset_intersec, :]
+            cls_1 = cls_inds[cls_id_1, cls_subset_union]
+            cls_2 = cls_inds[cls_id_2, cls_subset_union]
+            N_subset = N[cls_subset_union, :]
 
-            while N_subset.size > 0:
-                # True if the example is in the overlapping region
+            # Search only on remaining features, without copying any data
+            valid_attr_inds = np.arange(N_subset.shape[1])
+            N_view = N_subset[:, valid_attr_inds]
+
+            while N_view.size > 0:
+                N_cls_1, N_cls_2 = N_view[cls_1, :], N_view[cls_2, :]
+
+                # Note: 'feat_overlapped_region' is a boolean vector with
+                # True values if the example is in the overlapping region
                 ind_less_overlap, _, feat_overlapped_region = (
                     cls._calc_overlap(
-                        N=N_subset,
-                        minmax=cls._calc_minmax(N_subset, cls_1, cls_2),
-                        maxmin=cls._calc_maxmin(N_subset, cls_1, cls_2)))
+                        N=N_view,
+                        minmax=cls._calc_minmax(N_cls_1, N_cls_2),
+                        maxmin=cls._calc_maxmin(N_cls_1, N_cls_2)))
 
-                # boolean that if True, this example is in the overlapping
+                # Boolean that if True, this example is in the overlapping
                 # region
                 overlapped_region = feat_overlapped_region[:, ind_less_overlap]
 
-                # removing the non overlapped features
+                # Removing the non-overlapping instances
                 N_subset = N_subset[overlapped_region, :]
                 cls_1 = cls_1[overlapped_region]
                 cls_2 = cls_2[overlapped_region]
 
-                # removing the most efficient feature
-                N_subset = np.delete(N_subset, ind_less_overlap, axis=1)
+                # Removing the most efficient feature
+                # Note: previous versions used to delete it directly from data
+                # 'N_subset', but that procedure takes up much more memory
+                # because each 'np.delete' operation creates a new dataset.
+                valid_attr_inds = np.delete(valid_attr_inds, ind_less_overlap)
+                N_view = N_subset[:, valid_attr_inds]
 
             subset_size = N_subset.shape[0]
 
-            f4[ind] = subset_size / (
-                class_freqs[cls_id_1] + class_freqs[cls_id_2])
+            f4[ind] = subset_size / (class_freqs[cls_id_1] +
+                                     class_freqs[cls_id_2])
 
         # The measure is computed in the literature using the mean. However, it
         # is formulated here as a meta-feature. Therefore, the post-processing
         # should be used to get the mean and other measures as well.
-        return np.asarray(f4)
+        return f4
 
     @classmethod
     def ft_l2(cls,
@@ -450,7 +474,7 @@ class MFEComplexity:
         # The measure is computed in the literature using the mean. However, it
         # is formulated here as a meta-feature. Therefore, the post-processing
         # should be used to get the mean and other measures as well.
-        return np.asarray(l2)
+        return l2
 
     @classmethod
     def ft_n1(cls, N: np.ndarray, y: np.ndarray,
