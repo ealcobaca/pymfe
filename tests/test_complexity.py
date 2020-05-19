@@ -2,6 +2,7 @@
 import pytest
 
 from pymfe.mfe import MFE
+from pymfe.complexity import MFEComplexity
 from tests.utils import load_xy
 import numpy as np
 
@@ -139,3 +140,34 @@ class TestComplexity:
         value = mfe.extract()[1]
 
         assert np.allclose(value, exp_value, equal_nan=True)
+
+    @pytest.mark.parametrize("num_inst_1, num_inst_2, expected_val", (
+        (4, 0, (0, 0)),
+        (0, 5, (0, 0)),
+        (4, 6, (7, 6)),
+    ))
+    def test_overlapping_area(self, num_inst_1, num_inst_2, expected_val):
+        N_cls_1 = np.asarray([
+            [0, 0],
+            [1, 1],
+            [1, 0],
+            [0, 1],
+        ])[:num_inst_1, :]
+
+        N_cls_2 = np.asarray([
+            [2, 0.5],
+            [0.5, 0.5],
+            [0, 0],
+            [-1, -1],
+            [-1, 0],
+            [0, -1],
+        ])[:num_inst_2, :]
+
+        ind_less_overlap, feat_overlap_num, _ = (
+            MFEComplexity._calc_overlap(
+                N=np.vstack((N_cls_1, N_cls_2)),
+                minmax=MFEComplexity._calc_minmax(N_cls_1, N_cls_2),
+                maxmin=MFEComplexity._calc_maxmin(N_cls_1, N_cls_2)))
+
+        assert (ind_less_overlap == np.argmin(feat_overlap_num) and
+                np.allclose(feat_overlap_num, expected_val))
