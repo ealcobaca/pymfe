@@ -99,7 +99,18 @@ class TestOutput:
         MFE().fit(X=X.values, y=y.values).extract(verbose=verbosity)
 
         captured = capsys.readouterr().out
+        assert (not msg_expected) or captured
 
+    @pytest.mark.parametrize("verbosity, msg_expected", [
+        (0, False),
+        (1, True),
+    ])
+    def test_verbosity_with_confidence(self, verbosity, msg_expected, capsys):
+        X, y = load_xy(2)
+
+        MFE().fit(X.values, y.values).extract_with_confidence(verbose=verbosity)
+        
+        captured = capsys.readouterr().out
         assert ((not msg_expected) and (not captured)) or (msg_expected and captured)
 
     @pytest.mark.parametrize("verbosity, msg_expected", [
@@ -112,7 +123,6 @@ class TestOutput:
         model = sklearn.tree.DecisionTreeClassifier().fit(X.values, y.values)
 
         MFE().extract_from_model(model, verbose=verbosity)
-
+        
         captured = capsys.readouterr().out
-
         assert ((not msg_expected) and (not captured)) or (msg_expected and captured)

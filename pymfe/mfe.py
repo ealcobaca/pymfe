@@ -1225,6 +1225,252 @@ class MFE:
 
         return res_names, res_vals
 
+    def _extract_with_bootstrap(self,
+                                extractor: "MFE",
+                                sample_num: int,
+                                arguments_fit: t.Dict[str, t.Any],
+                                arguments_extract: t.Dict[str, t.Any],
+                                verbose: int = 0) -> t.Tuple[np.ndarray, ...]:
+        """Extract metafeatures using bootstrapping."""
+        if self.X is None:
+            raise TypeError("Fitted data not found. Please call 'fit' "
+                            "method first.")
+
+        def _handle_extract_ret(
+                res: t.Tuple[np.ndarray, ...],
+                args: t.Tuple[t.Sequence, ...],
+                it_num: int) -> t.Tuple[np.ndarray, ...]:
+            """Handle each .extraction method return value."""
+            mtf_names, mtf_vals, mtf_time = res
+
+            if not self.timeopt:
+                cur_mtf_names, cur_mtf_vals = args
+
+            else:
+                cur_mtf_names, cur_mtf_vals, cur_mtf_time = args
+
+            if mtf_names.size:
+                mtf_vals[:, it_num] = cur_mtf_vals
+
+                if self.timeopt:
+                    mtf_time += cur_mtf_time
+
+            else:
+                mtf_names = np.asarray(cur_mtf_names, dtype=str)
+                mtf_vals = np.zeros(
+                    (len(cur_mtf_vals), sample_num), dtype=float)
+                mtf_vals[:, 0] = cur_mtf_vals
+
+                if self.timeopt:
+                    mtf_time = np.asarray(cur_mtf_time, dtype=float)
+
+            return mtf_names, mtf_vals, mtf_time
+
+        res = 3 * (np.array([]),)
+
+        if self.random_state is None:
+            # Enforce pseudo-random behaviour to avoid previously set
+            # random seeds out of this context
+            np.random.seed()
+
+        bootstrap_random_state = (
+            self.random_state
+            if self.random_state is not None
+            else np.random.randint(2 ** 20 - 1))
+
+        for it_num in np.arange(sample_num):
+            if verbose > 0:
+                print("Extracting from sample dataset {} of {} ({:.2f}%)..."
+                      .format(1 + it_num,
+                              sample_num,
+                              100.0 * (1 + it_num) / sample_num))
+
+            # Note: setting random state to prevent same sample indices due
+            # to random states set during fit/extraction
+            np.random.seed(bootstrap_random_state)
+            bootstrap_random_state += 1
+
+            sample_inds = np.random.randint(
+                self.X.shape[0],
+                size=self.X.shape[0])
+
+            X_sample = self.X[sample_inds, :]
+            y_sample = self.y[sample_inds] if self.y is not None else None
+
+            extractor.fit(X_sample, y_sample, **arguments_fit)
+
+            res = _handle_extract_ret(
+                res=res,
+                args=extractor.extract(**arguments_extract),
+                it_num=it_num)
+
+            if verbose > 0:
+                print("Done extracting from sample dataset {}.\n"
+                      .format(1 + it_num))
+
+        return res
+
+    def extract_with_confidence(
+            self,
+            sample_num: int = 128,
+            confidence: t.Union[float, t.Sequence[float]] = 0.95,
+            return_avg_val: bool = True,
+            arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
+            arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
+            verbose: int = 0,
+    ) -> t.Tuple[t.List, ...]:
+        """Extract metafeatures with confidence intervals.
+
+        To build the confidence intervals, each metafeature is extracted
+        ``sample_num`` times from a distinct dataset built from the
+        fitted data using bootstrap.
+
+        All configuration used by this method are from the configuration
+        while instantiating the current model.
+
+        Parameters
+        ----------
+        sample_num : int, optional
+            Number of samples from the fitted data using bootstrap. Each
+            metafeature will be extracted ``sample_num`` times.
+
+        confidence : float or sequence of floats, optional
+            Confidence level of the interval. Must be in (0.0, 1.0) range.
+            If a sequence of confidence levels is given, a confidence
+            interval will be extracted for all values. Each confidence
+            interval will be calculated as [confidence/2, 1 - confidence/2].
+
+        return_avg_vals : bool, optional
+            If True, return the average value for both the metafeature
+            values and the time elapsed for its extraction (if any
+            ``measure_time`` option was chosen.) If False, then all
+            extracted metafeature values are returned as a 2D numpy array
+            of shape (`metafeature_num`, `sample_num`) (i.e., each row
+            represents a distinct metafeature, and each column is the
+            value of the corresponding metafeature extracted from a
+            distinct sample dataset) and the time elapsed will be the
+            sum of all extractions for each metafeature.
+
+        arguments_fit : dict, optional
+            Extra arguments for the fit method for each sampled dataset.
+            See ``.fit`` method documentation for more information.
+
+        arguments_extract : dict, optional
+            Extra arguments for each metafeature extraction procedure.
+            See ``.extract`` method documentation for more information.
+
+        verbose : int, optional
+            Verbosity level for this method. Please note that the
+            verbosity level for both ``.fit`` and ``.extract`` methods
+            performed within this method must be controlled separately
+            using, respectively, ``arguments_fit`` and ``arguments_extract``
+            parameters.
+
+        Returns
+        -------
+        tuple of :obj:`np.ndarray`
+            The same return value format of the ``extract`` method, appended
+            with the confidence intervals as a new sequence of values in the
+            form (interval_low_1, interval_low_2, ..., interval_high_(n-1),
+            interval_high_n) for each corresponding metafeature, and with shape
+            (`metafeature_num`, 2 * C), where `C` is the number of confidence
+            levels given in ``confidence`` (i.e., the rows represents each
+            metafeature and the columns each interval limit). This means that
+            all interval lower limits are given first, and all the interval
+            upper limits are grouped together afterwards. The sequence order
+            of the interval limits follows the same sequence order of the
+            confidence levels given in ``confidence``. For instance, if
+            `confidence=[0.80, 0.90, 0.99]`, then the confidence intervals
+            will be returned in the following order (for all metafeatures):
+            (lower_0.80, lower_0.90, lower_0.99, upper_0.80, upper_0.90,
+            upper_0.99).
+
+            if ``return_avg_val`` is True, the metafeature values and the
+            time elapsed for extraction for each item (if any ``measure_time``
+            options was chosen) will be the average value between all
+            extractions. Otherwise, all extracted metafeature values will be
+            returned as a 2D numpy array (where each columns is from a distinct
+            sampled dataset, and each row is a distinct metafeature), and the
+            time elapsed will be the sum of all extractions for the
+            corresponding metafeature.
+
+        Raises
+        ------
+        ValueError
+            If ``confidence`` is not in (0.0, 1.0) range.
+
+        Notes
+        -----
+        The model used to fit and extract metafeatures for each sampled
+        dataset is instantiated within this method and, therefore, this
+        method does not affect the current model (if any) by any means.
+        """
+        _confidence = np.asarray(confidence, dtype=float)
+
+        if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
+            raise ValueError("'_confidence' must be in (0.0, 1.0) range (got "
+                             "{}.)".format(_confidence))
+
+        if self.random_state is not None:
+            np.random.seed(self.random_state)
+
+        if arguments_fit is None:
+            arguments_fit = {}
+
+        if arguments_extract is None:
+            arguments_extract = {}
+
+        # Note: the metafeature extraction random seed will be fixed due
+        # to the random indices while bootstrapping the fitted data.
+        _random_state = self.random_state if self.random_state else 1234
+
+        if verbose > 0:
+            print("Started metafeature extract with _confidence interval.")
+            print("Random seed:")
+            print(" {} For extractor model: {}{}".format(
+                _internal.VERBOSE_BLOCK_END_SYMBOL,
+                _random_state,
+                "" if self.random_state else " (chosen by default)"))
+
+            print(" {} For bootstrapping: {}".format(
+                _internal.VERBOSE_BLOCK_END_SYMBOL, self.random_state))
+
+        extractor = MFE(
+            features=self.features,
+            groups=self.groups,
+            summary=self.summary,
+            measure_time=self.timeopt,
+            random_state=_random_state)
+
+        mtf_names, mtf_vals, mtf_time = self._extract_with_bootstrap(
+            extractor=extractor,
+            sample_num=sample_num,
+            verbose=verbose,
+            arguments_fit=arguments_fit,
+            arguments_extract=arguments_extract)
+
+        if verbose > 0:
+            print("Finished metafeature extract with _confidence interval.")
+            print("Now getting _confidence intervals...", end=" ")
+
+        _half_sig_level = 0.5 * (1.0 - _confidence)
+        quantiles = np.hstack((_half_sig_level, 1.0 - _half_sig_level))
+        mtf_conf_int = np.quantile(a=mtf_vals, q=quantiles, axis=1).T
+
+        if verbose > 0:
+            print("Done.")
+
+        if return_avg_val:
+            mtf_vals = np.nanmean(mtf_vals, axis=1)
+
+        if self.timeopt:
+            if return_avg_val:
+                mtf_time /= sample_num
+
+            return mtf_names, mtf_vals, mtf_time, mtf_conf_int
+
+        return mtf_names, mtf_vals, mtf_conf_int
+
     def extract_from_model(
             self,
             model: t.Any,
