@@ -7,6 +7,8 @@ import time
 
 import texttable
 import numpy as np
+import sklearn.utils
+import sklearn.exceptions
 
 import pymfe._internal as _internal
 
@@ -323,14 +325,14 @@ class MFE:
         self.hypparam_model_dt = (hypparam_model_dt.copy()
                                   if hypparam_model_dt else None)
 
+        # """Total time elapsed for precomputations."""
         self.time_precomp = -1.0
-        """Total time elapsed for precomputations."""
 
+        # """Total time elapsed for metafeature extraction."""
         self.time_extract = -1.0
-        """Total time elapsed for metafeature extraction."""
 
+        # """Total time elapsed in total (precomp + extract.)"""
         self.time_total = -1.0
-        """Total time elapsed in total (precomp + extract.)"""
 
     def _call_summary_methods(
             self,
@@ -837,6 +839,7 @@ class MFE:
             wildcard: str = "all",
             suppress_warnings: bool = False,
             verbose: int = 0,
+            **kwargs,
             ) -> "MFE":
         """Fits dataset into an MFE model.
 
@@ -938,6 +941,17 @@ class MFE:
             higher, then log every step of the fitted data transformations and
             the precomputation steps.
 
+        **kwargs:
+            Extra custom arguments to the precomputation methods. Keep in
+            mind that those values may even replace internal custom parameters,
+            if the name matches. Use this resource carefully.
+
+            Hint: you can check which are the internal custom arguments by
+            verifying the values in '._custom_args_ft' attribute after the
+            model is fitted.
+
+            This argument format is {'parameter_name': parameter_value}.
+
         Returns
         -------
         self
@@ -1017,7 +1031,7 @@ class MFE:
             wildcard=wildcard,
             suppress_warnings=suppress_warnings,
             verbose=verbose,
-            **self._custom_args_ft)
+            **{**self._custom_args_ft, **kwargs})
 
         self.time_precomp = time.time() - _time_start
 
@@ -1100,7 +1114,7 @@ class MFE:
         Returns
         -------
         :obj:`tuple`(:obj:`list`, :obj:`list`)
-            A tuple containing two lists.
+            A tuple containing two lists (if ``measure_time`` is None.)
 
             The first field is the identifiers of each summarized value in the
             form ``feature_name.summary_mtd_name`` (i.e., the feature
@@ -1118,6 +1132,10 @@ class MFE:
                 is the return value for the feature ``attr_end`` summarized by
                 both ``mean`` and ``sd`` (standard deviation), giving the valu-
                 es ``0.983`` and ``0.344``, respectively.
+
+            if ``measure_time`` is given during the model instantiation, a
+            third list will be returned with the time spent during the
+            calculations for the corresponding (by index) metafeature.
 
         Raises
         ------
@@ -1295,7 +1313,7 @@ class MFE:
     def extract_with_confidence(
             self,
             sample_num: int = 128,
-            confidence: float = 0.95,
+            confidence: t.Union[float, t.Sequence[float]] = 0.95,
             return_avg_val: bool = True,
             arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
             arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
@@ -1316,8 +1334,11 @@ class MFE:
             Number of samples from the fitted data using bootstrap. Each
             metafeature will be extracted ``sample_num`` times.
 
-        confidence : float, optional
-            Confidence of the interval. Must be in (0, 1) range.
+        confidence : float or sequence of floats, optional
+            Confidence level of the interval. Must be in (0.0, 1.0) range.
+            If a sequence of confidence levels is given, a confidence
+            interval will be extracted for all values. Each confidence
+            interval will be calculated as [confidence/2, 1 - confidence/2].
 
         return_avg_vals : bool, optional
             If True, return the average value for both the metafeature
@@ -1350,14 +1371,24 @@ class MFE:
         tuple of :obj:`np.ndarray`
             The same return value format of the ``extract`` method, appended
             with the confidence intervals as a new sequence of values in the
-            form (interval_low, interval_high) for each corresponding
-            metafeature, and with shape (`metafeature_num`, 2) (i.e., the rows
-            represents each metafeature and the columns each interval limit.)
+            form (interval_low_1, interval_low_2, ..., interval_high_(n-1),
+            interval_high_n) for each corresponding metafeature, and with shape
+            (`metafeature_num`, 2 * C), where `C` is the number of confidence
+            levels given in ``confidence`` (i.e., the rows represents each
+            metafeature and the columns each interval limit). This means that
+            all interval lower limits are given first, and all the interval
+            upper limits are grouped together afterwards. The sequence order
+            of the interval limits follows the same sequence order of the
+            confidence levels given in ``confidence``. For instance, if
+            `confidence=[0.80, 0.90, 0.99]`, then the confidence intervals
+            will be returned in the following order (for all metafeatures):
+            (lower_0.80, lower_0.90, lower_0.99, upper_0.80, upper_0.90,
+            upper_0.99).
 
             if ``return_avg_val`` is True, the metafeature values and the
             time elapsed for extraction for each item (if any ``measure_time``
             options was chosen) will be the average value between all
-            extractions. Otherwise, all extract metafeature values will be
+            extractions. Otherwise, all extracted metafeature values will be
             returned as a 2D numpy array (where each columns is from a distinct
             sampled dataset, and each row is a distinct metafeature), and the
             time elapsed will be the sum of all extractions for the
@@ -1366,7 +1397,7 @@ class MFE:
         Raises
         ------
         ValueError
-            If ``confidence`` is not in (0, 1) range.
+            If ``confidence`` is not in (0.0, 1.0) range.
 
         Notes
         -----
@@ -1374,9 +1405,11 @@ class MFE:
         dataset is instantiated within this method and, therefore, this
         method does not affect the current model (if any) by any means.
         """
-        if not 0 < confidence < 1.0:
-            raise ValueError("'confidence' must be in (0, 1) range (got {}.)"
-                             .format(confidence))
+        _confidence = np.asarray(confidence, dtype=float)
+
+        if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
+            raise ValueError("'_confidence' must be in (0.0, 1.0) range (got "
+                             "{}.)".format(_confidence))
 
         if self.random_state is not None:
             np.random.seed(self.random_state)
@@ -1392,7 +1425,7 @@ class MFE:
         _random_state = self.random_state if self.random_state else 1234
 
         if verbose > 0:
-            print("Started metafeature extract with confidence interval.")
+            print("Started metafeature extract with _confidence interval.")
             print("Random seed:")
             print(" {} For extractor model: {}{}".format(
                 _internal.VERBOSE_BLOCK_END_SYMBOL,
@@ -1417,12 +1450,12 @@ class MFE:
             arguments_extract=arguments_extract)
 
         if verbose > 0:
-            print("Finished metafeature extract with confidence interval.")
-            print("Now getting confidence intervals...", end=" ")
+            print("Finished metafeature extract with _confidence interval.")
+            print("Now getting _confidence intervals...", end=" ")
 
-        _half_sig_level = 0.5 * (1.0 - confidence)
-        interval = [_half_sig_level, 1.0 - _half_sig_level]
-        mtf_conf_int = np.quantile(a=mtf_vals, q=interval, axis=1).T
+        _half_sig_level = 0.5 * (1.0 - _confidence)
+        quantiles = np.hstack((_half_sig_level, 1.0 - _half_sig_level))
+        mtf_conf_int = np.quantile(a=mtf_vals, q=quantiles, axis=1).T
 
         if verbose > 0:
             print("Done.")
@@ -1437,6 +1470,122 @@ class MFE:
             return mtf_names, mtf_vals, mtf_time, mtf_conf_int
 
         return mtf_names, mtf_vals, mtf_conf_int
+
+    def extract_from_model(
+            self,
+            model: t.Any,
+            arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
+            arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
+            verbose: int = 0,
+    ) -> t.Tuple[t.Sequence, ...]:
+        """Extract model-based metafeatures from given model.
+
+        The random seed used by the new internal model is the same random
+        seed set in the current model (if any.)
+
+        The metafeatures extracted will be all metafeatures selected
+        originally in the current model that are also in the 'model-based'
+        group.
+
+        The extracted values will be summarized also with the summary
+        functions selected originally in this model.
+
+        Parameters
+        ----------
+        model : any
+            Pre-fitted machine learning model.
+
+        arguments_fit : :obj:`dict`, optional
+            Custom arguments to fit the extractor model. See `.fit` method
+            documentation for more information.
+
+        arguments_extract : :obj:`dict`, optional
+            Custom arguments to extract the metafeatures. See `.extract`
+            method documentation for more information.
+
+        verbose : int, optional
+            Select the level of verbosity of this method. Please note that
+            the verbosity level of each step (`fit` and `extract`) need to
+            be given separately using, respectively, `arguments_fit` and
+            `arguments_extract` arguments.
+
+        Returns
+        -------
+        :obj:`tuple`(:obj:`list`, :obj:`list`)
+            See `.extract` method return value for more information.
+
+        Notes
+        -----
+        Internally, a new MFE model is created to perform the metafeature
+        extractions. Therefore, the current model (if any) will not be
+        affected by this method by any means.
+        """
+        if "model-based" not in self.groups:
+            raise ValueError("The current MFE model does not have the "
+                             "'model-based' metafeature group configured ("
+                             "found groups {}.) Please include it in the "
+                             "MFE model creation before using 'extract_from"
+                             "_model' method.".format(self.groups))
+
+        model_argument = _internal.type_translator.get(type(model), None)
+
+        if model_argument is None:
+            raise TypeError("'model' from type '{}' not supported. Currently "
+                            "only supporting classes: {}.".format(
+                                type(model),
+                                list(_internal.type_translator.keys())))
+
+        try:
+            sklearn.utils.validation.check_is_fitted(model)
+
+        except sklearn.exceptions.NotFittedError:
+            raise RuntimeError("Given 'model' does not have any fitted data. "
+                               "Please use its 'fit' method before using the "
+                               "model with 'extract_from_model' method.")
+
+        if arguments_fit is None:
+            arguments_fit = {}
+
+        if arguments_extract is None:
+            arguments_extract = {}
+
+        if model_argument in arguments_fit:
+            raise KeyError("Illegal argument '{}' in 'arguments_fit' (used "
+                           "internally by '.extract_from_model' method.)"
+                           "".format(model_argument))
+
+        _fts = set(self.features).intersection(
+            MFE.valid_metafeatures(groups="model-based"))
+
+        if verbose >= 1:
+            print("Selected features from 'model-based' group:")
+
+            for ft_name in _fts:
+                print(" {} {}".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL, ft_name))
+
+            print("Total of {} 'model-based' metafeature method candidates."
+                  .format(len(_fts)))
+
+            print("Started extraction from model.")
+
+        _extractor = MFE(
+            features=_fts,
+            groups="model-based",
+            summary=self.summary,
+            measure_time=self.timeopt,
+            random_state=self.random_state).fit(
+                X=[1],
+                y=None, transform_num=False,
+                **{model_argument: model},
+                **arguments_fit)
+
+        res = _extractor.extract(**arguments_extract)
+
+        if verbose >= 1:
+            print("Finished extracting metafeatures from model.")
+
+        return res
 
     @classmethod
     def valid_groups(cls) -> t.Tuple[str, ...]:
@@ -1614,7 +1763,7 @@ class MFE:
         if include_references:
             aux = docstring.split("References\n        ----------\n")
             if len(aux) >= 2:
-                split = aux[1].split(f".. [")
+                split = aux[1].split(".. [")
                 if len(split) >= 2:
                     del split[0]
                     for spl in split:

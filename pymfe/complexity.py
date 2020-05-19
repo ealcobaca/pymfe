@@ -867,7 +867,7 @@ class MFEComplexity:
             Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Fitted target attribute.
+            Target attribute.
 
         ovo_comb : :obj:`np.ndarray`, optional
             List of all class OVO combination, i.e., all combinations of
@@ -940,7 +940,7 @@ class MFEComplexity:
             Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Fitted target attribute.
+            Target attribute.
 
         ovo_comb : :obj:`np.ndarray`, optional
             List of all class OVO combination, i.e., all combinations of
@@ -1167,7 +1167,7 @@ class MFEComplexity:
             Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Fitted target attribute.
+            Target attribute.
 
         ovo_comb : :obj:`np.ndarray`, optional
             List of all class OVO combination, i.e., all combinations of
@@ -1386,7 +1386,7 @@ class MFEComplexity:
             Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Fitted target attribute.
+            Target attribute.
 
         metric : str, optional
             Metric used to calculate the distances between the instances.
