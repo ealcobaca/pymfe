@@ -58,7 +58,7 @@ class MFEItemset:
         Parameters
         ----------
         C : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+            Categorical fitted data.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -109,9 +109,9 @@ class MFEItemset:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Categorical fitted data.
 
-        itemset_binary_matrix : :obj:`list`
+        itemset_binary_matrix : :obj:`list` of :obj:`np.ndarray`, optional
             Binary representation of the attributes. Each list value has a
             binary representation of each attributes in the dataset.
 
@@ -159,9 +159,9 @@ class MFEItemset:
         Parameters
         ----------
         C : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Categorical fitted data.
 
-        itemset_binary_matrix : :obj:`list`
+        itemset_binary_matrix : :obj:`list` of :obj:`np.ndarray`, optional
             Binary representation of the attributes. Each list value has a
             binary representation of each attributes in the dataset.
 

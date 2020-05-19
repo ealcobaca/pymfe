@@ -58,7 +58,7 @@ class MFEGeneral:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         **kwargs
             Additional arguments. May have previously precomputed before
@@ -92,8 +92,8 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+        X : :obj:`np.ndarray`
+            Fitted data.
 
         Returns
         -------
@@ -122,16 +122,16 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+        X : :obj:`np.ndarray`
+            Fitted data.
 
-        cat_cols : :obj:`list`
+        cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
             in ``X``.
 
         Returns
         -------
-        int | float
+        int or float
             Proportion of categorical and numerical attributes.
 
         References
@@ -149,16 +149,17 @@ class MFEGeneral:
         return num_cat / (X.shape[1] - num_cat)
 
     @classmethod
-    def ft_freq_class(cls,
-                      y: np.ndarray,
-                      class_freqs: t.Optional[np.ndarray] = None
-                      ) -> np.ndarray:
+    def ft_freq_class(
+            cls,
+            y: np.ndarray,
+            class_freqs: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Compute the relative frequency of each distinct class.
 
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         class_freqs : :obj:`np.ndarray`, optional
             Absolute frequency of each distinct class. Argument
@@ -189,8 +190,8 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+        X : :obj:`np.ndarray`
+            Fitted data.
 
         Returns
         -------
@@ -212,8 +213,8 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+        X : :obj:`np.ndarray`
+            Fitted data.
 
         Returns
         -------
@@ -237,8 +238,8 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+        X : :obj:`np.ndarray`
+            Fitted data.
 
         Returns
         -------
@@ -262,7 +263,7 @@ class MFEGeneral:
 
         Parameters
         ----------
-        cat_cols : list
+        cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
             in ``X``.
 
@@ -281,16 +282,14 @@ class MFEGeneral:
         return len(cat_cols)
 
     @classmethod
-    def ft_nr_class(
-            cls,
-            y: np.ndarray,
-            classes: t.Optional[np.ndarray] = None) -> int:
+    def ft_nr_class(cls, y: np.ndarray,
+                    classes: t.Optional[np.ndarray] = None) -> int:
         """Compute the number of distinct classes.
 
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         classes : :obj:`np.ndarray`, optional
             Array with all distinct classes. This argument purpose is
@@ -318,8 +317,8 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+        X : :obj:`np.ndarray`
+            Fitted data.
 
         Returns
         -------
@@ -340,10 +339,10 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+        X : :obj:`np.ndarray`
+            Fitted data.
 
-        cat_cols : list
+        cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
             in ``X``.
 
@@ -373,16 +372,16 @@ class MFEGeneral:
 
         Parameters
         ----------
-        X : :obj:`np.ndarray`, optional
-            Attributes from fitted data.
+        X : :obj:`np.ndarray`
+            Fitted data.
 
-        cat_cols : :obj:`list`
+        cat_cols : :obj:`list` of int
             Sequence containing the indices of each categorical column
             in ``X``.
 
         Returns
         -------
-        int | float
+        int or float
             If ``X`` has at least one categorical feature, then return the
             ratio of numerical and categorical features. Return :obj:`np.nan`
             otherwise.
