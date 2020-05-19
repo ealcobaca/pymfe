@@ -66,7 +66,7 @@ class MFEClustering:
         Parameters
         ----------
         y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+            Instance cluster index (or target attribute).
 
         **kwargs
             Additional arguments. May have previously precomputed before
@@ -114,15 +114,15 @@ class MFEClustering:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Numerical attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
-            instances. Check `distmetric`_ for a full list of valid
-            distance metrics.
+            instances. Check :obj:`sklearn.neighbors.DistanceMetric`
+            documentation for a full list of valid distance metrics.
 
         classes : :obj:`np.ndarray`, optional
             Distinct classes in ``y``. Used to exploit precomputations.
@@ -155,11 +155,6 @@ class MFEClustering:
               indicates whether each example belongs to each class. The
               rows represents the distinct classes, and the instances
               are represented by the columns.
-
-        Notes
-        -----
-            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
-              documentation.
         """
         precomp_vals = {}
 
@@ -216,18 +211,18 @@ class MFEClustering:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Numerical attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+            Instance cluster index (or target attribute).
 
         n_neighbors : int, optional
             Number of nearest neighbors returned for each instance.
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
-            instances. Check `distmetric`_ for a full list of valid
-            distance metrics.
+            instances. Check :obj:`sklearn.neighbors.DistanceMetric`
+            documentation for a full list of valid distance metrics.
 
         **kwargs
             Additional arguments. May have previously precomputed before
@@ -241,11 +236,6 @@ class MFEClustering:
                 * ``pairwise_intraclass_dists`` (:obj:`np.ndarray`):
                   distance between each distinct pair of instances of
                   the same class.
-
-        Notes
-        -----
-            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
-                documentation.
         """
         precomp_vals = {}
 
@@ -277,15 +267,15 @@ class MFEClustering:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Numerical attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
-            instances. Check `distmetric`_ for a full list of valid
-            distance metrics.
+            instances. Check :obj:`sklearn.neighbors.DistanceMetric`
+            documentation for a full list of valid distance metrics.
 
         representative : str or :obj:`np.ndarray` or Sequence, optional
             * If representative is string-type, then it must assume one
@@ -326,11 +316,6 @@ class MFEClustering:
                 * ``pairwise_intraclass_dists`` (:obj:`np.ndarray`):
                   distance between each distinct pair of instances of
                   the same class.
-
-        Notes
-        -----
-            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
-                documentation.
         """
         precomp_vals = {}
 
@@ -527,14 +512,15 @@ class MFEClustering:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
-            instances. Check `scipydoc`_ for a full list of valid distance
-            metrics. If precomputation in clustering metafeatures is
-            enabled, then this parameter takes no effect.
+            instances. Check :obj:`scipy.spatial.distance` documentation
+            for a full list of valid distance metrics. If precomputation
+            in clustering metafeatures is enabled, then this parameter
+            takes no effect.
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
@@ -555,12 +541,8 @@ class MFEClustering:
 
         Returns
         -------
-        :obj:`float`
+        float
             Dunn index for given parameters.
-
-        Notes
-        -----
-        .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
 
         References
         ----------
@@ -600,20 +582,16 @@ class MFEClustering:
 
         Metric range is 0 (inclusive) and infinity.
 
-        Check `dbindex`_ for more information.
+        Check :obj:`sklearn.metrics.davies_bouldin_score` documentation
+        for more information.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
-
-        Notes
-        -----
-        .. _dbindex: :obj:``sklearn.metrics.davies_bouldin_score``
-           documentation.
+        y : :obj:`np.ndarray`
+            Instance cluster index (or target attribute).
 
         References
         ----------
@@ -641,14 +619,15 @@ class MFEClustering:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
-            instances. Check `scipydoc`_ for a full list of valid distance
-            metrics. If precomputation in clustering metafeatures is
-            enabled, then this parameter takes no effect.
+            instances. Check :obj:`scipy.spatial.distance` documentation
+            for a full list of valid distance metrics. If precomputation
+            in clustering metafeatures is enabled, then this parameter
+            takes no effect.
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
@@ -665,12 +644,8 @@ class MFEClustering:
 
         Returns
         -------
-        :obj:`float`
+        float
             INT index.
-
-        Notes
-        -----
-            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
 
         References
         ----------
@@ -716,20 +691,21 @@ class MFEClustering:
 
         Metric range is -1 to +1 (both inclusive).
 
-        Check `silhouette`_ for more information.
+        Check :obj:`sklearn.metrics.silhouette_score` documentation for
+        more information.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
-            instances. Check `distmetric`_ for a full list of valid
-            distance metrics.
+            instances. Check :obj:`sklearn.neighbors.DistanceMetric`
+            documentation for a full list of valid distance metrics.
 
         sample_frac : int, optional
             Sample fraction used to compute the silhouette coefficient. If
@@ -741,15 +717,8 @@ class MFEClustering:
 
         Returns
         -------
-        :obj:`float`
+        float
             Mean Silhouette value.
-
-        Notes
-        -----
-            .. _silhouette: :obj:`sklearn.metrics.silhouette_score`
-                documentation.
-            .. _distmetric: :obj:`sklearn.neighbors.DistanceMetric`
-                documentation.
 
         References
         ----------
@@ -788,22 +757,18 @@ class MFEClustering:
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Instance cluster index (or target attribute).
 
         dist_metric : str, optional
             The distance metric used to calculate the distances between
-            instances. Check `scipydoc`_ for a full list of valid distance
-            metrics.
+            instances. Check :obj:`scipy.spatial.distance` for a full
+            list of valid distance metrics.
 
         Returns
         -------
-        :obj:`float`
+        float
             Point Biserial coefficient.
-
-        Notes
-        -----
-            .. _scipydoc: :obj:`scipy.spatial.distance` documentation.
 
         References
         ----------
@@ -827,25 +792,21 @@ class MFEClustering:
     def ft_ch(cls, N: np.ndarray, y: np.ndarray) -> float:
         """Compute the Calinski and Harabasz index.
 
-        Check `cahascore`_ for more information.
+        Check :obj:`sklearn.metrics.calinski_harabasz_score` documentation
+        for more information.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Attributes from fitted data.
 
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Instance cluster index (or target attribute).
 
         Returns
         -------
-        :obj:`float`
+        float
             Calinski-Harabasz index.
-
-        Notes
-        -----
-            .. _cahascore: ``sklearn.metrics.calinski_harabasz_score``
-                documentation.
 
         References
         ----------
@@ -866,15 +827,15 @@ class MFEClustering:
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Instance cluster index (or target attribute).
 
-        class_freqs : :obj:`np.ndarray`
+        class_freqs : :obj:`np.ndarray`, optional
             Absolute class frequencies. Used to exploit precomputations.
 
         Returns
         -------
-        :obj:`float`
+        float
             Entropy of relative class frequencies.
 
         References
@@ -892,32 +853,34 @@ class MFEClustering:
         return scipy.stats.entropy(class_freqs / num_inst)
 
     @classmethod
-    def ft_sc(cls,
-              y: np.ndarray,
-              size: int = 15,
-              class_freqs: t.Optional[np.ndarray] = None,
-              normalize: bool = False) -> int:
+    def ft_sc(
+            cls,
+            y: np.ndarray,
+            size: int = 15,
+            normalize: bool = False,
+            class_freqs: t.Optional[np.ndarray] = None,
+    ) -> int:
         """Compute the number of clusters with size smaller than a given size.
 
         Parameters
         ----------
-        y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+        y : :obj:`np.ndarray`
+            Instance cluster index (or target attribute).
 
         size : int, optional
             Maximum (exclusive) size of classes to be considered.
-
-        class_freqs : :obj:`np.ndarray`, optional
-            Class (absolute) frequencies. Used to exploit precomputations.
 
         normalize : bool, optional
             If True, then the result will be the proportion of classes
             with less than ``size`` instances from the total of classes.
             (i.e., result is divided by the number of classes.)
 
+        class_freqs : :obj:`np.ndarray`, optional
+            Class (absolute) frequencies. Used to exploit precomputations.
+
         Returns
         -------
-        :obj:`int` or :obj:`float`
+        int or float
             Number of classes with less than ``size`` instances if
             ``normalize`` is False, proportion of classes with less
             than ``size`` instances otherwise.

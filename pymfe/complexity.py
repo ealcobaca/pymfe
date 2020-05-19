@@ -58,14 +58,14 @@ class MFEComplexity:
     precomputation or feature extraction method of module ``landmarking``).
     """
     @classmethod
-    def precompute_fx(cls, y: t.Optional[np.ndarray] = None,
-                      **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_complexity(cls, y: t.Optional[np.ndarray] = None,
+                              **kwargs) -> t.Dict[str, t.Any]:
         """Precompute some useful things to support feature-based measures.
 
         Parameters
         ----------
         y : :obj:`np.ndarray`, optional
-            Target attribute from fitted data.
+            Target attribute.
 
         **kwargs
             Additional arguments. May have previously precomputed before this
@@ -117,7 +117,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         tx_n_components : float, optional
             Specifies the number of components such that the amount of variance
@@ -233,10 +233,10 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Fitted target attribute.
+            Target attribute.
 
         ovo_comb : :obj:`np.ndarray`, optional
             List of all class OVO combination, i.e., all combinations of
@@ -266,7 +266,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
@@ -304,10 +304,10 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Fitted target attribute.
+            Target attribute.
 
         ovo_comb : :obj:`np.ndarray`, optional
             List of all class OVO combination, i.e., all combinations of
@@ -337,7 +337,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None or class_freqs is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
@@ -408,10 +408,10 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Fitted target attribute.
+            Target attribute.
 
         ovo_comb : :obj:`np.ndarray`, optional
             List of all class OVO combination, i.e., all combinations of
@@ -443,7 +443,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if ovo_comb is None or cls_inds is None:
-            sub_dic = cls.precompute_fx(y=y)
+            sub_dic = cls.precompute_complexity(y=y)
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
@@ -484,10 +484,10 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Fitted target attribute.
+            Target attribute.
 
         metric : str, optional
             Metric used to calculate the distances between the instances.
@@ -551,10 +551,10 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
@@ -649,7 +649,7 @@ class MFEComplexity:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         class_freqs : :obj:`np.ndarray`, optional
             The number of examples in each class. The indices represent
@@ -688,7 +688,7 @@ class MFEComplexity:
         Parameters
         ----------
         y : :obj:`np.ndarray`
-            Target attribute from fitted data.
+            Target attribute.
 
         class_freqs : :obj:`np.ndarray`, optional
             The number of examples in each class. The indices represent
@@ -762,7 +762,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         num_attr_pca : int, optional
             Number of features after PCA where a fraction of at least 0.95
@@ -810,7 +810,7 @@ class MFEComplexity:
         Parameters
         ----------
         N : :obj:`np.ndarray`
-            Attributes from fitted data.
+            Numerical fitted data.
 
         num_attr_pca : int, optional
             Number of features after PCA where a fraction of at least 0.95

@@ -1,5 +1,7 @@
 sphinx
-sphinx-gallery
 sphinx_rtd_theme
+pillow
+seaborn
+sphinx-gallery
 numpydoc
 liac-arff
