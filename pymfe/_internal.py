@@ -1464,7 +1464,7 @@ def _equal_freq_discretization(data: np.ndarray,
                                num_bins: int,
                                tol: float = 1e-8) -> np.ndarray:
     """Discretize a 1-D numeric array into an equal-frequency histogram."""
-    hist_divs = np.quantile(data, np.linspace(0, 1, num_bins + 1)[:-1])
+    hist_divs = np.quantile(data, np.linspace(0, 1, num_bins + 1)[1:])
 
     # Sometimes the 'hist_divs' is not appropriated.
     # For example when all values are constants. It implies in 'hist_divs'
