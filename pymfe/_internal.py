@@ -204,6 +204,15 @@ type_translator = {
 }
 """'.extract_from_model' supported types and correspoding parameters."""
 
+_EXCEPTIONS = (
+    ValueError,
+    TypeError,
+    MemoryError,
+    ZeroDivisionError,
+    AttributeError,
+    np.linalg.LinAlgError,
+)
+"""Common exceptions of metafeature extraction."""
 
 def warning_format(message: str,
                    category: t.Type[Warning],
@@ -546,7 +555,7 @@ def summarize(
     try:
         metafeature = callable_sum(processed_feat, **callable_args)
 
-    except (TypeError, ValueError, ZeroDivisionError, MemoryError):
+    except _EXCEPTIONS:
         metafeature = np.nan
 
     return metafeature
@@ -586,7 +595,7 @@ def get_feat_value(
     try:
         features = mtd_callable(**mtd_args)
 
-    except (TypeError, ValueError, ZeroDivisionError, MemoryError) as type_e:
+    except _EXCEPTIONS as type_e:
         if not suppress_warnings:
             warnings.warn(
                 "Can't extract feature '{0}'.\n Exception message: {1}.\n"
@@ -1208,8 +1217,7 @@ def process_precomp_groups(
         try:
             new_precomp_vals = precomp_mtd_callable(**kwargs)  # type: ignore
 
-        except (AttributeError, TypeError,
-                ValueError, MemoryError) as type_err:
+        except _EXCEPTIONS as type_err:
             new_precomp_vals = {}
 
             if not suppress_warnings:
@@ -1742,8 +1750,7 @@ def post_processing(
                 for res_list_old, res_list_new in zip(results, new_results):
                     res_list_old += res_list_new
 
-        except (AttributeError, TypeError,
-                ValueError, MemoryError) as type_err:
+        except _EXCEPTIONS as type_err:
             if not suppress_warnings:
                 warnings.warn("Something went wrong while "
                               "postprocessing '{0}'. Will ignore "
