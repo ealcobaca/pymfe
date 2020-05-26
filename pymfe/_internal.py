@@ -1452,10 +1452,17 @@ def transform_cat_onehot(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
 
     ohe = sklearn.preprocessing.OneHotEncoder(sparse=False)
 
-    one_cat_attrs = np.hstack([
-        ohe.fit_transform(data_categoric[:, attr_ind, np.newaxis])
-        for attr_ind in np.arange(num_col)
-    ])
+    try:
+        one_cat_attrs = np.hstack([
+            ohe.fit_transform(data_categoric[:, attr_ind, np.newaxis])
+            for attr_ind in np.arange(num_col)
+        ])
+
+    except ValueError:
+        raise ValueError("Categorical data encoding of type 'one-hot-full' has"
+                         " no support for missing values. Please handle the "
+                         "missing data manually before fitting it into the "
+                         "MFE model.")
 
     return one_cat_attrs
 
