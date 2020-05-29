@@ -49,7 +49,11 @@ def sum_histogram(values: TypeValList,
     if len(values) == 0:
         return np.full(bins, fill_value=np.nan)
 
-    freqs, _ = np.histogram(values, bins=bins)
+    try:
+        freqs, _ = np.histogram(values, bins=bins)
+
+    except ValueError:
+        return np.full(bins, fill_value=np.nan)
 
     if normalize:
         freqs = freqs / sum(freqs)
