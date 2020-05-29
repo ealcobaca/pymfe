@@ -372,6 +372,9 @@ def sum_powersum(
     """Calculate the power sum of ``values``."""
     def ps_func(arr: TypeValList, p: t.Union[int,
                                              float]) -> t.Union[int, float]:
+        if np.any(np.isnan(arr)):
+            return np.nan
+
         return np.sum(np.power(arr, p))
 
     return _apply_power_func(values=values, p_func=ps_func, p=p)
@@ -392,6 +395,9 @@ def sum_pnorm(
     """Calculate the p-norm of ``values``."""
     def pn_func(arr: TypeValList, p: t.Union[int,
                                              float]) -> t.Union[int, float]:
+        if np.any(np.isnan(arr)):
+            return np.nan
+
         return np.linalg.norm(x=arr, ord=p) if p >= 0 else np.nan
 
     return _apply_power_func(values=values, p_func=pn_func, p=p)
@@ -415,7 +421,7 @@ def sum_sum(values: TypeValList) -> float:
 
 def sum_nansum(values: TypeValList) -> float:
     """Calculate the sum of ``values`` ignoring nan values."""
-    if len(values) == 0:
+    if len(values) == 0 or np.all(np.isnan(values)):
         return np.nan
 
     return np.nansum(values)
