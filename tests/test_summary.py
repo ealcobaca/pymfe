@@ -289,3 +289,65 @@ def test_summary_empty_slice(summary: str, sum_args: t.Dict[str, t.Any],
     res = extractor.extract(suppress_warnings=True, **{summary: sum_args})[1]
 
     assert len(res) == exp_len and np.all(np.isnan(res))
+
+@pytest.mark.parametrize("summary, sum_args, exp_len", (
+    ("mean", None, 1),
+    ("nanmean", None, 1),
+    ("sd", None, 1),
+    ("nansd", None, 1),
+    ("var", None, 1),
+    ("nanvar", None, 1),
+    ("histogram", {
+        "bins": 7
+    }, 7),
+    ("nanhistogram", {
+        "bins": 7
+    }, 7),
+    ("iq_range", None, 1),
+    ("naniq_range", None, 1),
+    ("kurtosis", None, 1),
+    ("nankurtosis", None, 1),
+    ("max", None, 1),
+    ("nanmax", None, 1),
+    ("median", None, 1),
+    ("nanmedian", None, 1),
+    ("min", None, 1),
+    ("nanmin", None, 1),
+    ("quantiles", None, 5),
+    ("nanquantiles", None, 5),
+    ("range", None, 1),
+    ("nanrange", None, 1),
+    ("skewness", None, 1),
+    ("nanskewness", None, 1),
+    ("sum", None, 1),
+    ("nansum", None, 1),
+    ("powersum", None, 1),
+    ("powersum", {
+        "p": [-1, 0, 1, 2]
+    }, 4),
+    ("pnorm", None, 1),
+    ("pnorm", {
+        "p": [-1, 0, 1, 2]
+    }, 4),
+    ("nanpowersum", None, 1),
+    ("nanpowersum", {
+        "p": [-1, 0, 1, 2]
+    }, 4),
+    ("nanpnorm", None, 1),
+    ("nanpnorm", {
+        "p": [-1, 0, 1, 2]
+    }, 4),
+))
+def test_summary_all_nan(summary: str, sum_args: t.Dict[str, t.Any],
+                         exp_len: int):
+    if sum_args is None:
+        sum_args = {}
+
+    X = np.asarray([np.nan, np.nan, np.nan], dtype=str)
+
+    extractor = pymfe.mfe.MFE(features="mean",
+                              summary=summary).fit(X, transform_cat=None)
+
+    res = extractor.extract(suppress_warnings=True, **{summary: sum_args})[1]
+
+    assert len(res) == exp_len and np.all(np.isnan(res))
