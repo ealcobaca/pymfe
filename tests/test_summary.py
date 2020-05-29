@@ -343,10 +343,10 @@ def test_summary_all_nan(summary: str, sum_args: t.Dict[str, t.Any],
     if sum_args is None:
         sum_args = {}
 
-    X = np.asarray([np.nan, np.nan, np.nan], dtype=str)
+    X = np.full(5, fill_value=np.nan)
 
-    extractor = pymfe.mfe.MFE(features="mean",
-                              summary=summary).fit(X, transform_cat=None)
+    extractor = pymfe.mfe.MFE(features="mean", summary=summary)
+    extractor.fit(X, transform_cat=None, transform_num=None)
 
     res = extractor.extract(suppress_warnings=True, **{summary: sum_args})[1]
 
