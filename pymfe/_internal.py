@@ -211,6 +211,7 @@ _EXCEPTIONS = (
     ZeroDivisionError,
     AttributeError,
     np.linalg.LinAlgError,
+    OverflowError,
 )
 """Common exceptions of metafeature extraction."""
 
