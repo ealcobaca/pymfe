@@ -1834,7 +1834,6 @@ class MFE:
         if not isinstance(print_table, bool):
             raise TypeError("The parameter print_table should be bool.")
 
-        mtf_names = []  # type: t.List[str]
         mtf_desc = [["Group", "Meta-feature name", "Description"]]
         if include_references:
             mtf_desc[0].append("Reference")
@@ -1842,14 +1841,14 @@ class MFE:
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
-            mtf_names = (  # type: ignore
-                _internal.get_prefixed_mtds_from_class(  # type: ignore
+            mtf_names = (  # tipe: t.Collection[t.Tuple[str, t.Callable]]
+                _internal.get_prefixed_mtds_from_class(
                     class_obj=_internal.VALID_MFECLASSES[class_ind],
                     prefix=_internal.MTF_PREFIX,
                     only_name=False,
                     prefix_removal=True))
 
-            for name, method in mtf_names:
+            for name, method in mtf_names:  # type: ignore
                 ini_desc, ref_desc = MFE._parse_description(
                     str(method.__doc__), include_references)
                 mtf_desc_line = [group, name, ini_desc]
