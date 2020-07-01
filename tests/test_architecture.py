@@ -284,11 +284,20 @@ class TestArchitecture:
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat="one-hot")
 
-        exp_value = np.sum([np.unique(attr).size for attr in X.values.T])
+        exp_value = np.sum([np.unique(attr).size - 1 for attr in X.values.T])
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
     def test_one_hot_encoding_02(self):
+        X, y = utils.load_xy(1)
+        mfe = MFE()
+        mfe.fit(X.values, y.values, transform_cat="one-hot-full")
+
+        exp_value = np.sum([np.unique(attr).size for attr in X.values.T])
+
+        assert mfe._custom_args_ft["N"].shape[1] == exp_value
+
+    def test_one_hot_encoding_03(self):
         X, y = utils.load_xy(2)
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat="one-hot")
@@ -296,6 +305,16 @@ class TestArchitecture:
         exp_value = X.values.shape[1]
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
+
+    def test_one_hot_encoding_04(self):
+        X, y = utils.load_xy(2)
+        mfe = MFE()
+
+        X = np.hstack((X.values, np.ones((y.size, 1), dtype=str)))
+        y = y.values
+
+        with pytest.raises(ValueError):
+            mfe.fit(X=X, y=y, transform_cat="one-hot")
 
     @pytest.mark.parametrize("confidence", (0.95, 0.99))
     def test_extract_with_confidence(self, confidence):
@@ -461,6 +480,7 @@ class TestArchitecture:
 
         with pytest.raises(ValueError):
             MFE(groups="general").extract_from_model(model)
+
 
 class TestArchitectureWarnings:
     def test_feature_warning1(self):

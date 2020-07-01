@@ -150,6 +150,7 @@ VALID_TIMEOPT = (
 VALID_TRANSFORM_CAT = (
     "gray",
     "one-hot",
+    "one-hot-full",
 )
 
 _RESCALE_SCALERS = {
@@ -1435,21 +1436,34 @@ def transform_cat_gray(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
     return np.asarray(patsy.dmatrix(formula, named_data))
 
 
-def transform_cat_onehot(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
+def transform_cat_onehot(
+        data_categoric: np.ndarray,
+        use_all_columns: bool = True) -> t.Optional[np.ndarray]:
     """Transform categorical data using one-hot encoding."""
     if data_categoric.size == 0:
         return None
 
     _, num_col = data_categoric.shape
 
-    ohe = sklearn.preprocessing.OneHotEncoder(sparse=False)
+    _drop = None if use_all_columns else "first"
 
-    one_cat_attrs = np.hstack([
-        ohe.fit_transform(data_categoric[:, attr_ind, np.newaxis])
-        for attr_ind in np.arange(num_col)
-    ])
+    ohe = sklearn.preprocessing.OneHotEncoder(drop=_drop, sparse=False)
 
-    return one_cat_attrs
+    one_cat_attrs = []  # type: t.List[np.ndarray]
+
+    for attr_ind in np.arange(num_col):
+        cur_attr = data_categoric[:, attr_ind, np.newaxis]
+
+        if not use_all_columns and np.unique(cur_attr).size <= 1:
+            raise ValueError("This type of one-hot encoding does not "
+                             "support features with 1 or less distinct "
+                             "values. Drop the {}th categorical feature "
+                             "or select another encoding strategy.".format(
+                                 attr_ind + 1))
+
+        one_cat_attrs.append(ohe.fit_transform(cur_attr))
+
+    return np.hstack(one_cat_attrs)
 
 
 def _equal_freq_discretization(data: np.ndarray,
