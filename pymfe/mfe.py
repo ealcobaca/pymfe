@@ -744,7 +744,7 @@ class MFE:
 
         Parameters
         ----------
-        transform_cat: :obj:`bool`
+        transform_cat: :obj:`str`
             If `gray`, then all categoric-type data will be binarized with a
             model matrix strategy. If `one-hot`, then all categoric-type
             data will be transformed using the k-1 one-hot encoding strategy
