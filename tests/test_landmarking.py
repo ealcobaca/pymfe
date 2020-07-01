@@ -104,7 +104,7 @@ class TestLandmarking:
             assert value[0] is exp_value
 
         else:
-            assert np.allclose(value, exp_value)
+            assert np.allclose(value, exp_value, equal_nan=True, atol=1.0e-6)
 
     @pytest.mark.parametrize(
         "dt_id, exp_value, precompute, lm_sample_frac",
@@ -154,4 +154,4 @@ class TestLandmarking:
 
         value = mfe.extract()[1]
 
-        assert np.allclose(value, exp_value, equal_nan=True)
+        assert np.allclose(value, exp_value, equal_nan=True, atol=1.0e-6)

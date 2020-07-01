@@ -10,14 +10,23 @@ import collections
 import scipy.stats
 import numpy as np
 
-TypeNumeric = t.TypeVar("TypeNumeric", int, float, np.number)
+TypeNumeric = t.Union[int, float, np.number]
 """Type annotation for a numeric type (int, float, np.number)."""
 
 TypeValList = t.Sequence[TypeNumeric]
 """Type annotation for a sequence of numeric type elements."""
 
 
-def sum_histogram(values: TypeValList, bins: int = 10,
+def _remove_nan(values: TypeValList) -> TypeValList:
+    """Remove nan values in ``values``."""
+    if not isinstance(values, np.ndarray):
+        values = np.asarray(values, dtype=float)
+
+    return values[~np.isnan(values)]
+
+
+def sum_histogram(values: TypeValList,
+                  bins: int = 10,
                   normalize: bool = True) -> TypeValList:
     """Returns a list of frequencies of a histogram of given values.
 
@@ -37,8 +46,14 @@ def sum_histogram(values: TypeValList, bins: int = 10,
     Raises:
         TypeError: if ``values`` contains non-numeric data.
     """
+    if len(values) == 0:
+        return np.full(bins, fill_value=np.nan)
 
-    freqs, _ = np.histogram(values, bins=bins)
+    try:
+        freqs, _ = np.histogram(values, bins=bins)
+
+    except ValueError:
+        return np.full(bins, fill_value=np.nan)
 
     if normalize:
         freqs = freqs / sum(freqs)
@@ -85,21 +100,23 @@ def sum_quantiles(values: TypeValList,
         ValueError: if ``package`` value is neither ``numpy`` or ``scipy``, or
             ``numpy_interpolation`` argument has not a valid value.
     """
-    valid_packges = ("numpy", "scipy")
+    if len(values) == 0:
+        return np.full(5, fill_value=np.nan)
 
-    if package not in valid_packges:
+    valid_packages = ("numpy", "scipy")
+
+    if package not in valid_packages:
         raise ValueError('"package" must be in {} '
-                         "(got {}).".format(valid_packges, package))
+                         "(got {}).".format(valid_packages, package))
 
     if package == "numpy":
-        return np.quantile(
-            values, (0.00, 0.25, 0.50, 0.75, 1.00),
-            interpolation=numpy_interpolation)
+        return np.quantile(values, (0.00, 0.25, 0.50, 0.75, 1.00),
+                           interpolation=numpy_interpolation)
 
-    return scipy.stats.mstats.mquantiles(
-        values, (0.00, 0.25, 0.50, 0.75, 1.00),
-        alphap=scipy_alphap,
-        betap=scipy_betap)
+    return scipy.stats.mstats.mquantiles(values,
+                                         (0.00, 0.25, 0.50, 0.75, 1.00),
+                                         alphap=scipy_alphap,
+                                         betap=scipy_betap)
 
 
 def sum_nanquantiles(values: TypeValList,
@@ -109,12 +126,15 @@ def sum_nanquantiles(values: TypeValList,
     The quantiles calculated corresponds to the minimum, maximum,
     median value, and third and fourth quartiles.
     """
-    return np.nanquantile(
-        values, (0.00, 0.25, 0.50, 0.75, 1.00),
-        interpolation=numpy_interpolation)
+    if len(values) == 0:
+        return np.full(5, fill_value=np.nan)
+
+    return np.nanquantile(values, (0.00, 0.25, 0.50, 0.75, 1.00),
+                          interpolation=numpy_interpolation)
 
 
-def sum_skewness(values: TypeValList, method: int = 3,
+def sum_skewness(values: TypeValList,
+                 method: int = 3,
                  bias: bool = True) -> float:
     """Calculate the skewness from ``values`` using ``method`` strategy.
 
@@ -175,7 +195,8 @@ def sum_skewness(values: TypeValList, method: int = 3,
     return skew_val
 
 
-def sum_kurtosis(values: TypeValList, method: int = 3,
+def sum_kurtosis(values: TypeValList,
+                 method: int = 3,
                  bias: bool = True) -> float:
     """Calculate the kurtosis of ``values`` using ``method`` strategy.
 
@@ -291,28 +312,119 @@ def sum_nanhistogram(values: TypeValList,
     if not isinstance(values, np.ndarray):
         values = np.asarray(values, dtype=float)
 
-    return sum_histogram(
-        values=values[~np.isnan(values)], bins=bins, normalize=normalize)
+    return sum_histogram(values=_remove_nan(values=values),
+                         bins=bins,
+                         normalize=normalize)
 
 
-def sum_nankurtosis(values: TypeValList, method: int = 3,
+def sum_nankurtosis(values: TypeValList,
+                    method: int = 3,
                     bias: bool = True) -> float:
     """Estimate data kurtosis ignoring `nan` values."""
     if not isinstance(values, np.ndarray):
         values = np.asarray(values, dtype=float)
 
-    return sum_kurtosis(
-        values=values[~np.isnan(values)], method=method, bias=bias)
+    return sum_kurtosis(values=_remove_nan(values=values),
+                        method=method,
+                        bias=bias)
 
 
-def sum_nanskewness(values: TypeValList, method: int = 3,
+def sum_nanskewness(values: TypeValList,
+                    method: int = 3,
                     bias: bool = True) -> float:
     """Estimate data skewness ignoring `nan` values."""
     if not isinstance(values, np.ndarray):
         values = np.asarray(values, dtype=float)
 
-    return sum_skewness(
-        values=values[~np.isnan(values)], method=method, bias=bias)
+    return sum_skewness(values=_remove_nan(values=values),
+                        method=method,
+                        bias=bias)
+
+
+def _apply_power_func(
+        values: TypeValList,
+        p_func: t.Callable[[TypeValList, t.Union[int, float]], t.Union[int,
+                                                                       float]],
+        p: t.Union[int, float, t.Iterable[t.Union[int, float]]],
+) -> t.Union[float, np.ndarray]:
+    """Apply a power function to ``values`` using ``p_func``."""
+    if len(values) == 0:
+        if np.isscalar(p):
+            return np.nan
+
+        return np.full(len(p), fill_value=np.nan)  # type: ignore
+
+    if not isinstance(values, np.ndarray) or values.dtype != float:
+        values = np.asarray(values, dtype=float)
+
+    if np.isscalar(p):
+        return p_func(values, p)  # type: ignore
+
+    res = np.array([p_func(values, cur_p) for cur_p in p])  # type: ignore
+
+    return res
+
+
+def sum_powersum(
+        values: TypeValList,
+        p: t.Union[int, float, t.Iterable[t.Union[int, float]]] = 2,
+) -> t.Union[float, np.ndarray]:
+    """Calculate the power sum of ``values``."""
+    def ps_func(arr: TypeValList, p: t.Union[int,
+                                             float]) -> t.Union[int, float]:
+        if np.any(np.isnan(arr)):
+            return np.nan
+
+        return np.sum(np.power(arr, p))
+
+    return _apply_power_func(values=values, p_func=ps_func, p=p)
+
+
+def sum_nanpowersum(
+        values: TypeValList,
+        p: t.Union[int, float, t.Iterable[t.Union[int, float]]] = 2,
+) -> t.Union[float, np.ndarray]:
+    """Calculate the power sum of ``values`` ignoring nan values."""
+    return sum_powersum(_remove_nan(values=values), p=p)
+
+
+def sum_pnorm(
+        values: TypeValList,
+        p: t.Union[int, float, t.Iterable[t.Union[int, float]]] = 2,
+) -> t.Union[float, np.ndarray]:
+    """Calculate the p-norm of ``values``."""
+    def pn_func(arr: TypeValList, p: t.Union[int,
+                                             float]) -> t.Union[int, float]:
+        if np.any(np.isnan(arr)):
+            return np.nan
+
+        return np.linalg.norm(x=arr, ord=p) if p >= 0 else np.nan
+
+    return _apply_power_func(values=values, p_func=pn_func, p=p)
+
+
+def sum_nanpnorm(
+        values: TypeValList,
+        p: t.Union[int, float, t.Iterable[t.Union[int, float]]] = 2,
+) -> t.Union[float, np.ndarray]:
+    """Calculate the p-norm of ``values`` ignoring nan values."""
+    return sum_pnorm(_remove_nan(values=values), p=p)
+
+
+def sum_sum(values: TypeValList) -> float:
+    """Calculate the sum of ``values``."""
+    if len(values) == 0:
+        return np.nan
+
+    return sum(values)
+
+
+def sum_nansum(values: TypeValList) -> float:
+    """Calculate the sum of ``values`` ignoring nan values."""
+    if len(values) == 0 or np.all(np.isnan(values)):
+        return np.nan
+
+    return np.nansum(values)
 
 
 SUMMARY_METHODS = collections.OrderedDict((
@@ -342,4 +454,10 @@ SUMMARY_METHODS = collections.OrderedDict((
     ("nanrange", sum_nanptp),
     ("skewness", sum_skewness),
     ("nanskewness", sum_nanskewness),
+    ("sum", sum_sum),
+    ("nansum", sum_nansum),
+    ("powersum", sum_powersum),
+    ("pnorm", sum_pnorm),
+    ("nanpowersum", sum_nanpowersum),
+    ("nanpnorm", sum_nanpnorm),
 ))
