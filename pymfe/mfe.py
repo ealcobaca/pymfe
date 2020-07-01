@@ -737,26 +737,31 @@ class MFE:
 
     def _set_data_numeric(
             self,
-            transform_cat: str,
+            transform_cat: str = None,
             rescale: t.Optional[str] = None,
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None) -> np.ndarray:
         """Returns numeric data from the fitted dataset.
 
         Parameters
         ----------
-        transform_cat: :obj:`bool`
+        transform_cat: :obj:`str`, optional
             If `gray`, then all categoric-type data will be binarized with a
             model matrix strategy. If `one-hot`, then all categoric-type
-            data will be transformed using the one-hot encoding strategy.
-            If None, then categorical attributes are not transformed.
+            data will be transformed using the k-1 one-hot encoding strategy
+            (for a traditional one-hot encoding, the first column is dropped
+            out). If `one-hot-full`, the strategy used is the one-hot encoding
+            with all encoded features (`k` features for an attribute with `k`
+            unique values; not recommended due to multicollinearity problems
+            due to the `dummy variable trap`). If None, then the categorical
+            attributes are not transformed.
 
         rescale : :obj:`str`, optional
-            Check ``fit`` documentation for more information about this
-            parameter.
+            Check the documentation of the method ``fit`` for more information
+            about this.
 
         rescale_args : :obj:`dict`, optional
-            Check ``fit`` documentation for more information about this
-            parameter.
+            Check the documentation of the method ``fit`` for more information
+            about this.
 
         Returns
         -------
@@ -775,8 +780,8 @@ class MFE:
             this method.
 
         ValueError
-            If `transform_cat` is neither None nor a value among `one-hot` and
-            `gray`.
+            If `transform_cat` is not in the set {None, `one-hot`, `gray`,
+            `one-hot-full`}.
         """
         if self.X is None:
             raise TypeError("It is necessary to fit valid data into the "
@@ -802,8 +807,11 @@ class MFE:
                     self.X[:, self._attr_indexes_cat])
 
             else:
+                _use_all_ohe_columns = transform_cat == "one-hot-full"
+
                 categorical_dummies = _internal.transform_cat_onehot(
-                    self.X[:, self._attr_indexes_cat])
+                    self.X[:, self._attr_indexes_cat],
+                    use_all_columns=_use_all_ohe_columns)
 
             if categorical_dummies is not None:
                 data_num = np.concatenate((data_num, categorical_dummies),
@@ -859,16 +867,37 @@ class MFE:
             binarized ones.
 
             If `one-hot`, categorical attributes are binarized using one-hot
-            encoding.
+            encoding with `k-1` features for a categorical attribute with `k`
+            distinct values. This algorithm works as follows:
+
+            For each categorical attribute C:
+                1. Encode C with traditional one-hot encoding.
+                2. Arbitrarily drop the first column of the encoding result.
+
+            The unique value previously represented by the k-length vector
+            [1, 0, ..., 0] will now be presented by the (k-1)-length vector
+            [0, 0, ..., 0]. Note that all other unique values will also now be
+            represented by (k-1)-length vectors (the first `0` is dropped out).
+
+            This algorithm avoids the `dummy variable trap`, which may raise
+            multicollinearity problems due to the unnecessary extra feature.
+            Note that the decision of dropping the very first encoded feature
+            is arbitrary, as any other encoded feature could have been dropped
+            instead.
 
             If `gray`, categorical attributes are binarized using a model
-            matrix.
+            matrix. The formula used for this transformation is just the union
+            (+) of all categoric attributes using formula language from `patsy`
+            package API, removing the intercept terms: `~ 0 + A_1 + ... + A_n`,
+            where `n` is the number of features and `A_i` is the ith categoric
+            attribute, 1 <= i <= n.
 
-            The formula used for this transformation is just the union (+) of
-            all categoric attributes using formula language from ``patsy``
-            package API, removing the intercept terms:
-            ``~ 0 + A_1 + ... + A_n``, where ``n`` is the number of attributes
-            and A_i is the ith categoric attribute, 1 <= i <= n.
+            If `one-hot-full`, categorical attributes are binarized using one-
+            hot encoding with `k` features for a categorical attributes with
+            `k` distinct values. This option is not recommended due to the
+            `dummy variable trap`, which may cause multicollinearity problems
+            due to an extra unnecessary variable (a label can be encoded using
+            the null vector [0, ..., 0]^T).
 
             If None, then categorical attributes are not transformed.
 
