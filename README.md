@@ -215,6 +215,7 @@ You can also use the bibtex format:
   pages   = {1-5},
   url     = {http://jmlr.org/papers/v21/19-348.html}
 }
+```
 
 ## Acknowledgments
 We would like to thank every [Contributor](https://github.com/ealcobaca/pymfe/graphs/contributors) directly or indirectly has helped this project to happen. Thank you all.
