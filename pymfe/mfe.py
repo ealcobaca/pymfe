@@ -760,8 +760,8 @@ class MFE:
             about this.
 
         rescale_args : :obj:`dict`, optional
-            Check ``fit`` method documentation for more information about this
-            parameter.
+            Check the documentation of the method ``fit`` for more information
+            about this.
 
         Returns
         -------
