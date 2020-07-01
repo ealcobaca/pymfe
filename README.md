@@ -200,8 +200,21 @@ This project is licensed under the MIT License - see the [License](LICENSE) file
 ## Cite Us
 
 If you use the `pymfe` or [`mfe`](https://github.com/rivolli/mfe) in scientific publication, we would appreciate citations to the following paper:
-```
-@article{}
+
+Edesio Alcobaça, Felipe Siqueira, Adriano Rivolli, Luís P. F. Garcia, Jefferson T. Oliva, & André C. P. L. F. de Carvalho (2020). MFE: Towards reproducible meta-feature extractionJournal of Machine Learning Research, 21(111), 1-5. http://jmlr.org/papers/v21/19-348.html
+
+You can also use the bibtex format:
+```bibtex
+@article{JMLR:v21:19-348,
+  author  = {Edesio Alcobaça and Felipe Siqueira and Adriano Rivolli and Luís P. F. Garcia and Jefferson T. Oliva and André C. P. L. F. de Carvalho},
+  title   = {MFE: Towards reproducible meta-feature extraction},
+  journal = {Journal of Machine Learning Research},
+  year    = {2020},
+  volume  = {21},
+  number  = {111},
+  pages   = {1-5},
+  url     = {http://jmlr.org/papers/v21/19-348.html}
+}
 ```
 
 ## Acknowledgments
