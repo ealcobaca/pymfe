@@ -737,14 +737,14 @@ class MFE:
 
     def _set_data_numeric(
             self,
-            transform_cat: str,
+            transform_cat: str = None,
             rescale: t.Optional[str] = None,
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None) -> np.ndarray:
         """Returns numeric data from the fitted dataset.
 
         Parameters
         ----------
-        transform_cat: :obj:`str`
+        transform_cat: :obj:`str`, optional
             If `gray`, then all categoric-type data will be binarized with a
             model matrix strategy. If `one-hot`, then all categoric-type
             data will be transformed using the k-1 one-hot encoding strategy
