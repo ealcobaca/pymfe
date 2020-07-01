@@ -756,8 +756,8 @@ class MFE:
             attributes are not transformed.
 
         rescale : :obj:`str`, optional
-            Check ``fit`` method documentation for more information about this
-            parameter.
+            Check the documentation of the method ``fit`` for more information
+            about this.
 
         rescale_args : :obj:`dict`, optional
             Check ``fit`` method documentation for more information about this
