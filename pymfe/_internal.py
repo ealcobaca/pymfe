@@ -1470,10 +1470,10 @@ def transform_cat_onehot(
             one_cat_attrs.append(ohe.fit_transform(cur_attr))
 
         except ValueError:
-            raise ValueError("Categorical data encoding of type 'one-hot' has"
-                             " no support for missing values. Please handle the "
-                             "missing data manually before fitting it into the "
-                             "MFE model.")
+            raise ValueError("Categorical data encoding of type 'one-hot' has "
+                             "no support for missing values. Please handle the"
+                             " missing data manually before fitting it into "
+                             "the MFE model.")
 
     return np.hstack(one_cat_attrs)
 
