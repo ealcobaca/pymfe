@@ -37,7 +37,7 @@ pypi: clean ## Send the package to pypi.
 	twine upload dist/*
 
 install-dev: ## Install pymfe for developers using pip.
-	pip install -e .
+	pip install -U -e .
 	pip install -U -r requirements.txt
 	pip install -U -r requirements-dev.txt
 	pip install -U -r requirements-docs.txt

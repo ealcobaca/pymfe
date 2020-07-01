@@ -504,7 +504,6 @@ def summarize(
         features: t.Union[np.ndarray, t.Sequence],
         callable_sum: t.Callable,
         callable_args: t.Optional[t.Dict[str, t.Any]] = None,
-        remove_nan: bool = True,
         ) -> t.Union[t.Sequence, TypeNumeric]:
     """Returns ``feature`` values summarized by ``callable_sum``.
 
@@ -521,10 +520,6 @@ def summarize(
             need to check out the documentation of the method which implemen-
             ts it.
 
-        remove_nan (:obj:`bool`, optional): check and remove all elements
-            in `features` which are not numeric. Note that :obj:`np.inf`
-            is still considered numeric (:obj:`float` type).
-
     Returns:
         float: value of summarized feature values, if possible. May return
             :obj:`np.nan` if summary function call invokes TypeError, Value-
@@ -534,23 +529,22 @@ def summarize(
         AttributeError: if ``callable_sum`` is invalid.
         TypeError: if ``features``  is not a sequence.
     """
-    processed_feat = np.array(features)
-
-    if remove_nan:
-        numeric_vals = list(map(isnumeric, features))
-        processed_feat = processed_feat[numeric_vals]
-        processed_feat = processed_feat.astype(np.float32)
-
     if callable_args is None:
         callable_args = {}
 
     try:
-        metafeature = callable_sum(processed_feat, **callable_args)
+        metafeature = callable_sum(features, **callable_args)
 
     except (TypeError, ValueError, ZeroDivisionError, MemoryError):
         metafeature = np.nan
 
     return metafeature
+
+
+def array_is_returned(mtd_callable: t.Callable) -> bool:
+    """Check if a callable return a scalar or an array."""
+    ret_type = t.get_type_hints(mtd_callable).get("return", float)
+    return hasattr(ret_type, "__len__")
 
 
 def get_feat_value(
@@ -587,14 +581,18 @@ def get_feat_value(
     try:
         features = mtd_callable(**mtd_args)
 
-    except (TypeError, ValueError, ZeroDivisionError, MemoryError) as type_e:
+    except (TypeError, ValueError, ZeroDivisionError,
+            MemoryError, np.linalg.LinAlgError) as type_e:
+        is_array = array_is_returned(mtd_callable)
+
         if not suppress_warnings:
             warnings.warn(
-                "Can't extract feature '{0}'.\n Exception message: {1}.\n"
-                " Will set it as 'np.nan' for all summary functions."
-                .format(mtd_name, repr(type_e)), RuntimeWarning)
+                "Can't extract feature '{0}'.\n Exception message: {1}.{2}"
+                .format(mtd_name, repr(type_e), "\n Will set it as 'np.nan' "
+                        "for all summary functions." if is_array else ""),
+                RuntimeWarning)
 
-        features = np.nan
+        features = np.empty(0) if is_array else np.nan
 
     return features
 
@@ -1340,7 +1338,6 @@ def isnumeric(
     Args:
         value (:obj:`Any`): any object to be checked as numeric or a collec-
             tion of numerics.
-
         check_subtype (:obj:`bool`, optional): if True, check elements of
             ``value`` if it is an iterable object. Otherwise, only checks
             ``value`` type, ignoring the fact that it can be an iterable ob-
