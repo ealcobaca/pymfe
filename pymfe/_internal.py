@@ -1459,7 +1459,7 @@ def transform_cat_onehot(
     for attr_ind in np.arange(num_col):
         cur_attr = data_categoric[:, attr_ind, np.newaxis]
 
-        if not use_all_columns and len(set(cur_attr)) <= 1:
+        if not use_all_columns and len(set(cur_attr.ravel())) <= 1:
             raise ValueError("This type of one-hot encoding does not "
                              "support features with 1 or less distinct "
                              "values. Drop the {}th categorical feature "
