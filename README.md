@@ -206,7 +206,13 @@ Edesio Alcobaça, Felipe Siqueira, Adriano Rivolli, Luís P. F. Garcia, Jefferso
 You can also use the bibtex format:
 ```bibtex
 @article{JMLR:v21:19-348,
-  author  = {Edesio Alcobaça and Felipe Siqueira and Adriano Rivolli and Luís P. F. Garcia and Jefferson T. Oliva and André C. P. L. F. de Carvalho},
+  author  = {Edesio Alcobaça and
+             Felipe Siqueira and
+             Adriano Rivolli and
+             Luís P. F. Garcia and
+             Jefferson T. Oliva and
+             André C. P. L. F. de Carvalho
+  },
   title   = {MFE: Towards reproducible meta-feature extraction},
   journal = {Journal of Machine Learning Research},
   year    = {2020},
