@@ -6,7 +6,10 @@
 [![Pypi](https://badge.fury.io/py/pymfe.svg)](https://badge.fury.io/py/pymfe)
 
 
-Extracts meta-features from datasets to support the design of recommendation systems based on Meta-Learning (MtL). The meta-features are able to characterize the complexity of datasets and to provide estimates of algorithm performance. The package contains not only the standard, but also more recent characterization measures. By making available a large set of meta-feature extraction functions, this package allows a comprehensive data characterization, a deep data exploration and a large number of MtL-based data analysis.
+The pymfe (**py**thon **m**eta-**f**eature **e**xtractor) provides a comprehensive set of meta-features implemented in python.
+The package brings cutting edge meta-features, following recent literature propose.
+The pymfe architecture was thought to systematically make the extraction, which can produce a robust set of meta-features.
+Moreover, pymfe follows recent meta-feature formalization aiming to make MtL reproducible.
 
 ## Measures
 
