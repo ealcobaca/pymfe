@@ -279,6 +279,18 @@ class TestArchitecture:
         mfe.fit(X.values, y.values, transform_cat=None)
         assert mfe._custom_args_ft["N"].size == 0
 
+    def test_gray_encoding_missing_value(self):
+        X, y = utils.load_xy(1)
+        mfe = MFE()
+
+        X = np.copy(X.values)
+        y = y.values
+
+        X[5, 0] = np.nan
+
+        with pytest.raises(ValueError):
+            mfe.fit(X, y, transform_cat="gray")
+
     def test_one_hot_encoding_01(self):
         X, y = utils.load_xy(1)
         mfe = MFE()
@@ -315,6 +327,18 @@ class TestArchitecture:
 
         with pytest.raises(ValueError):
             mfe.fit(X=X, y=y, transform_cat="one-hot")
+
+    def test_ohe_full_encoding_missing_value(self):
+        X, y = utils.load_xy(1)
+        mfe = MFE()
+
+        X = np.copy(X.values)
+        y = y.values
+
+        X[5, 0] = np.nan
+
+        with pytest.raises(ValueError):
+            mfe.fit(X, y, transform_cat="one-hot")
 
     @pytest.mark.parametrize("confidence", (0.95, 0.99))
     def test_extract_with_confidence(self, confidence):

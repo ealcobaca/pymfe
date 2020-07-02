@@ -1430,7 +1430,15 @@ def transform_cat_gray(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
 
     formula = "~ 0 + {}".format(" + ".join(dummy_attr_names))
 
-    return np.asarray(patsy.dmatrix(formula, named_data))
+    try:
+        enc_data = patsy.dmatrix(formula, named_data, NA_action="raise")
+        return np.asarray(enc_data, dtype=float)
+
+    except patsy.PatsyError:
+        raise ValueError("Categorical data encoding of type 'gray' has no "
+                         "support for missing values. Please handle the "
+                         "missing data manually before fitting it into the "
+                         "MFE model.")
 
 
 def transform_cat_onehot(
@@ -1451,14 +1459,21 @@ def transform_cat_onehot(
     for attr_ind in np.arange(num_col):
         cur_attr = data_categoric[:, attr_ind, np.newaxis]
 
-        if not use_all_columns and np.unique(cur_attr).size <= 1:
+        if not use_all_columns and len(set(cur_attr.ravel())) <= 1:
             raise ValueError("This type of one-hot encoding does not "
                              "support features with 1 or less distinct "
                              "values. Drop the {}th categorical feature "
                              "or select another encoding strategy.".format(
                                  attr_ind + 1))
 
-        one_cat_attrs.append(ohe.fit_transform(cur_attr))
+        try:
+            one_cat_attrs.append(ohe.fit_transform(cur_attr))
+
+        except ValueError:
+            raise ValueError("Categorical data encoding of type 'one-hot' has "
+                             "no support for missing values. Please handle the"
+                             " missing data manually before fitting it into "
+                             "the MFE model.")
 
     return np.hstack(one_cat_attrs)
 
@@ -1467,9 +1482,7 @@ def _equal_freq_discretization(data: np.ndarray,
                                num_bins: int,
                                tol: float = 1e-8) -> np.ndarray:
     """Discretize a 1-D numeric array into an equal-frequency histogram."""
-    perc_interval = 100.0 / num_bins
-    perc_range = np.arange(perc_interval, 100, perc_interval)
-    hist_divs = np.percentile(data, perc_range)
+    hist_divs = np.quantile(data, np.linspace(0, 1, num_bins + 1)[1:])
 
     # Sometimes the 'hist_divs' is not appropriated.
     # For example when all values are constants. It implies in 'hist_divs'
@@ -1477,13 +1490,15 @@ def _equal_freq_discretization(data: np.ndarray,
     # To avoid partitions with the same value, we check if all partitions are
     # different. Unfortunately, it leads to a non-equal frequency
     # discretization.
-    aux = len(hist_divs)
-    diffs = np.append(True, np.diff(hist_divs))
-    hist_divs = hist_divs[diffs > tol]
-    if aux != len(hist_divs):
+    prev_size = hist_divs.size
+
+    hist_divs = hist_divs[np.append(True, np.diff(hist_divs) > tol)]
+
+    if prev_size != hist_divs.size:
         warnings.warn("It is not possible make equal discretization")
 
     hist_divs = np.unique(hist_divs)
+
     return np.digitize(x=data, bins=hist_divs, right=True)
 
 
