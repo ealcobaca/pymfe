@@ -5,11 +5,15 @@
 [![PythonVersion](https://img.shields.io/pypi/pyversions/pymfe.svg)](https://www.python.org/downloads/release/python-370/)
 [![Pypi](https://badge.fury.io/py/pymfe.svg)](https://badge.fury.io/py/pymfe)
 
-
 The pymfe (**py**thon **m**eta-**f**eature **e**xtractor) provides a comprehensive set of meta-features implemented in python.
 The package brings cutting edge meta-features, following recent literature propose.
 The pymfe architecture was thought to systematically make the extraction, which can produce a robust set of meta-features.
 Moreover, pymfe follows recent meta-feature formalization aiming to make MtL reproducible.
+
+Here,  you can use different measures and summary functions, setting their hyperparameters, and also measuring automatically the elapsed time.
+Moreover,  you can extract meta-features from specific models, or even extract meta-features with confidence intervals using bootstrap.
+There are a lot of other interesting features and you can see more about it looking at the documentation.
+
 
 ## Measures
 
