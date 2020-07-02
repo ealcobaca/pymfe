@@ -22,6 +22,11 @@ LICENSE = 'MIT'
 
 URL = 'https://github.com/ealcobaca/pymfe'
 
+MAINTAINER = 'Edesio Alcobaça, Felipe Alves Siqueira'
+
+
+MAINTAINER_EMAIL = 'edesio@usp.br, felipe.siqueira@usp.br'
+
 
 DOWNLOAD_URL = 'https://github.com/ealcobaca/pymfe/releases'
 
@@ -72,6 +77,8 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     license=LICENSE,
     url=URL,
+    maintainer=MAINTAINER,
+    maintainer_email=MAINTAINER_EMAIL,
     description=DESCRIPTION,
     download_url=DOWNLOAD_URL,
     packages=setuptools.find_packages(),
