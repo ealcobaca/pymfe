@@ -49,6 +49,18 @@ EXTRAS_REQUIRE = {
         'liac-arff',
         'flake8',
         'pylint'
+    ],
+    'tests': [
+        'pytest',
+        'pytest-cov',
+        'liac-arff'
+    ],
+    'docs': [
+        'sphinx',
+        'sphinx-gallery',
+        'sphinx_rtd_theme',
+        'numpydoc',
+        'liac-arff'
     ]
 }
 
