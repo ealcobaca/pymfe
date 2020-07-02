@@ -36,7 +36,7 @@ class TestInfoTheo:
             ###################
             # Categorical data
             ###################
-            (1, "attr_conc", [0.01682327, 0.04715381], False),
+            (1, "attr_conc", [0.017922703, 0.057748884], False),
             (1, "attr_ent", [0.59014829, 0.33852165], False),
             (1, "class_conc", [0.02313025, 0.04485300], False),
             (1, "class_ent", 0.99857554, False),
@@ -44,7 +44,7 @@ class TestInfoTheo:
             (1, "joint_ent", [1.56957216, 0.33197232], False),
             (1, "mut_inf", [0.01915167, 0.03918710], False),
             (1, "ns_ratio", 29.81446298, False),
-            (1, "attr_conc", [0.01682327, 0.04715381], True),
+            (1, "attr_conc", [0.017922703, 0.057748884], True),
             (1, "attr_ent", [0.59014829, 0.33852165], True),
             (1, "class_conc", [0.02313025, 0.04485300], True),
             (1, "class_ent", 0.99857554, True),
@@ -78,7 +78,7 @@ class TestInfoTheo:
         precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
         mfe = MFE(
-            groups=[GNAME], features=[ft_name]).fit(
+            groups=[GNAME], features=[ft_name], random_state=1234).fit(
                 X.values, y.values, precomp_groups=precomp_group)
         value = mfe.extract()[1]
 

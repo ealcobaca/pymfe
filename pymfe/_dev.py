@@ -844,7 +844,8 @@ class MFEBoilerplate:
         its mean, standard deviation, quantiles, variance etc. It will
         happen automatically, and you should not worry about this. You
         can put 'np.nan' inside your array. If you need to return an
-        entire invalid array, consider returning 'np.array([np.nan])'.
+        entire invalid array, consider returning 'np.empty(0)', or simply
+        raise and ValueError or TypeError exception.
         DO NOT return a single 'np.nan', as it is reserved for the
         'non-summarizable' metafeature extraction methods.
 
@@ -869,7 +870,8 @@ class MFEBoilerplate:
             # can return an invalid array
 
             # return np.nan  # Wrong! It is not an array!
-            return np.array([np.nan])  # Correct.
+            # return np.empty(0)  # Correct, but there's room for improvement.
+            raise ValueError("'y' can't have negative values.")  # Better.
 
         if y.size > 20:
             return np.power(y, 1 / 4) + np.arange(y.size)

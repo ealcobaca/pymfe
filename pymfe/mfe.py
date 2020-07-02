@@ -338,7 +338,6 @@ class MFE:
             self,
             feature_values: t.Sequence[_internal.TypeNumeric],
             feature_name: str,
-            remove_nan: bool = True,
             verbose: int = 0,
             suppress_warnings: bool = False,
             **kwargs
@@ -355,13 +354,6 @@ class MFE:
         feature_name : :obj:`str`
             Name of the feature method used for produce the ``feature_value.``
 
-        remove_nan : :obj:`bool`, optional
-            If True, all non-numeric values are removed from ``feature_values``
-            before calling each summary method. Note that the summary method
-            itself may still remove non-numeric values and, in this case, the
-            user must suppress these warnings using some built-in argument of
-            the summary method using the kwargs argument, if possible.
-
         verbose : :obj:`int`, optional
             Select the verbosity level of the summarization process.
             If == 1, then print just the ending message, without a line break.
@@ -371,9 +363,8 @@ class MFE:
 
         suppress_warnings : :obj:`bool`, optional
             If True, ignore all warnings invoked before and after summary
-            method calls. Note that, as seen in the ``remove_nan`` argument,
-            the summary callables may still invoke warnings by itself and the
-            user need to ignore them, if possible, via kwargs.
+            method calls. The summary callables may still invoke warnings by
+            itself and the user need to ignore them, if possible, via kwargs.
 
         kwargs:
             User-defined arguments for the summary callables.
@@ -434,7 +425,7 @@ class MFE:
 
             summarized_val, time_sm = _internal.timeit(
                 _internal.summarize, feature_values, sm_mtd_callable,
-                sm_mtd_args_pack, remove_nan)
+                sm_mtd_args_pack)
 
             if not suppress_warnings:
                 _internal.check_summary_warnings(
@@ -472,7 +463,6 @@ class MFE:
 
     def _call_feature_methods(
             self,
-            remove_nan: bool = True,
             verbose: int = 0,
             # enable_parallel: bool = False,
             suppress_warnings: bool = False,
@@ -536,7 +526,6 @@ class MFE:
                 sm_ret = self._call_summary_methods(
                     feature_values=features,
                     feature_name=ft_name_without_prefix,
-                    remove_nan=remove_nan,
                     verbose=verbose,
                     suppress_warnings=suppress_warnings,
                     **kwargs)
@@ -748,26 +737,31 @@ class MFE:
 
     def _set_data_numeric(
             self,
-            transform_cat: str,
+            transform_cat: str = None,
             rescale: t.Optional[str] = None,
             rescale_args: t.Optional[t.Dict[str, t.Any]] = None) -> np.ndarray:
         """Returns numeric data from the fitted dataset.
 
         Parameters
         ----------
-        transform_cat: :obj:`bool`
+        transform_cat: :obj:`str`, optional
             If `gray`, then all categoric-type data will be binarized with a
             model matrix strategy. If `one-hot`, then all categoric-type
-            data will be transformed using the one-hot encoding strategy.
-            If None, then categorical attributes are not transformed.
+            data will be transformed using the k-1 one-hot encoding strategy
+            (for a traditional one-hot encoding, the first column is dropped
+            out). If `one-hot-full`, the strategy used is the one-hot encoding
+            with all encoded features (`k` features for an attribute with `k`
+            unique values; not recommended due to multicollinearity problems
+            due to the `dummy variable trap`). If None, then the categorical
+            attributes are not transformed.
 
         rescale : :obj:`str`, optional
-            Check ``fit`` documentation for more information about this
-            parameter.
+            Check the documentation of the method ``fit`` for more information
+            about this.
 
         rescale_args : :obj:`dict`, optional
-            Check ``fit`` documentation for more information about this
-            parameter.
+            Check the documentation of the method ``fit`` for more information
+            about this.
 
         Returns
         -------
@@ -786,8 +780,8 @@ class MFE:
             this method.
 
         ValueError
-            If `transform_cat` is neither None nor a value among `one-hot` and
-            `gray`.
+            If `transform_cat` is not in the set {None, `one-hot`, `gray`,
+            `one-hot-full`}.
         """
         if self.X is None:
             raise TypeError("It is necessary to fit valid data into the "
@@ -813,8 +807,11 @@ class MFE:
                     self.X[:, self._attr_indexes_cat])
 
             else:
+                _use_all_ohe_columns = transform_cat == "one-hot-full"
+
                 categorical_dummies = _internal.transform_cat_onehot(
-                    self.X[:, self._attr_indexes_cat])
+                    self.X[:, self._attr_indexes_cat],
+                    use_all_columns=_use_all_ohe_columns)
 
             if categorical_dummies is not None:
                 data_num = np.concatenate((data_num, categorical_dummies),
@@ -823,6 +820,9 @@ class MFE:
         if rescale:
             data_num = _internal.rescale_data(
                 data=data_num, option=rescale, args=rescale_args)
+
+        if data_num.dtype != float:
+            data_num = data_num.astype(float)
 
         return data_num
 
@@ -867,16 +867,37 @@ class MFE:
             binarized ones.
 
             If `one-hot`, categorical attributes are binarized using one-hot
-            encoding.
+            encoding with `k-1` features for a categorical attribute with `k`
+            distinct values. This algorithm works as follows:
+
+            For each categorical attribute C:
+                1. Encode C with traditional one-hot encoding.
+                2. Arbitrarily drop the first column of the encoding result.
+
+            The unique value previously represented by the k-length vector
+            [1, 0, ..., 0] will now be presented by the (k-1)-length vector
+            [0, 0, ..., 0]. Note that all other unique values will also now be
+            represented by (k-1)-length vectors (the first `0` is dropped out).
+
+            This algorithm avoids the `dummy variable trap`, which may raise
+            multicollinearity problems due to the unnecessary extra feature.
+            Note that the decision of dropping the very first encoded feature
+            is arbitrary, as any other encoded feature could have been dropped
+            instead.
 
             If `gray`, categorical attributes are binarized using a model
-            matrix.
+            matrix. The formula used for this transformation is just the union
+            (+) of all categoric attributes using formula language from `patsy`
+            package API, removing the intercept terms: `~ 0 + A_1 + ... + A_n`,
+            where `n` is the number of features and `A_i` is the ith categoric
+            attribute, 1 <= i <= n.
 
-            The formula used for this transformation is just the union (+) of
-            all categoric attributes using formula language from ``patsy``
-            package API, removing the intercept terms:
-            ``~ 0 + A_1 + ... + A_n``, where ``n`` is the number of attributes
-            and A_i is the ith categoric attribute, 1 <= i <= n.
+            If `one-hot-full`, categorical attributes are binarized using one-
+            hot encoding with `k` features for a categorical attributes with
+            `k` distinct values. This option is not recommended due to the
+            `dummy variable trap`, which may cause multicollinearity problems
+            due to an extra unnecessary variable (a label can be encoded using
+            the null vector [0, ..., 0]^T).
 
             If None, then categorical attributes are not transformed.
 
@@ -1059,7 +1080,6 @@ class MFE:
 
     def extract(
             self,
-            remove_nan: bool = True,
             verbose: int = 0,
             enable_parallel: bool = False,
             suppress_warnings: bool = False,
@@ -1068,13 +1088,6 @@ class MFE:
 
         Parameters
         ----------
-        remove_nan : :obj:`bool`, optional
-            If True, remove any non-numeric values features before summarizing
-            values from all feature extraction methods. Note that the summary
-            methods may still remove non-numeric values by itself. In this
-            case, the user must modify this behavior using built-in summary
-            method arguments via kwargs, if possible.
-
         verbose : :obj:`int`, optional
             Defines the verbosity level related to the metafeature extraction.
             If == 1, show just the current progress, without line breaks.
@@ -1093,9 +1106,7 @@ class MFE:
             If True, do not show warnings about unknown user custom parameters
             for feature extraction and summary methods passed via kwargs. Note
             that both feature extraction and summary methods may still raise
-            warnings by itself. In this case, just like the ``remove_nan``
-            situation, the user must suppress them by built-in args from these
-            methods via kwargs, if possible.
+            warnings by itself.
 
         kwargs:
             Used to pass custom arguments for both feature-extraction and
@@ -1176,7 +1187,6 @@ class MFE:
         _time_start = time.time()
 
         results = self._call_feature_methods(
-            remove_nan=remove_nan,
             verbose=verbose,
             enable_parallel=enable_parallel,
             suppress_warnings=suppress_warnings,
