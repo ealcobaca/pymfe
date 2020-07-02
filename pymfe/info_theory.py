@@ -163,6 +163,9 @@ class MFEInfoTheory:
             Absolute frequency of each distinct value in ``values``. This
             argument is meant to exploit precomputations.
         """
+        if len(values) == 0:
+            raise ValueError("'values' is empty.")
+
         if value_freqs is None:
             _, value_freqs = np.unique(values, return_counts=True)
 
@@ -204,7 +207,7 @@ class MFEInfoTheory:
     @classmethod
     def ft_attr_conc(cls,
                      C: np.ndarray,
-                     max_attr_num: t.Optional[int] = None,
+                     max_attr_num: t.Optional[int] = 12,
                      random_state: t.Optional[int] = None) -> np.ndarray:
         """Compute concentration coef. of each pair of distinct attributes.
 
@@ -294,11 +297,7 @@ class MFEInfoTheory:
         if attr_ent is not None:
             return attr_ent
 
-        try:
-            return np.apply_along_axis(func1d=cls._calc_entropy, axis=0, arr=C)
-
-        except ValueError:
-            return np.array([np.nan])
+        return np.apply_along_axis(func1d=cls._calc_entropy, axis=0, arr=C)
 
     @classmethod
     def ft_class_conc(cls, C: np.ndarray, y: np.ndarray) -> np.ndarray:

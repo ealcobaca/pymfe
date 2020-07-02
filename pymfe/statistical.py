@@ -420,9 +420,6 @@ class MFEStatistical:
         if abs_corr_mat is None:
             abs_corr_mat = np.abs(np.corrcoef(N, rowvar=False))
 
-        if not isinstance(abs_corr_mat, np.ndarray) and np.isnan(abs_corr_mat):
-            return np.array([np.nan])
-
         res_num_rows, _ = abs_corr_mat.shape
 
         inf_triang_vals = abs_corr_mat[np.tril_indices(res_num_rows, k=-1)]
@@ -554,13 +551,7 @@ class MFEStatistical:
         if cov_mat is None:
             cov_mat = np.cov(N, rowvar=False, ddof=ddof)
 
-        try:
-            eigvals = np.linalg.eigvals(cov_mat)
-
-        except (np.linalg.LinAlgError, ValueError):
-            return np.array([np.nan])
-
-        return eigvals
+        return np.linalg.eigvals(cov_mat)
 
     @classmethod
     def ft_g_mean(cls,
@@ -617,16 +608,13 @@ class MFEStatistical:
         return g_mean
 
     @classmethod
-    def ft_h_mean(cls, N: np.ndarray, epsilon: float = 1.0e-8) -> np.ndarray:
+    def ft_h_mean(cls, N: np.ndarray) -> np.ndarray:
         """Compute the harmonic mean of each attribute.
 
         Parameters
         ----------
         N : :obj:`np.ndarray`
             Fitted numerical data.
-
-        epsilon : float, optional
-            A tiny value to prevent division by zero.
 
         Returns
         -------
@@ -639,11 +627,7 @@ class MFEStatistical:
            to automatic kernel selection for support vector machines.
            Neurocomputing, 70(1):173 – 186, 2006.
         """
-        try:
-            return scipy.stats.hmean(N + epsilon, axis=0)
-
-        except ValueError:
-            return np.array([np.nan])
+        return scipy.stats.hmean(N, axis=0)
 
     @classmethod
     def ft_iq_range(cls, N: np.ndarray) -> np.ndarray:
@@ -1251,12 +1235,8 @@ class MFEStatistical:
 
         gamma = calc_gamma_factor(num_col, num_classes, num_inst)
 
-        try:
-            m_factor = calc_m_factor(sample_cov_matrices, pooled_cov_mat,
-                                     num_inst, num_classes, gamma, vec_weight)
-
-        except (ValueError, np.linalg.LinAlgError):
-            return np.nan
+        m_factor = calc_m_factor(sample_cov_matrices, pooled_cov_mat,
+                                 num_inst, num_classes, gamma, vec_weight)
 
         return np.exp(m_factor / (num_col * (num_inst - num_classes)))
 
@@ -1371,9 +1351,7 @@ class MFEStatistical:
         pcut : float, optional
             Percentage of cut from both the `lower` and `higher` values.
             This value should be in interval [0.0, 0.5), where if 0.0 the
-            return value is the default mean calculation. If this argument is
-            not in mentioned interval, then the return value is :obj:`np.nan`
-            instead.
+            return value is the default mean calculation.
 
         Returns
         -------
@@ -1387,9 +1365,6 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        if not 0 <= pcut < 0.5:
-            return np.array([np.nan])
-
         return scipy.stats.trim_mean(N, proportiontocut=pcut)
 
     @classmethod
