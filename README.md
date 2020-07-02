@@ -17,8 +17,16 @@ There are a lot of other interesting features and you can see more about it look
 
 ## Measures
 
-In MtL, meta-features are designed to extract general properties able to characterize datasets. The meta-feature values should provide relevant evidences about the performance of algorithms, allowing the design of MtL-based recommendation systems. Thus, these measures must be able to predict, with a low computational cost, the performance of the  algorithms under evaluation. In this package, the meta-feature measures are divided into 11 groups:
+In the Meta-learning (MtL) literature, meta-features are measures used to characterize data sets and/or their relations with algorithm bias.
+According to Brazdil et al. (2008), "Meta-learning is the study of principled methods that exploit meta-knowledge to obtain efficient models and solutions by adapting the machine learning and data mining process".
 
+Meta-features are used in AutoML and MtL tasks in general, to represent/understand a dataset,  to understanding a learning bias, to create machine learning (or data mining) recommendations systems, and to create surrogates models, to name a few.
+
+In the pymfe package, you can use different measures and summary functions, setting their hyperparameters, and automatically measure the elapsed time.
+Moreover,  you can extract meta-features from specific models, or even obtain meta-features with confidence intervals using bootstrap.
+There are many other exciting features. You can see more about it looking at the documentation.
+
+<img src="https://render.githubusercontent.com/render/math?math=f\big(\mathcal{D}\big) = \sigma\big(m(\mathcal{D},h_m), h_\sigma\big)">
 
 - **General**: General information related to the dataset, also known as simple measures, such as the number of instances, attributes and classes.
 - **Statistical**: Standard statistical measures to describe the numerical properties of data distribution.
