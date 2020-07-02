@@ -1464,10 +1464,10 @@ class MFEComplexity:
         """Ratio of intra and extra class nearest neighbor distance.
 
         This measure computes the ratio of two sums:
-        (i) The sum of the distances between each example and its closest
-            neighborfrom the same class (intra-class); and
-        (ii) The sum of the distances between each example and its closest
-            neighbor fromanother class (extra-class)
+            - The sum of the distances between each example and its closest
+              neighborfrom the same class (intra-class); and
+            - The sum of the distances between each example and its closest
+              neighbor fromanother class (extra-class)
 
         The average value of this measure is in [0, 1] range.
 
