@@ -15,7 +15,7 @@ and :math:`\sigma\colon \mathbb{R}^{k'} \to \mathbb{R}^{k}` be a summarization f
 Both :math:`m` and 
 :math:`\sigma` have also hyperparameters associated,
 :math:`h_m` and
-:math: `h_\sigma` respectively.
+:math:`h_\sigma` respectively.
 Thus, a meta-feature :math:`f\colon \mathcal{D} \to \mathbb{R}^{k}` for a given dataset :math:`D` is:
 
 .. math::
