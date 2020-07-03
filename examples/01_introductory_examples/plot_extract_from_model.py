@@ -19,6 +19,7 @@ iris = load_iris()
 # needing to use the training data:
 
 # Extract from model
+
 model = sklearn.tree.DecisionTreeClassifier().fit(iris.data, iris.target)
 extractor = MFE()
 ft = extractor.extract_from_model(model)
