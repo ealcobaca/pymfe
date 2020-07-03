@@ -37,10 +37,11 @@ Thus, a meta-feature <img src="https://render.githubusercontent.com/render/math?
 </p>
 
 The measure <img src="https://render.githubusercontent.com/render/math?math=m"> can extract more than one value from each data set, i.e., <img src="https://render.githubusercontent.com/render/math?math=k'"> can vary according to
-<img src="https://render.githubusercontent.com/render/math?math=\mathcal{D}">, which can be mapped to a vector of fixed length
+<img src="https://render.githubusercontent.com/render/math?math=D">, which can be mapped to a vector of fixed length
 <img src="https://render.githubusercontent.com/render/math?math=k"> using a summarization function
 <img src="https://render.githubusercontent.com/render/math?math=\sigma">.
 
+In this package, We provided the following meta-features groups:
 - **General**: General information related to the dataset, also known as simple measures, such as the number of instances, attributes and classes.
 - **Statistical**: Standard statistical measures to describe the numerical properties of data distribution.
 - **Information-theoretic**: Particularly appropriate to describe discrete (categorical) attributes and their relationship with the classes.
