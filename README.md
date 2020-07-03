@@ -15,7 +15,7 @@ Moreover,  you can extract meta-features from specific models, or even extract m
 There are a lot of other interesting features and you can see more about it looking at the documentation.
 
 
-## Measures
+## Meta-features
 
 In the Meta-learning (MtL) literature, meta-features are measures used to characterize data sets and/or their relations with algorithm bias.
 According to Brazdil et al. (2008), "Meta-learning is the study of principled methods that exploit meta-knowledge to obtain efficient models and solutions by adapting the machine learning and data mining process".
@@ -27,16 +27,19 @@ Let <img src="https://render.githubusercontent.com/render/math?math=D \in \mathc
 <img src="https://render.githubusercontent.com/render/math?math=m\colon \mathcal{D} \to \mathbb{R}^{k'}"> be a characterization measure,
 and <img src="https://render.githubusercontent.com/render/math?math=\sigma\colon \mathbb{R}^{k'} \to \mathbb{R}^{k}"> be a summarization function.
 Both <img src="https://render.githubusercontent.com/render/math?math=m"> and 
-<img src="https://render.githubusercontent.com/render/math?math=h_m"> have also hyperparameters associated,
-<img src="https://render.githubusercontent.com/render/math?math=h_\sigma"> and
-<img src="https://render.githubusercontent.com/render/math?math=\sigma"> respectively.
+<img src="https://render.githubusercontent.com/render/math?math=\sigma"> have also hyperparameters associated,
+<img src="https://render.githubusercontent.com/render/math?math=h_m"> and
+<img src="https://render.githubusercontent.com/render/math?math=h_\sigma"> respectively.
 Thus, a meta-feature <img src="https://render.githubusercontent.com/render/math?math=f\colon \mathcal{D} \to \mathbb{R}^{k}"> for a given dataset <img src="https://render.githubusercontent.com/render/math?math=D"> is:
 
 <p align="center">
     <img src="https://render.githubusercontent.com/render/math?math=f\big(D\big) = \sigma\big(m(D,h_m), h_\sigma\big)">.
 </p>
 
-
+The measure <img src="https://render.githubusercontent.com/render/math?math=m"> can extract more than one value from each data set, i.e., <img src="https://render.githubusercontent.com/render/math?math=k'"> can vary according to
+<img src="https://render.githubusercontent.com/render/math?math=\mathcal{D}">, which can be mapped to a vector of fixed length
+<img src="https://render.githubusercontent.com/render/math?math=k"> using a summarization function
+<img src="https://render.githubusercontent.com/render/math?math=\sigma">.
 
 - **General**: General information related to the dataset, also known as simple measures, such as the number of instances, attributes and classes.
 - **Statistical**: Standard statistical measures to describe the numerical properties of data distribution.
