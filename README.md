@@ -58,10 +58,20 @@ In the pymfe package, you can use different measures and summary functions, sett
 Moreover,  you can extract meta-features from specific models, or even obtain meta-features with confidence intervals using bootstrap.
 There are many other exciting features. You can see more about it looking at the [documentation](https://pymfe.readthedocs.io/en/latest/api.html).
 
+
+## Learning task supported
+
+The pymfe can extract meta-features from the following machine learning tasks:
+
+- supervised
+- unsupervised
+
+
 ## Dependencies
 
 The main `pymfe` requirement is:
 * Python (>= 3.6)
+
 
 ## Installation
 
@@ -212,7 +222,9 @@ ft = mfe.extract_with_confidence(
 print(ft)
 ```
 
+
 ## Documentation
+
 We write a great Documentation to guide you on how to use the pymfe library. You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
 You can find in the documentation interesting pages like:
 * [Getting started](https://pymfe.readthedocs.io/en/latest/install.html)
@@ -220,15 +232,18 @@ You can find in the documentation interesting pages like:
 * [Examples](https://pymfe.readthedocs.io/en/latest/auto_examples/index.html)
 * [News about pymfe](https://pymfe.readthedocs.io/en/latest/new.html)
 
+
 ## Developer notes
 
 * We are glad to accept any contributions, please check [Contributing](https://github.com/ealcobaca/pymfe/blob/master/CONTRIBUTING.md) and the [Documentation](https://pymfe.readthedocs.io/en/latest/?badge=latest).
 * To submit bugs and feature requests, report at [project issues](https://github.com/ealcobaca/pymfe/issues).
-* In the current version, the meta-feature extractor supports only classification problems. The authors plan to extend the package to add clustering and regression measures and to support MtL evaluation measures. For more specific information on how to extract each group of measures, please refer to the functions documentation page and the examples contained therein. For a general overview of the `pymfe` package, please have a look at the associated documentation.
+* For a general overview of the `pymfe` package, please have a look at the associated documentation.
+
 
 ## License
 
-This project is licensed under the MIT License - see the [License](LICENSE) file for details.
+This project is licensed under the MIT License - see the [License](https://github.com/ealcobaca/pymfe/blob/master/LICENCE) file for details.
+
 
 ## Cite Us
 
@@ -256,8 +271,10 @@ You can also use the bibtex format:
 }
 ```
 
+
 ## Acknowledgments
 We would like to thank every [Contributor](https://github.com/ealcobaca/pymfe/graphs/contributors) directly or indirectly has helped this project to happen. Thank you all.
+
 
 ## References
  
