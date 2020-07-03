@@ -130,14 +130,6 @@ print(ft)
 You can simply omit the target attribute for unsupervised tasks while fitting the data into the MFE model. The `pymfe` package automatically finds and extracts only the metafeatures suitable for this type of task. Examples are given next:
 
 ```python
-# Load a dataset
-from sklearn.datasets import load_iris
-from pymfe.mfe import MFE
-
-data = load_iris()
-y = data.target
-X = data.data
-
 # Extract default unsupervised measures
 mfe = MFE()
 mfe.fit(X)
