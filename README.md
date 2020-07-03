@@ -5,10 +5,10 @@
 [![PythonVersion](https://img.shields.io/pypi/pyversions/pymfe.svg)](https://www.python.org/downloads/release/python-370/)
 [![Pypi](https://badge.fury.io/py/pymfe.svg)](https://badge.fury.io/py/pymfe)
 
-The pymfe (**py**thon **m**eta-**f**eature **e**xtractor) provides a comprehensive set of meta-features implemented in python.
+The `pymfe` (**py**thon **m**eta-**f**eature **e**xtractor) provides a comprehensive set of meta-features implemented in python.
 The package brings cutting edge meta-features, following recent literature propose.
-The pymfe architecture was thought to systematically make the extraction, which can produce a robust set of meta-features.
-Moreover, pymfe follows recent meta-feature formalization aiming to make MtL reproducible.
+The `pymfe` architecture was thought to systematically make the extraction, which can produce a robust set of meta-features.
+Moreover, `pymfe` follows recent meta-feature formalization aiming to make MtL reproducible.
 
 Here,  you can use different measures and summary functions, setting their hyperparameters, and also measuring automatically the elapsed time.
 Moreover,  you can extract meta-features from specific models, or even extract meta-features with confidence intervals using bootstrap.
@@ -54,14 +54,14 @@ In this package, We provided the following meta-features groups:
 - **Itemset**: Compute the correlation between binary attributes.
 - **Complexity**: Estimate the difficulty in separating the data points into their expected classes.
 
-In the pymfe package, you can use different measures and summary functions, setting their hyperparameters, and automatically measure the elapsed time.
+In the `pymfe` package, you can use different measures and summary functions, setting their hyperparameters, and automatically measure the elapsed time.
 Moreover,  you can extract meta-features from specific models, or even obtain meta-features with confidence intervals using bootstrap.
 There are many other exciting features. You can see more about it looking at the [documentation](https://pymfe.readthedocs.io/en/latest/api.html).
 
 
 ## Learning task supported
 
-The pymfe can extract meta-features from the following machine learning tasks:
+The `pymfe` can extract meta-features from the following machine learning tasks:
 
 - supervised
 - unsupervised
@@ -225,7 +225,7 @@ print(ft)
 
 ## Documentation
 
-We write a great Documentation to guide you on how to use the pymfe library. You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
+We write a great Documentation to guide you on how to use the `pymfe` library. You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
 You can find in the documentation interesting pages like:
 * [Getting started](https://pymfe.readthedocs.io/en/latest/install.html)
 * [API documentation](https://pymfe.readthedocs.io/en/latest/api.html)
