@@ -11,7 +11,9 @@ import sklearn.tree
 from sklearn.datasets import load_iris
 from pymfe.mfe import MFE
 
-iris = load_iris()
+data = load_iris()
+y = data.target
+X = data.data
 
 # You can also extract your meta-features with confidence intervals using
 # bootstrap. Keep in mind that this method extracts each meta-feature several
