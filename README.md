@@ -15,7 +15,7 @@ Moreover,  you can extract meta-features from specific models, or even extract m
 There are a lot of other interesting features and you can see more about it looking at the documentation.
 
 
-## Meta-features
+## Meta-feature
 
 In the Meta-learning (MtL) literature, meta-features are measures used to characterize data sets and/or their relations with algorithm bias.
 According to Brazdil et al. (2008), "Meta-learning is the study of principled methods that exploit meta-knowledge to obtain efficient models and solutions by adapting the machine learning and data mining process".
@@ -56,7 +56,7 @@ In this package, We provided the following meta-features groups:
 
 In the pymfe package, you can use different measures and summary functions, setting their hyperparameters, and automatically measure the elapsed time.
 Moreover,  you can extract meta-features from specific models, or even obtain meta-features with confidence intervals using bootstrap.
-There are many other exciting features. You can see more about it looking at the documentation.
+There are many other exciting features. You can see more about it looking at the [documentation](https://pymfe.readthedocs.io/en/latest/api.html).
 
 ## Dependencies
 
