@@ -52,3 +52,6 @@ help: ## List target command description.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 h: help ## Shortcut to help
+
+format: ## format all the package using black
+	@black --line-length 80 pymfe/
