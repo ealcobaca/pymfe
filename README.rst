@@ -41,59 +41,90 @@ looking at the documentation.
 
 Meta-feature
 ------------
-
 In the Meta-learning (MtL) literature, meta-features are measures used to
 characterize data sets and/or their relations with algorithm bias.
-According to Brazdil et al. (2008), "Meta-learning is the study of principled methods that exploit meta-knowledge to obtain efficient models and solutions by adapting the machine learning and data mining process".
+According to Brazdil et al. (2008) [1]_, "Meta-learning is the study of
+principled methods that exploit meta-knowledge to obtain efficient models and
+solutions by adapting the machine learning and data mining process".
 
-Meta-features are used in MtL and AutoML tasks in general, to represent/understand a dataset,  to understanding a learning bias, to create machine learning (or data mining) recommendations systems, and to create surrogates models, to name a few.
+Meta-features are used in MtL and AutoML tasks in general, to
+represent/understand a dataset,  to understanding a learning bias, to create
+machine learning (or data mining) recommendations systems, and to create
+surrogates models, to name a few.
 
-`Pinto et al. (2016) [1]_` and Rivolli et al. (2018) defined a meta-feature as follows.
-Let <img src="https://render.githubusercontent.com/render/math?math=D \in \mathcal{D}"> be a dataset,
-<img src="https://render.githubusercontent.com/render/math?math=m\colon \mathcal{D} \to \mathbb{R}^{k'}"> be a characterization measure,
-and <img src="https://render.githubusercontent.com/render/math?math=\sigma\colon \mathbb{R}^{k'} \to \mathbb{R}^{k}"> be a summarization function.
-Both <img src="https://render.githubusercontent.com/render/math?math=m"> and 
-<img src="https://render.githubusercontent.com/render/math?math=\sigma"> have also hyperparameters associated,
-<img src="https://render.githubusercontent.com/render/math?math=h_m"> and
-<img src="https://render.githubusercontent.com/render/math?math=h_\sigma"> respectively.
-Thus, a meta-feature <img src="https://render.githubusercontent.com/render/math?math=f\colon \mathcal{D} \to \mathbb{R}^{k}"> for a given dataset <img src="https://render.githubusercontent.com/render/math?math=D"> is:
+Pinto et al. (2016) and Rivolli et al. (2018) defined a meta-feature as follows.
+Let :math:`D \in \mathcal{D}` be a dataset,
+:math:`m\colon \mathcal{D} \to \mathbb{R}^{k'}` be a characterization measure,
+and :math:`\sigma\colon \mathbb{R}^{k'} \to \mathbb{R}^{k}` be a summarization
+function. Both :math:`m` and 
+:math:`\sigma` have also hyperparameters associated,
+:math:`h_m` and
+:math:`h_\sigma` respectively.
+Thus, a meta-feature :math:`f\colon \mathcal{D} \to \mathbb{R}^{k}` for a
+given dataset :math:`D` is:
 
-<p align="center">
-    <img src="https://render.githubusercontent.com/render/math?math=f\big(D\big) = \sigma\big(m(D,h_m), h_\sigma\big)">.
-</p>
+.. math::
+    f\big(D\big) = \sigma\big(m(D,h_m), h_\sigma\big).
 
-The measure <img src="https://render.githubusercontent.com/render/math?math=m"> can extract more than one value from each data set, i.e., <img src="https://render.githubusercontent.com/render/math?math=k'"> can vary according to
-<img src="https://render.githubusercontent.com/render/math?math=D">, which can be mapped to a vector of fixed length
-<img src="https://render.githubusercontent.com/render/math?math=k"> using a summarization function
-<img src="https://render.githubusercontent.com/render/math?math=\sigma">.
+The measure :math: `m` can extract more than one value from each data set,
+i.e., :math:`k'` can vary according to
+:math:`D`, which can be mapped to a vector of fixed length
+:math:`k` using a summarization function
+:math: `\sigma`.
 
 In this package, We provided the following meta-features groups:
-- **General**: General information related to the dataset, also known as simple measures, such as the number of instances, attributes and classes.
-- **Statistical**: Standard statistical measures to describe the numerical properties of data distribution.
-- **Information-theoretic**: Particularly appropriate to describe discrete (categorical) attributes and their relationship with the classes.
-- **Model-based**: Measures designed to extract characteristics from simple machine learning models.
-- **Landmarking**: Performance of simple and efficient learning algorithms.
-- **Relative Landmarking**: Relative performance of simple and efficient learning algorithms.
-- **Subsampling Landmarking**: Performance of simple and efficient learning algorithms from a subsample of the dataset.
-- **Clustering**: Clustering measures extract information about dataset based on external validation indexes.
-- **Concept**: Estimate the variability of class labels among examples and the examples density.
-- **Itemset**: Compute the correlation between binary attributes.
-- **Complexity**: Estimate the difficulty in separating the data points into their expected classes.
 
-In the `pymfe` package, you can use different measures and summary functions, setting their hyperparameters, and automatically measure the elapsed time.
-Moreover,  you can extract meta-features from specific models, or even obtain meta-features with confidence intervals using bootstrap.
-There are many other exciting features. You can see more about it looking at the [documentation](https://pymfe.readthedocs.io/en/latest/api.html).
+* **General**: General information related to the dataset, also known as simple
+  measures, such as the number of instances, attributes and classes.
+
+* **Statistical**: Standard statistical measures to describe the numerical
+  properties of data distribution.
+
+* **Information-theoretic**: Particularly appropriate to describe discrete
+  (categorical) attributes and their relationship with the classes.
+
+* **Model-based**: Measures designed to extract characteristics from simple
+  machine learning models.
+
+* **Landmarking**: Performance of simple and efficient learning algorithms.
+
+* **Relative Landmarking**: Relative performance of simple and efficient
+  learning algorithms.
+
+* **Subsampling Landmarking**: Performance of simple and efficient learning
+  algorithms from a subsample of the dataset.
+
+* **Clustering**: Clustering measures extract information about dataset based
+  on external validation indexes.
+
+* **Concept**: Estimate the variability of class labels among examples and the
+  examples density.
+
+* **Itemset**: Compute the correlation between binary attributes.
+
+* **Complexity**: Estimate the difficulty in separating the data points into
+  their expected classes.
 
 
-## Learning task supported
+In the `pymfe` package, you can use different measures and summary functions,
+setting their hyperparameters, and automatically measure the elapsed time.
+Moreover,  you can extract meta-features from specific models, or even obtain
+meta-features with confidence intervals using bootstrap.
+There are many other exciting features. You can see more about it looking at
+the `documentation <https://pymfe.readthedocs.io/en/latest/api.html>`.
 
-The `pymfe` can extract meta-features from the following machine learning tasks:
 
-- supervised
-- unsupervised
+Learning task supported
+-----------------------
+The `pymfe` can extract meta-features from the following machine learning
+tasks:
+
+* supervised
+* unsupervised
 
 
-## Dependencies
+Dependencies
+------------
 
 The main `pymfe` requirement is:
 * Python (>= 3.6)
@@ -296,6 +327,6 @@ We would like to thank every [Contributor](https://github.com/ealcobaca/pymfe/gr
 
 ## References
  
-.. [1] `Brazdil, P., Carrier, C. G., Soares, C., & Vilalta, R. (2008). Metalearning: Applications to data mining. Springer Science & Business Media. <https://www.springer.com/gp/book/9783540732624>`_
-.. [2] `Pinto, F., Soares, C., & Mendes-Moreira, J. (2016). Towards automatic generation of metafeatures. In Pacific-Asia Conference on Knowledge Discovery and Data Mining (pp. 215-226). Springer, Cham. <https://link.springer.com/chapter/10.1007/978-3-319-31753-3_18>`_
-.. [3] `Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406. <https://arxiv.org/abs/1808.10406>`_
+.. [Brazdil-2018] `Brazdil, P., Carrier, C. G., Soares, C., & Vilalta, R. (2008). Metalearning: Applications to data mining. Springer Science & Business Media. <https://www.springer.com/gp/book/9783540732624>`_
+.. [Pinto-2016] `Pinto, F., Soares, C., & Mendes-Moreira, J. (2016). Towards automatic generation of metafeatures. In Pacific-Asia Conference on Knowledge Discovery and Data Mining (pp. 215-226). Springer, Cham. <https://link.springer.com/chapter/10.1007/978-3-319-31753-3_18>`_
+.. [Rivolli-2018] `Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406. <https://arxiv.org/abs/1808.10406>`_
