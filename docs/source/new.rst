@@ -6,8 +6,8 @@ The PyMFE releases are available in PyPI_ and GitHub_.
 .. _GitHub: https://github.com/ealcobaca/pymfe/releases
 
 
-Version 0.3.0 (Available on PyPI)
----------------------------------
+Version 0.3.0
+-------------
 * Metafeature extraction with confidence intervals
 
 * Pydoc fixes and package documentation/code consistency improvements
@@ -41,8 +41,8 @@ Version 0.3.0 (Available on PyPI)
 * Online documentation improvement
 
 
-Version 0.2.0 (Available on PyPI)
----------------------------------
+Version 0.2.0
+-------------
 * New meta-feature groups
 
   * Complexity
@@ -70,8 +70,8 @@ Version 0.2.0 (Available on PyPI)
 * Statistical group updated
 
 
-Version 0.1.1 (Available on PyPI)
----------------------------------
+Version 0.1.1
+-------------
 * Bugs solved
 
    * False positive of mypy fixed
@@ -88,8 +88,8 @@ Version 0.1.1 (Available on PyPI)
   current percentage of progress done so far.
 
 
-Version 0.1.0 (Available on PyPI)
----------------------------------
+Version 0.1.0
+-------------
 * Meta-feature groups available
 
    * Relative landmarking
@@ -123,15 +123,12 @@ Version 0.1.0 (Available on PyPI)
    * Several new tests added
 
 
-Version 0.0.3 (Available on PyPI)
----------------------------------
+Version 0.0.3
+-------------
 * Documentation improvement
   
 * Setup improvement
 
-
-Initial Release
----------------
 * Meta-feature groups available:
 
   * Simple
@@ -143,5 +140,4 @@ Initial Release
   * Model-based
 
   * Landmarking
-
 
