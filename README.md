@@ -1,10 +1,10 @@
-# pymfe: Python Meta-Feature Extractor
 [![Build Status](https://travis-ci.org/ealcobaca/pymfe.svg?branch=master)](https://travis-ci.org/ealcobaca/pymfe)
 [![codecov](https://codecov.io/gh/ealcobaca/pymfe/branch/master/graph/badge.svg)](https://codecov.io/gh/ealcobaca/pymfe)
 [![Documentation Status](https://readthedocs.org/projects/pymfe/badge/?version=latest)](https://pymfe.readthedocs.io/en/latest/?badge=latest)
 [![PythonVersion](https://img.shields.io/pypi/pyversions/pymfe.svg)](https://www.python.org/downloads/release/python-370/)
 [![Pypi](https://badge.fury.io/py/pymfe.svg)](https://badge.fury.io/py/pymfe)
 
+# pymfe: Python Meta-Feature Extractor
 The pymfe (**py**thon **m**eta-**f**eature **e**xtractor) provides a
 comprehensive set of meta-features implemented in python. The package brings
 cutting edge meta-features, following recent literature propose. The pymfe
@@ -269,8 +269,8 @@ print(ft)
 ```
 
 ## Documentation
-We write a great Documentation to guide you on how to use the pymfe library.
-You can find the Documentation in this [link](https://pymfe.readthedocs.io/en/latest/?badge=latest).
+We write a great [Documentation](https://pymfe.readthedocs.io/en/latest/?badge=latest)
+to guide you on how to use the pymfe library.
 You can find in the documentation interesting pages like:
 * [Getting started](https://pymfe.readthedocs.io/en/latest/install.html)
 * [API documentation](https://pymfe.readthedocs.io/en/latest/api.html)
