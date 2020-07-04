@@ -295,6 +295,6 @@ We would like to thank every [Contributor](https://github.com/ealcobaca/pymfe/gr
 
 ## References
  
-1. Brazdil, P., Carrier, C. G., Soares, C., & Vilalta, R. (2008). Metalearning: Applications to data mining. Springer Science & Business Media. [link](https://www.springer.com/gp/book/9783540732624)
+.. [1] : `Brazdil, P., Carrier, C. G., Soares, C., & Vilalta, R. (2008). Metalearning: Applications to data mining. Springer Science & Business Media. <https://www.springer.com/gp/book/9783540732624>`
 2. Pinto, F., Soares, C., & Mendes-Moreira, J. (2016). Towards automatic generation of metafeatures. In Pacific-Asia Conference on Knowledge Discovery and Data Mining (pp. 215-226). Springer, Cham. [link](https://link.springer.com/chapter/10.1007/978-3-319-31753-3_18)
 3. Rivolli, A., Garcia, L. P. F., Soares, C., Vanschoren, J., and de Carvalho, A. C. P. L. F. (2018). Towards Reproducible Empirical Research in Meta-Learning. arXiv:1808.10406. [link](https://arxiv.org/abs/1808.10406)
