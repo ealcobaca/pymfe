@@ -22,7 +22,7 @@
 pymfe: Python Meta-Feature Extractor
 ====================================
 
-The `pymfe` (**py**thon **m**eta-**f**eature **e**xtractor) provides a
+The `pymfe` (**py**\ thon **m**\ eta-\ **f**\ eature **e**\ xtractor) provides a
 comprehensive set of meta-features implemented in python.
 The package brings cutting edge meta-features, following recent literature
 propose.
