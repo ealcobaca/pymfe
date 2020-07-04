@@ -54,4 +54,4 @@ help: ## List target command description.
 h: help ## Shortcut to help
 
 format: ## format all the package using black
-	@black --line-length 80 pymfe/
+	@black --line-length 79 pymfe/
