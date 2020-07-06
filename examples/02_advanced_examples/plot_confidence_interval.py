@@ -30,4 +30,6 @@ ft = mfe.extract_with_confidence(
     verbose=1,
 )
 
-print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
+print("\n".join("{:50} {:30} {:30}".format(x, y[0], y[1])
+                for x, y in zip(ft[0], ft[2])))
+
