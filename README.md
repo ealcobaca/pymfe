@@ -121,11 +121,11 @@ python3 setup.py install
 ## Example of use
 
 The simplest way to extract meta-features is by instantiating the `MFE` class.
-The parameters are the measures, the group of measures, and the summarization
-functions to be extracted. The default parameter is to extract all the
-measures. The `fit` function can be called by passing the `X` and `y`.
-The `extract` function is used to extract the related measures. A simple
-example using `pymfe` for supervised tasks is given next:
+It computes five meta-features groups by default using mean and standard
+deviation as summary functions:  General, Statistical, Information-theoretic,
+Model-based, and Landmarking. The `fit` method can be called by passing the `X`
+and `y`. Then the `extract` method is used to extract the related measures.
+A simple example using `pymfe` for supervised tasks is given next:
 
 ```python
 # Load a dataset
