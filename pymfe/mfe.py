@@ -1988,8 +1988,6 @@ class MFE:
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
-            mtf_names: t.Collection[t.Tuple[str, t.Callable]]
-
             mtf_names = _internal.get_prefixed_mtds_from_class(  # type: ignore
                 class_obj=_internal.VALID_MFECLASSES[class_ind],
                 prefix=_internal.MTF_PREFIX,
