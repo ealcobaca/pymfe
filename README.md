@@ -156,7 +156,7 @@ print(ft)
 ```
 
 You can simply omit the target attribute for unsupervised tasks while fitting
-the data into the MFE model. The `pymfe` package automatically finds and
+the data into the `MFE` model. The `pymfe` package automatically finds and
 extracts only the metafeatures suitable for this type of task. Examples are
 given next:
 
@@ -202,7 +202,7 @@ ft = mfe.extract()
 print(ft)
 ```
 
-It is possible to pass custom arguments to every metafeature using MFE
+It is possible to pass custom arguments to every metafeature using `MFE`
 `extract` method kwargs. The keywords must be the target metafeature name, and
 the value must be a dictionary in the format {`argument`: `value`}, i.e., each
 key in the dictionary is a target argument with its respective value. In the
