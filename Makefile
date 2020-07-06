@@ -26,7 +26,7 @@ t: test-cov ## Shortcut to test-cov
 
 code-check: ## Execute the code check with flake8, pylint, mypy.
 	flake8 $(PACKAGE)
-	pylint $(PACKAGE) -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101'
+	pylint $(PACKAGE) -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101, C0330'
 	mypy $(PACKAGE) --ignore-missing-imports
 
 c: code-check # Shortcut to code-check
@@ -52,3 +52,6 @@ help: ## List target command description.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 h: help ## Shortcut to help
+
+format: ## format all the package using black
+	@black --line-length 79 pymfe/

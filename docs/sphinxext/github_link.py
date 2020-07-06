@@ -1,3 +1,5 @@
+#  Authors : https://github.com/scikit-learn-contrib/imbalanced-learn/blob/master/doc/sphinxext/github_link.py
+
 from operator import attrgetter
 import inspect
 import subprocess

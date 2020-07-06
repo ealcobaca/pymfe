@@ -87,13 +87,7 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 
-html_static_path = ['_static']
-
-html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',  # override wide tables in RTD theme
-        ],
-     }
+# html_static_path = ['_static']
 
 
 # Output file base name for HTML help builder.
@@ -124,8 +118,8 @@ sphinx_gallery_conf = {
     'reference_url': {
         # The module you locally document uses None
         'pymfe': None,
-    }
-    # 'plot_gallery': True,
+    },
+    # 'thumbnail_size': (50, 50),
     # 'junit': '../test-results/sphinx-gallery/junit.xml',
     # 'log_level': {'backreference_missing': 'warning'},
     # 'subsection_order': ExplicitOrder(['../examples/sin_func',

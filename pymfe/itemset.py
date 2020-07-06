@@ -51,8 +51,9 @@ class MFEItemset:
     """
 
     @classmethod
-    def precompute_binary_matrix(cls, C: t.Optional[np.ndarray],
-                                 **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_binary_matrix(
+        cls, C: t.Optional[np.ndarray], **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precompute the binary representation of attributes.
 
         Parameters
@@ -96,9 +97,7 @@ class MFEItemset:
 
     @classmethod
     def ft_two_itemset(
-            cls,
-            C: np.ndarray,
-            itemset_binary_matrix: t.List[np.ndarray] = None,
+        cls, C: np.ndarray, itemset_binary_matrix: t.List[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the two itemset meta-feature.
 
@@ -147,10 +146,9 @@ class MFEItemset:
         return twoitem_by_attr
 
     @classmethod
-    def ft_one_itemset(cls,
-                       C: np.ndarray,
-                       itemset_binary_matrix: t.List[np.ndarray] = None
-                       ) -> np.ndarray:
+    def ft_one_itemset(
+        cls, C: np.ndarray, itemset_binary_matrix: t.List[np.ndarray] = None
+    ) -> np.ndarray:
         """Compute the one itemset meta-feature.
 
         The one itemset is the individual frequency of each attribute

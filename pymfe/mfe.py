@@ -12,8 +12,9 @@ import sklearn.exceptions
 
 import pymfe._internal as _internal
 
-_TypeSeqExt = t.Sequence[t.Tuple[str, t.Callable, t.Tuple[str, ...],
-                                 t.Tuple[str, ...]]]
+_TypeSeqExt = t.Sequence[
+    t.Tuple[str, t.Callable, t.Tuple[str, ...], t.Tuple[str, ...]]
+]
 """Type annotation for a sequence of TypeExtMtdTuple objects."""
 
 
@@ -41,21 +42,24 @@ class MFE:
             Tuple object which contains summary functions names for features
             summarization.
     """
-    groups_alias = [('default', _internal.DEFAULT_GROUP)]
 
-    def __init__(self,
-                 groups: t.Union[str, t.Iterable[str]] = "default",
-                 features: t.Union[str, t.Iterable[str]] = "all",
-                 summary: t.Union[str, t.Iterable[str]] = ("mean", "sd"),
-                 measure_time: t.Optional[str] = None,
-                 wildcard: str = "all",
-                 score: str = "accuracy",
-                 num_cv_folds: int = 10,
-                 shuffle_cv_folds: bool = False,
-                 lm_sample_frac: float = 1.0,
-                 hypparam_model_dt: t.Optional[t.Dict[str, t.Any]] = None,
-                 suppress_warnings: bool = False,
-                 random_state: t.Optional[int] = None) -> None:
+    groups_alias = [("default", _internal.DEFAULT_GROUP)]
+
+    def __init__(
+        self,
+        groups: t.Union[str, t.Iterable[str]] = "default",
+        features: t.Union[str, t.Iterable[str]] = "all",
+        summary: t.Union[str, t.Iterable[str]] = ("mean", "sd"),
+        measure_time: t.Optional[str] = None,
+        wildcard: str = "all",
+        score: str = "accuracy",
+        num_cv_folds: int = 10,
+        shuffle_cv_folds: bool = False,
+        lm_sample_frac: float = 1.0,
+        hypparam_model_dt: t.Optional[t.Dict[str, t.Any]] = None,
+        suppress_warnings: bool = False,
+        random_state: t.Optional[int] = None,
+    ) -> None:
         """Provides easy access for metafeature extraction from datasets.
 
         It expected that user first calls ``fit`` method after instantiation
@@ -244,13 +248,16 @@ class MFE:
 
         """
         self.groups = _internal.process_generic_set(
-            values=groups, group_name="groups",
+            values=groups,
+            group_name="groups",
             groups_alias=MFE.groups_alias,
-            wildcard=wildcard)  # type: t.Tuple[str, ...]
+            wildcard=wildcard,
+        )  # type: t.Tuple[str, ...]
 
-        self.groups, self.inserted_group_dep = (
-            _internal.solve_group_dependencies(
-                groups=self.groups))
+        (
+            self.groups,
+            self.inserted_group_dep,
+        ) = _internal.solve_group_dependencies(groups=self.groups)
 
         proc_feat = _internal.process_features(
             features=features,
@@ -263,12 +270,12 @@ class MFE:
         del proc_feat
 
         self.summary, self._metadata_mtd_sm = _internal.process_summary(
-            summary,
-            wildcard=wildcard)  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
+            summary, wildcard=wildcard
+        )  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
 
         self.timeopt = _internal.process_generic_option(
-            value=measure_time, group_name="timeopt",
-            allow_none=True)  # type: t.Optional[str]
+            value=measure_time, group_name="timeopt", allow_none=True
+        )  # type: t.Optional[str]
 
         self.X = None  # type: t.Optional[np.ndarray]
         self.y = None  # type: t.Optional[np.ndarray]
@@ -298,7 +305,8 @@ class MFE:
         else:
             raise ValueError(
                 'Invalid "random_state" argument ({0}). '
-                'Expecting None or an integer.'.format(random_state))
+                "Expecting None or an integer.".format(random_state)
+            )
 
         self.shuffle_cv_folds = shuffle_cv_folds
 
@@ -306,24 +314,27 @@ class MFE:
             self.num_cv_folds = num_cv_folds
 
         else:
-            raise ValueError('Invalid "num_cv_folds" argument ({0}). '
-                             'Expecting an integer.'.format(random_state))
+            raise ValueError(
+                'Invalid "num_cv_folds" argument ({0}). '
+                "Expecting an integer.".format(random_state)
+            )
 
         if isinstance(lm_sample_frac, int):
             lm_sample_frac = float(lm_sample_frac)
 
-        if isinstance(lm_sample_frac, float)\
-           and 0.5 <= lm_sample_frac <= 1.0:
+        if isinstance(lm_sample_frac, float) and 0.5 <= lm_sample_frac <= 1.0:
             self.lm_sample_frac = lm_sample_frac
 
         else:
-            raise ValueError('Invalid "lm_sample_frac" argument ({0}). '
-                             'Expecting an float [0.5, 1].'
-                             .format(random_state))
+            raise ValueError(
+                'Invalid "lm_sample_frac" argument ({0}). '
+                "Expecting an float [0.5, 1].".format(random_state)
+            )
 
         self.score = _internal.check_score(score, self.groups)
-        self.hypparam_model_dt = (hypparam_model_dt.copy()
-                                  if hypparam_model_dt else None)
+        self.hypparam_model_dt = (
+            hypparam_model_dt.copy() if hypparam_model_dt else None
+        )
 
         # """Total time elapsed for precomputations."""
         self.time_precomp = -1.0
@@ -335,14 +346,15 @@ class MFE:
         self.time_total = -1.0
 
     def _call_summary_methods(
-            self,
-            feature_values: t.Sequence[_internal.TypeNumeric],
-            feature_name: str,
-            verbose: int = 0,
-            suppress_warnings: bool = False,
-            **kwargs
-    ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.Sequence]], t.
-                 List[float]]:
+        self,
+        feature_values: t.Sequence[_internal.TypeNumeric],
+        feature_name: str,
+        verbose: int = 0,
+        suppress_warnings: bool = False,
+        **kwargs,
+    ) -> t.Tuple[
+        t.List[str], t.List[t.Union[float, t.Sequence]], t.List[float]
+    ]:
         """Invoke summary functions loaded in the model on given feature
         values.
 
@@ -412,8 +424,10 @@ class MFE:
                     "function...".format(
                         _internal.VERBOSE_BLOCK_MID_SYMBOL,
                         feature_name,
-                        sm_mtd_name),
-                    end=" ")
+                        sm_mtd_name,
+                    ),
+                    end=" ",
+                )
 
             sm_mtd_args_pack = _internal.build_mtd_kwargs(
                 mtd_name=sm_mtd_name,
@@ -421,30 +435,37 @@ class MFE:
                 mtd_mandatory=set(),
                 user_custom_args=kwargs.get(sm_mtd_name),
                 inner_custom_args=self._custom_args_sum,
-                suppress_warnings=suppress_warnings)
+                suppress_warnings=suppress_warnings,
+            )
 
             summarized_val, time_sm = _internal.timeit(
-                _internal.summarize, feature_values, sm_mtd_callable,
-                sm_mtd_args_pack)
+                _internal.summarize,
+                feature_values,
+                sm_mtd_callable,
+                sm_mtd_args_pack,
+            )
 
             if not suppress_warnings:
                 _internal.check_summary_warnings(
                     value=summarized_val,
                     name_feature=feature_name,
-                    name_summary=sm_mtd_name)
+                    name_summary=sm_mtd_name,
+                )
 
             if isinstance(summarized_val, np.ndarray):
                 summarized_val = summarized_val.flatten().tolist()
 
-            if (isinstance(summarized_val, collections.Sequence)
-                    and not isinstance(summarized_val, str)):
+            if isinstance(
+                summarized_val, collections.Sequence
+            ) and not isinstance(summarized_val, str):
                 metafeat_vals += summarized_val
                 metafeat_names += [
                     ".".join((feature_name, sm_mtd_name, str(i)))
                     for i in range(len(summarized_val))
                 ]
-                metafeat_times += ([time_sm] + (
-                    (len(summarized_val) - 1) * [0.0]))
+                metafeat_times += [time_sm] + (
+                    (len(summarized_val) - 1) * [0.0]
+                )
 
             else:
                 metafeat_vals.append(summarized_val)
@@ -455,20 +476,23 @@ class MFE:
                 print("Done.")
 
         if verbose >= 2:
-            print(" {} Done summarizing '{}' feature.".format(
-                _internal.VERBOSE_BLOCK_END_SYMBOL,
-                feature_name))
+            print(
+                " {} Done summarizing '{}' feature.".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL, feature_name
+                )
+            )
 
         return metafeat_names, metafeat_vals, metafeat_times
 
     def _call_feature_methods(
-            self,
-            verbose: int = 0,
-            # enable_parallel: bool = False,
-            suppress_warnings: bool = False,
-            **kwargs) -> t.Tuple[t.List[str],
-                                 t.List[t.Union[int, float, t.Sequence]],
-                                 t.List[float]]:
+        self,
+        verbose: int = 0,
+        # enable_parallel: bool = False,
+        suppress_warnings: bool = False,
+        **kwargs,
+    ) -> t.Tuple[
+        t.List[str], t.List[t.Union[int, float, t.Sequence]], t.List[float]
+    ]:
         """Invoke feature methods loaded in the model and gather results.
 
         The returned values are already summarized if needed.
@@ -482,11 +506,16 @@ class MFE:
 
         skipped_count = 0
         for ind, cur_metadata in enumerate(self._metadata_mtd_ft, 1):
-            (ft_mtd_name, ft_mtd_callable,
-             ft_mtd_args, ft_mandatory) = cur_metadata
+            (
+                ft_mtd_name,
+                ft_mtd_callable,
+                ft_mtd_args,
+                ft_mandatory,
+            ) = cur_metadata
 
             ft_name_without_prefix = _internal.remove_prefix(
-                value=ft_mtd_name, prefix=_internal.MTF_PREFIX)
+                value=ft_mtd_name, prefix=_internal.MTF_PREFIX
+            )
 
             try:
                 ft_mtd_args_pack = _internal.build_mtd_kwargs(
@@ -496,28 +525,40 @@ class MFE:
                     user_custom_args=kwargs.get(ft_name_without_prefix),
                     inner_custom_args=self._custom_args_ft,
                     precomp_args=self._precomp_args_ft,
-                    suppress_warnings=suppress_warnings)
+                    suppress_warnings=suppress_warnings,
+                )
 
             except RuntimeError:
                 # Not all method's mandatory arguments were satisfied.
                 # Skip the current method.
                 if verbose >= 2:
-                    print("\nSkipped '{}' ({} of {}).".format(
-                        ft_mtd_name, ind, len(self._metadata_mtd_ft)))
+                    print(
+                        "\nSkipped '{}' ({} of {}).".format(
+                            ft_mtd_name, ind, len(self._metadata_mtd_ft)
+                        )
+                    )
 
                 skipped_count += 1
                 continue
 
             if verbose >= 2:
-                print("\nExtracting '{}' feature ({} of {})..."
-                      .format(ft_mtd_name, ind, len(self._metadata_mtd_ft)))
+                print(
+                    "\nExtracting '{}' feature ({} of {})...".format(
+                        ft_mtd_name, ind, len(self._metadata_mtd_ft)
+                    )
+                )
 
             features, time_ft = _internal.timeit(
-                _internal.get_feat_value, ft_mtd_name, ft_mtd_args_pack,
-                ft_mtd_callable, suppress_warnings)
+                _internal.get_feat_value,
+                ft_mtd_name,
+                ft_mtd_args_pack,
+                ft_mtd_callable,
+                suppress_warnings,
+            )
 
-            ft_has_length = isinstance(features,
-                                       (np.ndarray, collections.Sequence))
+            ft_has_length = isinstance(
+                features, (np.ndarray, collections.Sequence)
+            )
 
             if ft_has_length and self._timeopt_type_is_avg():
                 time_ft /= len(features)
@@ -528,7 +569,8 @@ class MFE:
                     feature_name=ft_name_without_prefix,
                     verbose=verbose,
                     suppress_warnings=suppress_warnings,
-                    **kwargs)
+                    **kwargs,
+                )
 
                 summarized_names, summarized_vals, times_sm = sm_ret
 
@@ -546,27 +588,35 @@ class MFE:
                     cur_progress=100 * ind / len(self._metadata_mtd_ft),
                     cur_mtf_name=ft_mtd_name,
                     item_type="feature",
-                    verbose=verbose)
+                    verbose=verbose,
+                )
 
         if verbose == 1:
             _t_num_cols, _ = shutil.get_terminal_size()
-            print("\r{:<{fill}}".format(
-                "Process of metafeature extraction finished.",
-                fill=_t_num_cols))
+            print(
+                "\r{:<{fill}}".format(
+                    "Process of metafeature extraction finished.",
+                    fill=_t_num_cols,
+                )
+            )
 
         if verbose >= 2 and skipped_count > 0:
-            print("\nNote: skipped a total of {} metafeatures, "
-                  "out of {} ({:.2f}%).".format(
-                      skipped_count,
-                      len(self._metadata_mtd_ft),
-                      100 * skipped_count / len(self._metadata_mtd_ft)))
+            print(
+                "\nNote: skipped a total of {} metafeatures, "
+                "out of {} ({:.2f}%).".format(
+                    skipped_count,
+                    len(self._metadata_mtd_ft),
+                    100 * skipped_count / len(self._metadata_mtd_ft),
+                )
+            )
 
         return metafeat_names, metafeat_vals, metafeat_times
 
     def _fill_col_ind_by_type(
-            self,
-            cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
-            check_bool: bool = True) -> None:
+        self,
+        cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
+        check_bool: bool = True,
+    ) -> None:
         """Select ``X`` column indexes based in its data type.
 
         The indexes for numerical and categorical attributes are kept,
@@ -606,7 +656,8 @@ class MFE:
                     axis=0,
                     arr=self.X,
                     check_subtype=True,
-                ))
+                )
+            )
 
             if check_bool:
                 categorical_cols |= np.apply_along_axis(
@@ -615,34 +666,40 @@ class MFE:
                     arr=self.X,
                 )
 
-        elif (isinstance(cat_cols, (np.ndarray, collections.Iterable))
-              and not isinstance(cat_cols, str)):
+        elif isinstance(
+            cat_cols, (np.ndarray, collections.Iterable)
+        ) and not isinstance(cat_cols, str):
             # and all(isinstance(x, int) for x in cat_cols)):
             categorical_cols = [i in cat_cols for i in range(self.X.shape[1])]
 
         else:
             raise ValueError(
                 'Invalid "cat_cols" argument ({0}). '
-                'Expecting "auto" or an integer Iterable.'.format(cat_cols))
+                'Expecting "auto" or an integer Iterable.'.format(cat_cols)
+            )
 
         categorical_cols = np.array(categorical_cols)
 
         self._attr_indexes_num = tuple(
-            np.where(np.logical_not(categorical_cols))[0])
+            np.where(np.logical_not(categorical_cols))[0]
+        )
         self._attr_indexes_cat = tuple(np.where(categorical_cols)[0])
 
     def _timeopt_type_is_avg(self) -> bool:
         """Checks if user selected time option is an ``average`` type."""
-        return (isinstance(self.timeopt, str)
-                and self.timeopt.startswith(_internal.TIMEOPT_AVG_PREFIX))
+        return isinstance(self.timeopt, str) and self.timeopt.startswith(
+            _internal.TIMEOPT_AVG_PREFIX
+        )
 
     def _timeopt_include_summary(self) -> bool:
         """Checks if user selected time option includes ``summary`` time."""
-        return (isinstance(self.timeopt, str)
-                and self.timeopt.endswith(_internal.TIMEOPT_SUMMARY_SUFFIX))
+        return isinstance(self.timeopt, str) and self.timeopt.endswith(
+            _internal.TIMEOPT_SUMMARY_SUFFIX
+        )
 
-    def _combine_time(self, time_ft: float,
-                      times_sm: t.List[float]) -> t.List[float]:
+    def _combine_time(
+        self, time_ft: float, times_sm: t.List[float]
+    ) -> t.List[float]:
         """Treat time from feature extraction and summarization based in
         ``timeopt``.
 
@@ -679,8 +736,9 @@ class MFE:
 
         return total_time.tolist()
 
-    def _set_data_categoric(self, transform_num: bool,
-                            num_bins: bool = None) -> np.ndarray:
+    def _set_data_categoric(
+        self, transform_num: bool, num_bins: bool = None
+    ) -> np.ndarray:
         """Returns categorical data from the fitted dataset.
 
         Parameters
@@ -714,20 +772,25 @@ class MFE:
             method.
         """
         if self.X is None:
-            raise TypeError("It is necessary to fit valid data into the "
-                            'model before setting up categoric data. ("X" '
-                            'attribute is "NoneType").')
+            raise TypeError(
+                "It is necessary to fit valid data into the "
+                'model before setting up categoric data. ("X" '
+                'attribute is "NoneType").'
+            )
 
         if self._attr_indexes_cat is None:
-            raise TypeError("No information about indexes of categoric "
-                            "attributes. Please be sure to call method "
-                            '"_fill_col_ind_by_type" before this method.')
+            raise TypeError(
+                "No information about indexes of categoric "
+                "attributes. Please be sure to call method "
+                '"_fill_col_ind_by_type" before this method.'
+            )
 
         data_cat = self.X[:, self._attr_indexes_cat]
 
         if transform_num:
             data_num_disc = _internal.transform_num(
-                self.X[:, self._attr_indexes_num], num_bins=num_bins)
+                self.X[:, self._attr_indexes_num], num_bins=num_bins
+            )
 
             if data_num_disc is not None and data_num_disc.size > 0:
                 data_cat = np.hstack((data_cat, data_num_disc))
@@ -735,10 +798,11 @@ class MFE:
         return data_cat
 
     def _set_data_numeric(
-            self,
-            transform_cat: str = None,
-            rescale: t.Optional[str] = None,
-            rescale_args: t.Optional[t.Dict[str, t.Any]] = None) -> np.ndarray:
+        self,
+        transform_cat: str = None,
+        rescale: t.Optional[str] = None,
+        rescale_args: t.Optional[t.Dict[str, t.Any]] = None,
+    ) -> np.ndarray:
         """Returns numeric data from the fitted dataset.
 
         Parameters
@@ -783,62 +847,75 @@ class MFE:
             `one-hot-full`}.
         """
         if self.X is None:
-            raise TypeError("It is necessary to fit valid data into the "
-                            'model before setting up numeric data. ("X" '
-                            'attribute is "NoneType").')
+            raise TypeError(
+                "It is necessary to fit valid data into the "
+                'model before setting up numeric data. ("X" '
+                'attribute is "NoneType").'
+            )
 
         if self._attr_indexes_num is None:
-            raise TypeError("No information about indexes of numeric "
-                            "attributes. Please be sure to call method "
-                            '"_fill_col_ind_by_type" before this method.')
+            raise TypeError(
+                "No information about indexes of numeric "
+                "attributes. Please be sure to call method "
+                '"_fill_col_ind_by_type" before this method.'
+            )
 
-        if (transform_cat is not None and
-                transform_cat not in _internal.VALID_TRANSFORM_CAT):
-            raise ValueError("Invalid 'transform_cat' value ('{}'). Must be "
-                             "a value in {}.".format(
-                                 transform_cat, _internal.VALID_TRANSFORM_CAT))
+        if (
+            transform_cat is not None
+            and transform_cat not in _internal.VALID_TRANSFORM_CAT
+        ):
+            raise ValueError(
+                "Invalid 'transform_cat' value ('{}'). Must be "
+                "a value in {}.".format(
+                    transform_cat, _internal.VALID_TRANSFORM_CAT
+                )
+            )
 
         data_num = self.X[:, self._attr_indexes_num]
 
         if transform_cat:
             if transform_cat == "gray":
                 cat_dummies = _internal.transform_cat_gray(
-                    self.X[:, self._attr_indexes_cat])
+                    self.X[:, self._attr_indexes_cat]
+                )
 
             else:
                 _use_all_ohe_columns = transform_cat == "one-hot-full"
 
                 cat_dummies = _internal.transform_cat_onehot(
                     self.X[:, self._attr_indexes_cat],
-                    use_all_columns=_use_all_ohe_columns)
+                    use_all_columns=_use_all_ohe_columns,
+                )
 
             if cat_dummies is not None and cat_dummies.size > 0:
                 data_num = np.hstack((data_num, cat_dummies)).astype(float)
 
         if rescale:
             data_num = _internal.rescale_data(
-                data=data_num, option=rescale, args=rescale_args)
+                data=data_num, option=rescale, args=rescale_args
+            )
 
         if data_num.dtype != float:
             data_num = data_num.astype(float)
 
         return data_num
 
-    def fit(self,
-            X: t.Sequence,
-            y: t.Optional[t.Sequence] = None,
-            transform_num: bool = True,
-            transform_cat: str = "gray",
-            rescale: t.Optional[str] = None,
-            rescale_args: t.Optional[t.Dict[str, t.Any]] = None,
-            cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
-            check_bool: bool = False,
-            precomp_groups: t.Optional[str] = "all",
-            wildcard: str = "all",
-            suppress_warnings: bool = False,
-            verbose: int = 0,
-            **kwargs,
-            ) -> "MFE":
+    def fit(
+        self,
+        X: t.Sequence,
+        y: t.Optional[t.Sequence] = None,
+        transform_num: bool = True,
+        transform_cat: str = "gray",
+        rescale: t.Optional[str] = None,
+        rescale_args: t.Optional[t.Dict[str, t.Any]] = None,
+        cat_cols: t.Optional[t.Union[str, t.Iterable[int]]] = "auto",
+        check_bool: bool = False,
+        precomp_groups: t.Optional[str] = "all",
+        wildcard: str = "all",
+        suppress_warnings: bool = False,
+        verbose: int = 0,
+        **kwargs,
+    ) -> "MFE":
         """Fits dataset into an MFE model.
 
         Parameters
@@ -992,33 +1069,40 @@ class MFE:
             print("Done.")
 
         rescale = _internal.process_generic_option(
-            value=rescale, group_name="rescale", allow_none=True)
+            value=rescale, group_name="rescale", allow_none=True
+        )
 
         self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
 
         if verbose >= 2:
-            print("Started data transformation process.",
-                  " {} Encoding numerical data into discrete values... "
-                  .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
-                  sep="\n", end="")
+            print(
+                "Started data transformation process.",
+                " {} Encoding numerical data into discrete values... ".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL
+                ),
+                sep="\n",
+                end="",
+            )
 
         data_cat = self._set_data_categoric(transform_num=transform_num)
 
         if verbose >= 2:
-            print("Done.",
-                  " {} Enconding categorical data into numerical values... "
-                  .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
-                  sep="\n", end="")
+            print(
+                "Done.",
+                " {} Enconding categorical data into numerical values... "
+                .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
+                sep="\n",
+                end="",
+            )
 
         data_num = self._set_data_numeric(
             transform_cat=transform_cat,
             rescale=rescale,
-            rescale_args=rescale_args)
+            rescale_args=rescale_args,
+        )
 
         if verbose >= 2:
-            print("Done.",
-                  "Finished data transformation process.",
-                  sep="\n")
+            print("Done.", "Finished data transformation process.", sep="\n")
 
         # Custom arguments for metafeature extraction methods
         self._custom_args_ft = {
@@ -1049,19 +1133,23 @@ class MFE:
             wildcard=wildcard,
             suppress_warnings=suppress_warnings,
             verbose=verbose,
-            **{**self._custom_args_ft, **kwargs})
+            **{**self._custom_args_ft, **kwargs},
+        )
 
         self.time_precomp = time.time() - _time_start
 
         if verbose >= 2:
-            print("\nFinished precomputation process.",
-                  " {} Total time elapsed: {:.8f} seconds".format(
-                      _internal.VERBOSE_BLOCK_MID_SYMBOL,
-                      self.time_precomp),
-                  " {} Got a total of {} precomputed values.".format(
-                      _internal.VERBOSE_BLOCK_END_SYMBOL,
-                      len(self._precomp_args_ft)),
-                  sep="\n")
+            print(
+                "\nFinished precomputation process.",
+                " {} Total time elapsed: {:.8f} seconds".format(
+                    _internal.VERBOSE_BLOCK_MID_SYMBOL, self.time_precomp
+                ),
+                " {} Got a total of {} precomputed values.".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL,
+                    len(self._precomp_args_ft),
+                ),
+                sep="\n",
+            )
 
         # Custom arguments for postprocessing methods
         self._postprocess_args_ft = {
@@ -1076,11 +1164,12 @@ class MFE:
         return self
 
     def extract(
-            self,
-            verbose: int = 0,
-            enable_parallel: bool = False,
-            suppress_warnings: bool = False,
-            **kwargs) -> t.Tuple[t.Sequence, ...]:
+        self,
+        verbose: int = 0,
+        enable_parallel: bool = False,
+        suppress_warnings: bool = False,
+        **kwargs,
+    ) -> t.Tuple[t.Sequence, ...]:
         """Extracts metafeatures from the previously fitted dataset.
 
         Parameters
@@ -1171,11 +1260,13 @@ class MFE:
 
         """
         if self.X is None:
-            raise TypeError("Fitted data not found. Call "
-                            '"fit" method before "extract".')
+            raise TypeError(
+                'Fitted data not found. Call "fit" method before "extract".'
+            )
 
-        if (not isinstance(self.X, np.ndarray)
-                or not isinstance(self.y, np.ndarray)):
+        if not isinstance(self.X, np.ndarray) or not isinstance(
+            self.y, np.ndarray
+        ):
             self.X, self.y = _internal.check_data(self.X, self.y)
 
         if verbose >= 2:
@@ -1187,14 +1278,16 @@ class MFE:
             verbose=verbose,
             enable_parallel=enable_parallel,
             suppress_warnings=suppress_warnings,
-            **kwargs)  # type: t.Tuple[t.List, ...]
+            **kwargs,
+        )  # type: t.Tuple[t.List, ...]
 
         _internal.post_processing(
             results=results,
             groups=self.groups,
             suppress_warnings=suppress_warnings,
             **self._postprocess_args_ft,
-            **kwargs)
+            **kwargs,
+        )
 
         self.time_extract = time.time() - _time_start
         self.time_total = self.time_extract + self.time_precomp
@@ -1202,8 +1295,10 @@ class MFE:
         if results and results[0]:
             # Sort results by metafeature name
             results = tuple(
-                map(list, zip(*sorted(zip(*results),
-                                      key=lambda item: item[0]))))
+                map(
+                    list, zip(*sorted(zip(*results), key=lambda item: item[0]))
+                )
+            )
 
         res_names, res_vals, res_times = results
 
@@ -1213,40 +1308,50 @@ class MFE:
                 "\nMetafeature extraction process done.",
                 " {} Time elapsed in total (precomputations + extraction): "
                 "{:.8f} seconds.".format(
-                    _internal.VERBOSE_BLOCK_MID_SYMBOL, self.time_total),
+                    _internal.VERBOSE_BLOCK_MID_SYMBOL, self.time_total
+                ),
                 " {} Time elapsed for extractions: {:.8f} seconds ({:.2f}% "
                 "from the total).".format(
                     _internal.VERBOSE_BLOCK_MID_SYMBOL,
                     self.time_extract,
-                    _ext_t_pct),
+                    _ext_t_pct,
+                ),
                 " {} Time elapsed for precomputations: {:.8f} seconds "
                 "({:.2f}% from the total).".format(
                     _internal.VERBOSE_BLOCK_MID_SYMBOL,
-                    self.time_precomp, 100 - _ext_t_pct),
+                    self.time_precomp,
+                    100 - _ext_t_pct,
+                ),
                 " {} Total of {} values obtained.".format(
-                    _internal.VERBOSE_BLOCK_END_SYMBOL, len(res_vals)),
-                sep="\n")
+                    _internal.VERBOSE_BLOCK_END_SYMBOL, len(res_vals)
+                ),
+                sep="\n",
+            )
 
         if self.timeopt:
             return res_names, res_vals, res_times
 
         return res_names, res_vals
 
-    def _extract_with_bootstrap(self,
-                                extractor: "MFE",
-                                sample_num: int,
-                                arguments_fit: t.Dict[str, t.Any],
-                                arguments_extract: t.Dict[str, t.Any],
-                                verbose: int = 0) -> t.Tuple[np.ndarray, ...]:
+    def _extract_with_bootstrap(
+        self,
+        extractor: "MFE",
+        sample_num: int,
+        arguments_fit: t.Dict[str, t.Any],
+        arguments_extract: t.Dict[str, t.Any],
+        verbose: int = 0,
+    ) -> t.Tuple[np.ndarray, ...]:
         """Extract metafeatures using bootstrapping."""
         if self.X is None:
-            raise TypeError("Fitted data not found. Please call 'fit' "
-                            "method first.")
+            raise TypeError(
+                "Fitted data not found. Please call 'fit' method first."
+            )
 
         def _handle_extract_ret(
-                res: t.Tuple[np.ndarray, ...],
-                args: t.Tuple[t.Sequence, ...],
-                it_num: int) -> t.Tuple[np.ndarray, ...]:
+            res: t.Tuple[np.ndarray, ...],
+            args: t.Tuple[t.Sequence, ...],
+            it_num: int,
+        ) -> t.Tuple[np.ndarray, ...]:
             """Handle each .extraction method return value."""
             mtf_names, mtf_vals, mtf_time = res
 
@@ -1265,7 +1370,8 @@ class MFE:
             else:
                 mtf_names = np.asarray(cur_mtf_names, dtype=str)
                 mtf_vals = np.zeros(
-                    (len(cur_mtf_vals), sample_num), dtype=float)
+                    (len(cur_mtf_vals), sample_num), dtype=float
+                )
                 mtf_vals[:, 0] = cur_mtf_vals
 
                 if self.timeopt:
@@ -1283,14 +1389,19 @@ class MFE:
         bootstrap_random_state = (
             self.random_state
             if self.random_state is not None
-            else np.random.randint(2 ** 20 - 1))
+            else np.random.randint(2 ** 20 - 1)
+        )
 
         for it_num in np.arange(sample_num):
             if verbose > 0:
-                print("Extracting from sample dataset {} of {} ({:.2f}%)..."
-                      .format(1 + it_num,
-                              sample_num,
-                              100.0 * (1 + it_num) / sample_num))
+                print(
+                    "Extracting from sample dataset {} of {} ({:.2f}%)..."
+                    .format(
+                        1 + it_num,
+                        sample_num,
+                        100.0 * (1 + it_num) / sample_num,
+                    )
+                )
 
             # Note: setting random state to prevent same sample indices due
             # to random states set during fit/extraction
@@ -1298,8 +1409,8 @@ class MFE:
             bootstrap_random_state += 1
 
             sample_inds = np.random.randint(
-                self.X.shape[0],
-                size=self.X.shape[0])
+                self.X.shape[0], size=self.X.shape[0]
+            )
 
             X_sample = self.X[sample_inds, :]
             y_sample = self.y[sample_inds] if self.y is not None else None
@@ -1309,22 +1420,26 @@ class MFE:
             res = _handle_extract_ret(
                 res=res,
                 args=extractor.extract(**arguments_extract),
-                it_num=it_num)
+                it_num=it_num,
+            )
 
             if verbose > 0:
-                print("Done extracting from sample dataset {}.\n"
-                      .format(1 + it_num))
+                print(
+                    "Done extracting from sample dataset {}.\n".format(
+                        1 + it_num
+                    )
+                )
 
         return res
 
     def extract_with_confidence(
-            self,
-            sample_num: int = 128,
-            confidence: t.Union[float, t.Sequence[float]] = 0.95,
-            return_avg_val: bool = True,
-            arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
-            arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
-            verbose: int = 0,
+        self,
+        sample_num: int = 128,
+        confidence: t.Union[float, t.Sequence[float]] = 0.95,
+        return_avg_val: bool = True,
+        arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
+        arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
+        verbose: int = 0,
     ) -> t.Tuple[t.List, ...]:
         """Extract metafeatures with confidence intervals.
 
@@ -1415,8 +1530,11 @@ class MFE:
         _confidence = np.asarray(confidence, dtype=float)
 
         if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
-            raise ValueError("'_confidence' must be in (0.0, 1.0) range (got "
-                             "{}.)".format(_confidence))
+            raise ValueError(
+                "'_confidence' must be in (0.0, 1.0) range (got {}.)".format(
+                    _confidence
+                )
+            )
 
         if self.random_state is not None:
             np.random.seed(self.random_state)
@@ -1434,27 +1552,35 @@ class MFE:
         if verbose > 0:
             print("Started metafeature extract with _confidence interval.")
             print("Random seed:")
-            print(" {} For extractor model: {}{}".format(
-                _internal.VERBOSE_BLOCK_END_SYMBOL,
-                _random_state,
-                "" if self.random_state else " (chosen by default)"))
+            print(
+                " {} For extractor model: {}{}".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL,
+                    _random_state,
+                    "" if self.random_state else " (chosen by default)",
+                )
+            )
 
-            print(" {} For bootstrapping: {}".format(
-                _internal.VERBOSE_BLOCK_END_SYMBOL, self.random_state))
+            print(
+                " {} For bootstrapping: {}".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL, self.random_state
+                )
+            )
 
         extractor = MFE(
             features=self.features,
             groups=self.groups,
             summary=self.summary,
             measure_time=self.timeopt,
-            random_state=_random_state)
+            random_state=_random_state,
+        )
 
         mtf_names, mtf_vals, mtf_time = self._extract_with_bootstrap(
             extractor=extractor,
             sample_num=sample_num,
             verbose=verbose,
             arguments_fit=arguments_fit,
-            arguments_extract=arguments_extract)
+            arguments_extract=arguments_extract,
+        )
 
         if verbose > 0:
             print("Finished metafeature extract with _confidence interval.")
@@ -1479,11 +1605,11 @@ class MFE:
         return mtf_names, mtf_vals, mtf_conf_int
 
     def extract_from_model(
-            self,
-            model: t.Any,
-            arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
-            arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
-            verbose: int = 0,
+        self,
+        model: t.Any,
+        arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
+        arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
+        verbose: int = 0,
     ) -> t.Tuple[t.Sequence, ...]:
         """Extract model-based metafeatures from given model.
 
@@ -1528,27 +1654,33 @@ class MFE:
         affected by this method by any means.
         """
         if "model-based" not in self.groups:
-            raise ValueError("The current MFE model does not have the "
-                             "'model-based' metafeature group configured ("
-                             "found groups {}.) Please include it in the "
-                             "MFE model creation before using 'extract_from"
-                             "_model' method.".format(self.groups))
+            raise ValueError(
+                "The current MFE model does not have the "
+                "'model-based' metafeature group configured ("
+                "found groups {}.) Please include it in the "
+                "MFE model creation before using 'extract_from"
+                "_model' method.".format(self.groups)
+            )
 
         model_argument = _internal.type_translator.get(type(model), None)
 
         if model_argument is None:
-            raise TypeError("'model' from type '{}' not supported. Currently "
-                            "only supporting classes: {}.".format(
-                                type(model),
-                                list(_internal.type_translator.keys())))
+            raise TypeError(
+                "'model' from type '{}' not supported. Currently "
+                "only supporting classes: {}.".format(
+                    type(model), list(_internal.type_translator.keys())
+                )
+            )
 
         try:
             sklearn.utils.validation.check_is_fitted(model)
 
         except sklearn.exceptions.NotFittedError:
-            raise RuntimeError("Given 'model' does not have any fitted data. "
-                               "Please use its 'fit' method before using the "
-                               "model with 'extract_from_model' method.")
+            raise RuntimeError(
+                "Given 'model' does not have any fitted data. "
+                "Please use its 'fit' method before using the "
+                "model with 'extract_from_model' method."
+            )
 
         if arguments_fit is None:
             arguments_fit = {}
@@ -1557,22 +1689,30 @@ class MFE:
             arguments_extract = {}
 
         if model_argument in arguments_fit:
-            raise KeyError("Illegal argument '{}' in 'arguments_fit' (used "
-                           "internally by '.extract_from_model' method.)"
-                           "".format(model_argument))
+            raise KeyError(
+                "Illegal argument '{}' in 'arguments_fit' (used "
+                "internally by '.extract_from_model' method.)"
+                "".format(model_argument)
+            )
 
         _fts = set(self.features).intersection(
-            MFE.valid_metafeatures(groups="model-based"))
+            MFE.valid_metafeatures(groups="model-based")
+        )
 
         if verbose >= 1:
             print("Selected features from 'model-based' group:")
 
             for ft_name in _fts:
-                print(" {} {}".format(
-                    _internal.VERBOSE_BLOCK_END_SYMBOL, ft_name))
+                print(
+                    " {} {}".format(
+                        _internal.VERBOSE_BLOCK_END_SYMBOL, ft_name
+                    )
+                )
 
-            print("Total of {} 'model-based' metafeature method candidates."
-                  .format(len(_fts)))
+            print(
+                "Total of {} 'model-based' metafeature method candidates."
+                .format(len(_fts))
+            )
 
             print("Started extraction from model.")
 
@@ -1581,11 +1721,14 @@ class MFE:
             groups="model-based",
             summary=self.summary,
             measure_time=self.timeopt,
-            random_state=self.random_state).fit(
-                X=[1],
-                y=None, transform_num=False,
-                **{model_argument: model},
-                **arguments_fit)
+            random_state=self.random_state,
+        ).fit(
+            X=[1],
+            y=None,
+            transform_num=False,
+            **{model_argument: model},
+            **arguments_fit,
+        )
 
         res = _extractor.extract(**arguments_extract)
 
@@ -1621,9 +1764,9 @@ class MFE:
         return _internal.VALID_SUMMARY
 
     @classmethod
-    def _check_groups_type(cls,
-                           groups: t.Optional[t.Union[str, t.Iterable[str]]]
-                           ) -> t.Set[str]:
+    def _check_groups_type(
+        cls, groups: t.Optional[t.Union[str, t.Iterable[str]]]
+    ) -> t.Set[str]:
         """Cast ``groups`` to a tuple of valid metafeature group names."""
         if groups is None:
             return set(_internal.VALID_GROUPS)
@@ -1633,20 +1776,16 @@ class MFE:
         return set(groups)
 
     @classmethod
-    def _filter_groups(cls,
-                       groups: t.Set[str]
-                       ) -> t.Set[str]:
+    def _filter_groups(cls, groups: t.Set[str]) -> t.Set[str]:
         """Filter given groups by the available metafeature group names."""
         filtered_group_set = {
-            group for group in groups
-            if group in _internal.VALID_GROUPS
+            group for group in groups if group in _internal.VALID_GROUPS
         }
         return filtered_group_set
 
     @classmethod
     def valid_metafeatures(
-            cls,
-            groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
+        cls, groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
     ) -> t.Tuple[str, ...]:
         """Return a tuple with all metafeatures related to given ``groups``.
 
@@ -1679,20 +1818,20 @@ class MFE:
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
-            mtf_names += (
-                _internal.get_prefixed_mtds_from_class(
-                    class_obj=_internal.VALID_MFECLASSES[class_ind],
-                    prefix=_internal.MTF_PREFIX,
-                    only_name=True,
-                    prefix_removal=True))
+            mtf_names += _internal.get_prefixed_mtds_from_class(
+                class_obj=_internal.VALID_MFECLASSES[class_ind],
+                prefix=_internal.MTF_PREFIX,
+                only_name=True,
+                prefix_removal=True,
+            )
 
         return tuple(mtf_names)
 
     @classmethod
     def parse_by_group(
-            cls,
-            groups: t.Union[t.Sequence[str], str],
-            extracted_results: t.Tuple[t.Sequence, ...],
+        cls,
+        groups: t.Union[t.Sequence[str], str],
+        extracted_results: t.Tuple[t.Sequence, ...],
     ) -> t.Tuple[t.List, ...]:
         """Parse the result of ``extract`` for given metafeature ``groups``.
 
@@ -1728,19 +1867,19 @@ class MFE:
         selected_indexes = _internal.select_results_by_classes(
             mtf_names=extracted_results[0],
             class_names=groups,
-            include_dependencies=True)
+            include_dependencies=True,
+        )
 
         filtered_res = (
-            [seq[ind] for ind in selected_indexes]
-            for seq in extracted_results
+            [seq[ind] for ind in selected_indexes] for seq in extracted_results
         )
 
         return tuple(filtered_res)
 
     @staticmethod
-    def _parse_description(docstring: str,
-                           include_references: bool = False
-                           ) -> t.Tuple[str, str]:
+    def _parse_description(
+        docstring: str, include_references: bool = False
+    ) -> t.Tuple[str, str]:
         """Parse the docstring to get initial description and reference.
 
         Parameters
@@ -1774,19 +1913,20 @@ class MFE:
                 if len(split) >= 2:
                     del split[0]
                     for spl in split:
-                        reference_description += "[" + " ".join(
-                            spl.split()) + "\n"
+                        reference_description += (
+                            "[" + " ".join(spl.split()) + "\n"
+                        )
 
         return (initial_description, reference_description)
 
     @classmethod
     def metafeature_description(
-            cls,
-            groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
-            sort_by_group: bool = False,
-            sort_by_mtf: bool = False,
-            print_table: bool = True,
-            include_references: bool = False
+        cls,
+        groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
+        sort_by_group: bool = False,
+        sort_by_mtf: bool = False,
+        print_table: bool = True,
+        include_references: bool = False,
     ) -> t.Optional[t.Tuple[t.List[t.List[str]], str]]:
         """Print a table with groups, metafeatures and description.
 
@@ -1848,16 +1988,17 @@ class MFE:
         for group in groups.union(deps):
             class_ind = _internal.VALID_GROUPS.index(group)
 
-            mtf_names = (  # tipe: t.Collection[t.Tuple[str, t.Callable]]
-                _internal.get_prefixed_mtds_from_class(
-                    class_obj=_internal.VALID_MFECLASSES[class_ind],
-                    prefix=_internal.MTF_PREFIX,
-                    only_name=False,
-                    prefix_removal=True))
+            mtf_names = _internal.get_prefixed_mtds_from_class(  # type: ignore
+                class_obj=_internal.VALID_MFECLASSES[class_ind],
+                prefix=_internal.MTF_PREFIX,
+                only_name=False,
+                prefix_removal=True,
+            )
 
             for name, method in mtf_names:  # type: ignore
                 ini_desc, ref_desc = MFE._parse_description(
-                    str(method.__doc__), include_references)
+                    str(method.__doc__), include_references
+                )
                 mtf_desc_line = [group, name, ini_desc]
                 mtf_desc.append(mtf_desc_line)
 

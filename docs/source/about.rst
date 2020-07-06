@@ -13,12 +13,30 @@ You can find the contributors of this package here_.
 Citing PyMFE
 ------------
 
-If you use PyMFE in a scientific publication, we would appreciate
-citations to the following paper::
+If you use the `pymfe` in scientific publication, we would appreciate citations
+to the following paper:
 
-  None
+`Edesio Alcobaça, Felipe Siqueira, Adriano Rivolli, Luís P. F. Garcia,
+Jefferson T. Oliva, & André C. P. L. F. de Carvalho (2020).
+MFE: Towards reproducible meta-feature extraction. Journal of Machine Learning
+Research, 21(111), 1-5. <http://jmlr.org/papers/v21/19-348.html>`_
 
-Extra information
------------------
-See the `README <https://github.com/ealcobaca/pymfe/blob/master/README.md>`_
-file from GitHub for extra information.
+You can also use the bibtex format::
+
+  @article{JMLR:v21:19-348,
+    author  = {Edesio Alcobaça and
+               Felipe Siqueira and
+               Adriano Rivolli and
+               Luís P. F. Garcia and
+               Jefferson T. Oliva and
+               André C. P. L. F. de Carvalho
+    },
+    title   = {MFE: Towards reproducible meta-feature extraction},
+    journal = {Journal of Machine Learning Research},
+    year    = {2020},
+    volume  = {21},
+    number  = {111},
+    pages   = {1-5},
+    url     = {http://jmlr.org/papers/v21/19-348.html}
+  }
+

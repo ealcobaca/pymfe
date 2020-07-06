@@ -1,6 +1,6 @@
 """
 Customizing measures arguments
-===================================
+==============================
 
 In this example we will show you how to custorize the measures.
 """
