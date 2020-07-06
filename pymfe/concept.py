@@ -53,10 +53,9 @@ class MFEConcept:
     """
 
     @classmethod
-    def precompute_concept_dist(cls,
-                                N: np.ndarray,
-                                concept_dist_metric: str = "euclidean",
-                                **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_concept_dist(
+        cls, N: np.ndarray, concept_dist_metric: str = "euclidean", **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precompute some useful things to support complexity measures.
 
         Parameters
@@ -85,11 +84,13 @@ class MFEConcept:
         if N is not None and "concept_distances" not in kwargs:
             # 0-1 scaling
             N = sklearn.preprocessing.MinMaxScaler(
-                feature_range=(0, 1)).fit_transform(N)
+                feature_range=(0, 1)
+            ).fit_transform(N)
 
             # distance matrix
             concept_distances = scipy.spatial.distance.cdist(
-                N, N, metric=concept_dist_metric)
+                N, N, metric=concept_dist_metric
+            )
 
             precomp_vals["concept_distances"] = concept_distances
 
@@ -97,13 +98,13 @@ class MFEConcept:
 
     @classmethod
     def ft_conceptvar(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            conceptvar_alpha: float = 2.0,
-            concept_dist_metric: str = "euclidean",
-            concept_minimum: float = 10e-10,
-            concept_distances: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        conceptvar_alpha: float = 2.0,
+        concept_dist_metric: str = "euclidean",
+        concept_minimum: float = 10e-10,
+        concept_distances: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the concept variation that estimates the variability of
         class labels among examples.
@@ -158,12 +159,13 @@ class MFEConcept:
 
         rep_class_matrix = np.repeat([y], y.shape[0], axis=0)
         # check if class is different
-        class_diff = np.not_equal(rep_class_matrix.T,
-                                  rep_class_matrix).astype(int)
+        class_diff = np.not_equal(rep_class_matrix.T, rep_class_matrix).astype(
+            int
+        )
 
-        conceptvar_by_example = np.sum(
-            weights * class_diff, axis=0) / np.sum(
-                weights, axis=0)
+        conceptvar_by_example = np.sum(weights * class_diff, axis=0) / np.sum(
+            weights, axis=0
+        )
 
         # The original meta-feature is the mean of the return.
         # It will be done by the summary functions.
@@ -171,12 +173,12 @@ class MFEConcept:
 
     @classmethod
     def ft_wg_dist(
-            cls,
-            N: np.ndarray,
-            wg_dist_alpha: float = 2.0,
-            concept_dist_metric: str = "euclidean",
-            concept_minimum: float = 10e-10,
-            concept_distances: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        wg_dist_alpha: float = 2.0,
+        concept_dist_metric: str = "euclidean",
+        concept_minimum: float = 10e-10,
+        concept_distances: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the weighted distance, that captures how dense or sparse
         is the example distribution.
@@ -226,9 +228,9 @@ class MFEConcept:
         weights = np.power(2, -wg_dist_alpha * (concept_distances / div))
         np.fill_diagonal(weights, 0.0)
 
-        wg_dist_example = np.sum(
-            weights * concept_distances, axis=0) / np.sum(
-                weights, axis=0)
+        wg_dist_example = np.sum(weights * concept_distances, axis=0) / np.sum(
+            weights, axis=0
+        )
 
         # The original meta-feature is the mean of the return.
         # It will be done by summary functions.
@@ -236,12 +238,12 @@ class MFEConcept:
 
     @classmethod
     def ft_impconceptvar(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            impconceptvar_alpha: float = 1.0,
-            concept_dist_metric: str = "euclidean",
-            concept_distances: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        impconceptvar_alpha: float = 1.0,
+        concept_dist_metric: str = "euclidean",
+        concept_distances: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the improved concept variation that estimates the
         variability of class labels among examples.
@@ -290,8 +292,9 @@ class MFEConcept:
 
         rep_class_matrix = np.repeat([y], y.shape[0], axis=0)
         # check if class is different
-        class_diff = np.not_equal(rep_class_matrix.T,
-                                  rep_class_matrix).astype(int)
+        class_diff = np.not_equal(rep_class_matrix.T, rep_class_matrix).astype(
+            int
+        )
 
         impconceptvar_by_example = np.sum(weights * class_diff, axis=0)
 
@@ -301,11 +304,11 @@ class MFEConcept:
 
     @classmethod
     def ft_cohesiveness(
-            cls,
-            N: np.ndarray,
-            cohesiveness_alpha: float = 1.0,
-            concept_dist_metric: str = "euclidean",
-            concept_distances: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        cohesiveness_alpha: float = 1.0,
+        concept_dist_metric: str = "euclidean",
+        concept_distances: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the improved version of the weighted distance, that
         captures how dense or sparse is the example distribution.

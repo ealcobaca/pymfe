@@ -50,9 +50,9 @@ class MFEGeneral:
     """
 
     @classmethod
-    def precompute_general_class(cls,
-                                 y: t.Optional[np.ndarray] = None,
-                                 **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_general_class(
+        cls, y: t.Optional[np.ndarray] = None, **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precompute distinct classes and its frequencies from ``y``.
 
         Parameters
@@ -110,8 +110,9 @@ class MFEGeneral:
         return X.shape[1] / X.shape[0]
 
     @classmethod
-    def ft_cat_to_num(cls, X: np.ndarray,
-                      cat_cols: t.Sequence[int]) -> t.Union[int, np.float]:
+    def ft_cat_to_num(
+        cls, X: np.ndarray, cat_cols: t.Sequence[int]
+    ) -> t.Union[int, np.float]:
         """Compute the ratio between the number of categoric and numeric
         features.
 
@@ -150,9 +151,7 @@ class MFEGeneral:
 
     @classmethod
     def ft_freq_class(
-            cls,
-            y: np.ndarray,
-            class_freqs: t.Optional[np.ndarray] = None,
+        cls, y: np.ndarray, class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the relative frequency of each distinct class.
 
@@ -253,7 +252,8 @@ class MFEGeneral:
            Classification, volume 37. Ellis Horwood Upper Saddle River, 1994.
         """
         bin_cols = np.apply_along_axis(
-            func1d=lambda col: np.unique(col).size == 2, axis=0, arr=X)
+            func1d=lambda col: np.unique(col).size == 2, axis=0, arr=X
+        )
 
         return np.sum(bin_cols)
 
@@ -282,8 +282,9 @@ class MFEGeneral:
         return len(cat_cols)
 
     @classmethod
-    def ft_nr_class(cls, y: np.ndarray,
-                    classes: t.Optional[np.ndarray] = None) -> int:
+    def ft_nr_class(
+        cls, y: np.ndarray, classes: t.Optional[np.ndarray] = None
+    ) -> int:
         """Compute the number of distinct classes.
 
         Parameters
@@ -361,8 +362,9 @@ class MFEGeneral:
         return X.shape[1] - len(cat_cols)
 
     @classmethod
-    def ft_num_to_cat(cls, X: np.ndarray,
-                      cat_cols: t.Sequence[int]) -> t.Union[int, np.float]:
+    def ft_num_to_cat(
+        cls, X: np.ndarray, cat_cols: t.Sequence[int]
+    ) -> t.Union[int, np.float]:
         """Compute the number of numerical and categorical features.
 
         If the number of categoric features is zero, :obj:`np.nan` is returned

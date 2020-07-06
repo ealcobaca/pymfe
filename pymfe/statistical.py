@@ -58,9 +58,9 @@ class MFEStatistical:
     """
 
     @classmethod
-    def precompute_statistical_class(cls,
-                                     y: t.Optional[np.ndarray] = None,
-                                     **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_statistical_class(
+        cls, y: t.Optional[np.ndarray] = None, **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precompute distinct classes and its abs. frequencies from ``y``.
 
         Parameters
@@ -93,10 +93,12 @@ class MFEStatistical:
         return precomp_vals
 
     @classmethod
-    def precompute_can_cors(cls,
-                            N: t.Optional[np.ndarray] = None,
-                            y: t.Optional[np.ndarray] = None,
-                            **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_can_cors(
+        cls,
+        N: t.Optional[np.ndarray] = None,
+        y: t.Optional[np.ndarray] = None,
+        **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precompute canonical correlations and its eigenvalues.
 
         Parameters
@@ -123,8 +125,12 @@ class MFEStatistical:
         """
         precomp_vals = {}
 
-        if (y is not None and N is not None and N.size
-                and not {"can_cors", "can_cor_eigvals"}.issubset(kwargs)):
+        if (
+            y is not None
+            and N is not None
+            and N.size
+            and not {"can_cors", "can_cor_eigvals"}.issubset(kwargs)
+        ):
             can_cors = cls._calc_can_cors(N=N, y=y)
 
             precomp_vals["can_cors"] = can_cors
@@ -133,10 +139,9 @@ class MFEStatistical:
         return precomp_vals
 
     @classmethod
-    def precompute_statistical_cor_cov(cls,
-                                       N: t.Optional[np.ndarray] = None,
-                                       ddof: int = 1,
-                                       **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_statistical_cor_cov(
+        cls, N: t.Optional[np.ndarray] = None, ddof: int = 1, **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precomputes the correlation and covariance matrix of numerical data.
 
         Be cautious in allowing this precomputation method on huge datasets, as
@@ -174,8 +179,9 @@ class MFEStatistical:
             if "abs_corr_mat" not in kwargs:
                 abs_corr_mat = np.abs(np.corrcoef(N, rowvar=False))
 
-                if (not isinstance(abs_corr_mat, np.ndarray)
-                        and np.isnan(abs_corr_mat)):
+                if not isinstance(abs_corr_mat, np.ndarray) and np.isnan(
+                    abs_corr_mat
+                ):
                     abs_corr_mat = np.array([np.nan])
 
                 precomp_vals["abs_corr_mat"] = abs_corr_mat
@@ -203,9 +209,7 @@ class MFEStatistical:
 
     @classmethod
     def _calc_can_cors(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
+        cls, N: np.ndarray, y: np.ndarray,
     ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, np.ndarray]]:
         """Calculate the Canonical Correlations between ``N`` and ``y.``
 
@@ -216,7 +220,8 @@ class MFEStatistical:
         kept.
         """
         y_bin = sklearn.preprocessing.OneHotEncoder(
-            sparse=False).fit_transform(y.reshape(-1, 1))
+            sparse=False
+        ).fit_transform(y.reshape(-1, 1))
 
         num_classes, num_attr = y_bin.shape[1], N.shape[1]
         # Note: 'n_components' is a theoretical upper bound, so it is not
@@ -230,7 +235,8 @@ class MFEStatistical:
         warnings.filterwarnings("ignore", category=UserWarning)
 
         N_tf, y_tf = sklearn.cross_decomposition.CCA(
-            n_components=n_components).fit_transform(N, y_bin)
+            n_components=n_components
+        ).fit_transform(N, y_bin)
 
         warnings.filterwarnings("default", category=UserWarning)
 
@@ -247,10 +253,10 @@ class MFEStatistical:
 
     @classmethod
     def ft_can_cor(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            can_cors: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        can_cors: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute canonical correlations of data.
 
@@ -286,13 +292,15 @@ class MFEStatistical:
         return can_cors
 
     @classmethod
-    def ft_gravity(cls,
-                   N: np.ndarray,
-                   y: np.ndarray,
-                   norm_ord: t.Union[int, float] = 2,
-                   classes: t.Optional[np.ndarray] = None,
-                   class_freqs: t.Optional[np.ndarray] = None,
-                   cls_inds: t.Optional[np.ndarray] = None) -> float:
+    def ft_gravity(
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        norm_ord: t.Union[int, float] = 2,
+        classes: t.Optional[np.ndarray] = None,
+        class_freqs: t.Optional[np.ndarray] = None,
+        cls_inds: t.Optional[np.ndarray] = None,
+    ) -> float:
         """Compute the distance between minority and majority classes center
         of mass.
 
@@ -380,13 +388,15 @@ class MFEStatistical:
 
         gravity = np.linalg.norm(
             insts_cls_maj.mean(axis=0) - insts_cls_min.mean(axis=0),
-            ord=norm_ord)
+            ord=norm_ord,
+        )
 
         return gravity
 
     @classmethod
-    def ft_cor(cls, N: np.ndarray,
-               abs_corr_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_cor(
+        cls, N: np.ndarray, abs_corr_mat: t.Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """Compute the absolute value of the correlation of distinct dataset
         column pairs.
 
@@ -427,10 +437,12 @@ class MFEStatistical:
         return np.abs(inf_triang_vals)
 
     @classmethod
-    def ft_cov(cls,
-               N: np.ndarray,
-               ddof: int = 1,
-               cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_cov(
+        cls,
+        N: np.ndarray,
+        ddof: int = 1,
+        cov_mat: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Compute the absolute value of the covariance of distinct dataset
         attribute pairs.
 
@@ -474,10 +486,10 @@ class MFEStatistical:
 
     @classmethod
     def ft_nr_disc(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            can_cors: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        can_cors: t.Optional[np.ndarray] = None,
     ) -> t.Union[int, float]:
         """Compute the number of canonical correlation between each attribute
         and class.
@@ -519,10 +531,12 @@ class MFEStatistical:
         return can_cors.size
 
     @classmethod
-    def ft_eigenvalues(cls,
-                       N: np.ndarray,
-                       ddof: int = 1,
-                       cov_mat: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_eigenvalues(
+        cls,
+        N: np.ndarray,
+        ddof: int = 1,
+        cov_mat: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Compute the eigenvalues of covariance matrix from dataset.
 
         Parameters
@@ -554,10 +568,9 @@ class MFEStatistical:
         return np.linalg.eigvals(cov_mat)
 
     @classmethod
-    def ft_g_mean(cls,
-                  N: np.ndarray,
-                  allow_zeros: bool = True,
-                  epsilon: float = 1.0e-10) -> np.ndarray:
+    def ft_g_mean(
+        cls, N: np.ndarray, allow_zeros: bool = True, epsilon: float = 1.0e-10
+    ) -> np.ndarray:
         """Compute the geometric mean of each attribute.
 
         Parameters
@@ -652,8 +665,9 @@ class MFEStatistical:
         return scipy.stats.iqr(N, axis=0)
 
     @classmethod
-    def ft_kurtosis(cls, N: np.ndarray, method: int = 3,
-                    bias: bool = True) -> np.ndarray:
+    def ft_kurtosis(
+        cls, N: np.ndarray, method: int = 3, bias: bool = True
+    ) -> np.ndarray:
         """Compute the kurtosis of each attribute.
 
         Parameters
@@ -705,7 +719,8 @@ class MFEStatistical:
             axis=0,
             arr=N,
             method=method,
-            bias=bias)
+            bias=bias,
+        )
 
         return kurt_arr
 
@@ -830,12 +845,13 @@ class MFEStatistical:
         return N.min(axis=0)
 
     @classmethod
-    def ft_nr_cor_attr(cls,
-                       N: np.ndarray,
-                       threshold: float = 0.5,
-                       normalize: bool = True,
-                       abs_corr_mat: t.Optional[np.ndarray] = None
-                       ) -> t.Union[int, float]:
+    def ft_nr_cor_attr(
+        cls,
+        N: np.ndarray,
+        threshold: float = 0.5,
+        normalize: bool = True,
+        abs_corr_mat: t.Optional[np.ndarray] = None,
+    ) -> t.Union[int, float]:
         """Compute the number of distinct highly correlated pair of attributes.
 
         A pair of attributes is considered highly correlated if the
@@ -884,12 +900,14 @@ class MFEStatistical:
         return np.sum(abs_corr_vals >= threshold) * norm_factor
 
     @classmethod
-    def ft_nr_norm(cls,
-                   N: np.ndarray,
-                   method: str = "shapiro-wilk",
-                   threshold: float = 0.05,
-                   failure: str = "soft",
-                   max_samples: int = 5000) -> t.Union[float, int]:
+    def ft_nr_norm(
+        cls,
+        N: np.ndarray,
+        method: str = "shapiro-wilk",
+        threshold: float = 0.05,
+        failure: str = "soft",
+        max_samples: int = 5000,
+    ) -> t.Union[float, int]:
         """Compute the number of attributes normally distributed based in a
         given method.
 
@@ -969,12 +987,17 @@ class MFEStatistical:
         )
 
         if method not in accepted_tests:
-            raise ValueError("Unknown method {0}. Select one between "
-                             "{1}".format(method, accepted_tests))
+            raise ValueError(
+                "Unknown method {0}. Select one between {1}".format(
+                    method, accepted_tests
+                )
+            )
 
         if failure not in ("hard", "soft"):
-            raise ValueError('"failure" argument must be either "soft" '
-                             'or "hard" (got "{}").'.format(failure))
+            raise ValueError(
+                '"failure" argument must be either "soft" '
+                'or "hard" (got "{}").'.format(failure)
+            )
 
         if max_samples <= 0:
             return np.nan
@@ -987,13 +1010,15 @@ class MFEStatistical:
 
         if method in ("shapiro-wilk", "all"):
             _, p_values_shapiro = np.apply_along_axis(
-                func1d=scipy.stats.shapiro, axis=0, arr=N[:max_row_index, :])
+                func1d=scipy.stats.shapiro, axis=0, arr=N[:max_row_index, :]
+            )
 
             test_results.append(p_values_shapiro > threshold)
 
         if method in ("dagostino-pearson", "all"):
             _, p_values_dagostino = scipy.stats.normaltest(
-                N[:max_row_index, :], axis=0)
+                N[:max_row_index, :], axis=0
+            )
 
             test_results.append(p_values_dagostino > threshold)
 
@@ -1002,7 +1027,8 @@ class MFEStatistical:
 
             for attr_ind, attr_vals in enumerate(N[:max_row_index, :].T):
                 stat_value, crit_values, signif_levels = scipy.stats.anderson(
-                    attr_vals, dist="norm")
+                    attr_vals, dist="norm"
+                )
 
                 # As scipy.stats.anderson gives critical values for fixed
                 # significance levels, then the strategy adopted is to use
@@ -1118,12 +1144,14 @@ class MFEStatistical:
         return N.std(axis=0, ddof=ddof)
 
     @classmethod
-    def ft_sd_ratio(cls,
-                    N: np.ndarray,
-                    y: np.ndarray,
-                    ddof: int = 1,
-                    classes: t.Optional[np.ndarray] = None,
-                    class_freqs: t.Optional[np.ndarray] = None) -> float:
+    def ft_sd_ratio(
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        ddof: int = 1,
+        classes: t.Optional[np.ndarray] = None,
+        class_freqs: t.Optional[np.ndarray] = None,
+    ) -> float:
         """Compute a statistical test for homogeneity of covariances.
 
         The test applied is the Box's M Test for equivalence of
@@ -1177,45 +1205,57 @@ class MFEStatistical:
 
         def calc_sample_cov_mat(N, y, ddof):
             """Calculate the Sample Covariance Matrix for each class."""
-            sample_cov_matrices = np.array([
-                np.cov(N[y == cl, :], rowvar=False, ddof=ddof)
-                for cl in classes
-            ])
+            sample_cov_matrices = np.array(
+                [
+                    np.cov(N[y == cl, :], rowvar=False, ddof=ddof)
+                    for cl in classes
+                ]
+            )
 
             return np.flip(m=sample_cov_matrices, axis=(0, 1))
 
-        def calc_pooled_cov_mat(sample_cov_matrices: np.ndarray,
-                                vec_weight: np.ndarray, num_inst: int,
-                                num_classes: int) -> np.ndarray:
+        def calc_pooled_cov_mat(
+            sample_cov_matrices: np.ndarray,
+            vec_weight: np.ndarray,
+            num_inst: int,
+            num_classes: int,
+        ) -> np.ndarray:
             """Calculate the Pooled Covariance Matrix."""
-            pooled_cov_mat = np.array([
-                weight * S_i
-                for weight, S_i in zip(vec_weight, sample_cov_matrices)
-            ]).sum(axis=0) / (num_inst - num_classes)
+            pooled_cov_mat = np.array(
+                [
+                    weight * S_i
+                    for weight, S_i in zip(vec_weight, sample_cov_matrices)
+                ]
+            ).sum(axis=0) / (num_inst - num_classes)
 
             return pooled_cov_mat
 
         def calc_gamma_factor(num_col, num_classes, num_inst):
             """Calculate the gamma factor which adjust the output."""
             gamma = 1.0 - (
-                (2.0 * num_col**2.0 + 3.0 * num_col - 1.0) /
-                (6.0 * (num_col + 1.0) *
-                 (num_classes - 1.0))) * (np.sum(1.0 / vec_weight) - 1.0 /
-                                          (num_inst - num_classes))
+                (2.0 * num_col ** 2.0 + 3.0 * num_col - 1.0)
+                / (6.0 * (num_col + 1.0) * (num_classes - 1.0))
+            ) * (np.sum(1.0 / vec_weight) - 1.0 / (num_inst - num_classes))
             return gamma
 
-        def calc_m_factor(sample_cov_matrices: np.ndarray,
-                          pooled_cov_mat: np.ndarray, num_inst: int,
-                          num_classes: int, gamma: float,
-                          vec_weight: np.ndarray) -> float:
+        def calc_m_factor(
+            sample_cov_matrices: np.ndarray,
+            pooled_cov_mat: np.ndarray,
+            num_inst: int,
+            num_classes: int,
+            gamma: float,
+            vec_weight: np.ndarray,
+        ) -> float:
             """Calculate the M factor."""
             vec_logdet = [
                 np.math.log(np.linalg.det(S_i)) for S_i in sample_cov_matrices
             ]
 
-            m_factor = (gamma * ((num_inst - num_classes) * np.math.log(
-                np.linalg.det(pooled_cov_mat)) - np.dot(
-                    vec_weight, vec_logdet)))
+            m_factor = gamma * (
+                (num_inst - num_classes)
+                * np.math.log(np.linalg.det(pooled_cov_mat))
+                - np.dot(vec_weight, vec_logdet)
+            )
 
             return m_factor
 
@@ -1230,19 +1270,27 @@ class MFEStatistical:
 
         vec_weight = class_freqs - 1.0
 
-        pooled_cov_mat = calc_pooled_cov_mat(sample_cov_matrices, vec_weight,
-                                             num_inst, num_classes)
+        pooled_cov_mat = calc_pooled_cov_mat(
+            sample_cov_matrices, vec_weight, num_inst, num_classes
+        )
 
         gamma = calc_gamma_factor(num_col, num_classes, num_inst)
 
-        m_factor = calc_m_factor(sample_cov_matrices, pooled_cov_mat,
-                                 num_inst, num_classes, gamma, vec_weight)
+        m_factor = calc_m_factor(
+            sample_cov_matrices,
+            pooled_cov_mat,
+            num_inst,
+            num_classes,
+            gamma,
+            vec_weight,
+        )
 
         return np.exp(m_factor / (num_col * (num_inst - num_classes)))
 
     @classmethod
-    def ft_skewness(cls, N: np.ndarray, method: int = 3,
-                    bias: bool = True) -> np.ndarray:
+    def ft_skewness(
+        cls, N: np.ndarray, method: int = 3, bias: bool = True
+    ) -> np.ndarray:
         """Compute the skewness for each attribute.
 
         Parameters
@@ -1292,7 +1340,8 @@ class MFEStatistical:
             axis=0,
             arr=N,
             bias=bias,
-            method=method)
+            method=method,
+        )
 
         return skew_arr
 
@@ -1395,11 +1444,11 @@ class MFEStatistical:
 
     @classmethod
     def ft_w_lambda(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            can_cor_eigvals: t.Optional[np.ndarray] = None,
-            can_cors: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        can_cor_eigvals: t.Optional[np.ndarray] = None,
+        can_cors: t.Optional[np.ndarray] = None,
     ) -> float:
         """Compute the Wilks' Lambda value.
 
@@ -1470,10 +1519,10 @@ class MFEStatistical:
 
     @classmethod
     def ft_p_trace(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            can_cors: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        can_cors: t.Optional[np.ndarray] = None,
     ) -> float:
         """Compute the Pillai's trace.
 
@@ -1514,11 +1563,11 @@ class MFEStatistical:
 
     @classmethod
     def ft_lh_trace(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            can_cor_eigvals: t.Optional[np.ndarray] = None,
-            can_cors: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        can_cor_eigvals: t.Optional[np.ndarray] = None,
+        can_cors: t.Optional[np.ndarray] = None,
     ) -> float:
         """Compute the Lawley-Hotelling trace.
 
@@ -1590,12 +1639,12 @@ class MFEStatistical:
 
     @classmethod
     def ft_roy_root(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            criterion: str = "eigval",
-            can_cors: t.Optional[np.ndarray] = None,
-            can_cor_eigvals: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        criterion: str = "eigval",
+        can_cors: t.Optional[np.ndarray] = None,
+        can_cor_eigvals: t.Optional[np.ndarray] = None,
     ) -> float:
         """Compute the Roy's largest root.
 
@@ -1678,8 +1727,11 @@ class MFEStatistical:
         VALID_CRITERIA = ("eigval", "cancor")
 
         if criterion not in VALID_CRITERIA:
-            raise ValueError("Roy's largest root 'criterion' must be in {}."
-                             .format(VALID_CRITERIA))
+            raise ValueError(
+                "Roy's largest root 'criterion' must be in {}.".format(
+                    VALID_CRITERIA
+                )
+            )
 
         if criterion == "eigval":
             if can_cor_eigvals is None:

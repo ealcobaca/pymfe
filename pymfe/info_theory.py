@@ -54,8 +54,9 @@ class MFEInfoTheory:
     """
 
     @classmethod
-    def precompute_class_freq(cls, y: t.Optional[np.ndarray] = None,
-                              **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_class_freq(
+        cls, y: t.Optional[np.ndarray] = None, **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precompute each distinct class (absolute) frequencies.
 
         Parameters
@@ -86,11 +87,13 @@ class MFEInfoTheory:
         return precomp_vals
 
     @classmethod
-    def precompute_entropy(cls,
-                           y: t.Optional[np.ndarray] = None,
-                           C: t.Optional[np.ndarray] = None,
-                           class_freqs: t.Optional[np.ndarray] = None,
-                           **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_entropy(
+        cls,
+        y: t.Optional[np.ndarray] = None,
+        C: t.Optional[np.ndarray] = None,
+        class_freqs: t.Optional[np.ndarray] = None,
+        **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precompute various values related to Shannon's Entropy.
 
         Parameters
@@ -128,7 +131,8 @@ class MFEInfoTheory:
 
         if y is not None and "class_ent" not in kwargs:
             precomp_vals["class_ent"] = cls.ft_class_ent(
-                y, class_freqs=class_freqs)
+                y, class_freqs=class_freqs
+            )
 
         if C is not None and C.size and "attr_ent" not in kwargs:
             precomp_vals["attr_ent"] = cls.ft_attr_ent(C)
@@ -136,7 +140,8 @@ class MFEInfoTheory:
         if y is not None and C is not None and C.size:
             if "joint_ent" not in kwargs:
                 precomp_vals["joint_ent"] = np.apply_along_axis(
-                    func1d=cls._calc_joint_ent, axis=0, arr=C, vec_y=y)
+                    func1d=cls._calc_joint_ent, axis=0, arr=C, vec_y=y
+                )
 
             if "mut_inf" not in kwargs:
                 precomp_vals["mut_inf"] = cls.ft_mut_inf(
@@ -144,14 +149,17 @@ class MFEInfoTheory:
                     y=y,
                     attr_ent=precomp_vals.get("attr_ent"),
                     class_ent=precomp_vals.get("class_ent"),
-                    joint_ent=precomp_vals.get("joint_ent"))
+                    joint_ent=precomp_vals.get("joint_ent"),
+                )
 
         return precomp_vals
 
     @classmethod
-    def _calc_entropy(cls,
-                      values: t.Union[np.ndarray, t.List],
-                      value_freqs: t.Optional[np.ndarray] = None) -> float:
+    def _calc_entropy(
+        cls,
+        values: t.Union[np.ndarray, t.List],
+        value_freqs: t.Optional[np.ndarray] = None,
+    ) -> float:
         """Calculate Shannon's entropy within array ``values``.
 
         Check ``ft_attr_ent`` and ``ft_class_ent`` methods for more informa-
@@ -172,24 +180,24 @@ class MFEInfoTheory:
         return scipy.stats.entropy(value_freqs, base=2)
 
     @classmethod
-    def _calc_joint_ent(cls,
-                        vec_x: np.ndarray,
-                        vec_y: np.ndarray,
-                        epsilon: float = 1.0e-8) -> float:
+    def _calc_joint_ent(
+        cls, vec_x: np.ndarray, vec_y: np.ndarray, epsilon: float = 1.0e-8
+    ) -> float:
         """Compute joint entropy between ``vec_x`` and ``vec_y``."""
-        joint_prob_mat = pd.crosstab(
-            vec_y, vec_x, normalize=True).values + epsilon
+        joint_prob_mat = (
+            pd.crosstab(vec_y, vec_x, normalize=True).values + epsilon
+        )
 
         joint_ent = np.sum(
-            np.multiply(joint_prob_mat, np.log2(joint_prob_mat)))
+            np.multiply(joint_prob_mat, np.log2(joint_prob_mat))
+        )
 
         return -1.0 * joint_ent
 
     @classmethod
-    def _calc_conc(cls,
-                   vec_x: np.ndarray,
-                   vec_y: np.ndarray,
-                   epsilon: float = 1.0e-8) -> float:
+    def _calc_conc(
+        cls, vec_x: np.ndarray, vec_y: np.ndarray, epsilon: float = 1.0e-8
+    ) -> float:
         """Concentration coefficient between two arrays ``vec_x`` and
         ``vec_y``.
 
@@ -198,17 +206,19 @@ class MFEInfoTheory:
         pij = pd.crosstab(vec_x, vec_y, normalize=True).values + epsilon
 
         isum = pij.sum(axis=0)
-        jsum2 = np.sum(pij.sum(axis=1)**2)
+        jsum2 = np.sum(pij.sum(axis=1) ** 2)
 
-        conc = (np.sum(pij**2 / isum) - jsum2) / (1.0 - jsum2)
+        conc = (np.sum(pij ** 2 / isum) - jsum2) / (1.0 - jsum2)
 
         return conc
 
     @classmethod
-    def ft_attr_conc(cls,
-                     C: np.ndarray,
-                     max_attr_num: t.Optional[int] = 12,
-                     random_state: t.Optional[int] = None) -> np.ndarray:
+    def ft_attr_conc(
+        cls,
+        C: np.ndarray,
+        max_attr_num: t.Optional[int] = 12,
+        random_state: t.Optional[int] = None,
+    ) -> np.ndarray:
         """Compute concentration coef. of each pair of distinct attributes.
 
         Parameters
@@ -249,21 +259,24 @@ class MFEInfoTheory:
                 np.random.seed(random_state)
 
             col_inds = np.random.choice(
-                col_inds, size=max_attr_num, replace=False)
+                col_inds, size=max_attr_num, replace=False
+            )
 
         col_permutations = itertools.permutations(col_inds, 2)
 
-        attr_conc = np.array([
-            cls._calc_conc(C[:, ind_attr_a], C[:, ind_attr_b])
-            for ind_attr_a, ind_attr_b in col_permutations
-        ])
+        attr_conc = np.array(
+            [
+                cls._calc_conc(C[:, ind_attr_a], C[:, ind_attr_b])
+                for ind_attr_a, ind_attr_b in col_permutations
+            ]
+        )
 
         return attr_conc
 
     @classmethod
-    def ft_attr_ent(cls,
-                    C: np.ndarray,
-                    attr_ent: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_attr_ent(
+        cls, C: np.ndarray, attr_ent: t.Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """Compute Shannon's entropy for each predictive attribute.
 
         The Shannon's Entropy H of a vector x is defined as:
@@ -324,13 +337,16 @@ class MFEInfoTheory:
            on Artificial Intelligence Tools, 10(4):525–554, 2001.
         """
         return np.apply_along_axis(
-            func1d=cls._calc_conc, axis=0, arr=C, vec_y=y)
+            func1d=cls._calc_conc, axis=0, arr=C, vec_y=y
+        )
 
     @classmethod
-    def ft_class_ent(cls,
-                     y: np.ndarray,
-                     class_ent: t.Optional[np.ndarray] = None,
-                     class_freqs: t.Optional[np.ndarray] = None) -> float:
+    def ft_class_ent(
+        cls,
+        y: np.ndarray,
+        class_ent: t.Optional[np.ndarray] = None,
+        class_freqs: t.Optional[np.ndarray] = None,
+    ) -> float:
         """Compute target attribute Shannon's entropy.
 
         The Shannon's Entropy H of a vector y is defined as:
@@ -373,12 +389,14 @@ class MFEInfoTheory:
         return cls._calc_entropy(y, value_freqs=class_freqs)
 
     @classmethod
-    def ft_eq_num_attr(cls,
-                       C: np.ndarray,
-                       y: np.ndarray,
-                       class_ent: t.Optional[np.ndarray] = None,
-                       class_freqs: t.Optional[np.ndarray] = None,
-                       mut_inf: t.Optional[np.ndarray] = None) -> float:
+    def ft_eq_num_attr(
+        cls,
+        C: np.ndarray,
+        y: np.ndarray,
+        class_ent: t.Optional[np.ndarray] = None,
+        class_freqs: t.Optional[np.ndarray] = None,
+        mut_inf: t.Optional[np.ndarray] = None,
+    ) -> float:
         """Compute the number of attributes equivalent for a predictive task.
 
         The attribute equivalence E is defined as:
@@ -436,10 +454,12 @@ class MFEInfoTheory:
         return num_col * class_ent / np.sum(mut_inf)
 
     @classmethod
-    def ft_joint_ent(cls,
-                     C: np.ndarray,
-                     y: np.ndarray,
-                     joint_ent: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_joint_ent(
+        cls,
+        C: np.ndarray,
+        y: np.ndarray,
+        joint_ent: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Compute the joint entropy between each attribute and class.
 
         The Joint Entropy H between a predictive attribute x and target
@@ -482,19 +502,22 @@ class MFEInfoTheory:
         """
         if joint_ent is None:
             joint_ent = np.apply_along_axis(
-                func1d=cls._calc_joint_ent, axis=0, arr=C, vec_y=y)
+                func1d=cls._calc_joint_ent, axis=0, arr=C, vec_y=y
+            )
 
         return joint_ent
 
     @classmethod
-    def ft_mut_inf(cls,
-                   C: np.ndarray,
-                   y: np.ndarray,
-                   mut_inf: t.Optional[np.ndarray] = None,
-                   attr_ent: t.Optional[np.ndarray] = None,
-                   class_ent: t.Optional[float] = None,
-                   joint_ent: t.Optional[np.ndarray] = None,
-                   class_freqs: t.Optional[np.ndarray] = None) -> np.ndarray:
+    def ft_mut_inf(
+        cls,
+        C: np.ndarray,
+        y: np.ndarray,
+        mut_inf: t.Optional[np.ndarray] = None,
+        attr_ent: t.Optional[np.ndarray] = None,
+        class_ent: t.Optional[float] = None,
+        joint_ent: t.Optional[np.ndarray] = None,
+        class_freqs: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Compute the mutual information between each attribute and target.
 
         The mutual Information MI between an independent attribute `x` and
@@ -565,11 +588,13 @@ class MFEInfoTheory:
         return attr_ent + class_ent - joint_ent
 
     @classmethod
-    def ft_ns_ratio(cls,
-                    C: np.ndarray,
-                    y: np.ndarray,
-                    attr_ent: t.Optional[np.ndarray] = None,
-                    mut_inf: t.Optional[np.ndarray] = None) -> float:
+    def ft_ns_ratio(
+        cls,
+        C: np.ndarray,
+        y: np.ndarray,
+        attr_ent: t.Optional[np.ndarray] = None,
+        mut_inf: t.Optional[np.ndarray] = None,
+    ) -> float:
         """Compute the noisiness of attributes.
 
         Let ``y`` be a target attribute and `x` one predictive attribute in

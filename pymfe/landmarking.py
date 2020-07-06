@@ -54,11 +54,13 @@ class MFELandmarking:
     """
 
     @classmethod
-    def precompute_landmarking_sample(cls,
-                                      N: np.ndarray,
-                                      lm_sample_frac: float,
-                                      random_state: t.Optional[int] = None,
-                                      **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_landmarking_sample(
+        cls,
+        N: np.ndarray,
+        lm_sample_frac: float,
+        random_state: t.Optional[int] = None,
+        **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precompute subsampling landmarking subsample indices.
 
         Parameters
@@ -94,20 +96,22 @@ class MFELandmarking:
                 precomp_vals["sample_inds"] = cls._get_sample_inds(
                     num_inst=num_inst,
                     lm_sample_frac=lm_sample_frac,
-                    random_state=random_state)
+                    random_state=random_state,
+                )
 
         return precomp_vals
 
     @classmethod
     def precompute_landmarking_kfolds(
-            cls,
-            N: np.ndarray,
-            y: t.Optional[np.ndarray] = None,
-            num_cv_folds: int = 10,
-            shuffle_cv_folds: t.Optional[bool] = False,
-            random_state: t.Optional[int] = None,
-            lm_sample_frac: float = 1.0,
-            **kwargs) -> t.Dict[str, t.Any]:
+        cls,
+        N: np.ndarray,
+        y: t.Optional[np.ndarray] = None,
+        num_cv_folds: int = 10,
+        shuffle_cv_folds: t.Optional[bool] = False,
+        random_state: t.Optional[int] = None,
+        lm_sample_frac: float = 1.0,
+        **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precompute k-fold cross validation related values.
 
         Parameters
@@ -155,10 +159,14 @@ class MFELandmarking:
                 precomp_vals["skf"] = sklearn.model_selection.StratifiedKFold(
                     n_splits=num_cv_folds,
                     shuffle=shuffle_cv_folds,
-                    random_state=random_state if shuffle_cv_folds else None)
+                    random_state=random_state if shuffle_cv_folds else None,
+                )
 
-            if (not shuffle_cv_folds or random_state is not None and
-                    "cv_folds_imp_rank" not in kwargs):
+            if (
+                not shuffle_cv_folds
+                or random_state is not None
+                and "cv_folds_imp_rank" not in kwargs
+            ):
                 skf = precomp_vals.get("skf", kwargs.get("skf"))
                 sample_inds = kwargs.get("sample_inds")
 
@@ -167,40 +175,50 @@ class MFELandmarking:
                     y=y,
                     lm_sample_frac=lm_sample_frac,
                     random_state=random_state,
-                    sample_inds=sample_inds)
+                    sample_inds=sample_inds,
+                )
 
-                attr_fold_imp = np.array([
-                    cls._rank_feat_importance(
-                        N=N[inds_train, :],
-                        y=y[inds_train],
-                        random_state=random_state)
-                    for inds_train, inds_test in skf.split(N, y)
-                ], dtype=int)
+                attr_fold_imp = np.array(
+                    [
+                        cls._rank_feat_importance(
+                            N=N[inds_train, :],
+                            y=y[inds_train],
+                            random_state=random_state,
+                        )
+                        for inds_train, inds_test in skf.split(N, y)
+                    ],
+                    dtype=int,
+                )
 
                 precomp_vals["cv_folds_imp_rank"] = attr_fold_imp
 
         return precomp_vals
 
     @classmethod
-    def _get_sample_inds(cls, num_inst: int, lm_sample_frac: float,
-                         random_state: t.Optional[int]) -> np.ndarray:
+    def _get_sample_inds(
+        cls,
+        num_inst: int,
+        lm_sample_frac: float,
+        random_state: t.Optional[int],
+    ) -> np.ndarray:
         """Sample indices to calculate subsampling landmarking metafeatures."""
         if random_state is not None:
             np.random.seed(random_state)
 
         sample_inds = np.random.choice(
-            a=num_inst, size=int(lm_sample_frac * num_inst), replace=False)
+            a=num_inst, size=int(lm_sample_frac * num_inst), replace=False
+        )
 
         return sample_inds
 
     @classmethod
     def _sample_data(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            lm_sample_frac: float,
-            random_state: t.Optional[int] = None,
-            sample_inds: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        lm_sample_frac: float,
+        random_state: t.Optional[int] = None,
+        sample_inds: t.Optional[np.ndarray] = None,
     ) -> t.Tuple[np.ndarray, np.ndarray]:
         """Select ``lm_sample_frac`` percent of data from ``N`` and ``y``."""
         if lm_sample_frac >= 1.0 and sample_inds is None:
@@ -212,18 +230,19 @@ class MFELandmarking:
             sample_inds = cls._get_sample_inds(
                 num_inst=num_inst,
                 lm_sample_frac=lm_sample_frac,
-                random_state=random_state)
+                random_state=random_state,
+            )
 
         return N[sample_inds, :], y[sample_inds]
 
     @classmethod
     def _rank_feat_importance(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            lm_sample_frac: float = 1.0,
-            sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        lm_sample_frac: float = 1.0,
+        sample_inds: t.Optional[np.ndarray] = None,
+        random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Rank the feature importances of a DT model.
 
@@ -261,25 +280,28 @@ class MFELandmarking:
             y=y,
             lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_inds=sample_inds)
+            sample_inds=sample_inds,
+        )
 
         clf = sklearn.tree.DecisionTreeClassifier(
-            random_state=random_state).fit(N, y)
+            random_state=random_state
+        ).fit(N, y)
 
         return np.argsort(clf.feature_importances_)
 
     @classmethod
     def ft_best_node(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
-            num_cv_folds: int = 10,
-            shuffle_cv_folds: bool = False,
-            lm_sample_frac: float = 1.0,
-            sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None) -> np.ndarray:
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+        skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
+        num_cv_folds: int = 10,
+        shuffle_cv_folds: bool = False,
+        lm_sample_frac: float = 1.0,
+        sample_inds: t.Optional[np.ndarray] = None,
+        random_state: t.Optional[int] = None,
+    ) -> np.ndarray:
         """Performance of a the best single decision tree node.
 
         Construct a single decision tree node model induced by the most
@@ -344,16 +366,19 @@ class MFELandmarking:
             y=y,
             lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_inds=sample_inds)
+            sample_inds=sample_inds,
+        )
 
         if skf is None:
             skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state if shuffle_cv_folds else None)
+                random_state=random_state if shuffle_cv_folds else None,
+            )
 
         model = sklearn.tree.DecisionTreeClassifier(
-            max_depth=1, random_state=random_state)
+            max_depth=1, random_state=random_state
+        )
 
         res = np.zeros(skf.n_splits, dtype=float)
 
@@ -370,16 +395,17 @@ class MFELandmarking:
 
     @classmethod
     def ft_random_node(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
-            num_cv_folds: int = 10,
-            shuffle_cv_folds: bool = False,
-            lm_sample_frac: float = 1.0,
-            sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None) -> np.ndarray:
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+        skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
+        num_cv_folds: int = 10,
+        shuffle_cv_folds: bool = False,
+        lm_sample_frac: float = 1.0,
+        sample_inds: t.Optional[np.ndarray] = None,
+        random_state: t.Optional[int] = None,
+    ) -> np.ndarray:
         """Performance of the single decision tree node model induced by a
         random attribute.
 
@@ -442,13 +468,15 @@ class MFELandmarking:
             y=y,
             lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_inds=sample_inds)
+            sample_inds=sample_inds,
+        )
 
         if skf is None:
             skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state if shuffle_cv_folds else None)
+                random_state=random_state if shuffle_cv_folds else None,
+            )
 
         if random_state is not None:
             np.random.seed(random_state)
@@ -456,7 +484,8 @@ class MFELandmarking:
         rand_ind_attr = np.random.randint(0, N.shape[1], size=1)
 
         model = sklearn.tree.DecisionTreeClassifier(
-            max_depth=1, random_state=random_state)
+            max_depth=1, random_state=random_state
+        )
 
         res = np.zeros(skf.n_splits, dtype=float)
 
@@ -473,17 +502,17 @@ class MFELandmarking:
 
     @classmethod
     def ft_worst_node(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
-            num_cv_folds: int = 10,
-            shuffle_cv_folds: bool = False,
-            lm_sample_frac: float = 1.0,
-            sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None,
-            cv_folds_imp_rank: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+        skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
+        num_cv_folds: int = 10,
+        shuffle_cv_folds: bool = False,
+        lm_sample_frac: float = 1.0,
+        sample_inds: t.Optional[np.ndarray] = None,
+        random_state: t.Optional[int] = None,
+        cv_folds_imp_rank: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Performance of the single decision tree node model induced by the
         worst informative attribute.
@@ -555,16 +584,19 @@ class MFELandmarking:
             y=y,
             lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_inds=sample_inds)
+            sample_inds=sample_inds,
+        )
 
         if skf is None:
             skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state if shuffle_cv_folds else None)
+                random_state=random_state if shuffle_cv_folds else None,
+            )
 
         model = sklearn.tree.DecisionTreeClassifier(
-            max_depth=1, random_state=random_state)
+            max_depth=1, random_state=random_state
+        )
 
         res = np.zeros(skf.n_splits, dtype=float)
 
@@ -576,7 +608,8 @@ class MFELandmarking:
                 imp_rank = cls._rank_feat_importance(
                     N=N[inds_train, :],
                     y=y[inds_train],
-                    random_state=random_state)
+                    random_state=random_state,
+                )
 
             X_train = N[inds_train, imp_rank[0], np.newaxis]
             X_test = N[inds_test, imp_rank[0], np.newaxis]
@@ -590,16 +623,16 @@ class MFELandmarking:
 
     @classmethod
     def ft_linear_discr(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
-            num_cv_folds: int = 10,
-            shuffle_cv_folds: bool = False,
-            lm_sample_frac: float = 1.0,
-            sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+        skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
+        num_cv_folds: int = 10,
+        shuffle_cv_folds: bool = False,
+        lm_sample_frac: float = 1.0,
+        sample_inds: t.Optional[np.ndarray] = None,
+        random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Performance of the Linear Discriminant classifier.
 
@@ -665,13 +698,15 @@ class MFELandmarking:
             y=y,
             lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_inds=sample_inds)
+            sample_inds=sample_inds,
+        )
 
         if skf is None:
             skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state if shuffle_cv_folds else None)
+                random_state=random_state if shuffle_cv_folds else None,
+            )
 
         model = sklearn.discriminant_analysis.LinearDiscriminantAnalysis()
 
@@ -690,16 +725,16 @@ class MFELandmarking:
 
     @classmethod
     def ft_naive_bayes(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
-            num_cv_folds: int = 10,
-            shuffle_cv_folds: bool = False,
-            lm_sample_frac: float = 1.0,
-            sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+        skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
+        num_cv_folds: int = 10,
+        shuffle_cv_folds: bool = False,
+        lm_sample_frac: float = 1.0,
+        sample_inds: t.Optional[np.ndarray] = None,
+        random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Performance of the Naive Bayes classifier.
 
@@ -765,13 +800,15 @@ class MFELandmarking:
             y=y,
             lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_inds=sample_inds)
+            sample_inds=sample_inds,
+        )
 
         if skf is None:
             skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state if shuffle_cv_folds else None)
+                random_state=random_state if shuffle_cv_folds else None,
+            )
 
         model = sklearn.naive_bayes.GaussianNB()
 
@@ -790,16 +827,16 @@ class MFELandmarking:
 
     @classmethod
     def ft_one_nn(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
-            num_cv_folds: int = 10,
-            shuffle_cv_folds: bool = False,
-            lm_sample_frac: float = 1.0,
-            sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+        skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
+        num_cv_folds: int = 10,
+        shuffle_cv_folds: bool = False,
+        lm_sample_frac: float = 1.0,
+        sample_inds: t.Optional[np.ndarray] = None,
+        random_state: t.Optional[int] = None,
     ) -> np.ndarray:
         """Performance of the 1-Nearest Neighbor classifier.
 
@@ -861,20 +898,23 @@ class MFELandmarking:
             y=y,
             lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_inds=sample_inds)
+            sample_inds=sample_inds,
+        )
 
         if skf is None:
             skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state if shuffle_cv_folds else None)
+                random_state=random_state if shuffle_cv_folds else None,
+            )
 
         model = sklearn.neighbors.KNeighborsClassifier(
             n_neighbors=1,
             algorithm="auto",
             weights="uniform",
             p=2,
-            metric="minkowski")
+            metric="minkowski",
+        )
 
         res = np.zeros(skf.n_splits, dtype=float)
 
@@ -891,17 +931,17 @@ class MFELandmarking:
 
     @classmethod
     def ft_elite_nn(
-            cls,
-            N: np.ndarray,
-            y: np.ndarray,
-            score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
-            skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
-            num_cv_folds: int = 10,
-            shuffle_cv_folds: bool = False,
-            lm_sample_frac: float = 1.0,
-            sample_inds: t.Optional[np.ndarray] = None,
-            random_state: t.Optional[int] = None,
-            cv_folds_imp_rank: t.Optional[np.ndarray] = None,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        score: t.Callable[[np.ndarray, np.ndarray], np.ndarray],
+        skf: t.Optional[sklearn.model_selection.StratifiedKFold] = None,
+        num_cv_folds: int = 10,
+        shuffle_cv_folds: bool = False,
+        lm_sample_frac: float = 1.0,
+        sample_inds: t.Optional[np.ndarray] = None,
+        random_state: t.Optional[int] = None,
+        cv_folds_imp_rank: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Performance of Elite Nearest Neighbor.
 
@@ -974,13 +1014,15 @@ class MFELandmarking:
             y=y,
             lm_sample_frac=lm_sample_frac,
             random_state=random_state,
-            sample_inds=sample_inds)
+            sample_inds=sample_inds,
+        )
 
         if skf is None:
             skf = sklearn.model_selection.StratifiedKFold(
                 n_splits=num_cv_folds,
                 shuffle=shuffle_cv_folds,
-                random_state=random_state if shuffle_cv_folds else None)
+                random_state=random_state if shuffle_cv_folds else None,
+            )
 
         model = sklearn.neighbors.KNeighborsClassifier(n_neighbors=1)
 
@@ -994,7 +1036,8 @@ class MFELandmarking:
                 imp_rank = cls._rank_feat_importance(
                     N=N[inds_train, :],
                     y=y[inds_train],
-                    random_state=random_state)
+                    random_state=random_state,
+                )
 
             X_train = N[inds_train, imp_rank[-1], np.newaxis]
             X_test = N[inds_test, imp_rank[-1], np.newaxis]

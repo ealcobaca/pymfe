@@ -259,10 +259,12 @@ class MFEBoilerplate:
     # Important detail: all methods must be classmethods; there is no class
     # instantiation in the pymfe framework.
     @classmethod
-    def precompute_basic_precomp_method(cls,
-                                        y: t.Optional[np.ndarray] = None,
-                                        argument_bar: t.Optional[int] = None,
-                                        **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_basic_precomp_method(
+        cls,
+        y: t.Optional[np.ndarray] = None,
+        argument_bar: t.Optional[int] = None,
+        **kwargs
+    ) -> t.Dict[str, t.Any]:
         """A precomputation method example.
 
         The pydoc of each method must explain cleary what is the purpose of
@@ -395,9 +397,9 @@ class MFEBoilerplate:
         return precomp_vals
 
     @classmethod
-    def precompute_more_info(cls,
-                             argument_bar: t.Optional[int] = None,
-                             **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_more_info(
+        cls, argument_bar: t.Optional[int] = None, **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Highly relevant information about precomputation methods.
 
         1. How many precomputation methods per class?
@@ -479,14 +481,15 @@ class MFEBoilerplate:
             precomp_vals["qux"] = 1.0
             precomp_vals["quux"] = 5 + 1.0j * (precomp_vals["qux"])
             precomp_vals["quuz"] = np.array(
-                [precomp_vals["qux"] + i for i in np.arange(5)])
+                [precomp_vals["qux"] + i for i in np.arange(5)]
+            )
 
         return precomp_vals
 
     @classmethod
-    def precompute_random_values(cls,
-                                 random_state: t.Optional[int] = None,
-                                 **kwargs) -> t.Dict[str, t.Any]:
+    def precompute_random_values(
+        cls, random_state: t.Optional[int] = None, **kwargs
+    ) -> t.Dict[str, t.Any]:
         """Precomputation method with pseudo-random behavior.
 
         1. An important pymfe default argument for you: 'random_state'
@@ -539,12 +542,12 @@ class MFEBoilerplate:
 
     @classmethod
     def ft_metafeature_name(
-            cls,
-            X: np.ndarray,
-            y: np.ndarray,
-            random_state: t.Optional[int] = None,
-            opt_arg_bar: float = 1.0,
-            opt_arg_baz: np.ndarray = None,
+        cls,
+        X: np.ndarray,
+        y: np.ndarray,
+        random_state: t.Optional[int] = None,
+        opt_arg_bar: float = 1.0,
+        opt_arg_baz: np.ndarray = None,
     ) -> int:
         """Single-line description of this feature extraction method.
 
@@ -673,8 +676,9 @@ class MFEBoilerplate:
         return ret
 
     @classmethod
-    def ft_fitted_data_arguments(cls, X: np.ndarray, N: np.ndarray,
-                                 C: np.ndarray, y: np.ndarray) -> int:
+    def ft_fitted_data_arguments(
+        cls, X: np.ndarray, N: np.ndarray, C: np.ndarray, y: np.ndarray
+    ) -> int:
         """Information about some arguments related to fitted data.
 
         1. Handling Numerical, Categorical and Mixed data types
@@ -728,10 +732,11 @@ class MFEBoilerplate:
 
     @classmethod
     def ft_using_precomputed_values(
-            cls,
-            y: np.ndarray,
-            # y_unique: np.ndarray,  # Wrong! Need an default value.
-            y_unique: t.Optional[np.ndarray] = None) -> np.ndarray:
+        cls,
+        y: np.ndarray,
+        # y_unique: np.ndarray,  # Wrong! Need an default value.
+        y_unique: t.Optional[np.ndarray] = None,
+    ) -> np.ndarray:
         """Metafeature extraction method using precomputed values.
 
         1. How to use precomputed arguments
@@ -811,10 +816,7 @@ class MFEBoilerplate:
         return res
 
     @classmethod
-    def ft_about_return_values(
-            cls,
-            y: np.ndarray,
-    ) -> np.ndarray:
+    def ft_about_return_values(cls, y: np.ndarray,) -> np.ndarray:
         """Information about return values of feature extraction methods.
 
         1. You have two return options for metafeature extraction methods
@@ -938,14 +940,19 @@ class MFEBoilerplate:
         fact that it is not of the user's interest.
         """
         raise NotImplementedError(
-            "Hide me prefixing my name with a single '_'.")
+            "Hide me prefixing my name with a single '_'."
+        )
 
     @classmethod
     def postprocess_groupName1_groupName2(
-            cls, mtf_names: t.List[str], mtf_vals: t.List[float],
-            mtf_time: t.List[float], class_indexes: t.Sequence[int],
-            groups: t.Tuple[str, ...], inserted_group_dep: t.FrozenSet[str],
-            **kwargs
+        cls,
+        mtf_names: t.List[str],
+        mtf_vals: t.List[float],
+        mtf_time: t.List[float],
+        class_indexes: t.Sequence[int],
+        groups: t.Tuple[str, ...],
+        inserted_group_dep: t.FrozenSet[str],
+        **kwargs
     ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
         """Introduction to post-processing methods.
 
