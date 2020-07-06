@@ -66,7 +66,7 @@ In this package, We provided the following meta-features groups:
 - **General**: General information related to the dataset, also known as simple
   measures, such as the number of instances, attributes and classes.
 - **Statistical**: Standard statistical measures to describe the numerical
-- properties of data distribution.
+  properties of data distribution.
 - **Information-theoretic**: Particularly appropriate to describe discrete
   (categorical) attributes and their relationship with the classes.
 - **Model-based**: Measures designed to extract characteristics from simple
