@@ -43,7 +43,7 @@ class MFETestClass:
             number_of_lists: int = 3,
             **kwargs) -> t.Tuple[t.List, t.List, t.List]:
         """Postprocess: return Tuple of lists."""
-        return tuple(["_test_value"] for _ in range(number_of_lists))
+        return tuple(["test_value"] for _ in range(number_of_lists))
 
     @classmethod
     def postprocess_raise_exception(cls,
@@ -74,10 +74,10 @@ class MFETestClass:
     def precompute_return_something(cls, **kwargs) -> t.Dict[str, t.Any]:
         """Precompute: return empty dictionary."""
         precomp_vals = {
-            "_test_param_1": 0,
-            "_test_param_2": "euclidean",
-            "_test_param_3": list,
-            "_test_param_4": abs,
+            "test_param_1": 0,
+            "test_param_2": "euclidean",
+            "test_param_3": list,
+            "test_param_4": abs,
         }
 
         return precomp_vals
@@ -138,7 +138,7 @@ class MFETestClass:
 
 class TestArchitecture:
     """Tests for the framework architecture."""
-    def _test_summary_valid1(self):
+    def test_summary_valid1(self):
         vals = np.arange(5)
 
         res = _internal.summarize(features=vals,
@@ -146,7 +146,7 @@ class TestArchitecture:
 
         assert res == len(vals)
 
-    def _test_summary_valid2(self):
+    def test_summary_valid2(self):
         vals = np.arange(5)
 
         res = _internal.summarize(features=vals,
@@ -154,21 +154,21 @@ class TestArchitecture:
 
         assert res == len(vals)
 
-    def _test_summary_invalid1(self):
+    def test_summary_invalid1(self):
         res = _internal.summarize(features=np.arange(5),
                                   callable_sum=summary_exception,
                                   callable_args={"raise_exception": True})
 
         assert np.isnan(res)
 
-    def _test_summary_invalid2(self):
+    def test_summary_invalid2(self):
         res = _internal.summarize(features=np.arange(5),
                                   callable_sum=summary_memory_error,
                                   callable_args={"raise_mem_err": True})
 
         assert np.isnan(res)
 
-    def _test_postprocessing_valid(self):
+    def test_postprocessing_valid(self):
         """Test valid postprocessing and its automatic detection."""
         results = [], [], []
 
@@ -178,14 +178,14 @@ class TestArchitecture:
 
         assert all(map(lambda l: len(l) > 0, results))
 
-    def _test_preprocessing_valid(self):
+    def test_preprocessing_valid(self):
         """Test valid precomputation and its automatic detection."""
         precomp_args = _internal.process_precomp_groups(
             precomp_groups=tuple(), groups=tuple(), custom_class_=MFETestClass)
 
         assert len(precomp_args) > 0
 
-    def _test_feature_detection(self):
+    def test_feature_detection(self):
         """Test automatic dectection of metafeature extraction method."""
         name, mtd, groups = _internal.process_features(
             features="all",
@@ -195,13 +195,13 @@ class TestArchitecture:
 
         assert len(name) == 4 and len(mtd) == 4 and len(groups) == 1
 
-    def _test_get_groups(self):
+    def test_get_groups(self):
         model = MFE()
         res = model.valid_groups()
         assert (len(res) == len(_internal.VALID_GROUPS)
                 and not set(res).symmetric_difference(_internal.VALID_GROUPS))
 
-    def _test_metafeature_description(self):
+    def test_metafeature_description(self):
         desc, _ = MFE.metafeature_description(print_table=False)
         groups = [d[0] for d in desc]
         assert len(set(groups)) == len(_internal.VALID_GROUPS)
@@ -216,7 +216,7 @@ class TestArchitecture:
         desc = MFE.metafeature_description()
         assert desc is None
 
-    def _test_metafeature_description_exceptions(self):
+    def test_metafeature_description_exceptions(self):
         """Test metafeature description exceptions"""
         with pytest.raises(TypeError):
             MFE.metafeature_description(print_table="False")
@@ -227,7 +227,7 @@ class TestArchitecture:
         with pytest.raises(TypeError):
             MFE.metafeature_description(sort_by_group=[True])
 
-    def _test_default_alias_groups(self):
+    def test_default_alias_groups(self):
         model = MFE(groups="default")
         res = model.valid_groups()
         assert (len(res) == len(_internal.VALID_GROUPS)
@@ -290,7 +290,7 @@ class TestArchitecture:
         ("general", "model-based", "statistical"),
         ("statistical", "statistical"),
     ])
-    def _test_parse_valid_metafeatures(self, groups):
+    def test_parse_valid_metafeatures(self, groups):
         """Check the length of valid metafeatures per group."""
         X, y = utils.load_xy(0)
 
@@ -308,13 +308,13 @@ class TestArchitecture:
 
         assert not set(names).symmetric_difference(target_mtf)
 
-    def _test_no_cat_transformation(self):
+    def test_no_cat_transformation(self):
         X, y = utils.load_xy(1)
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat=None)
         assert mfe._custom_args_ft["N"].size == 0
 
-    def _test_gray_encoding_missing_value(self):
+    def test_gray_encoding_missing_value(self):
         X, y = utils.load_xy(1)
         mfe = MFE()
 
@@ -326,7 +326,7 @@ class TestArchitecture:
         with pytest.raises(ValueError):
             mfe.fit(X, y, transform_cat="gray")
 
-    def _test_one_hot_encoding_01(self):
+    def test_one_hot_encoding_01(self):
         X, y = utils.load_xy(1)
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat="one-hot")
@@ -335,7 +335,7 @@ class TestArchitecture:
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
-    def _test_one_hot_encoding_02(self):
+    def test_one_hot_encoding_02(self):
         X, y = utils.load_xy(1)
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat="one-hot-full")
@@ -344,7 +344,7 @@ class TestArchitecture:
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
-    def _test_one_hot_encoding_03(self):
+    def test_one_hot_encoding_03(self):
         X, y = utils.load_xy(2)
         mfe = MFE()
         mfe.fit(X.values, y.values, transform_cat="one-hot")
@@ -353,7 +353,7 @@ class TestArchitecture:
 
         assert mfe._custom_args_ft["N"].shape[1] == exp_value
 
-    def _test_one_hot_encoding_04(self):
+    def test_one_hot_encoding_04(self):
         X, y = utils.load_xy(2)
         mfe = MFE()
 
@@ -363,7 +363,7 @@ class TestArchitecture:
         with pytest.raises(ValueError):
             mfe.fit(X=X, y=y, transform_cat="one-hot")
 
-    def _test_ohe_full_encoding_missing_value(self):
+    def test_ohe_full_encoding_missing_value(self):
         X, y = utils.load_xy(1)
         mfe = MFE()
 
@@ -376,7 +376,7 @@ class TestArchitecture:
             mfe.fit(X, y, transform_cat="one-hot")
 
     @pytest.mark.parametrize("confidence", (0.95, 0.99))
-    def _test_extract_with_confidence(self, confidence):
+    def test_extract_with_confidence(self, confidence):
         X, y = utils.load_xy(2)
 
         mtf_names, mtf_vals, mtf_conf_int = MFE(
@@ -398,18 +398,18 @@ class TestArchitecture:
 
         assert np.all(confidence - 0.05 <= in_range_prop)
 
-    def _test_extract_with_confidence_invalid1(self):
+    def test_extract_with_confidence_invalid1(self):
         with pytest.raises(TypeError):
             MFE().extract_with_confidence()
 
-    def _test_extract_with_confidence_invalid2(self):
+    def test_extract_with_confidence_invalid2(self):
         X, y = utils.load_xy(2)
 
         with pytest.raises(ValueError):
             MFE().fit(
                 X.values, y.values).extract_with_confidence(confidence=-0.0001)
 
-    def _test_extract_with_confidence_invalid3(self):
+    def test_extract_with_confidence_invalid3(self):
         X, y = utils.load_xy(2)
 
         with pytest.raises(ValueError):
@@ -417,7 +417,7 @@ class TestArchitecture:
                 X.values, y.values).extract_with_confidence(confidence=1.0001)
 
     @pytest.mark.parametrize("return_avg_val", (True, False))
-    def _test_extract_with_confidence_time(self, return_avg_val):
+    def test_extract_with_confidence_time(self, return_avg_val):
         X, y = utils.load_xy(2)
 
         res = MFE(
@@ -431,7 +431,7 @@ class TestArchitecture:
 
         assert (len(mtf_names) == len(mtf_vals) == len(mtf_time) == len(mtf_conf_int))
 
-    def _test_extract_with_confidence_multiple_conf_level(self):
+    def test_extract_with_confidence_multiple_conf_level(self):
         X, y = utils.load_xy(2)
 
         confidence = [0.8, 0.9, 0.7]
@@ -444,7 +444,7 @@ class TestArchitecture:
 
         assert 2 * len(confidence) == mtf_conf_int.shape[1]
 
-    def _test_extract_with_confidence_random_state1(self):
+    def test_extract_with_confidence_random_state1(self):
         X, y = utils.load_xy(2)
 
         _, mtf_vals_1, mtf_conf_int_1 = MFE(
@@ -460,7 +460,7 @@ class TestArchitecture:
         assert (np.allclose(mtf_vals_1, mtf_vals_2) and
                 np.allclose(mtf_conf_int_1, mtf_conf_int_2))
 
-    def _test_extract_with_confidence_random_state2(self):
+    def test_extract_with_confidence_random_state2(self):
         X, y = utils.load_xy(2)
 
         _, mtf_vals_1, mtf_conf_int_1 = MFE(
@@ -476,7 +476,7 @@ class TestArchitecture:
         assert (np.any(~np.isclose(mtf_vals_1, mtf_vals_2)) and
                 np.any(~np.isclose(mtf_conf_int_1, mtf_conf_int_2)))
 
-    def _test_extract_with_confidence_random_state3(self):
+    def test_extract_with_confidence_random_state3(self):
         X, y = utils.load_xy(2)
 
         np.random.seed(1234)
@@ -494,7 +494,7 @@ class TestArchitecture:
         assert (np.any(~np.isclose(mtf_vals_1, mtf_vals_2)) and
                 np.any(~np.isclose(mtf_conf_int_1, mtf_conf_int_2)))
 
-    def _test_extract_from_model(self):
+    def test_extract_from_model(self):
         X, y = utils.load_xy(2)
 
         model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
@@ -509,7 +509,7 @@ class TestArchitecture:
         assert (np.all(mtf_name == mtf_name2)
                 and np.allclose(mtf_vals, mtf_vals2))
 
-    def _test_extract_from_model_invalid1(self):
+    def test_extract_from_model_invalid1(self):
         X, y = utils.load_xy(2)
 
         model = sklearn.tree.DecisionTreeRegressor().fit(X.values, y.values)
@@ -517,7 +517,7 @@ class TestArchitecture:
         with pytest.raises(TypeError):
             MFE().extract_from_model(model)
 
-    def _test_extract_from_model_invalid2(self):
+    def test_extract_from_model_invalid2(self):
         X, y = utils.load_xy(2)
 
         model = sklearn.tree.DecisionTreeClassifier(random_state=1234).fit(
@@ -526,13 +526,13 @@ class TestArchitecture:
         with pytest.raises(KeyError):
             MFE().extract_from_model(model, arguments_fit={"dt_model": model})
 
-    def _test_extract_from_model_invalid3(self):
+    def test_extract_from_model_invalid3(self):
         model = sklearn.tree.DecisionTreeClassifier()
 
         with pytest.raises(RuntimeError):
             MFE().extract_from_model(model)
 
-    def _test_extract_from_model_invalid4(self):
+    def test_extract_from_model_invalid4(self):
         X, y = utils.load_xy(2)
 
         model = sklearn.tree.DecisionTreeClassifier().fit(X, y)
@@ -542,7 +542,7 @@ class TestArchitecture:
 
 
 class TestArchitectureWarnings:
-    def _test_feature_warning1(self):
+    def test_feature_warning1(self):
         """Test exception handling of feature extraction."""
         name, mtd, groups = map(
             np.asarray,
@@ -561,7 +561,7 @@ class TestArchitectureWarnings:
                                      mtd_callable=mtd[0][1],
                                      suppress_warnings=False)
 
-    def _test_feature_warning2(self):
+    def test_feature_warning2(self):
         """Test memory error handling of feature extraction."""
         name, mtd, groups = map(
             np.asarray,
@@ -580,14 +580,14 @@ class TestArchitectureWarnings:
                                      mtd_callable=mtd[0][1],
                                      suppress_warnings=False)
 
-    def _test_mem_err_precompute(self):
+    def test_mem_err_precompute(self):
         with pytest.warns(UserWarning):
             _internal.process_precomp_groups(precomp_groups=tuple(),
                                              groups=tuple(),
                                              custom_class_=MFETestClass,
                                              raise_mem_err=True)
 
-    def _test_mem_err_postprocess(self):
+    def test_mem_err_postprocess(self):
         """Test memory error in postprocessing methods."""
         results = [], [], []
 
@@ -597,7 +597,7 @@ class TestArchitectureWarnings:
                                       custom_class_=MFETestClass,
                                       raise_mem_err=True)
 
-    def _test_postprocessing_invalid1(self):
+    def test_postprocessing_invalid1(self):
         """Test exception handling in invalid postprocessing."""
         results = [], [], []
 
@@ -607,7 +607,7 @@ class TestArchitectureWarnings:
                                       custom_class_=MFETestClass,
                                       raise_exception=True)
 
-    def _test_postprocessing_invalid2(self):
+    def test_postprocessing_invalid2(self):
         """Test incorrect return value in postprocessing methods."""
         results = [], [], []
 
@@ -617,7 +617,7 @@ class TestArchitectureWarnings:
                                       custom_class_=MFETestClass,
                                       number_of_lists=2)
 
-    def _test_preprocessing_invalid(self):
+    def test_preprocessing_invalid(self):
         """Test exception handling of precomputation."""
         with pytest.warns(UserWarning):
             _internal.process_precomp_groups(precomp_groups=tuple(),
