@@ -1028,7 +1028,7 @@ class MFE:
             Value used as ``select all`` for ``precomp_groups``.
 
         suppress_warnings : :obj:`bool`, optional
-            If True, ignore all warnings invoked while fitting dataset.
+            If True, ignore all warnings invoked while fitting the dataset.
 
         verbose : :obj:`int`, optional
             Defines the level of verbosity for the fit method. If `1`, then
@@ -1200,10 +1200,7 @@ class MFE:
             (to be implemented).
 
         suppress_warnings : :obj:`bool`, optional
-            If True, do not show warnings about unknown user custom parameters
-            for feature extraction and summary methods passed via kwargs. Note
-            that both feature extraction and summary methods may still raise
-            warnings by itself.
+            If True, do not show any warning while extracting meta-features.
 
         kwargs:
             Used to pass custom arguments for both feature-extraction and
