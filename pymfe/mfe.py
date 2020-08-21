@@ -315,8 +315,8 @@ class MFE:
 
         else:
             raise ValueError(
-                'Invalid "num_cv_folds" argument ({0}). '
-                "Expecting an integer.".format(random_state)
+                'Invalid "num_cv_folds" argument ({0}). Expecting an integer.'
+                .format(random_state)
             )
 
         if isinstance(lm_sample_frac, int):
@@ -420,8 +420,8 @@ class MFE:
 
             if verbose >= 2:
                 print(
-                    " {} Summarizing '{}' feature with '{}' summary "
-                    "function...".format(
+                    " {} Summarizing '{}' feature with '{}' summary"
+                    " function...".format(
                         _internal.VERBOSE_BLOCK_MID_SYMBOL,
                         feature_name,
                         sm_mtd_name,
@@ -865,10 +865,8 @@ class MFE:
             and transform_cat not in _internal.VALID_TRANSFORM_CAT
         ):
             raise ValueError(
-                "Invalid 'transform_cat' value ('{}'). Must be "
-                "a value in {}.".format(
-                    transform_cat, _internal.VALID_TRANSFORM_CAT
-                )
+                "Invalid 'transform_cat' value ('{}'). Must be a value in {}."
+                .format(transform_cat, _internal.VALID_TRANSFORM_CAT)
             )
 
         data_num = self.X[:, self._attr_indexes_num]
@@ -1675,12 +1673,12 @@ class MFE:
         try:
             sklearn.utils.validation.check_is_fitted(model)
 
-        except sklearn.exceptions.NotFittedError:
+        except sklearn.exceptions.NotFittedError as err:
             raise RuntimeError(
                 "Given 'model' does not have any fitted data. "
                 "Please use its 'fit' method before using the "
                 "model with 'extract_from_model' method."
-            )
+            ) from err
 
         if arguments_fit is None:
             arguments_fit = {}
