@@ -4,6 +4,7 @@ import typing as t
 import collections
 import shutil
 import time
+import warnings
 
 import texttable
 import numpy as np
@@ -1058,49 +1059,56 @@ class MFE:
             If X or y (or both) is neither a :obj:`list` or a :obj:`np.ndarray`
             object.
         """
-        if verbose >= 2:
-            print("Fitting data into model... ", end="")
+        with warnings.catch_warnings():
+            if suppress_warnings:
+                warnings.filterwarnings("ignore")
 
-        self.X, self.y = _internal.check_data(X, y)
+            if verbose >= 2:
+                print("Fitting data into model... ", end="")
 
-        if verbose >= 2:
-            print("Done.")
+            self.X, self.y = _internal.check_data(X, y)
 
-        rescale = _internal.process_generic_option(
-            value=rescale, group_name="rescale", allow_none=True
-        )
+            if verbose >= 2:
+                print("Done.")
 
-        self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
-
-        if verbose >= 2:
-            print(
-                "Started data transformation process.",
-                " {} Encoding numerical data into discrete values... ".format(
-                    _internal.VERBOSE_BLOCK_END_SYMBOL
-                ),
-                sep="\n",
-                end="",
+            rescale = _internal.process_generic_option(
+                value=rescale, group_name="rescale", allow_none=True
             )
 
-        data_cat = self._set_data_categoric(transform_num=transform_num)
-
-        if verbose >= 2:
-            print(
-                "Done.",
-                " {} Enconding categorical data into numerical values... "
-                .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
-                sep="\n",
-                end="",
+            self._fill_col_ind_by_type(
+                cat_cols=cat_cols, check_bool=check_bool
             )
 
-        data_num = self._set_data_numeric(
-            transform_cat=transform_cat,
-            rescale=rescale,
-            rescale_args=rescale_args,
-        )
+            if verbose >= 2:
+                print(
+                    "Started data transformation process.",
+                    " {} Encoding numerical data into discrete values... "
+                    .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
+                    sep="\n",
+                    end="",
+                )
 
-        if verbose >= 2:
-            print("Done.", "Finished data transformation process.", sep="\n")
+            data_cat = self._set_data_categoric(transform_num=transform_num)
+
+            if verbose >= 2:
+                print(
+                    "Done.",
+                    " {} Enconding categorical data into numerical values... "
+                    .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
+                    sep="\n",
+                    end="",
+                )
+
+            data_num = self._set_data_numeric(
+                transform_cat=transform_cat,
+                rescale=rescale,
+                rescale_args=rescale_args,
+            )
+
+            if verbose >= 2:
+                print(
+                    "Done.", "Finished data transformation process.", sep="\n"
+                )
 
         # Custom arguments for metafeature extraction methods
         self._custom_args_ft = {
@@ -1124,15 +1132,20 @@ class MFE:
 
         _time_start = time.time()
 
-        # Custom arguments from preprocessing methods
-        self._precomp_args_ft = _internal.process_precomp_groups(
-            precomp_groups=precomp_groups,
-            groups=self.groups,
-            wildcard=wildcard,
-            suppress_warnings=suppress_warnings,
-            verbose=verbose,
-            **{**self._custom_args_ft, **kwargs},
-        )
+        with warnings.catch_warnings():
+            if suppress_warnings:
+                warnings.filterwarnings("ignore")
+
+            # Custom arguments from preprocessing methods
+            self._precomp_args_ft = _internal.process_precomp_groups(
+                precomp_groups=precomp_groups,
+                groups=self.groups,
+                wildcard=wildcard,
+                suppress_warnings=suppress_warnings,
+                verbose=verbose,
+                **self._custom_args_ft,
+                **kwargs,
+            )
 
         self.time_precomp = time.time() - _time_start
 
@@ -1272,20 +1285,24 @@ class MFE:
 
         _time_start = time.time()
 
-        results = self._call_feature_methods(
-            verbose=verbose,
-            enable_parallel=enable_parallel,
-            suppress_warnings=suppress_warnings,
-            **kwargs,
-        )  # type: t.Tuple[t.List, ...]
+        with warnings.catch_warnings():
+            if suppress_warnings:
+                warnings.filterwarnings("ignore")
 
-        _internal.post_processing(
-            results=results,
-            groups=self.groups,
-            suppress_warnings=suppress_warnings,
-            **self._postprocess_args_ft,
-            **kwargs,
-        )
+            results = self._call_feature_methods(
+                verbose=verbose,
+                enable_parallel=enable_parallel,
+                suppress_warnings=suppress_warnings,
+                **kwargs,
+            )  # type: t.Tuple[t.List, ...]
+
+            _internal.post_processing(
+                results=results,
+                groups=self.groups,
+                suppress_warnings=suppress_warnings,
+                **self._postprocess_args_ft,
+                **kwargs,
+            )
 
         self.time_extract = time.time() - _time_start
         self.time_total = self.time_extract + self.time_precomp
