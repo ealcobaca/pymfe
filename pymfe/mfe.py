@@ -1350,6 +1350,17 @@ class MFE:
     ) -> t.Tuple[str, ...]:
         """Extract the pre-configured meta-feature names.
 
+        Parameters
+        ----------
+        supervised : bool, optional
+            If True, extract the meta-feature names assuming that `y` (data
+            labels) is given alongside `X` (independent attributes).
+
+            If there is some data fit into the MFE model, this method checks
+            wether `y` was fitted or not. Therefore, setting `supervised=True`
+            while fitting only `X` has no effect, and only unsupervised
+            meta-feature names will be returned.
+
         Returns
         -------
         tuple
@@ -1367,6 +1378,9 @@ class MFE:
             "cat_cols",
             "hypparam_model_dt",
         }
+
+        if self.X is not None:
+            supervised &= self.y is not None
 
         if supervised:
             given_arguments.add("y")
