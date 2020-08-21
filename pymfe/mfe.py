@@ -1345,6 +1345,109 @@ class MFE:
 
         return res_names, res_vals
 
+    def extract_metafeature_names(
+        self, supervised: bool = True
+    ) -> t.Tuple[str]:
+        """Extract the pre-configured meta-feature names.
+
+        Returns
+        -------
+        tuple
+            Tuple with meta-feature names to be extracted as values.
+        """
+        given_arguments = {
+            "X",
+            "N",
+            "C",
+            "num_cv_folds",
+            "shuffle_cv_folds",
+            "lm_sample_frac",
+            "score",
+            "random_state",
+            "cat_cols",
+            "hypparam_model_dt",
+        }
+
+        if supervised:
+            given_arguments.add("y")
+            given_arguments.add("dt_model")
+
+        postprocess_args_ft = {
+            "inserted_group_dep": self.inserted_group_dep,
+        }
+
+        custom_args_ft = dict.fromkeys(given_arguments, None)
+
+        metafeat_names = []  # type: t.List[str]
+
+        for cur_metadata in self._metadata_mtd_ft:
+            (
+                ft_mtd_name,
+                ft_mtd_callable,
+                ft_mtd_args,
+                ft_mandatory,
+            ) = cur_metadata
+
+            ft_name_without_prefix = _internal.remove_prefix(
+                value=ft_mtd_name, prefix=_internal.MTF_PREFIX
+            )
+
+            try:
+                ft_mtd_args_pack = _internal.build_mtd_kwargs(
+                    mtd_name=ft_name_without_prefix,
+                    mtd_args=ft_mtd_args,
+                    mtd_mandatory=ft_mandatory,
+                    user_custom_args=None,
+                    inner_custom_args=custom_args_ft,
+                    precomp_args=None,
+                    suppress_warnings=True,
+                )
+
+            except RuntimeError as err:
+                continue
+
+            ft_has_length = _internal.array_is_returned(ft_mtd_callable)
+
+            if self._metadata_mtd_sm and ft_has_length:
+                for cur_metadata_sm in self._metadata_mtd_sm:
+                    sm_mtd_name, sm_mtd_callable, _, _ = cur_metadata_sm
+
+                    try:
+                        summarized_val_len = len(sm_mtd_callable([0]))
+
+                    except TypeError:
+                        summarized_val_len = 0
+
+                    if summarized_val_len > 0:
+                        metafeat_names += [
+                            ".".join(
+                                (ft_name_without_prefix, sm_mtd_name, str(i))
+                            )
+                            for i in range(summarized_val_len)
+                        ]
+
+                    else:
+                        metafeat_names.append(
+                            ".".join((ft_name_without_prefix, sm_mtd_name))
+                        )
+
+            else:
+                metafeat_names.append(ft_name_without_prefix)
+
+        fake_vals = len(metafeat_names) * [0]
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+
+            _internal.post_processing(
+                results=[metafeat_names, fake_vals, fake_vals],
+                groups=self.groups,
+                suppress_warnings=True,
+                **postprocess_args_ft,
+            )
+
+        return tuple(sorted(metafeat_names))
+
     def _extract_with_bootstrap(
         self,
         extractor: "MFE",
