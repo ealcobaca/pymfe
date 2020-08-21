@@ -845,12 +845,12 @@ def process_generic_set(
             _module_name,
             "{0}{1}".format(VALID_VALUE_PREFIX, group_name.upper()),
         )
-    except AttributeError:
+    except AttributeError as err:
         raise ValueError(
             'Invalid "group_name" "{}". Check _internal '
             "module documentation to verify which ones "
             "are available for use.".format(group_name)
-        )
+        ) from err
 
     if groups_alias:
         values = convert_alias(groups_alias, values)
@@ -929,8 +929,8 @@ def process_generic_option(
 
     if value is not None and not isinstance(value, str):
         raise TypeError(
-            '"value" (group name {}) must be a string-'
-            "type object (got {}).".format(group_name, type(value))
+            '"value" (group name {}) must be a string-type object (got {}).'
+            .format(group_name, type(value))
         )
 
     processed_value = process_generic_set(
@@ -991,8 +991,8 @@ def process_summary(
 
     if not_in_group:
         raise ValueError(
-            "Unknown summary function '{0}'. "
-            "Please select values in {1}.".format(not_in_group, VALID_SUMMARY)
+            "Unknown summary function '{0}'. Please select values in {1}."
+            .format(not_in_group, VALID_SUMMARY)
         )
 
     summary_methods = []  # type: t.List[TypeExtMtdTuple]
@@ -1506,13 +1506,13 @@ def transform_cat_gray(data_categoric: np.ndarray) -> t.Optional[np.ndarray]:
         enc_data = patsy.dmatrix(formula, named_data, NA_action="raise")
         return np.asarray(enc_data, dtype=float)
 
-    except patsy.PatsyError:
+    except patsy.PatsyError as err:
         raise ValueError(
             "Categorical data encoding of type 'gray' has no "
             "support for missing values. Please handle the "
             "missing data manually before fitting it into the "
             "MFE model."
-        )
+        ) from err
 
 
 def transform_cat_onehot(
@@ -1544,13 +1544,13 @@ def transform_cat_onehot(
         try:
             one_cat_attrs.append(ohe.fit_transform(cur_attr))
 
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
                 "Categorical data encoding of type 'one-hot' has "
                 "no support for missing values. Please handle the"
                 " missing data manually before fitting it into "
                 "the MFE model."
-            )
+            ) from err
 
     return np.hstack(one_cat_attrs)
 
@@ -1854,10 +1854,8 @@ def post_processing(
             if new_results:
                 if len(new_results) != len(results):
                     raise ValueError(
-                        "Postprocessing result has length '{}'. "
-                        "Expecting '{}'.".format(
-                            len(new_results), len(results)
-                        )
+                        "Postprocessing result has length '{}'. Expecting"
+                        " '{}'.".format(len(new_results), len(results))
                     )
 
                 for res_list_old, res_list_new in zip(results, new_results):
