@@ -1347,7 +1347,7 @@ class MFE:
 
     def extract_metafeature_names(
         self, supervised: bool = True
-    ) -> t.Tuple[str]:
+    ) -> t.Tuple[str, ...]:
         """Extract the pre-configured meta-feature names.
 
         Returns
@@ -1441,7 +1441,7 @@ class MFE:
             warnings.filterwarnings("ignore")
 
             _internal.post_processing(
-                results=[metafeat_names, fake_vals, fake_vals],
+                results=(metafeat_names, fake_vals, fake_vals),
                 groups=self.groups,
                 suppress_warnings=True,
                 **postprocess_args_ft,
