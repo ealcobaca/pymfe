@@ -1393,7 +1393,8 @@ class MFE:
             )
 
             try:
-                ft_mtd_args_pack = _internal.build_mtd_kwargs(
+                # Test if meta-feature can be extracted.
+                _internal.build_mtd_kwargs(
                     mtd_name=ft_name_without_prefix,
                     mtd_args=ft_mtd_args,
                     mtd_mandatory=ft_mandatory,
@@ -1403,7 +1404,7 @@ class MFE:
                     suppress_warnings=True,
                 )
 
-            except RuntimeError as err:
+            except RuntimeError:
                 continue
 
             ft_has_length = _internal.array_is_returned(ft_mtd_callable)
