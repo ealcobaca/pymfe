@@ -565,7 +565,7 @@ class MFEStatistical:
         if cov_mat is None:
             cov_mat = np.cov(N, rowvar=False, ddof=ddof)
 
-        return np.linalg.eigvals(cov_mat)
+        return np.linalg.eigvalsh(cov_mat)
 
     @classmethod
     def ft_g_mean(
