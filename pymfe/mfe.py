@@ -1366,31 +1366,36 @@ class MFE:
         tuple
             Tuple with meta-feature names to be extracted as values.
         """
-        given_arguments = {
-            "X",
-            "N",
-            "C",
-            "num_cv_folds",
-            "shuffle_cv_folds",
-            "lm_sample_frac",
-            "score",
-            "random_state",
-            "cat_cols",
-            "hypparam_model_dt",
-        }
-
         if self.X is not None:
-            supervised &= self.y is not None
+            custom_args_ft = self._custom_args_ft
+            precomp_args_ft = self._precomp_args_ft
+            postprocess_args_ft = self._postprocess_args_ft
 
-        if supervised:
-            given_arguments.add("y")
-            given_arguments.add("dt_model")
+        else:
+            # No data fit, assume given arguments.
+            given_arguments = {
+                "X",
+                "N",
+                "C",
+                "num_cv_folds",
+                "shuffle_cv_folds",
+                "lm_sample_frac",
+                "score",
+                "random_state",
+                "cat_cols",
+                "hypparam_model_dt",
+            }
 
-        postprocess_args_ft = {
-            "inserted_group_dep": self.inserted_group_dep,
-        }
+            if supervised:
+                given_arguments.add("y")
+                given_arguments.add("dt_model")
 
-        custom_args_ft = dict.fromkeys(given_arguments, None)
+            postprocess_args_ft = {
+                "inserted_group_dep": self.inserted_group_dep,
+            }
+
+            custom_args_ft = dict.fromkeys(given_arguments, None)
+            precomp_args_ft = {}
 
         metafeat_names = []  # type: t.List[str]
 
@@ -1414,7 +1419,7 @@ class MFE:
                     mtd_mandatory=ft_mandatory,
                     user_custom_args=None,
                     inner_custom_args=custom_args_ft,
-                    precomp_args=None,
+                    precomp_args=precomp_args_ft,
                     suppress_warnings=True,
                 )
 
