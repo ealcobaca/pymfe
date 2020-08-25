@@ -813,7 +813,7 @@ class MFEComplexity:
         y: np.ndarray,
         ovo_comb: t.Optional[np.ndarray] = None,
         cls_inds: t.Optional[np.ndarray] = None,
-    ) -> float:
+    ) -> np.ndarray:
         """Volume of the overlapping region.
 
         This measure calculates the overlap of the distributions of
@@ -840,8 +840,8 @@ class MFEComplexity:
 
         Returns
         -------
-        float
-            Volume of the overlapping region.
+        :obj:`np.ndarray`
+            Volume of the overlapping region for each OVO combination.
 
         References
         ----------
@@ -864,7 +864,7 @@ class MFEComplexity:
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
-        f4 = np.zeros(ovo_comb.shape[0], dtype=float)
+        f2 = np.zeros(ovo_comb.shape[0], dtype=float)
 
         for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
             N_cls_1 = N[cls_inds[cls_id_1], :]
@@ -875,11 +875,11 @@ class MFEComplexity:
             minmax = cls._calc_minmax(N_cls_1, N_cls_2)
             maxmin = cls._calc_maxmin(N_cls_1, N_cls_2)
 
-            f4[ind] = np.prod(
+            f2[ind] = np.prod(
                 np.maximum(0.0, minmax - maxmin) / (maxmax - minmin)
             )
 
-        return f4
+        return f2
 
     @classmethod
     def ft_f3(
@@ -2499,7 +2499,7 @@ class MFEComplexity:
         cls_inds: t.Optional[np.ndarray] = None,
         N_scaled: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
-    ) -> np.ndarray:
+    ) -> float:
         """Clustering coefficient.
 
         The clustering coefficient of a vertex `v_i` is given by the
@@ -2552,7 +2552,7 @@ class MFEComplexity:
 
         Returns
         -------
-        :obj:`np.ndarray`
+        float
             Clustering coefficient of given data.
 
         References

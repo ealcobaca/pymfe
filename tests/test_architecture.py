@@ -243,6 +243,102 @@ class TestArchitecture:
         assert (len(res) == len(_internal.VALID_GROUPS)
                 and not set(res).symmetric_difference(_internal.VALID_GROUPS))
 
+    @pytest.mark.parametrize("groups, summary", [
+        ("statistical", "all"),
+        ("general", "all"),
+        ("landmarking", "all"),
+        ("relative", "all"),
+        ("model-based", "all"),
+        ("info-theory", "all"),
+        ("statistical", ("mean", "sd")),
+        ("general", ("mean", "sd")),
+        ("landmarking", ("mean", "sd")),
+        ("model-based", ("mean", "sd")),
+        ("general", ("mean", "histogram")),
+        ("landmarking", ("mean", "histogram")),
+        ("model-based", ("mean", "histogram")),
+        ("general", ("quantiles", "histogram")),
+        ("landmarking", ("quantiles", "histogram")),
+        ("model-based", ("quantiles", "histogram")),
+        (["general", "relative"], ("mean", "sd")),
+        (["general", "relative"], ("quantiles", "histogram")),
+        (["landmarking", "relative"], ("mean", "sd")),
+        (["landmarking", "relative"], ("quantiles", "histogram")),
+        (["statistical", "landmarking", "relative"], ("mean", "sd")),
+        ("all", "all"),
+    ])
+    def test_extract_metafeature_names_supervised(self, groups, summary):
+        """Test .extract_metafeature_names method."""
+        X, y = utils.load_xy(0)
+
+        mfe = MFE(groups=groups, summary=summary)
+
+        mtf_names_1 = mfe.extract_metafeature_names(supervised=True)
+        mtf_names_2 = mfe.fit(X.values, y.values).extract(suppress_warnings=True)[0]
+
+        assert mtf_names_1 == tuple(mtf_names_2)
+
+    @pytest.mark.parametrize("groups, summary", [
+        ("statistical", "all"),
+        ("general", "all"),
+        ("landmarking", "all"),
+        ("relative", "all"),
+        ("model-based", "all"),
+        ("info-theory", "all"),
+        ("statistical", ("mean", "sd")),
+        ("general", ("mean", "sd")),
+        ("landmarking", ("mean", "sd")),
+        ("model-based", ("mean", "sd")),
+        ("general", ("mean", "histogram")),
+        ("landmarking", ("mean", "histogram")),
+        ("model-based", ("mean", "histogram")),
+        ("general", ("quantiles", "histogram")),
+        ("landmarking", ("quantiles", "histogram")),
+        ("model-based", ("quantiles", "histogram")),
+        (["general", "relative"], ("mean", "sd")),
+        (["general", "relative"], ("quantiles", "histogram")),
+        (["landmarking", "relative"], ("mean", "sd")),
+        (["landmarking", "relative"], ("quantiles", "histogram")),
+        (["statistical", "landmarking", "relative"], ("mean", "sd")),
+        ("all", "all"),
+    ])
+    def test_extract_metafeature_names_unsupervised_01(self, groups, summary):
+        """Test .extract_metafeature_names method."""
+        X, _ = utils.load_xy(0)
+
+        mfe = MFE(groups=groups, summary=summary)
+
+        mtf_names_1 = mfe.extract_metafeature_names(supervised=False)
+        mtf_names_2 = mfe.fit(X.values).extract(suppress_warnings=True)[0]
+
+        assert mtf_names_1 == tuple(mtf_names_2)
+
+    @pytest.mark.parametrize("groups, summary", [
+        ("general", "all"),
+        ("statistical", ("mean", "sd")),
+        (["general", "relative"], ("mean", "sd")),
+        (["general", "relative"], ("quantiles", "histogram")),
+        (["landmarking", "relative"], ("mean", "sd")),
+        (["landmarking", "relative"], ("quantiles", "histogram")),
+        (["statistical", "landmarking", "relative"], ("mean", "sd")),
+        ("all", "all"),
+    ])
+    def test_extract_metafeature_names_unsupervised_02(self, groups, summary):
+        """Test .extract_metafeature_names method."""
+        X, _ = utils.load_xy(0)
+
+        mfe = MFE(groups=groups, summary=summary)
+
+        mtf_names_1 = mfe.fit(X.values).extract(suppress_warnings=True)[0]
+        # Note: by default, .extract_metafeature_names should check wether
+        # 'y' was fitted or not if .fit was called before. Therefore, here,
+        # supervised=True is expected to be ignored and behave like
+        # supervised=False.
+        mtf_names_2 = mfe.extract_metafeature_names(supervised=True)
+        mtf_names_3 = mfe.extract_metafeature_names(supervised=False)
+
+        assert tuple(mtf_names_1) == mtf_names_2 == mtf_names_3
+
     @pytest.mark.parametrize("groups", [
         "statistical",
         "general",
