@@ -82,7 +82,7 @@ class MFEStatistical:
                 * ``class_freqs`` (:obj:`np.ndarray`): absolute class
                   frequencies of ``y``, if ``y`` is not :obj:`NoneType`.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if y is not None and not {"classes", "class_freqs"}.issubset(kwargs):
             classes, class_freqs = np.unique(y, return_counts=True)
@@ -123,7 +123,7 @@ class MFEStatistical:
                     - ``can_cor_eigvals`` (:obj:`np.ndarray`): eigenvalues
                       related to the canonical correlations.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if (
             y is not None
@@ -170,7 +170,7 @@ class MFEStatistical:
                       correlation matrix of ``N``, if ``N`` is not
                       :obj:`NoneType`.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if N is not None and N.size:
             if "cov_mat" not in kwargs:
@@ -212,7 +212,7 @@ class MFEStatistical:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-    ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, np.ndarray]]:
+    ) -> np.ndarray:
         """Calculate the Canonical Correlations between ``N`` and ``y.``
 
         Note that the canonical correlations are calculated using the
@@ -378,13 +378,16 @@ class MFEStatistical:
         if classes is None or class_freqs is None:
             classes, class_freqs = np.unique(y, return_counts=True)
 
-        ind_cls_maj = np.argmax(class_freqs)
-        class_maj = classes[ind_cls_maj]
+        _classes = np.asarray(classes)  # type: np.ndarray
+        _class_freqs = np.asarray(class_freqs, dtype=int)  # type: np.ndarray
 
-        classes = np.delete(classes, ind_cls_maj)
-        class_freqs = np.delete(class_freqs, ind_cls_maj)
+        ind_cls_maj = np.argmax(_class_freqs)
+        class_maj = _classes[ind_cls_maj]
 
-        ind_cls_min = np.argmin(class_freqs)
+        _classes = np.delete(_classes, ind_cls_maj)
+        _class_freqs = np.delete(_class_freqs, ind_cls_maj)
+
+        ind_cls_min = np.argmin(_class_freqs)
 
         if cls_inds is not None:
             insts_cls_maj = N[cls_inds[ind_cls_maj, :], :]
@@ -393,7 +396,7 @@ class MFEStatistical:
             insts_cls_min = N[cls_inds[ind_cls_min, :], :]
 
         else:
-            class_min = classes[ind_cls_min]
+            class_min = _classes[ind_cls_min]
             insts_cls_maj = N[y == class_maj, :]
             insts_cls_min = N[y == class_min, :]
 
@@ -786,7 +789,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return N.max(axis=0)
+        return np.asfarray(N.max(axis=0))
 
     @classmethod
     def ft_mean(cls, N: np.ndarray) -> np.ndarray:
@@ -809,7 +812,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return N.mean(axis=0)
+        return np.asfarray(N.mean(axis=0))
 
     @classmethod
     def ft_median(cls, N: np.ndarray) -> np.ndarray:
@@ -832,7 +835,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return np.median(N, axis=0)
+        return np.asfarray(np.median(N, axis=0))
 
     @classmethod
     def ft_min(cls, N: np.ndarray) -> np.ndarray:
@@ -855,7 +858,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return N.min(axis=0)
+        return np.asfarray(N.min(axis=0))
 
     @classmethod
     def ft_nr_cor_attr(
@@ -1128,7 +1131,7 @@ class MFEStatistical:
            to automatic kernel selection for support vector machines.
            Neurocomputing, 70(1):173 – 186, 2006.
         """
-        return np.ptp(N, axis=0)
+        return np.asfarray(np.ptp(N, axis=0))
 
     @classmethod
     def ft_sd(cls, N: np.ndarray, ddof: int = 1) -> np.ndarray:
@@ -1298,7 +1301,7 @@ class MFEStatistical:
             vec_weight,
         )
 
-        return np.exp(m_factor / (num_col * (num_inst - num_classes)))
+        return float(np.exp(m_factor / (num_col * (num_inst - num_classes))))
 
     @classmethod
     def ft_skewness(
@@ -1528,7 +1531,8 @@ class MFEStatistical:
         if can_cor_eigvals.size == 0:
             return np.nan
 
-        return np.prod(1 / (1 + can_cor_eigvals))
+        # return float(np.prod(1 / (1 + can_cor_eigvals)))
+        return float(np.exp(-np.sum(np.log1p(can_cor_eigvals))))
 
     @classmethod
     def ft_p_trace(
@@ -1572,7 +1576,7 @@ class MFEStatistical:
         if can_cors.size == 0:  # type: ignore
             return np.nan
 
-        return np.sum(np.square(can_cors))
+        return float(np.sum(np.square(can_cors)))
 
     @classmethod
     def ft_lh_trace(
@@ -1648,7 +1652,7 @@ class MFEStatistical:
         if can_cor_eigvals.size == 0:  # type: ignore
             return np.nan
 
-        return np.sum(can_cor_eigvals)
+        return float(np.sum(can_cor_eigvals))
 
     @classmethod
     def ft_roy_root(
@@ -1764,4 +1768,4 @@ class MFEStatistical:
         if values.size == 0:  # type: ignore
             return np.nan
 
-        return np.max(values)
+        return float(np.max(values))
