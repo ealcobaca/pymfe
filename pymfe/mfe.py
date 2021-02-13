@@ -559,7 +559,7 @@ class MFE:
             ft_has_length = hasattr(features, "__len__")
 
             if ft_has_length and self._timeopt_type_is_avg():
-                time_ft /= len(features)
+                time_ft /= max(1, len(features))
 
             if self._metadata_mtd_sm and ft_has_length:
                 sm_ret = self._call_summary_methods(
