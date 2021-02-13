@@ -290,7 +290,7 @@ class MFEConcept:
         weights = np.power(2, -impconceptvar_alpha * radius)
         np.fill_diagonal(weights, 0.0)
 
-        rep_class_matrix = np.repeat([y], y.shape[0], axis=0)
+        rep_class_matrix = np.repeat(np.expand_dims(y, 0), y.shape[0], axis=0)
         # check if class is different
         class_diff = np.not_equal(rep_class_matrix.T, rep_class_matrix).astype(
             int

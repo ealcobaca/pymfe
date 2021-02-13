@@ -122,8 +122,10 @@ class MFEModelBased:
                 hypparam_model_dt = {}
 
             if dt_model is None:
+                _y = np.asarray(y)
+
                 dt_model = cls._fit_dt_model(
-                    N=N, y=y, random_state=random_state, **hypparam_model_dt
+                    N=N, y=_y, random_state=random_state, **hypparam_model_dt
                 )
 
             leaf_nodes = cls._get_leaf_node_array(dt_model)
