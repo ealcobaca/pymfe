@@ -222,7 +222,8 @@ class MFEStatistical:
         kept.
         """
         y_bin = sklearn.preprocessing.OneHotEncoder(
-            sparse=False
+            sparse=False,
+            drop="first",
         ).fit_transform(y.reshape(-1, 1))
 
         num_classes, num_attr = y_bin.shape[1], N.shape[1]
@@ -236,10 +237,11 @@ class MFEStatistical:
         # those warnings.
         warnings.filterwarnings("ignore", category=UserWarning)
 
+        cca_model = sklearn.cross_decomposition.CCA(
+            n_components=n_components, max_iter=500
+        )
+
         try:
-            cca_model = sklearn.cross_decomposition.CCA(
-                n_components=n_components
-            )
             cca_model.fit(N, y_bin)
 
         except StopIteration:
@@ -759,7 +761,9 @@ class MFEStatistical:
            selection for classification. Applied Soft Computing,
            6(2):119 – 138, 2006.
         """
-        return scipy.stats.median_absolute_deviation(x=N, axis=0, scale=factor)
+        return scipy.stats.median_abs_deviation(
+            x=N, axis=0, scale=1.0 / factor
+        )
 
     @classmethod
     def ft_max(cls, N: np.ndarray) -> np.ndarray:
