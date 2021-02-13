@@ -443,7 +443,8 @@ class MFEClustering:
                     get_max_dist=get_max_dist,
                 )
                 for cur_class in cls_inds
-            ]
+            ],
+            dtype=object
         )
 
         return intracls_dists
