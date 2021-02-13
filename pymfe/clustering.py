@@ -40,7 +40,7 @@ class MFEClustering:
        type, via kwargs argument of ``extract`` method of MFE class.
 
     4. The return value of all feature extraction methods should be a single
-       value or a generic Sequence (preferably a :obj:`np.ndarray`)
+       value or a generic List (preferably a :obj:`np.ndarray`)
        type with numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -300,7 +300,7 @@ class MFEClustering:
             instances. Check :obj:`sklearn.neighbors.DistanceMetric`
             documentation for a full list of valid distance metrics.
 
-        representative : str or :obj:`np.ndarray` or Sequence, optional
+        representative : str or :obj:`np.ndarray` or List, optional
             * If representative is string-type, then it must assume one
                 value between ``median`` or ``mean``, and the selected
                 method is used to estimate the representative instance of
@@ -308,7 +308,7 @@ class MFEClustering:
                 attributes of all instances of the same class is used to
                 represent that class).
 
-            * If representative is a Sequence or have :obj:`np.ndarray` type,
+            * If representative is a List or have :obj:`np.ndarray` type,
                 then its length must be the number of different classes in
                 ``y`` and each of its element must be a representative
                 instance for each class. For example, the following 2-D
@@ -451,7 +451,10 @@ class MFEClustering:
 
     @classmethod
     def _get_nearest_neighbors(
-        cls, N: np.ndarray, n_neighbors: int, dist_metric: str = "euclidean",
+        cls,
+        N: np.ndarray,
+        n_neighbors: int,
+        dist_metric: str = "euclidean",
     ) -> np.ndarray:
         """Indexes of ``n_neighbors`` nearest neighbors for each instance."""
         model = sklearn.neighbors.KDTree(N, metric=dist_metric)
@@ -469,7 +472,7 @@ class MFEClustering:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
+        representative: t.Union[t.List, np.ndarray, str] = "mean",
         cls_inds: t.Optional[np.ndarray] = None,
         classes: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
@@ -508,7 +511,7 @@ class MFEClustering:
             ]
 
         elif not isinstance(
-            representative, (collections.Sequence, np.ndarray)
+            representative, (collections.List, np.ndarray)
         ):
             raise TypeError(
                 "'representative' type must be string "
@@ -791,7 +794,10 @@ class MFEClustering:
 
     @classmethod
     def ft_pb(
-        cls, N: np.ndarray, y: np.ndarray, dist_metric: str = "euclidean",
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        dist_metric: str = "euclidean",
     ) -> float:
         """Compute the pearson correlation between class matching and instance
         distances.
@@ -866,7 +872,9 @@ class MFEClustering:
 
     @classmethod
     def ft_nre(
-        cls, y: np.ndarray, class_freqs: t.Optional[np.ndarray] = None,
+        cls,
+        y: np.ndarray,
+        class_freqs: t.Optional[np.ndarray] = None,
     ) -> float:
         """Compute the normalized relative entropy.
 

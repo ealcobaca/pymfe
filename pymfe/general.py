@@ -32,7 +32,7 @@ class MFEGeneral:
        type, via kwargs argument of ``extract`` method of MFE class.
 
     4. The return value of all feature extraction methods should be a single
-       value or a generic Sequence (preferably a :obj:`np.ndarray`)
+       value or a generic List (preferably a :obj:`np.ndarray`)
        type with numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -85,7 +85,7 @@ class MFEGeneral:
         return precomp_vals
 
     @classmethod
-    def ft_attr_to_inst(cls, X: np.ndarray) -> int:
+    def ft_attr_to_inst(cls, X: np.ndarray) -> float:
         """Compute the ratio between the number of attributes.
 
         It is effectively the inverse of value given by ``ft_inst_to_attr``.
@@ -98,7 +98,7 @@ class MFEGeneral:
         Returns
         -------
         float
-            The ration between the number of attributes and instances.
+            The ratio between the number of attributes and instances.
 
         References
         ----------
@@ -111,8 +111,8 @@ class MFEGeneral:
 
     @classmethod
     def ft_cat_to_num(
-        cls, X: np.ndarray, cat_cols: t.Sequence[int]
-    ) -> t.Union[int, np.float]:
+        cls, X: np.ndarray, cat_cols: t.List[int]
+    ) -> t.Union[int, float]:
         """Compute the ratio between the number of categoric and numeric
         features.
 
@@ -127,7 +127,7 @@ class MFEGeneral:
             Fitted data.
 
         cat_cols : :obj:`list` of int
-            Sequence containing the indices of each categorical column
+            List containing the indices of each categorical column
             in ``X``.
 
         Returns
@@ -151,7 +151,9 @@ class MFEGeneral:
 
     @classmethod
     def ft_freq_class(
-        cls, y: np.ndarray, class_freqs: t.Optional[np.ndarray] = None,
+        cls,
+        y: np.ndarray,
+        class_freqs: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the relative frequency of each distinct class.
 
@@ -258,13 +260,13 @@ class MFEGeneral:
         return np.sum(bin_cols)
 
     @classmethod
-    def ft_nr_cat(cls, cat_cols: t.Sequence[int]) -> int:
+    def ft_nr_cat(cls, cat_cols: t.List[int]) -> int:
         """Compute the number of categorical attributes.
 
         Parameters
         ----------
         cat_cols : :obj:`list` of int
-            Sequence containing the indices of each categorical column
+            List containing the indices of each categorical column
             in ``X``.
 
         Returns
@@ -335,7 +337,7 @@ class MFEGeneral:
         return X.shape[0]
 
     @classmethod
-    def ft_nr_num(cls, X: np.ndarray, cat_cols: t.Sequence[int]) -> int:
+    def ft_nr_num(cls, X: np.ndarray, cat_cols: t.List[int]) -> int:
         """Compute the number of numeric features.
 
         Parameters
@@ -344,7 +346,7 @@ class MFEGeneral:
             Fitted data.
 
         cat_cols : :obj:`list` of int
-            Sequence containing the indices of each categorical column
+            List containing the indices of each categorical column
             in ``X``.
 
         Returns
@@ -363,8 +365,8 @@ class MFEGeneral:
 
     @classmethod
     def ft_num_to_cat(
-        cls, X: np.ndarray, cat_cols: t.Sequence[int]
-    ) -> t.Union[int, np.float]:
+        cls, X: np.ndarray, cat_cols: t.List[int]
+    ) -> t.Union[int, float]:
         """Compute the number of numerical and categorical features.
 
         If the number of categoric features is zero, :obj:`np.nan` is returned
@@ -378,7 +380,7 @@ class MFEGeneral:
             Fitted data.
 
         cat_cols : :obj:`list` of int
-            Sequence containing the indices of each categorical column
+            List containing the indices of each categorical column
             in ``X``.
 
         Returns

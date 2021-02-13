@@ -13,7 +13,7 @@ import numpy as np
 TypeNumeric = t.Union[int, float, np.number]
 """Type annotation for a numeric type (int, float, np.number)."""
 
-TypeValList = t.Sequence[TypeNumeric]
+TypeValList = t.List[TypeNumeric]
 """Type annotation for a sequence of numeric type elements."""
 
 

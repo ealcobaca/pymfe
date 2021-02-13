@@ -41,7 +41,7 @@ class MFEComplexity:
        type, via kwargs argument of ``extract`` method of MFE class.
 
     4. The return value of all feature extraction methods should be a single
-       value or a generic Sequence (preferably a :obj:`np.ndarray`) type with
+       value or a generic List (preferably a :obj:`np.ndarray`) type with
        numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -516,7 +516,9 @@ class MFEComplexity:
 
     @staticmethod
     def _calc_overlap(
-        N: np.ndarray, minmax: np.ndarray, maxmin: np.ndarray,
+        N: np.ndarray,
+        minmax: np.ndarray,
+        maxmin: np.ndarray,
     ) -> t.Tuple[int, np.ndarray, np.ndarray]:
         """Compute the instances in overlapping region by feature."""
         # True if the example is in the overlapping region

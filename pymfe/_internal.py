@@ -186,7 +186,12 @@ _TYPE_NUMERIC = (
 )
 """Tuple with generic numeric types."""
 
-TypeNumeric = t.TypeVar("TypeNumeric", int, float, np.number,)
+TypeNumeric = t.TypeVar(
+    "TypeNumeric",
+    int,
+    float,
+    np.number,
+)
 """Typing alias of generic numeric types for static code checking."""
 
 
@@ -513,14 +518,14 @@ def _extract_mtd_args(
 
 
 def summarize(
-    features: t.Union[np.ndarray, t.Sequence],
+    features: t.Union[np.ndarray, t.List],
     callable_sum: t.Callable,
     callable_args: t.Optional[t.Dict[str, t.Any]] = None,
-) -> t.Union[t.Sequence, TypeNumeric]:
+) -> t.Union[t.List, TypeNumeric]:
     """Returns ``feature`` values summarized by ``callable_sum``.
 
     Args:
-        features (:obj:`Sequence` of numerics): Sequence containing values
+        features (:obj:`List` of numerics): List containing values
             to summarize.
 
         callable_sum (:obj:`callable`): callable of the method which im-
@@ -599,8 +604,8 @@ def get_feat_value(
 
         if not suppress_warnings:
             warnings.warn(
-                "Can't extract feature '{0}'.\n Exception message: {1}.{2}"
-                .format(
+                "Can't extract feature '{0}'.\n "
+                "Exception message: {1}.{2}".format(
                     mtd_name,
                     repr(type_e),
                     "\n Will set it as 'np.nan' for all summary functions."
@@ -703,14 +708,14 @@ def build_mtd_kwargs(
 
 
 def check_summary_warnings(
-    value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
+    value: t.Union[TypeNumeric, t.List, np.ndarray],
     name_feature: str,
     name_summary: str,
 ) -> None:
     """Check if there is :obj:`np.nan` within summarized values.
 
     Args:
-        value (numeric or :obj:`Sequence`): summarized values.
+        value (numeric or :obj:`List`): summarized values.
 
         name_feature (:obj:`str`): name of the feature-extraction
             method used to generate the values which was summarized.
@@ -929,8 +934,8 @@ def process_generic_option(
 
     if value is not None and not isinstance(value, str):
         raise TypeError(
-            '"value" (group name {}) must be a string-type object (got {}).'
-            .format(group_name, type(value))
+            '"value" (group name {}) must be a string-type '
+            "object (got {}).".format(group_name, type(value))
         )
 
     processed_value = process_generic_set(
@@ -991,8 +996,8 @@ def process_summary(
 
     if not_in_group:
         raise ValueError(
-            "Unknown summary function '{0}'. Please select values in {1}."
-            .format(not_in_group, VALID_SUMMARY)
+            "Unknown summary function '{0}'. "
+            "Please select values in {1}.".format(not_in_group, VALID_SUMMARY)
         )
 
     summary_methods = []  # type: t.List[TypeExtMtdTuple]
@@ -1218,7 +1223,7 @@ def process_precomp_groups(
 
     processed_precomp_groups = _preprocess_iterable_arg(
         precomp_groups
-    )  # type: t.Sequence[str]
+    )  # type: t.List[str]
 
     if wildcard in processed_precomp_groups:
         processed_precomp_groups = groups
@@ -1741,7 +1746,7 @@ def check_group_dependencies(groups: t.Iterable[str]) -> t.Set[str]:
 
 
 def select_results_by_classes(
-    mtf_names: t.Sequence[str],
+    mtf_names: t.List[str],
     class_names: t.Union[str, t.Iterable[str]],
     include_dependencies: bool = False,
 ) -> t.List[int]:
@@ -1814,7 +1819,9 @@ def post_processing(
             ds.
     """
     mtds_metadata = _get_all_prefixed_mtds(
-        prefix=POSTPROCESS_PREFIX, groups=groups, custom_class_=custom_class_,
+        prefix=POSTPROCESS_PREFIX,
+        groups=groups,
+        custom_class_=custom_class_,
     )  # type: t.Dict[str, t.Tuple]
 
     postprocess_mtds = mtds_metadata.get(

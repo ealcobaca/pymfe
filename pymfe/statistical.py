@@ -40,7 +40,7 @@ class MFEStatistical:
        ``extract`` method of MFE class.
 
     4. The return value of all feature-extraction methods should be a single
-       value or a generic Sequence (preferably an np.ndarray)
+       value or a generic List (preferably an np.ndarray)
        type with numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -209,7 +209,9 @@ class MFEStatistical:
 
     @classmethod
     def _calc_can_cors(
-        cls, N: np.ndarray, y: np.ndarray,
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
     ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, np.ndarray]]:
         """Calculate the Canonical Correlations between ``N`` and ``y.``
 

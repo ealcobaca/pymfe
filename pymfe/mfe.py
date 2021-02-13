@@ -13,9 +13,7 @@ import sklearn.exceptions
 
 import pymfe._internal as _internal
 
-_TypeSeqExt = t.Sequence[
-    t.Tuple[str, t.Callable, t.Tuple[str, ...], t.Tuple[str, ...]]
-]
+_TypeSeqExt = t.List[t.Tuple[str, t.Callable, t.Tuple[str, ...], t.Tuple[str, ...]]]
 """Type annotation for a sequence of TypeExtMtdTuple objects."""
 
 
@@ -24,10 +22,10 @@ class MFE:
 
     Attributes
     ----------
-    X : :obj:`Sequence`
+    X : :obj:`List`
         Independent attributes of the dataset.
 
-    y : :obj:`Sequence`
+    y : :obj:`List`
         Target attributes of the dataset.
 
     groups : :obj:`tuple` of :obj:`str`
@@ -316,8 +314,8 @@ class MFE:
 
         else:
             raise ValueError(
-                'Invalid "num_cv_folds" argument ({0}). Expecting an integer.'
-                .format(random_state)
+                'Invalid "num_cv_folds" argument ({0}). '
+                "Expecting an integer.".format(random_state)
             )
 
         if isinstance(lm_sample_frac, int):
@@ -333,9 +331,7 @@ class MFE:
             )
 
         self.score = _internal.check_score(score, self.groups)
-        self.hypparam_model_dt = (
-            hypparam_model_dt.copy() if hypparam_model_dt else None
-        )
+        self.hypparam_model_dt = hypparam_model_dt.copy() if hypparam_model_dt else None
 
         # """Total time elapsed for precomputations."""
         self.time_precomp = -1.0
@@ -348,21 +344,19 @@ class MFE:
 
     def _call_summary_methods(
         self,
-        feature_values: t.Sequence[_internal.TypeNumeric],
+        feature_values: t.List[_internal.TypeNumeric],
         feature_name: str,
         verbose: int = 0,
         suppress_warnings: bool = False,
         **kwargs,
-    ) -> t.Tuple[
-        t.List[str], t.List[t.Union[float, t.Sequence]], t.List[float]
-    ]:
+    ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.List]], t.List[float],]:
         """Invoke summary functions loaded in the model on given feature
         values.
 
         Parameters
         ----------
         feature_values : :obj:`sequence` of numerics
-            Sequence containing values from feature-extraction methods.
+            List containing values from feature-extraction methods.
 
         feature_name : :obj:`str`
             Name of the feature method used for produce the ``feature_value.``
@@ -412,7 +406,7 @@ class MFE:
                     by both ``mean`` and ``sd`` (standard deviation), giving
                     the values ``0.98347`` and ``0.34436``, respectively.
         """
-        metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
+        metafeat_vals = []  # type: t.List[t.Union[int, float, t.List]]
         metafeat_names = []  # type: t.List[str]
         metafeat_times = []  # type: t.List[float]
 
@@ -456,17 +450,15 @@ class MFE:
             if isinstance(summarized_val, np.ndarray):
                 summarized_val = summarized_val.flatten().tolist()
 
-            if isinstance(
-                summarized_val, collections.Sequence
-            ) and not isinstance(summarized_val, str):
+            if isinstance(summarized_val, t.List) and not isinstance(
+                summarized_val, str
+            ):
                 metafeat_vals += summarized_val
                 metafeat_names += [
                     ".".join((feature_name, sm_mtd_name, str(i)))
                     for i in range(len(summarized_val))
                 ]
-                metafeat_times += [time_sm] + (
-                    (len(summarized_val) - 1) * [0.0]
-                )
+                metafeat_times += [time_sm] + ((len(summarized_val) - 1) * [0.0])
 
             else:
                 metafeat_vals.append(summarized_val)
@@ -491,9 +483,7 @@ class MFE:
         # enable_parallel: bool = False,
         suppress_warnings: bool = False,
         **kwargs,
-    ) -> t.Tuple[
-        t.List[str], t.List[t.Union[int, float, t.Sequence]], t.List[float]
-    ]:
+    ) -> t.Tuple[t.List[str], t.List[t.Union[int, float, t.List]], t.List[float],]:
         """Invoke feature methods loaded in the model and gather results.
 
         The returned values are already summarized if needed.
@@ -501,7 +491,7 @@ class MFE:
         For more information, check ``extract`` method documentation for
         in-depth information about arguments and return value.
         """
-        metafeat_vals = []  # type: t.List[t.Union[int, float, t.Sequence]]
+        metafeat_vals = []  # type: t.List[t.Union[int, float, t.List]]
         metafeat_names = []  # type: t.List[str]
         metafeat_times = []  # type: t.List[float]
 
@@ -557,9 +547,7 @@ class MFE:
                 suppress_warnings,
             )
 
-            ft_has_length = isinstance(
-                features, (np.ndarray, collections.Sequence)
-            )
+            ft_has_length = isinstance(features, (np.ndarray, t.List))
 
             if ft_has_length and self._timeopt_type_is_avg():
                 time_ft /= len(features)
@@ -645,7 +633,7 @@ class MFE:
         if self.X is None:
             raise TypeError("X can't be 'None'.")
 
-        categorical_cols = None  # type: np.ndarray[bool]
+        categorical_cols = None  # type: t.Optional[np.ndarray]
 
         if not cat_cols:
             categorical_cols = np.array([False] * self.X.shape[1])
@@ -667,9 +655,9 @@ class MFE:
                     arr=self.X,
                 )
 
-        elif isinstance(
-            cat_cols, (np.ndarray, collections.Iterable)
-        ) and not isinstance(cat_cols, str):
+        elif isinstance(cat_cols, (np.ndarray, t.List)) and not isinstance(
+            cat_cols, str
+        ):
             # and all(isinstance(x, int) for x in cat_cols)):
             categorical_cols = [i in cat_cols for i in range(self.X.shape[1])]
 
@@ -681,9 +669,7 @@ class MFE:
 
         categorical_cols = np.array(categorical_cols)
 
-        self._attr_indexes_num = tuple(
-            np.where(np.logical_not(categorical_cols))[0]
-        )
+        self._attr_indexes_num = tuple(np.where(np.logical_not(categorical_cols))[0])
         self._attr_indexes_cat = tuple(np.where(categorical_cols)[0])
 
     def _timeopt_type_is_avg(self) -> bool:
@@ -698,9 +684,7 @@ class MFE:
             _internal.TIMEOPT_SUMMARY_SUFFIX
         )
 
-    def _combine_time(
-        self, time_ft: float, times_sm: t.List[float]
-    ) -> t.List[float]:
+    def _combine_time(self, time_ft: float, times_sm: t.List[float]) -> t.List[float]:
         """Treat time from feature extraction and summarization based in
         ``timeopt``.
 
@@ -710,8 +694,8 @@ class MFE:
             Time necessary to extract some feature.
 
         times_sm : :obj:`list` of :obj:`float`
-            List of values to summarize the metafeature value with each summary
-            function.
+            List of values to summarize the metafeature value with each
+            summary function.
 
         Returns
         -------
@@ -866,8 +850,10 @@ class MFE:
             and transform_cat not in _internal.VALID_TRANSFORM_CAT
         ):
             raise ValueError(
-                "Invalid 'transform_cat' value ('{}'). Must be a value in {}."
-                .format(transform_cat, _internal.VALID_TRANSFORM_CAT)
+                "Invalid 'transform_cat' value ('{}'). "
+                "Must be a value in {}.".format(
+                    transform_cat, _internal.VALID_TRANSFORM_CAT
+                )
             )
 
         data_num = self.X[:, self._attr_indexes_num]
@@ -901,8 +887,8 @@ class MFE:
 
     def fit(
         self,
-        X: t.Sequence,
-        y: t.Optional[t.Sequence] = None,
+        X: t.List,
+        y: t.Optional[t.List] = None,
         transform_num: bool = True,
         transform_cat: str = "gray",
         rescale: t.Optional[str] = None,
@@ -919,10 +905,10 @@ class MFE:
 
         Parameters
         ----------
-        X : :obj:`Sequence`
+        X : :obj:`List`
             Predictive attributes of the dataset.
 
-        y : :obj:`Sequence`, optional
+        y : :obj:`List`, optional
             Target attributes of the dataset, assuming that it is a supervised
             task.
 
@@ -1001,7 +987,7 @@ class MFE:
             are the parameter names as strings and the values, the
             corresponding parameter value.
 
-        cat_cols :obj:`Sequence` of :obj:`int` or :obj:`str`, optional
+        cat_cols :obj:`List` of :obj:`int` or :obj:`str`, optional
             Categorical columns of dataset. If given :obj:`NoneType` or an
             empty sequence, assume all columns as numeric. If given value
             ``auto``, then an attempt of automatic detection is performed while
@@ -1075,15 +1061,13 @@ class MFE:
                 value=rescale, group_name="rescale", allow_none=True
             )
 
-            self._fill_col_ind_by_type(
-                cat_cols=cat_cols, check_bool=check_bool
-            )
+            self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
 
             if verbose >= 2:
                 print(
                     "Started data transformation process.",
-                    " {} Encoding numerical data into discrete values... "
-                    .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
+                    " {} Encoding numerical data into discrete values..."
+                    "".format(_internal.VERBOSE_BLOCK_END_SYMBOL),
                     sep="\n",
                     end="",
                 )
@@ -1093,8 +1077,8 @@ class MFE:
             if verbose >= 2:
                 print(
                     "Done.",
-                    " {} Enconding categorical data into numerical values... "
-                    .format(_internal.VERBOSE_BLOCK_END_SYMBOL),
+                    " {} Enconding categorical data into numerical values..."
+                    "".format(_internal.VERBOSE_BLOCK_END_SYMBOL),
                     sep="\n",
                     end="",
                 )
@@ -1106,9 +1090,7 @@ class MFE:
             )
 
             if verbose >= 2:
-                print(
-                    "Done.", "Finished data transformation process.", sep="\n"
-                )
+                print("Done.", "Finished data transformation process.", sep="\n")
 
         # Custom arguments for metafeature extraction methods
         self._custom_args_ft = {
@@ -1180,7 +1162,7 @@ class MFE:
         enable_parallel: bool = False,
         suppress_warnings: bool = False,
         **kwargs,
-    ) -> t.Tuple[t.Sequence, ...]:
+    ) -> t.Tuple[t.List, ...]:
         """Extracts metafeatures from the previously fitted dataset.
 
         Parameters
@@ -1272,9 +1254,7 @@ class MFE:
                 'Fitted data not found. Call "fit" method before "extract".'
             )
 
-        if not isinstance(self.X, np.ndarray) or not isinstance(
-            self.y, np.ndarray
-        ):
+        if not isinstance(self.X, np.ndarray) or not isinstance(self.y, np.ndarray):
             self.X, self.y = _internal.check_data(self.X, self.y)
 
         if verbose >= 2:
@@ -1307,9 +1287,7 @@ class MFE:
         if results and results[0]:
             # Sort results by metafeature name
             results = tuple(
-                map(
-                    list, zip(*sorted(zip(*results), key=lambda item: item[0]))
-                )
+                map(list, zip(*sorted(zip(*results), key=lambda item: item[0])))
             )
 
         res_names, res_vals, res_times = results
@@ -1345,9 +1323,7 @@ class MFE:
 
         return res_names, res_vals
 
-    def extract_metafeature_names(
-        self, supervised: bool = True
-    ) -> t.Tuple[str, ...]:
+    def extract_metafeature_names(self, supervised: bool = True) -> t.Tuple[str, ...]:
         """Extract the pre-configured meta-feature names.
 
         Parameters
@@ -1440,9 +1416,7 @@ class MFE:
 
                     if summarized_val_len > 0:
                         metafeat_names += [
-                            ".".join(
-                                (ft_name_without_prefix, sm_mtd_name, str(i))
-                            )
+                            ".".join((ft_name_without_prefix, sm_mtd_name, str(i)))
                             for i in range(summarized_val_len)
                         ]
 
@@ -1478,13 +1452,11 @@ class MFE:
     ) -> t.Tuple[np.ndarray, ...]:
         """Extract metafeatures using bootstrapping."""
         if self.X is None:
-            raise TypeError(
-                "Fitted data not found. Please call 'fit' method first."
-            )
+            raise TypeError("Fitted data not found. Please call 'fit' method first.")
 
         def _handle_extract_ret(
             res: t.Tuple[np.ndarray, ...],
-            args: t.Tuple[t.Sequence, ...],
+            args: t.Tuple[t.List, ...],
             it_num: int,
         ) -> t.Tuple[np.ndarray, ...]:
             """Handle each .extraction method return value."""
@@ -1504,9 +1476,7 @@ class MFE:
 
             else:
                 mtf_names = np.asarray(cur_mtf_names, dtype=str)
-                mtf_vals = np.zeros(
-                    (len(cur_mtf_vals), sample_num), dtype=float
-                )
+                mtf_vals = np.zeros((len(cur_mtf_vals), sample_num), dtype=float)
                 mtf_vals[:, 0] = cur_mtf_vals
 
                 if self.timeopt:
@@ -1531,7 +1501,7 @@ class MFE:
             if verbose > 0:
                 print(
                     "Extracting from sample dataset {} of {} ({:.2f}%)..."
-                    .format(
+                    "".format(
                         1 + it_num,
                         sample_num,
                         100.0 * (1 + it_num) / sample_num,
@@ -1543,9 +1513,7 @@ class MFE:
             np.random.seed(bootstrap_random_state)
             bootstrap_random_state += 1
 
-            sample_inds = np.random.randint(
-                self.X.shape[0], size=self.X.shape[0]
-            )
+            sample_inds = np.random.randint(self.X.shape[0], size=self.X.shape[0])
 
             X_sample = self.X[sample_inds, :]
             y_sample = self.y[sample_inds] if self.y is not None else None
@@ -1559,18 +1527,14 @@ class MFE:
             )
 
             if verbose > 0:
-                print(
-                    "Done extracting from sample dataset {}.\n".format(
-                        1 + it_num
-                    )
-                )
+                print("Done extracting from sample dataset {}.\n".format(1 + it_num))
 
         return res
 
     def extract_with_confidence(
         self,
         sample_num: int = 128,
-        confidence: t.Union[float, t.Sequence[float]] = 0.95,
+        confidence: t.Union[float, t.List[float]] = 0.95,
         return_avg_val: bool = True,
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
@@ -1745,7 +1709,7 @@ class MFE:
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
-    ) -> t.Tuple[t.Sequence, ...]:
+    ) -> t.Tuple[t.List, ...]:
         """Extract model-based metafeatures from given model.
 
         The random seed used by the new internal model is the same random
@@ -1838,15 +1802,11 @@ class MFE:
             print("Selected features from 'model-based' group:")
 
             for ft_name in _fts:
-                print(
-                    " {} {}".format(
-                        _internal.VERBOSE_BLOCK_END_SYMBOL, ft_name
-                    )
-                )
+                print(" {} {}".format(_internal.VERBOSE_BLOCK_END_SYMBOL, ft_name))
 
             print(
                 "Total of {} 'model-based' metafeature method candidates."
-                .format(len(_fts))
+                "".format(len(_fts))
             )
 
             print("Started extraction from model.")
@@ -1920,13 +1880,14 @@ class MFE:
 
     @classmethod
     def valid_metafeatures(
-        cls, groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
+        cls,
+        groups: t.Optional[t.Union[str, t.Iterable[str]]] = None,
     ) -> t.Tuple[str, ...]:
         """Return a tuple with all metafeatures related to given ``groups``.
 
         Parameters
         ----------
-        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`, optional:
+        groups : :obj:`List` of :obj:`str` or :obj:`str`, optional:
             Can be a string such value is a name of a specific metafeature
             group (see ``valid_groups`` method for more information) or a
             sequence of metafeature group names. It can be also None, which
@@ -1965,8 +1926,8 @@ class MFE:
     @classmethod
     def parse_by_group(
         cls,
-        groups: t.Union[t.Sequence[str], str],
-        extracted_results: t.Tuple[t.Sequence, ...],
+        groups: t.Union[t.List[str], str],
+        extracted_results: t.Tuple[t.List, ...],
     ) -> t.Tuple[t.List, ...]:
         """Parse the result of ``extract`` for given metafeature ``groups``.
 
@@ -1975,12 +1936,12 @@ class MFE:
 
         Parameters
         ----------
-        groups : :obj:`Sequence` of :obj:`str` or :obj:`str`
+        groups : :obj:`List` of :obj:`str` or :obj:`str`
             Metafeature group names which the results should be parsed
             relative to. Use ``valid_groups`` method to check the available
             metafeature groups.
 
-        extracted_results : :obj:`tuple` of :obj:`t.Sequence`
+        extracted_results : :obj:`tuple` of :obj:`t.List`
             Output of ``extract`` method. Should contain all outputed lists
             (metafeature names, values and elapsed time for extraction, if
             present.)
@@ -2048,9 +2009,7 @@ class MFE:
                 if len(split) >= 2:
                     del split[0]
                     for spl in split:
-                        reference_description += (
-                            "[" + " ".join(spl.split()) + "\n"
-                        )
+                        reference_description += "[" + " ".join(spl.split()) + "\n"
 
         return (initial_description, reference_description)
 

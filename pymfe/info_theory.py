@@ -36,7 +36,7 @@ class MFEInfoTheory:
        type, via kwargs argument of ``extract`` method of MFE class.
 
     4. The return value of all feature extraction methods should be a single
-       value or a generic Sequence (preferably a :obj:`np.ndarray`) type with
+       value or a generic List (preferably a :obj:`np.ndarray`) type with
        numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -127,7 +127,7 @@ class MFEInfoTheory:
                   each attribute in ``C`` and ``y``, if they both are not
                   :obj:`NoneType`.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if y is not None and "class_ent" not in kwargs:
             precomp_vals["class_ent"] = cls.ft_class_ent(
@@ -344,7 +344,7 @@ class MFEInfoTheory:
     def ft_class_ent(
         cls,
         y: np.ndarray,
-        class_ent: t.Optional[np.ndarray] = None,
+        class_ent: t.Optional[float] = None,
         class_freqs: t.Optional[np.ndarray] = None,
     ) -> float:
         """Compute target attribute Shannon's entropy.
@@ -393,7 +393,7 @@ class MFEInfoTheory:
         cls,
         C: np.ndarray,
         y: np.ndarray,
-        class_ent: t.Optional[np.ndarray] = None,
+        class_ent: t.Optional[float] = None,
         class_freqs: t.Optional[np.ndarray] = None,
         mut_inf: t.Optional[np.ndarray] = None,
     ) -> float:
@@ -451,7 +451,7 @@ class MFEInfoTheory:
 
         _, num_col = C.shape
 
-        return num_col * class_ent / np.sum(mut_inf)
+        return float(num_col * class_ent / np.sum(mut_inf))
 
     @classmethod
     def ft_joint_ent(
@@ -645,6 +645,6 @@ class MFEInfoTheory:
             mut_inf = cls.ft_mut_inf(C, y)
 
         ent_attr = np.sum(attr_ent)
-        mut_inf = np.sum(mut_inf)
+        total_mut_inf = np.sum(mut_inf)
 
-        return (ent_attr - mut_inf) / mut_inf
+        return float((ent_attr - total_mut_inf) / total_mut_inf)

@@ -33,7 +33,7 @@ class MFEItemset:
        type, via kwargs argument of ``extract`` method of MFE class.
 
     4. The return value of all feature extraction methods should be a single
-       value or a generic Sequence (preferably a :obj:`np.ndarray`) type with
+       value or a generic List (preferably a :obj:`np.ndarray`) type with
        numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -91,13 +91,15 @@ class MFEItemset:
         return res
 
     @classmethod
-    def _matrix_to_binary(cls, C: np.array) -> t.List[np.ndarray]:
+    def _matrix_to_binary(cls, C: np.ndarray) -> t.List[np.ndarray]:
         """Convert an matrix to its binary representation."""
         return [cls._array_to_binary(col) for col in C.T]
 
     @classmethod
     def ft_two_itemset(
-        cls, C: np.ndarray, itemset_binary_matrix: t.List[np.ndarray] = None,
+        cls,
+        C: np.ndarray,
+        itemset_binary_matrix: t.List[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the two itemset meta-feature.
 
@@ -147,7 +149,9 @@ class MFEItemset:
 
     @classmethod
     def ft_one_itemset(
-        cls, C: np.ndarray, itemset_binary_matrix: t.List[np.ndarray] = None
+        cls,
+        C: np.ndarray,
+        itemset_binary_matrix: t.List[np.ndarray] = None,
     ) -> np.ndarray:
         """Compute the one itemset meta-feature.
 
