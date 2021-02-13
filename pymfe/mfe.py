@@ -1,7 +1,6 @@
 """Main module for extracting metafeatures from datasets.
 """
 import typing as t
-import collections
 import shutil
 import time
 import warnings
@@ -13,7 +12,9 @@ import sklearn.exceptions
 
 import pymfe._internal as _internal
 
-_TypeSeqExt = t.List[t.Tuple[str, t.Callable, t.Tuple[str, ...], t.Tuple[str, ...]]]
+_TypeSeqExt = t.List[
+    t.Tuple[str, t.Callable, t.Tuple[str, ...], t.Tuple[str, ...]]
+]
 """Type annotation for a sequence of TypeExtMtdTuple objects."""
 
 
@@ -331,7 +332,9 @@ class MFE:
             )
 
         self.score = _internal.check_score(score, self.groups)
-        self.hypparam_model_dt = hypparam_model_dt.copy() if hypparam_model_dt else None
+        self.hypparam_model_dt = (
+            hypparam_model_dt.copy() if hypparam_model_dt else None
+        )
 
         # """Total time elapsed for precomputations."""
         self.time_precomp = -1.0
@@ -349,7 +352,7 @@ class MFE:
         verbose: int = 0,
         suppress_warnings: bool = False,
         **kwargs,
-    ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.List]], t.List[float],]:
+    ) -> t.Tuple[t.List[str], t.List[t.Union[float, t.List]], t.List[float]]:
         """Invoke summary functions loaded in the model on given feature
         values.
 
@@ -450,7 +453,7 @@ class MFE:
             if isinstance(summarized_val, np.ndarray):
                 summarized_val = summarized_val.flatten().tolist()
 
-            if isinstance(summarized_val, t.List) and not isinstance(
+            if isinstance(summarized_val, list) and not isinstance(
                 summarized_val, str
             ):
                 metafeat_vals += summarized_val
@@ -458,7 +461,9 @@ class MFE:
                     ".".join((feature_name, sm_mtd_name, str(i)))
                     for i in range(len(summarized_val))
                 ]
-                metafeat_times += [time_sm] + ((len(summarized_val) - 1) * [0.0])
+                metafeat_times += [time_sm] + (
+                    (len(summarized_val) - 1) * [0.0]
+                )
 
             else:
                 metafeat_vals.append(summarized_val)
@@ -483,7 +488,11 @@ class MFE:
         # enable_parallel: bool = False,
         suppress_warnings: bool = False,
         **kwargs,
-    ) -> t.Tuple[t.List[str], t.List[t.Union[int, float, t.List]], t.List[float],]:
+    ) -> t.Tuple[
+        t.List[str],
+        t.List[t.Union[int, float, t.List]],
+        t.List[float],
+    ]:
         """Invoke feature methods loaded in the model and gather results.
 
         The returned values are already summarized if needed.
@@ -547,7 +556,7 @@ class MFE:
                 suppress_warnings,
             )
 
-            ft_has_length = isinstance(features, (np.ndarray, t.List))
+            ft_has_length = hasattr(features, "__len__")
 
             if ft_has_length and self._timeopt_type_is_avg():
                 time_ft /= len(features)
@@ -655,10 +664,7 @@ class MFE:
                     arr=self.X,
                 )
 
-        elif isinstance(cat_cols, (np.ndarray, t.List)) and not isinstance(
-            cat_cols, str
-        ):
-            # and all(isinstance(x, int) for x in cat_cols)):
+        elif hasattr(cat_cols, "__len__") and not isinstance(cat_cols, str):
             categorical_cols = [i in cat_cols for i in range(self.X.shape[1])]
 
         else:
@@ -669,7 +675,9 @@ class MFE:
 
         categorical_cols = np.array(categorical_cols)
 
-        self._attr_indexes_num = tuple(np.where(np.logical_not(categorical_cols))[0])
+        self._attr_indexes_num = tuple(
+            np.where(np.logical_not(categorical_cols))[0]
+        )
         self._attr_indexes_cat = tuple(np.where(categorical_cols)[0])
 
     def _timeopt_type_is_avg(self) -> bool:
@@ -684,7 +692,9 @@ class MFE:
             _internal.TIMEOPT_SUMMARY_SUFFIX
         )
 
-    def _combine_time(self, time_ft: float, times_sm: t.List[float]) -> t.List[float]:
+    def _combine_time(
+        self, time_ft: float, times_sm: t.List[float]
+    ) -> t.List[float]:
         """Treat time from feature extraction and summarization based in
         ``timeopt``.
 
@@ -1061,7 +1071,9 @@ class MFE:
                 value=rescale, group_name="rescale", allow_none=True
             )
 
-            self._fill_col_ind_by_type(cat_cols=cat_cols, check_bool=check_bool)
+            self._fill_col_ind_by_type(
+                cat_cols=cat_cols, check_bool=check_bool
+            )
 
             if verbose >= 2:
                 print(
@@ -1090,7 +1102,9 @@ class MFE:
             )
 
             if verbose >= 2:
-                print("Done.", "Finished data transformation process.", sep="\n")
+                print(
+                    "Done.", "Finished data transformation process.", sep="\n"
+                )
 
         # Custom arguments for metafeature extraction methods
         self._custom_args_ft = {
@@ -1254,7 +1268,9 @@ class MFE:
                 'Fitted data not found. Call "fit" method before "extract".'
             )
 
-        if not isinstance(self.X, np.ndarray) or not isinstance(self.y, np.ndarray):
+        if not isinstance(self.X, np.ndarray) or not isinstance(
+            self.y, np.ndarray
+        ):
             self.X, self.y = _internal.check_data(self.X, self.y)
 
         if verbose >= 2:
@@ -1287,7 +1303,9 @@ class MFE:
         if results and results[0]:
             # Sort results by metafeature name
             results = tuple(
-                map(list, zip(*sorted(zip(*results), key=lambda item: item[0])))
+                map(
+                    list, zip(*sorted(zip(*results), key=lambda item: item[0]))
+                )
             )
 
         res_names, res_vals, res_times = results
@@ -1323,7 +1341,9 @@ class MFE:
 
         return res_names, res_vals
 
-    def extract_metafeature_names(self, supervised: bool = True) -> t.Tuple[str, ...]:
+    def extract_metafeature_names(
+        self, supervised: bool = True
+    ) -> t.Tuple[str, ...]:
         """Extract the pre-configured meta-feature names.
 
         Parameters
@@ -1416,7 +1436,9 @@ class MFE:
 
                     if summarized_val_len > 0:
                         metafeat_names += [
-                            ".".join((ft_name_without_prefix, sm_mtd_name, str(i)))
+                            ".".join(
+                                (ft_name_without_prefix, sm_mtd_name, str(i))
+                            )
                             for i in range(summarized_val_len)
                         ]
 
@@ -1452,7 +1474,9 @@ class MFE:
     ) -> t.Tuple[np.ndarray, ...]:
         """Extract metafeatures using bootstrapping."""
         if self.X is None:
-            raise TypeError("Fitted data not found. Please call 'fit' method first.")
+            raise TypeError(
+                "Fitted data not found. Please call 'fit' method first."
+            )
 
         def _handle_extract_ret(
             res: t.Tuple[np.ndarray, ...],
@@ -1476,7 +1500,9 @@ class MFE:
 
             else:
                 mtf_names = np.asarray(cur_mtf_names, dtype=str)
-                mtf_vals = np.zeros((len(cur_mtf_vals), sample_num), dtype=float)
+                mtf_vals = np.zeros(
+                    (len(cur_mtf_vals), sample_num), dtype=float
+                )
                 mtf_vals[:, 0] = cur_mtf_vals
 
                 if self.timeopt:
@@ -1513,7 +1539,9 @@ class MFE:
             np.random.seed(bootstrap_random_state)
             bootstrap_random_state += 1
 
-            sample_inds = np.random.randint(self.X.shape[0], size=self.X.shape[0])
+            sample_inds = np.random.randint(
+                self.X.shape[0], size=self.X.shape[0]
+            )
 
             X_sample = self.X[sample_inds, :]
             y_sample = self.y[sample_inds] if self.y is not None else None
@@ -1527,7 +1555,11 @@ class MFE:
             )
 
             if verbose > 0:
-                print("Done extracting from sample dataset {}.\n".format(1 + it_num))
+                print(
+                    "Done extracting from sample dataset {}.\n".format(
+                        1 + it_num
+                    )
+                )
 
         return res
 
@@ -1802,7 +1834,11 @@ class MFE:
             print("Selected features from 'model-based' group:")
 
             for ft_name in _fts:
-                print(" {} {}".format(_internal.VERBOSE_BLOCK_END_SYMBOL, ft_name))
+                print(
+                    " {} {}".format(
+                        _internal.VERBOSE_BLOCK_END_SYMBOL, ft_name
+                    )
+                )
 
             print(
                 "Total of {} 'model-based' metafeature method candidates."
@@ -2009,7 +2045,9 @@ class MFE:
                 if len(split) >= 2:
                     del split[0]
                     for spl in split:
-                        reference_description += "[" + " ".join(spl.split()) + "\n"
+                        reference_description += (
+                            "[" + " ".join(spl.split()) + "\n"
+                        )
 
         return (initial_description, reference_description)
 

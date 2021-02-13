@@ -1226,7 +1226,7 @@ def process_precomp_groups(
     )  # type: t.List[str]
 
     if wildcard in processed_precomp_groups:
-        processed_precomp_groups = groups
+        processed_precomp_groups = list(groups)
 
     elif custom_class_ is None:
         if not suppress_warnings:
@@ -1241,7 +1241,7 @@ def process_precomp_groups(
                     UserWarning,
                 )
 
-        processed_precomp_groups = tuple(
+        processed_precomp_groups = list(
             set(processed_precomp_groups).intersection(groups)
         )
 
@@ -1378,11 +1378,11 @@ def check_data(
     # Object
     # >>>np.array(['test', 1], dtype=np.object)
     if not isinstance(X, np.ndarray):
-        X = np.array(X, dtype=np.object)
+        X = np.array(X, dtype=object)
 
     if y is not None:
         if not isinstance(y, np.ndarray):
-            y = np.array(y, dtype=np.object)
+            y = np.array(y, dtype=object)
 
         y = y.flatten()
 
@@ -1531,7 +1531,9 @@ def transform_cat_onehot(
 
     _drop = None if use_all_columns else "first"
 
-    ohe = sklearn.preprocessing.OneHotEncoder(drop=_drop, sparse=False)
+    ohe = sklearn.preprocessing.OneHotEncoder(
+        drop=_drop, sparse=False, handle_unknown="error"
+    )
 
     one_cat_attrs = []  # type: t.List[np.ndarray]
 

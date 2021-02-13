@@ -62,9 +62,7 @@ class MFERelativeLandmarking:
         groups: t.Tuple[str, ...],
         inserted_group_dep: t.FrozenSet[str],
         **kwargs
-    ) -> t.Optional[
-        t.Tuple[t.List[str], t.List[float], t.List[float]]
-    ]:
+    ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
         """Generate Relative Landmarking from Landmarking metafeatures.
 
         Parameters

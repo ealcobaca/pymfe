@@ -2,7 +2,6 @@
 """
 import typing as t
 import itertools
-import collections
 
 import numpy as np
 import scipy.spatial.distance
@@ -510,9 +509,7 @@ class MFEClustering:
                 for cur_class in cls_inds
             ]
 
-        elif not isinstance(
-            representative, (collections.List, np.ndarray)
-        ):
+        elif not hasattr(representative, "__len__"):
             raise TypeError(
                 "'representative' type must be string "
                 "or a sequence or a numpy array. "

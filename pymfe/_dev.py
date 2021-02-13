@@ -956,9 +956,7 @@ class MFEBoilerplate:
         groups: t.Tuple[str, ...],
         inserted_group_dep: t.FrozenSet[str],
         **kwargs
-    ) -> t.Optional[
-        t.Tuple[t.List[str], t.List[float], t.List[float]]
-    ]:
+    ) -> t.Optional[t.Tuple[t.List[str], t.List[float], t.List[float]]]:
         """Introduction to post-processing methods.
 
         1. What is a post-processing method?

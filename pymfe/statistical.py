@@ -236,9 +236,16 @@ class MFEStatistical:
         # those warnings.
         warnings.filterwarnings("ignore", category=UserWarning)
 
-        N_tf, y_tf = sklearn.cross_decomposition.CCA(
-            n_components=n_components
-        ).fit_transform(N, y_bin)
+        try:
+            cca_model = sklearn.cross_decomposition.CCA(
+                n_components=n_components
+            )
+            cca_model.fit(N, y_bin)
+
+        except StopIteration:
+            pass
+
+        N_tf, y_tf = cca_model.transform(N, y_bin)
 
         warnings.filterwarnings("default", category=UserWarning)
 

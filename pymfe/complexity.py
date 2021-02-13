@@ -149,7 +149,7 @@ class MFEComplexity:
                     data variance explained by the selected principal
                     components.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if N is not None and "num_attr_pca" not in kwargs:
             pca = sklearn.decomposition.PCA(
@@ -201,7 +201,7 @@ class MFEComplexity:
                     standardization (mean = 0 and variance = 1) before the
                     learning model.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if y is not None and "svc_pipeline" not in kwargs:
             scaler = sklearn.preprocessing.StandardScaler()
