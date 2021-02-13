@@ -378,7 +378,7 @@ class MFEClustering:
         dist_metric: str = "euclidean",
         classes: t.Optional[np.ndarray] = None,
         cls_inds: t.Optional[np.ndarray] = None,
-    ) -> np.ndarray:
+    ) -> t.List[np.ndarray]:
         """Calculate all pairwise normalized interclass distances."""
         if cls_inds is None:
             if classes is None:
@@ -547,7 +547,7 @@ class MFEClustering:
         cls_inds: t.Optional[np.ndarray] = None,
         classes: t.Optional[np.ndarray] = None,
         intracls_dists: t.Optional[np.ndarray] = None,
-        pairwise_norm_intercls_dist: t.Optional[np.ndarray] = None,
+        pairwise_norm_intercls_dist: t.Optional[t.List[np.ndarray]] = None,
     ) -> float:
         """Compute the Dunn Index.
 
@@ -612,14 +612,14 @@ class MFEClustering:
                 dist_metric=dist_metric,
                 classes=classes,
                 cls_inds=cls_inds,
-            ).max()
+            )
 
         _min_intercls_dist = np.inf
 
         for vals in pairwise_norm_intercls_dist:
             _min_intercls_dist = min(_min_intercls_dist, np.min(vals))
 
-        vdu = _min_intercls_dist / intracls_dists.max()
+        vdu = float(_min_intercls_dist / np.max(intracls_dists))
 
         return vdu
 
@@ -655,7 +655,7 @@ class MFEClustering:
         dist_metric: str = "euclidean",
         cls_inds: t.Optional[np.ndarray] = None,
         classes: t.Optional[np.ndarray] = None,
-        pairwise_norm_intercls_dist: t.Optional[np.ndarray] = None,
+        pairwise_norm_intercls_dist: t.Optional[t.List[np.ndarray]] = None,
     ) -> float:
         """Compute the INT index.
 
@@ -723,7 +723,7 @@ class MFEClustering:
         _sum_intercls_dist = 0.0
 
         for vals in pairwise_norm_intercls_dist:
-            _sum_intercls_dist += np.sum(vals)
+            _sum_intercls_dist += float(np.sum(vals))
 
         return _sum_intercls_dist * norm_factor
 
