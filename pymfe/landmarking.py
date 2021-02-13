@@ -910,7 +910,7 @@ class MFELandmarking:
 
         model = sklearn.neighbors.KNeighborsClassifier(
             n_neighbors=1,
-            algorithm="auto",
+            algorithm="kd_tree",
             weights="uniform",
             p=2,
             metric="minkowski",
