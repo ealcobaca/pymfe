@@ -908,7 +908,7 @@ class MFEStatistical:
 
         _, num_attr = N.shape
 
-        norm_factor = 1
+        norm_factor = 1.0
 
         if normalize:
             norm_factor = 2.0 / (num_attr * (num_attr - 1.0))
@@ -1063,7 +1063,7 @@ class MFEStatistical:
         else:
             attr_is_normal = np.all(test_results, axis=0)
 
-        return np.sum(attr_is_normal)
+        return float(np.sum(attr_is_normal))
 
     @classmethod
     def ft_nr_outliers(cls, N: np.ndarray, whis: float = 1.5) -> int:
@@ -1157,7 +1157,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return N.std(axis=0, ddof=ddof)
+        return np.asfarray(N.std(axis=0, ddof=ddof))
 
     @classmethod
     def ft_sd_ratio(
@@ -1244,7 +1244,7 @@ class MFEStatistical:
                 ]
             ).sum(axis=0) / (num_inst - num_classes)
 
-            return pooled_cov_mat
+            return np.asfarray(pooled_cov_mat)
 
         def calc_gamma_factor(num_col, num_classes, num_inst):
             """Calculate the gamma factor which adjust the output."""
@@ -1264,12 +1264,12 @@ class MFEStatistical:
         ) -> float:
             """Calculate the M factor."""
             vec_logdet = [
-                np.math.log(np.linalg.det(S_i)) for S_i in sample_cov_matrices
+                np.log(np.linalg.det(S_i)) for S_i in sample_cov_matrices
             ]
 
             m_factor = gamma * (
                 (num_inst - num_classes)
-                * np.math.log(np.linalg.det(pooled_cov_mat))
+                * np.log(np.linalg.det(pooled_cov_mat))
                 - np.dot(vec_weight, vec_logdet)
             )
 
@@ -1280,11 +1280,12 @@ class MFEStatistical:
         if classes is None or class_freqs is None:
             classes, class_freqs = np.unique(y, return_counts=True)
 
-        num_classes = classes.size
+        _classes = np.asarray(classes)
+        _class_freqs = np.asarray(class_freqs, dtype=int)
 
+        num_classes = _classes.size
         sample_cov_matrices = calc_sample_cov_mat(N, y, ddof)
-
-        vec_weight = class_freqs - 1.0
+        vec_weight = _class_freqs - 1.0
 
         pooled_cov_mat = calc_pooled_cov_mat(
             sample_cov_matrices, vec_weight, num_inst, num_classes
@@ -1300,6 +1301,9 @@ class MFEStatistical:
             gamma,
             vec_weight,
         )
+
+        if np.isinf(m_factor):
+            return np.nan
 
         return float(np.exp(m_factor / (num_col * (num_inst - num_classes))))
 
@@ -1456,7 +1460,7 @@ class MFEStatistical:
            In 2nd International Conference on Modeling Decisions for
            Artificial Intelligence (MDAI), pages 457–468, 2005.
         """
-        return N.var(axis=0, ddof=ddof)
+        return np.asfarray(N.var(axis=0, ddof=ddof))
 
     @classmethod
     def ft_w_lambda(

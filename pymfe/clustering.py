@@ -444,7 +444,7 @@ class MFEClustering:
                 )
                 for cur_class in cls_inds
             ],
-            dtype=object
+            dtype=object,
         )
 
         return intracls_dists
