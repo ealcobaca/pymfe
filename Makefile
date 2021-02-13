@@ -1,4 +1,5 @@
 PACKAGE := pymfe
+TEST_NCORES := 4
 
 all: clean install-dev code-check test-cov
 .PHONY: all clean test test-cov code-check pypi install install-dev html help h t c cl
@@ -16,11 +17,11 @@ clean: ## Clean all undesired files such as .so, .pyc, build files and etc.
 cl: clean ## Shortcut to clean
 
 test: ## Execute the code test using pytest.
-	pytest tests/
+	pytest -n $(TEST_NCORES) tests/
 
 test-cov: ## Execute the code test using pytest and measuring the coverage.
 	rm -rf coverage .coverage
-	pytest --cov=$(PACKAGE)/ tests/
+	pytest -n $(TEST_NCORES) --cov=$(PACKAGE)/ tests/
 
 t: test-cov ## Shortcut to test-cov
 
