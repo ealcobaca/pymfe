@@ -1548,16 +1548,7 @@ def transform_cat_onehot(
                 "or select another encoding strategy.".format(attr_ind + 1)
             )
 
-        try:
-            one_cat_attrs.append(ohe.fit_transform(cur_attr))
-
-        except ValueError as err:
-            raise ValueError(
-                "Categorical data encoding of type 'one-hot' has "
-                "no support for missing values. Please handle the"
-                " missing data manually before fitting it into "
-                "the MFE model."
-            ) from err
+        one_cat_attrs.append(ohe.fit_transform(cur_attr))
 
     return np.hstack(one_cat_attrs)
 
