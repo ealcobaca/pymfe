@@ -1261,11 +1261,9 @@ def process_precomp_groups(
 
     error_count = 0
     _prev_precomp_len = 0
-    _iterator = enumerate(
-        tqdm.auto.tqdm(precomp_mtds_filtered, disable=verbose != 1), 1
-    )
+    _iterator = tqdm.auto.tqdm(precomp_mtds_filtered, disable=verbose != 1)
 
-    for ind, precomp_mtd_tuple in _iterator:
+    for precomp_mtd_tuple in _iterator:
         precomp_mtd_name, precomp_mtd_callable = precomp_mtd_tuple
 
         if verbose >= 2:
