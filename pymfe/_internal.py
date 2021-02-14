@@ -74,6 +74,7 @@ import numpy as np
 import sklearn.preprocessing
 import sklearn.tree
 import patsy
+import tqdm.auto
 
 import pymfe._summary as _summary
 import pymfe.general as general
@@ -1260,8 +1261,11 @@ def process_precomp_groups(
 
     error_count = 0
     _prev_precomp_len = 0
+    _iterator = enumerate(
+        tqdm.auto.tqdm(precomp_mtds_filtered, disable=verbose != 1), 1
+    )
 
-    for ind, precomp_mtd_tuple in enumerate(precomp_mtds_filtered, 1):
+    for ind, precomp_mtd_tuple in _iterator:
         precomp_mtd_name, precomp_mtd_callable = precomp_mtd_tuple
 
         if verbose >= 2:
@@ -1308,14 +1312,6 @@ def process_precomp_groups(
                 **kwargs,
                 **new_precomp_vals,
             }
-
-        if verbose > 0:
-            print_verbose_progress(
-                cur_progress=100 * ind / len(precomp_mtds_filtered),
-                cur_mtf_name=precomp_mtd_name,
-                item_type="precomputation",
-                verbose=verbose,
-            )
 
     if verbose == 1:
         _t_num_cols, _ = shutil.get_terminal_size()
@@ -1871,39 +1867,3 @@ def post_processing(
 
     if remove_groups:
         kwargs.pop("groups")
-
-
-def print_verbose_progress(
-    cur_progress: float, cur_mtf_name: str, item_type: str, verbose: int = 0
-) -> None:
-    """Print messages about extraction progress based on ``verbose``."""
-    if verbose <= 0:
-        return
-
-    if verbose >= 2:
-        print(
-            "Done with '{}' {} (progress of {:.2f}%).".format(
-                cur_mtf_name, item_type, cur_progress
-            )
-        )
-        return
-
-    _t_num_cols, _ = shutil.get_terminal_size()
-    _t_num_cols -= 9
-
-    if _t_num_cols <= 0:
-        return
-
-    _total_prog_symb = int(cur_progress * _t_num_cols / 100)
-
-    print(
-        "".join(
-            [
-                "\r[",
-                _total_prog_symb * "#",
-                (_t_num_cols - _total_prog_symb) * ".",
-                "]{:.2f}%".format(cur_progress),
-            ]
-        ),
-        end="",
-    )

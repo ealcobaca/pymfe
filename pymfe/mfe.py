@@ -9,6 +9,7 @@ import texttable
 import numpy as np
 import sklearn.utils
 import sklearn.exceptions
+import tqdm.auto
 
 import pymfe._internal as _internal
 
@@ -505,7 +506,12 @@ class MFE:
         metafeat_times = []  # type: t.List[float]
 
         skipped_count = 0
-        for ind, cur_metadata in enumerate(self._metadata_mtd_ft, 1):
+
+        _iterator = enumerate(
+            tqdm.auto.tqdm(self._metadata_mtd_ft, disable=verbose != 1), 1
+        )
+
+        for ind, cur_metadata in _iterator:
             (
                 ft_mtd_name,
                 ft_mtd_callable,
@@ -580,14 +586,6 @@ class MFE:
                 metafeat_vals.append(features)
                 metafeat_names.append(ft_name_without_prefix)
                 metafeat_times.append(time_ft)
-
-            if verbose > 0:
-                _internal.print_verbose_progress(
-                    cur_progress=100 * ind / len(self._metadata_mtd_ft),
-                    cur_mtf_name=ft_mtd_name,
-                    item_type="feature",
-                    verbose=verbose,
-                )
 
         if verbose == 1:
             _t_num_cols, _ = shutil.get_terminal_size()
