@@ -1,5 +1,5 @@
 PACKAGE := pymfe
-TEST_NCORES := 4
+TEST_NCORES := auto
 
 all: clean install-dev code-check test-cov
 .PHONY: all clean test test-cov code-check pypi install install-dev html help h t c cl
