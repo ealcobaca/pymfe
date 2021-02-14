@@ -1339,7 +1339,7 @@ def process_precomp_groups(
 
 
 def check_data(
-    X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
+    X: t.Union[np.ndarray, list], y: t.Optional[t.Union[np.ndarray, list]]
 ) -> t.Tuple[np.ndarray, t.Optional[np.ndarray]]:
     """Checks ``X`` and ``y`` data type and shape and transform it if necessary.
 

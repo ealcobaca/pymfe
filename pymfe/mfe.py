@@ -264,14 +264,14 @@ class MFE:
             groups=self.groups,
             suppress_warnings=suppress_warnings,
             wildcard=wildcard,
-        )  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt, t.Tuple[str, ...]]
+        )
 
         self.features, self._metadata_mtd_ft, self.groups = proc_feat
         del proc_feat
 
         self.summary, self._metadata_mtd_sm = _internal.process_summary(
             summary, wildcard=wildcard
-        )  # type: t.Tuple[t.Tuple[str, ...], _TypeSeqExt]
+        )
 
         self.timeopt = _internal.process_generic_option(
             value=measure_time, group_name="timeopt", allow_none=True
@@ -642,7 +642,9 @@ class MFE:
         if self.X is None:
             raise TypeError("X can't be 'None'.")
 
-        categorical_cols = None  # type: t.Optional[np.ndarray]
+        categorical_cols = (
+            None
+        )  # type: t.Optional[t.Union[t.List, np.ndarray]]
 
         if not cat_cols:
             categorical_cols = np.array([False] * self.X.shape[1])
@@ -897,8 +899,8 @@ class MFE:
 
     def fit(
         self,
-        X: t.List,
-        y: t.Optional[t.List] = None,
+        X: t.Union[np.ndarray, t.List],
+        y: t.Optional[t.Union[np.ndarray, t.List]] = None,
         transform_num: bool = True,
         transform_cat: str = "gray",
         rescale: t.Optional[str] = None,
