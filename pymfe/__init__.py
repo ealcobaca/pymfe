@@ -5,3 +5,4 @@ Todo:
 """
 
 from ._version import __version__  # noqa: ignore
+from .mfe import *  # noqa: ignore
