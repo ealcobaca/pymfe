@@ -295,7 +295,7 @@ class MFEComplexity:
                 orig_dist_mat_min,
                 orig_dist_mat_ptp,
             ) = cls._calc_norm_dist_mat(
-                N=N, metric=metric, p=p, N_scaled=N_scaled, return_scalers=True
+                N=N, metric=metric, p=p, N_scaled=N_scaled
             )
 
             precomp_vals["norm_dist_mat"] = norm_dist_mat
@@ -388,7 +388,6 @@ class MFEComplexity:
             nearest_enemy_dist, nearest_enemy_ind = cls._calc_nearest_enemies(
                 norm_dist_mat=norm_dist_mat,
                 cls_inds=cls_inds,
-                return_inds=True,
             )
 
             precomp_vals["nearest_enemy_dist"] = nearest_enemy_dist
@@ -404,8 +403,7 @@ class MFEComplexity:
         p: t.Union[int, float] = 2,
         N_scaled: t.Optional[np.ndarray] = None,
         normalize: bool = True,
-        return_scalers: bool = False,
-    ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    ) -> t.Tuple[np.ndarray, float, float]:
         """Calculate a pairwise normalized distance matrix.
 
         All distances are normalized in [0, 1] range.
@@ -430,18 +428,15 @@ class MFEComplexity:
             N_scaled, N_scaled, metric=metric, p=p
         )
 
-        orig_dist_mat_min = np.min(norm_dist_mat)
-        orig_dist_mat_ptp = np.ptp(norm_dist_mat)
+        orig_dist_mat_min = float(np.min(norm_dist_mat))
+        orig_dist_mat_ptp = float(np.ptp(norm_dist_mat))
 
         if normalize and np.not_equal(0.0, orig_dist_mat_ptp):
             norm_dist_mat = (
                 norm_dist_mat - orig_dist_mat_min
             ) / orig_dist_mat_ptp
 
-        if return_scalers:
-            return norm_dist_mat, orig_dist_mat_min, orig_dist_mat_ptp
-
-        return norm_dist_mat
+        return norm_dist_mat, orig_dist_mat_min, orig_dist_mat_ptp
 
     @staticmethod
     def _calc_ovo_comb(classes: np.ndarray) -> np.ndarray:
@@ -583,8 +578,7 @@ class MFEComplexity:
         cls,
         norm_dist_mat: np.ndarray,
         cls_inds: np.ndarray,
-        return_inds: bool = True,
-    ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, ...]]:
+    ) -> t.Tuple[np.ndarray, np.ndarray]:
         """Calculate each instances nearest enemies.
 
         Returns the nearest enemies distance and its indices.
@@ -594,25 +588,18 @@ class MFEComplexity:
         # Note: 'n_en' stands for 'nearest_enemy'
         n_en_dist = np.full(num_inst, fill_value=np.inf, dtype=float)
 
-        if return_inds:
-            n_en_inds = np.full(num_inst, fill_value=-1, dtype=int)
-
-            for inds_cur_cls in cls_inds:
-                norm_dist_en = norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
-
-                en_inds = np.argmin(norm_dist_en, axis=0)
-                _aux = np.arange(norm_dist_en.shape[1])
-
-                n_en_inds[inds_cur_cls] = en_inds
-                n_en_dist[inds_cur_cls] = norm_dist_en[en_inds, _aux]
-
-            return n_en_dist, n_en_inds
+        n_en_inds = np.full(num_inst, fill_value=-1, dtype=int)
 
         for inds_cur_cls in cls_inds:
             norm_dist_en = norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
-            n_en_dist[inds_cur_cls] = np.min(norm_dist_en, axis=0)
 
-        return n_en_dist
+            en_inds = np.argmin(norm_dist_en, axis=0)
+            _aux = np.arange(norm_dist_en.shape[1])
+
+            n_en_inds[inds_cur_cls] = en_inds
+            n_en_dist[inds_cur_cls] = norm_dist_en[en_inds, _aux]
+
+        return n_en_dist, n_en_inds
 
     @staticmethod
     def _scale_N(N: np.ndarray) -> np.ndarray:
@@ -1511,9 +1498,11 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if norm_dist_mat is None:
-            norm_dist_mat = cls._calc_norm_dist_mat(
+            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
                 N=N, metric=metric, p=p, N_scaled=N_scaled
             )
+
+        _norm_dist_mat = np.asfarray(norm_dist_mat)
 
         # Compute the minimum spanning tree using Kruskal's Minimum
         # Spanning Tree algorithm.
@@ -1521,7 +1510,7 @@ class MFEComplexity:
         # Our implementation may change it in a future version due to
         # time complexity advantages of Prim's algorithm in this context.
         mst = scipy.sparse.csgraph.minimum_spanning_tree(
-            csgraph=np.triu(norm_dist_mat, k=1), overwrite=True
+            csgraph=np.triu(_norm_dist_mat, k=1), overwrite=True
         )
 
         node_id_i, node_id_j = np.nonzero(mst)
@@ -1626,7 +1615,7 @@ class MFEComplexity:
             cls_inds = _utils.calc_cls_inds(y, classes)
 
         if norm_dist_mat is None:
-            norm_dist_mat = cls._calc_norm_dist_mat(
+            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
                 N=N, metric=metric, p=p, N_scaled=N_scaled
             )
 
@@ -1726,7 +1715,7 @@ class MFEComplexity:
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
         if norm_dist_mat is None:
-            norm_dist_mat = cls._calc_norm_dist_mat(
+            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
                 N=N, metric=metric, p=p, N_scaled=N_scaled
             )
 
@@ -1844,7 +1833,7 @@ class MFEComplexity:
                 orig_dist_mat_min,
                 orig_dist_mat_ptp,
             ) = cls._calc_norm_dist_mat(
-                N=N, metric=metric, p=p, N_scaled=N_scaled, return_scalers=True
+                N=N, metric=metric, p=p, N_scaled=N_scaled
             )
 
         N_interpol, y_interpol = cls._interpolate(
@@ -2150,7 +2139,7 @@ class MFEComplexity:
             or orig_dist_mat_min is None
             or orig_dist_mat_ptp is None
         ):
-            orig_dist_mat = cls._calc_norm_dist_mat(
+            orig_dist_mat, _, _ = cls._calc_norm_dist_mat(
                 N=N, metric=metric, p=p, N_scaled=N_scaled, normalize=False
             )
 
@@ -2165,7 +2154,7 @@ class MFEComplexity:
         # That is why we are not using neither the precomputed
         # 'nearest_enemy_dist' nor 'nearest_enemy_ind' values here.
         nearest_enemy_dist, nearest_enemy_ind = cls._calc_nearest_enemies(
-            norm_dist_mat=orig_dist_mat, cls_inds=cls_inds, return_inds=True
+            norm_dist_mat=orig_dist_mat, cls_inds=cls_inds
         )
 
         radius = _calc_hyperspheres_radius(
@@ -2406,21 +2395,22 @@ class MFEComplexity:
            27(2):354–367, 2014.
         """
         if norm_dist_mat is None:
-            norm_dist_mat = cls._calc_norm_dist_mat(
+            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
                 N=N, metric=metric, p=p, N_scaled=N_scaled
             )
+
+        _norm_dist_mat = np.asfarray(norm_dist_mat)
 
         if nearest_enemy_dist is None:
             if cls_inds is None:
                 cls_inds = _utils.calc_cls_inds(y)
 
-            nearest_enemy_dist = cls._calc_nearest_enemies(
-                norm_dist_mat=norm_dist_mat,
+            nearest_enemy_dist, _ = cls._calc_nearest_enemies(
+                norm_dist_mat=_norm_dist_mat,
                 cls_inds=cls_inds,
-                return_inds=False,
             )
 
-        lsc = 1.0 - np.sum(norm_dist_mat < nearest_enemy_dist) / (y.size ** 2)
+        lsc = 1.0 - np.sum(_norm_dist_mat < nearest_enemy_dist) / (y.size ** 2)
 
         return lsc
 
@@ -2504,7 +2494,7 @@ class MFEComplexity:
             cls_inds = _utils.calc_cls_inds(y)
 
         if norm_dist_mat is None:
-            norm_dist_mat = cls._calc_norm_dist_mat(
+            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
                 N=N, metric=metric, p=p, N_scaled=N_scaled
             )
 
@@ -2602,15 +2592,17 @@ class MFEComplexity:
             cls_inds = _utils.calc_cls_inds(y)
 
         if norm_dist_mat is None:
-            norm_dist_mat = cls._calc_norm_dist_mat(
+            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
                 N=N, metric=metric, p=p, N_scaled=N_scaled
             )
+
+        _norm_dist_mat = np.asfarray(norm_dist_mat)
 
         # Note: -1 to discount self-loops
         neighbor_edges = np.full(y.size, fill_value=-1, dtype=int)
 
         for inds_cur_cls in cls_inds:
-            dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            dist_mat_subset = _norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
             neigh_num = np.sum(dist_mat_subset < radius, axis=1)
             neighbor_edges[inds_cur_cls] += neigh_num
 
@@ -2618,10 +2610,10 @@ class MFEComplexity:
         # possible edges between 'k' nodes, as the formula presented
         # in the original paper is not supposed to work with only the
         # number of the node neighbors, as the paper seems to claim.
-        total_nodes = np.sum(norm_dist_mat < radius, axis=1)
+        total_nodes = np.sum(_norm_dist_mat < radius, axis=1)
 
-        cls_coef = 1.0 - 2 * np.mean(
-            neighbor_edges / (1e-8 + total_nodes * (total_nodes - 1))
+        cls_coef = 1.0 - 2.0 * float(
+            np.mean(neighbor_edges / (1e-8 + total_nodes * (total_nodes - 1)))
         )
 
         # Note: the R mfe implementation calculates cls_coef as:
@@ -2719,16 +2711,20 @@ class MFEComplexity:
             cls_inds = _utils.calc_cls_inds(y)
 
         if norm_dist_mat is None:
-            norm_dist_mat = cls._calc_norm_dist_mat(
+            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
                 N=N, metric=metric, p=p, N_scaled=N_scaled
             )
 
-        adj_mat = np.zeros_like(norm_dist_mat, dtype=norm_dist_mat.dtype)
+        _norm_dist_mat = np.asfarray(norm_dist_mat)
+
+        adj_mat = np.zeros_like(_norm_dist_mat, dtype=_norm_dist_mat.dtype)
 
         for inds_cur_cls in cls_inds:
-            _inds = np.flatnonzero(inds_cur_cls)
+            _inds = np.flatnonzero(
+                inds_cur_cls
+            )  # type: t.Union[t.Tuple, np.ndarray]
             _inds = tuple(np.meshgrid(_inds, _inds, copy=False, sparse=True))
-            dist_mat_subset = norm_dist_mat[_inds]
+            dist_mat_subset = _norm_dist_mat[_inds]
             adj_mat[_inds] = dist_mat_subset * (dist_mat_subset < radius)
 
         # Note: 'adj_mat' is symmetric because the underlying graph is
