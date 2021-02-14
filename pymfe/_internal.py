@@ -64,7 +64,6 @@ Attributes:
 """
 import typing as t
 import inspect
-import collections
 import warnings
 import shutil
 import time
@@ -277,7 +276,7 @@ def _check_values_in_group(
             are not a :obj:`str` type.
     """
 
-    if not isinstance(value, collections.Iterable):
+    if not hasattr(value, "__len__"):
         raise TypeError(
             "Parameter type is not consistent ({0}).".format(type(value))
         )
@@ -724,7 +723,7 @@ def check_summary_warnings(
             used to produce `value`.
     """
 
-    if not isinstance(value, collections.Iterable):
+    if not hasattr(value, "__len__"):
         value = [value]
 
     if any(np.isnan(value)):
@@ -1425,7 +1424,7 @@ def isnumeric(value: t.Any, check_subtype: bool = True) -> bool:
     """
     if (
         check_subtype
-        and isinstance(value, (collections.Iterable, np.ndarray))
+        and hasattr(value, "__len__")
         and not isinstance(value, str)
     ):
 
