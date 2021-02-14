@@ -217,34 +217,34 @@ _EXCEPTIONS = (
 """Common exceptions of metafeature extraction."""
 
 
-def warning_format(
-    message: str,
-    category: t.Type[Warning],
-    filename: str,
-    lineno: int,
-    line: str = None,
-) -> str:
-    """Change warnings format to a simpler one.
-
-    Args:
-        message (:obj:`str`): warning message to print.
-
-        category: not used. Just to maintain consistency with warnings API.
-
-        filename: not used. Just to maintain consistency with warnings API.
-
-        lineno: not used. Just to maintain consistency with warnings API.
-
-        line: not used. Just to maintain consistency with warnings API.
-
-    Return:
-        str: formated warning message.
-    """
-    # pylint: disable=W0613
-    return " {} Warning: {}\n".format(VERBOSE_WARNING_SYMBOL, message)
-
-
-warnings.formatwarning = warning_format
+# def warning_format(
+#     message: str,
+#     category: t.Type[Warning],
+#     filename: str,
+#     lineno: int,
+#     line: str = None,
+# ) -> str:
+#     """Change warnings format to a simpler one.
+#
+#     Args:
+#         message (:obj:`str`): warning message to print.
+#
+#         category: not used. Just to maintain consistency with warnings API.
+#
+#         filename: not used. Just to maintain consistency with warnings API.
+#
+#         lineno: not used. Just to maintain consistency with warnings API.
+#
+#         line: not used. Just to maintain consistency with warnings API.
+#
+#     Return:
+#         str: formated warning message.
+#     """
+#     # pylint: disable=W0613
+#     return " {} Warning: {}\n".format(VERBOSE_WARNING_SYMBOL, message)
+#
+#
+# warnings.formatwarning = warning_format
 
 
 def _check_values_in_group(
