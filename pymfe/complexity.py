@@ -275,16 +275,21 @@ class MFEComplexity:
                     the original pairwise distance matrix. Can be used to
                     preprocess test data before predictions.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
-        if N.size and "N_scaled" not in kwargs:
+        N_scaled = kwargs.get("N_scaled")
+
+        if N.size and N_scaled is None:
             N_scaled = cls._scale_N(N=N)
             precomp_vals["N_scaled"] = N_scaled
 
-        else:
-            N_scaled = kwargs.get("N_scaled")
+        _all_precomputed = {
+            "norm_dist_mat",
+            "orig_dist_mat_min",
+            "orig_dist_mat_ptp",
+        }.issubset(kwargs)
 
-        if N_scaled is not None and "norm_dist_mat" not in kwargs:
+        if N_scaled is not None and not _all_precomputed:
             (
                 norm_dist_mat,
                 orig_dist_mat_min,
@@ -400,7 +405,7 @@ class MFEComplexity:
         N_scaled: t.Optional[np.ndarray] = None,
         normalize: bool = True,
         return_scalers: bool = False,
-    ) -> np.ndarray:
+    ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, np.ndarray, np.ndarray]]:
         """Calculate a pairwise normalized distance matrix.
 
         All distances are normalized in [0, 1] range.
@@ -439,7 +444,7 @@ class MFEComplexity:
         return norm_dist_mat
 
     @staticmethod
-    def _calc_ovo_comb(classes: np.ndarray) -> t.List[t.Tuple]:
+    def _calc_ovo_comb(classes: np.ndarray) -> np.ndarray:
         """Compute the ``ovo_comb`` variable.
 
         The ``ovo_comb`` value is a array with all class OVO combination,
@@ -525,7 +530,10 @@ class MFEComplexity:
         feat_overlapped_region = np.logical_and(N >= maxmin, N <= minmax)
 
         feat_overlap_num = np.sum(feat_overlapped_region, axis=0)
-        ind_less_overlap = np.argmin(feat_overlap_num)
+        ind_less_overlap = int(np.argmin(feat_overlap_num))
+
+        feat_overlapped_region = np.asarray(feat_overlapped_region, dtype=bool)
+        feat_overlap_num = np.asarray(feat_overlap_num, dtype=int)
 
         return ind_less_overlap, feat_overlap_num, feat_overlapped_region
 
@@ -767,29 +775,33 @@ class MFEComplexity:
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
 
+        _ovo_comb = np.asarray(ovo_comb, dtype=int)
+        _class_freqs = np.asarray(class_freqs, dtype=int)
+        _cls_inds = np.asarray(cls_inds, dtype=bool)
+
         num_attr = N.shape[1]
 
-        df = np.zeros(ovo_comb.shape[0], dtype=float)
+        df = np.zeros(_ovo_comb.shape[0], dtype=float)
         mat_scatter_within = []
-        centroids = np.zeros((class_freqs.size, num_attr), dtype=float)
+        centroids = np.zeros((_class_freqs.size, num_attr), dtype=float)
 
-        for cls_ind, inds_cur_cls in enumerate(cls_inds):
+        for cls_ind, inds_cur_cls in enumerate(_cls_inds):
             cur_cls_inst = N[inds_cur_cls, :]
             mat_scatter_within.append(
                 np.cov(cur_cls_inst, rowvar=False, ddof=1)
             )
             centroids[cls_ind, :] = cur_cls_inst.mean(axis=0)
 
-        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
+        for ind, (cls_id_1, cls_id_2) in enumerate(_ovo_comb):
             centroid_diff = (
                 centroids[cls_id_1, :] - centroids[cls_id_2, :]
             ).reshape(-1, 1)
 
-            total_inst_num = class_freqs[cls_id_1] + class_freqs[cls_id_2]
+            total_inst_num = _class_freqs[cls_id_1] + _class_freqs[cls_id_2]
 
             W_mat = (
-                class_freqs[cls_id_1] * mat_scatter_within[cls_id_1]
-                + class_freqs[cls_id_2] * mat_scatter_within[cls_id_2]
+                _class_freqs[cls_id_1] * mat_scatter_within[cls_id_1]
+                + _class_freqs[cls_id_2] * mat_scatter_within[cls_id_2]
             ) / total_inst_num
 
             # Note: the result of np.linalg.piv 'Moore-Penrose' pseudo-inverse
@@ -866,11 +878,14 @@ class MFEComplexity:
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
-        f2 = np.zeros(ovo_comb.shape[0], dtype=float)
+        _ovo_comb = np.asarray(ovo_comb, dtype=int)
+        _cls_inds = np.asarray(cls_inds, dtype=bool)
 
-        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
-            N_cls_1 = N[cls_inds[cls_id_1], :]
-            N_cls_2 = N[cls_inds[cls_id_2], :]
+        f2 = np.zeros(_ovo_comb.shape[0], dtype=float)
+
+        for ind, (cls_id_1, cls_id_2) in enumerate(_ovo_comb):
+            N_cls_1 = N[_cls_inds[cls_id_1], :]
+            N_cls_2 = N[_cls_inds[cls_id_2], :]
 
             maxmax = cls._calc_maxmax(N_cls_1, N_cls_2)
             minmin = cls._calc_minmin(N_cls_1, N_cls_2)
@@ -937,11 +952,15 @@ class MFEComplexity:
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
 
-        f3 = np.zeros(ovo_comb.shape[0], dtype=float)
+        _ovo_comb = np.asarray(ovo_comb, dtype=int)
+        _class_freqs = np.asarray(class_freqs, dtype=int)
+        _cls_inds = np.asarray(cls_inds, dtype=bool)
 
-        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
-            N_cls_1 = N[cls_inds[cls_id_1, :], :]
-            N_cls_2 = N[cls_inds[cls_id_2, :], :]
+        f3 = np.zeros(_ovo_comb.shape[0], dtype=float)
+
+        for ind, (cls_id_1, cls_id_2) in enumerate(_ovo_comb):
+            N_cls_1 = N[_cls_inds[cls_id_1, :], :]
+            N_cls_2 = N[_cls_inds[cls_id_2, :], :]
 
             ind_less_overlap, feat_overlap_num, _ = cls._calc_overlap(
                 N=N,
@@ -950,7 +969,7 @@ class MFEComplexity:
             )
 
             f3[ind] = feat_overlap_num[ind_less_overlap] / (
-                class_freqs[cls_id_1] + class_freqs[cls_id_2]
+                _class_freqs[cls_id_1] + _class_freqs[cls_id_2]
             )
 
         # The measure is computed in the literature using the mean. However, it
@@ -1012,15 +1031,19 @@ class MFEComplexity:
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
 
-        f4 = np.zeros(ovo_comb.shape[0], dtype=float)
+        _ovo_comb = np.asarray(ovo_comb, dtype=int)
+        _class_freqs = np.asarray(class_freqs, dtype=int)
+        _cls_inds = np.asarray(cls_inds, dtype=bool)
 
-        for ind, (cls_id_1, cls_id_2) in enumerate(ovo_comb):
+        f4 = np.zeros(_ovo_comb.shape[0], dtype=float)
+
+        for ind, (cls_id_1, cls_id_2) in enumerate(_ovo_comb):
             cls_subset_union = np.logical_or(
-                cls_inds[cls_id_1, :], cls_inds[cls_id_2, :]
+                _cls_inds[cls_id_1, :], _cls_inds[cls_id_2, :]
             )
 
-            cls_1 = cls_inds[cls_id_1, cls_subset_union]
-            cls_2 = cls_inds[cls_id_2, cls_subset_union]
+            cls_1 = _cls_inds[cls_id_1, cls_subset_union]
+            cls_2 = _cls_inds[cls_id_2, cls_subset_union]
             N_subset = N[cls_subset_union, :]
 
             # Search only on remaining features, without copying any data
@@ -1061,7 +1084,7 @@ class MFEComplexity:
             subset_size = N_subset.shape[0]
 
             f4[ind] = subset_size / (
-                class_freqs[cls_id_1] + class_freqs[cls_id_2]
+                _class_freqs[cls_id_1] + _class_freqs[cls_id_2]
             )
 
         # The measure is computed in the literature using the mean. However, it
@@ -1155,6 +1178,10 @@ class MFEComplexity:
             cls_inds = sub_dic["cls_inds"]
             class_freqs = sub_dic["class_freqs"]
 
+        _ovo_comb = np.asarray(ovo_comb, dtype=int)
+        _class_freqs = np.asarray(class_freqs, dtype=int)
+        _cls_inds = np.asarray(cls_inds, dtype=bool)
+
         if svc_pipeline is None:
             sub_dic = cls.precompute_complexity_svm(
                 max_iter=max_iter, y=y, random_state=random_state
@@ -1162,13 +1189,13 @@ class MFEComplexity:
 
             svc_pipeline = sub_dic["svc_pipeline"]
 
-        sum_err_dist = np.zeros(ovo_comb.shape[0], dtype=float)
+        sum_err_dist = np.zeros(_ovo_comb.shape[0], dtype=float)
 
-        for ind, (cls_1, cls_2) in enumerate(ovo_comb):
-            cls_union = np.logical_or(cls_inds[cls_1, :], cls_inds[cls_2, :])
+        for ind, (cls_1, cls_2) in enumerate(_ovo_comb):
+            cls_union = np.logical_or(_cls_inds[cls_1, :], _cls_inds[cls_2, :])
 
             N_subset = N[cls_union, :]
-            y_subset = cls_inds[cls_1, cls_union]
+            y_subset = _cls_inds[cls_1, cls_union]
 
             svc_pipeline.fit(N_subset, y_subset)
             y_pred = svc_pipeline.predict(N_subset)
@@ -1183,7 +1210,7 @@ class MFEComplexity:
                 insts_dists = np.array([0.0], dtype=float)
 
             sum_err_dist[ind] = np.linalg.norm(insts_dists, ord=1) / (
-                class_freqs[cls_1] + class_freqs[cls_2]
+                _class_freqs[cls_1] + _class_freqs[cls_2]
             )
 
         l1 = 1.0 - 1.0 / (1.0 + sum_err_dist)
@@ -1267,6 +1294,9 @@ class MFEComplexity:
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
+        _ovo_comb = np.asarray(ovo_comb, dtype=int)
+        _cls_inds = np.asarray(cls_inds, dtype=bool)
+
         if svc_pipeline is None:
             sub_dic = cls.precompute_complexity_svm(
                 max_iter=max_iter, y=y, random_state=random_state
@@ -1274,13 +1304,13 @@ class MFEComplexity:
 
             svc_pipeline = sub_dic["svc_pipeline"]
 
-        l2 = np.zeros(ovo_comb.shape[0], dtype=float)
+        l2 = np.zeros(_ovo_comb.shape[0], dtype=float)
 
-        for ind, (cls_1, cls_2) in enumerate(ovo_comb):
-            cls_union = np.logical_or(cls_inds[cls_1, :], cls_inds[cls_2, :])
+        for ind, (cls_1, cls_2) in enumerate(_ovo_comb):
+            cls_union = np.logical_or(_cls_inds[cls_1, :], _cls_inds[cls_2, :])
 
             N_subset = N[cls_union, :]
-            y_subset = cls_inds[cls_1, cls_union]
+            y_subset = _cls_inds[cls_1, cls_union]
 
             svc_pipeline.fit(N_subset, y_subset)
             y_pred = svc_pipeline.predict(N_subset)
@@ -1375,6 +1405,9 @@ class MFEComplexity:
             ovo_comb = sub_dic["ovo_comb"]
             cls_inds = sub_dic["cls_inds"]
 
+        _ovo_comb = np.asarray(ovo_comb, dtype=int)
+        _cls_inds = np.asarray(cls_inds, dtype=bool)
+
         if svc_pipeline is None:
             sub_dic = cls.precompute_complexity_svm(
                 max_iter=max_iter, y=y, random_state=random_state
@@ -1382,14 +1415,14 @@ class MFEComplexity:
 
             svc_pipeline = sub_dic["svc_pipeline"]
 
-        l3 = np.zeros(ovo_comb.shape[0], dtype=float)
+        l3 = np.zeros(_ovo_comb.shape[0], dtype=float)
 
-        for ind, (cls_1, cls_2) in enumerate(ovo_comb):
-            cls_union = np.logical_or(cls_inds[cls_1, :], cls_inds[cls_2, :])
+        for ind, (cls_1, cls_2) in enumerate(_ovo_comb):
+            cls_union = np.logical_or(_cls_inds[cls_1, :], _cls_inds[cls_2, :])
 
             N_subset = N[cls_union, :]
-            y_subset = cls_inds[cls_1, cls_union]
-            cls_inds_subset = cls_inds[:, cls_union]
+            y_subset = _cls_inds[cls_1, cls_union]
+            _cls_inds_subset = _cls_inds[:, cls_union]
 
             svc_pipeline.fit(N_subset, y_subset)
 
@@ -1403,7 +1436,7 @@ class MFEComplexity:
             N_interpol, y_interpol = cls._interpolate(
                 N=N_subset,
                 y=y_subset,
-                cls_inds=cls_inds_subset,
+                cls_inds=_cls_inds_subset,
                 random_state=random_state,
             )
 
@@ -1843,7 +1876,7 @@ class MFEComplexity:
 
     @classmethod
     def ft_c1(
-        cls, y: np.array, class_freqs: t.Optional[np.ndarray] = None
+        cls, y: np.ndarray, class_freqs: t.Optional[np.ndarray] = None
     ) -> float:
         """Compute the entropy of class proportions.
 
