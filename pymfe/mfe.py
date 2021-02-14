@@ -1573,7 +1573,7 @@ class MFE:
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
-    ) -> t.Tuple[t.List, ...]:
+    ) -> t.Tuple[np.ndarray, ...]:
         """Extract metafeatures with confidence intervals.
 
         To build the confidence intervals, each metafeature is extracted
