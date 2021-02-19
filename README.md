@@ -202,6 +202,24 @@ ft = mfe.extract()
 print(ft)
 ```
 
+You can easily list all available metafeature groups, metafeatures, summary
+methods and metafeatures filtered by groups of interest:
+```python
+from pymfe.mfe import MFE
+
+# Check all available meta-feature groups in the package
+print(MFE.valid_groups())
+
+# Check all available meta-features in the package
+print(MFE.valid_metafeatures())
+
+# Check available meta-features filtering by groups of interest
+print(MFE.valid_metafeatures(groups=["general", "statistical", "info-theory"]))
+
+# Check all available summary functions in the package
+print(MFE.valid_summary())
+```
+
 It is possible to pass custom arguments to every metafeature using `MFE`
 `extract` method kwargs. The keywords must be the target metafeature name, and
 the value must be a dictionary in the format {`argument`: `value`}, i.e., each
