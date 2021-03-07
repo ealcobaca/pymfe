@@ -2,7 +2,6 @@
 """
 import typing as t
 import itertools
-import collections
 
 import numpy as np
 import scipy.spatial.distance
@@ -40,7 +39,7 @@ class MFEClustering:
        type, via kwargs argument of ``extract`` method of MFE class.
 
     4. The return value of all feature extraction methods should be a single
-       value or a generic Sequence (preferably a :obj:`np.ndarray`)
+       value or a generic List (preferably a :obj:`np.ndarray`)
        type with numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -300,7 +299,7 @@ class MFEClustering:
             instances. Check :obj:`sklearn.neighbors.DistanceMetric`
             documentation for a full list of valid distance metrics.
 
-        representative : str or :obj:`np.ndarray` or Sequence, optional
+        representative : str or :obj:`np.ndarray` or List, optional
             * If representative is string-type, then it must assume one
                 value between ``median`` or ``mean``, and the selected
                 method is used to estimate the representative instance of
@@ -308,7 +307,7 @@ class MFEClustering:
                 attributes of all instances of the same class is used to
                 represent that class).
 
-            * If representative is a Sequence or have :obj:`np.ndarray` type,
+            * If representative is a List or have :obj:`np.ndarray` type,
                 then its length must be the number of different classes in
                 ``y`` and each of its element must be a representative
                 instance for each class. For example, the following 2-D
@@ -379,7 +378,7 @@ class MFEClustering:
         dist_metric: str = "euclidean",
         classes: t.Optional[np.ndarray] = None,
         cls_inds: t.Optional[np.ndarray] = None,
-    ) -> np.ndarray:
+    ) -> t.List[np.ndarray]:
         """Calculate all pairwise normalized interclass distances."""
         if cls_inds is None:
             if classes is None:
@@ -444,14 +443,18 @@ class MFEClustering:
                     get_max_dist=get_max_dist,
                 )
                 for cur_class in cls_inds
-            ]
+            ],
+            dtype=object,
         )
 
         return intracls_dists
 
     @classmethod
     def _get_nearest_neighbors(
-        cls, N: np.ndarray, n_neighbors: int, dist_metric: str = "euclidean",
+        cls,
+        N: np.ndarray,
+        n_neighbors: int,
+        dist_metric: str = "euclidean",
     ) -> np.ndarray:
         """Indexes of ``n_neighbors`` nearest neighbors for each instance."""
         model = sklearn.neighbors.KDTree(N, metric=dist_metric)
@@ -469,7 +472,7 @@ class MFEClustering:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        representative: t.Union[t.Sequence, np.ndarray, str] = "mean",
+        representative: t.Union[t.List, np.ndarray, str] = "mean",
         cls_inds: t.Optional[np.ndarray] = None,
         classes: t.Optional[np.ndarray] = None,
     ) -> np.ndarray:
@@ -507,9 +510,7 @@ class MFEClustering:
                 for cur_class in cls_inds
             ]
 
-        elif not isinstance(
-            representative, (collections.Sequence, np.ndarray)
-        ):
+        elif not hasattr(representative, "__len__"):
             raise TypeError(
                 "'representative' type must be string "
                 "or a sequence or a numpy array. "
@@ -546,7 +547,7 @@ class MFEClustering:
         cls_inds: t.Optional[np.ndarray] = None,
         classes: t.Optional[np.ndarray] = None,
         intracls_dists: t.Optional[np.ndarray] = None,
-        pairwise_norm_intercls_dist: t.Optional[np.ndarray] = None,
+        pairwise_norm_intercls_dist: t.Optional[t.List[np.ndarray]] = None,
     ) -> float:
         """Compute the Dunn Index.
 
@@ -611,14 +612,14 @@ class MFEClustering:
                 dist_metric=dist_metric,
                 classes=classes,
                 cls_inds=cls_inds,
-            ).max()
+            )
 
         _min_intercls_dist = np.inf
 
         for vals in pairwise_norm_intercls_dist:
             _min_intercls_dist = min(_min_intercls_dist, np.min(vals))
 
-        vdu = _min_intercls_dist / intracls_dists.max()
+        vdu = float(_min_intercls_dist / np.max(intracls_dists))
 
         return vdu
 
@@ -654,7 +655,7 @@ class MFEClustering:
         dist_metric: str = "euclidean",
         cls_inds: t.Optional[np.ndarray] = None,
         classes: t.Optional[np.ndarray] = None,
-        pairwise_norm_intercls_dist: t.Optional[np.ndarray] = None,
+        pairwise_norm_intercls_dist: t.Optional[t.List[np.ndarray]] = None,
     ) -> float:
         """Compute the INT index.
 
@@ -722,7 +723,7 @@ class MFEClustering:
         _sum_intercls_dist = 0.0
 
         for vals in pairwise_norm_intercls_dist:
-            _sum_intercls_dist += np.sum(vals)
+            _sum_intercls_dist += float(np.sum(vals))
 
         return _sum_intercls_dist * norm_factor
 
@@ -791,7 +792,10 @@ class MFEClustering:
 
     @classmethod
     def ft_pb(
-        cls, N: np.ndarray, y: np.ndarray, dist_metric: str = "euclidean",
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        dist_metric: str = "euclidean",
     ) -> float:
         """Compute the pearson correlation between class matching and instance
         distances.
@@ -866,7 +870,9 @@ class MFEClustering:
 
     @classmethod
     def ft_nre(
-        cls, y: np.ndarray, class_freqs: t.Optional[np.ndarray] = None,
+        cls,
+        y: np.ndarray,
+        class_freqs: t.Optional[np.ndarray] = None,
     ) -> float:
         """Compute the normalized relative entropy.
 

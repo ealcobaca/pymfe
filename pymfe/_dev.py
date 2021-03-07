@@ -816,7 +816,10 @@ class MFEBoilerplate:
         return res
 
     @classmethod
-    def ft_about_return_values(cls, y: np.ndarray,) -> np.ndarray:
+    def ft_about_return_values(
+        cls,
+        y: np.ndarray,
+    ) -> np.ndarray:
         """Information about return values of feature extraction methods.
 
         1. You have two return options for metafeature extraction methods
@@ -949,7 +952,7 @@ class MFEBoilerplate:
         mtf_names: t.List[str],
         mtf_vals: t.List[float],
         mtf_time: t.List[float],
-        class_indexes: t.Sequence[int],
+        class_indexes: t.List[int],
         groups: t.Tuple[str, ...],
         inserted_group_dep: t.FrozenSet[str],
         **kwargs
@@ -1048,7 +1051,7 @@ class MFEBoilerplate:
             A list containing all time elapsed for each metafeature
             previously extracted.
 
-        class_indexes : Sequence of int
+        class_indexes : List of int
             Indexes of the metafeatures related to this method ``groups of
             interest``. The ``groups of interest`` are the metafeature groups
             whose name are in this method's name after the ``postprocess_``

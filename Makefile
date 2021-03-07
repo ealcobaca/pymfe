@@ -1,4 +1,5 @@
 PACKAGE := pymfe
+TEST_NCORES := auto
 
 all: clean install-dev code-check test-cov
 .PHONY: all clean test test-cov code-check pypi install install-dev html help h t c cl
@@ -16,17 +17,20 @@ clean: ## Clean all undesired files such as .so, .pyc, build files and etc.
 cl: clean ## Shortcut to clean
 
 test: ## Execute the code test using pytest.
-	pytest tests/
+	pytest -n $(TEST_NCORES) tests/
 
 test-cov: ## Execute the code test using pytest and measuring the coverage.
 	rm -rf coverage .coverage
-	pytest --cov=$(PACKAGE)/ tests/
+	pytest -n $(TEST_NCORES) --cov=$(PACKAGE)/ tests/
 
 t: test-cov ## Shortcut to test-cov
 
 code-check: ## Execute the code check with flake8, pylint, mypy.
 	flake8 $(PACKAGE)
-	pylint $(PACKAGE) -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101, C0330'
+	pylint $(PACKAGE) -j 0 -d 'C0103, R0913, R0902, R0914, C0302, R0904, R0801, E1101, C0330, E1136'
+	mypy $(PACKAGE) --ignore-missing-imports
+
+type-check:  ## Execute the code check with mypy only.
 	mypy $(PACKAGE) --ignore-missing-imports
 
 c: code-check # Shortcut to code-check

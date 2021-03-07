@@ -209,12 +209,8 @@ class TestStatistical:
                 X.values, y.values, precomp_groups=precomp_group)
         value = mfe.extract()[1]
 
-        if exp_value is np.nan:
-            assert value[0] is exp_value
-
-        else:
-            assert np.allclose(
-                value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
+        assert np.allclose(
+            value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
 
     @pytest.mark.parametrize("dt_id, exp_value, precompute, test, failure", [
         (0, 0, False, "shapiro-wilk", "soft"),
@@ -259,12 +255,8 @@ class TestStatistical:
                 X.values, y.values, precomp_groups=precomp_group)
         value = mfe.extract(nr_norm={"failure": failure, "method": test})[1]
 
-        if exp_value is np.nan:
-            assert value[0] is exp_value
-
-        else:
-            assert np.allclose(
-                value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
+        assert np.allclose(
+            value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
 
     @pytest.mark.parametrize("test, failure", [
         ("invalid", "soft"),
@@ -327,12 +319,8 @@ class TestStatistical:
                 X.values, y.values, precomp_groups=precomp_group)
         value = mfe.extract(roy_root={"criterion": criterion})[1]
 
-        if exp_value is np.nan:
-            assert value[0] is exp_value
-
-        else:
-            assert np.allclose(
-                value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
+        assert np.allclose(
+            value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
 
     @pytest.mark.parametrize("criterion", ("invalid", "", None))
     def test_roy_largest_root_invalid_criteria(self, criterion):

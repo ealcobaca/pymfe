@@ -35,7 +35,7 @@ class MFEConcept:
        type, via kwargs argument of ``extract`` method of MFE class.
 
     4. The return value of all feature extraction methods should be a single
-       value or a generic Sequence (preferably a :obj:`np.ndarray`) type with
+       value or a generic List (preferably a :obj:`np.ndarray`) type with
        numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -157,7 +157,7 @@ class MFEConcept:
         weights = np.power(2, -conceptvar_alpha * (concept_distances / div))
         np.fill_diagonal(weights, 0.0)
 
-        rep_class_matrix = np.repeat([y], y.shape[0], axis=0)
+        rep_class_matrix = np.repeat(np.expand_dims(y, 0), y.shape[0], axis=0)
         # check if class is different
         class_diff = np.not_equal(rep_class_matrix.T, rep_class_matrix).astype(
             int
@@ -290,7 +290,7 @@ class MFEConcept:
         weights = np.power(2, -impconceptvar_alpha * radius)
         np.fill_diagonal(weights, 0.0)
 
-        rep_class_matrix = np.repeat([y], y.shape[0], axis=0)
+        rep_class_matrix = np.repeat(np.expand_dims(y, 0), y.shape[0], axis=0)
         # check if class is different
         class_diff = np.not_equal(rep_class_matrix.T, rep_class_matrix).astype(
             int

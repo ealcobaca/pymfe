@@ -424,18 +424,6 @@ class TestArchitecture:
         with pytest.raises(ValueError):
             mfe.fit(X=X, y=y, transform_cat="one-hot")
 
-    def test_ohe_full_encoding_missing_value(self):
-        X, y = utils.load_xy(1)
-        mfe = MFE()
-
-        X = np.copy(X.values)
-        y = y.values
-
-        X[5, 0] = np.nan
-
-        with pytest.raises(ValueError):
-            mfe.fit(X, y, transform_cat="one-hot")
-
     @pytest.mark.parametrize("confidence", (0.95, 0.99))
     def test_extract_with_confidence(self, confidence):
         X, y = utils.load_xy(2)

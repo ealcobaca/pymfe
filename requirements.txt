@@ -5,3 +5,4 @@ patsy
 pandas
 statsmodels
 texttable
+tqdm

@@ -34,7 +34,7 @@ class MFEModelBased:
        type, via kwargs argument of ``extract`` method of MFE class.
 
     4. The return value of all feature extraction methods should be a single
-       value or a generic Sequence (preferably a :obj:`np.ndarray`)
+       value or a generic List (preferably a :obj:`np.ndarray`)
        type with numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -122,8 +122,10 @@ class MFEModelBased:
                 hypparam_model_dt = {}
 
             if dt_model is None:
+                _y = np.asarray(y)
+
                 dt_model = cls._fit_dt_model(
-                    N=N, y=y, random_state=random_state, **hypparam_model_dt
+                    N=N, y=_y, random_state=random_state, **hypparam_model_dt
                 )
 
             leaf_nodes = cls._get_leaf_node_array(dt_model)

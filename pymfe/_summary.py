@@ -13,15 +13,13 @@ import numpy as np
 TypeNumeric = t.Union[int, float, np.number]
 """Type annotation for a numeric type (int, float, np.number)."""
 
-TypeValList = t.Sequence[TypeNumeric]
+TypeValList = t.Union[np.ndarray, t.List[TypeNumeric]]
 """Type annotation for a sequence of numeric type elements."""
 
 
 def _remove_nan(values: TypeValList) -> TypeValList:
     """Remove nan values in ``values``."""
-    if not isinstance(values, np.ndarray):
-        values = np.asarray(values, dtype=float)
-
+    values = np.asarray(values, dtype=float)
     return values[~np.isnan(values)]
 
 
@@ -277,7 +275,7 @@ def sum_nanstd(values: TypeValList, ddof: int = 1) -> float:
     if len(values) <= ddof:
         return np.nan
 
-    return np.nanstd(values, ddof=ddof)
+    return float(np.nanstd(values, ddof=ddof))
 
 
 def sum_std(values: TypeValList, ddof: int = 1) -> float:
@@ -285,7 +283,7 @@ def sum_std(values: TypeValList, ddof: int = 1) -> float:
     if len(values) <= ddof:
         return np.nan
 
-    return np.std(values, ddof=ddof)
+    return float(np.std(values, ddof=ddof))
 
 
 def sum_nanvar(values: TypeValList, ddof: int = 1) -> float:
@@ -293,7 +291,7 @@ def sum_nanvar(values: TypeValList, ddof: int = 1) -> float:
     if len(values) <= ddof:
         return np.nan
 
-    return np.nanvar(values, ddof=ddof)
+    return float(np.nanvar(values, ddof=ddof))
 
 
 def sum_var(values: TypeValList, ddof: int = 1) -> float:
@@ -301,12 +299,12 @@ def sum_var(values: TypeValList, ddof: int = 1) -> float:
     if len(values) <= ddof:
         return np.nan
 
-    return np.var(values, ddof=ddof)
+    return float(np.var(values, ddof=ddof))
 
 
 def sum_nancount(values: TypeValList) -> int:
     """Count how many non-nan element in ``values``."""
-    return len(values) - np.count_nonzero(np.isnan(values))
+    return int(len(values) - np.count_nonzero(np.isnan(values)))
 
 
 def sum_naniq_range(values: TypeValList) -> float:
@@ -316,7 +314,7 @@ def sum_naniq_range(values: TypeValList) -> float:
 
 def sum_nanptp(values: TypeValList) -> float:
     """Calculate (max - min) ignoring `nan` values."""
-    return np.nanmax(values) - np.nanmin(values)
+    return float(np.nanmax(values) - np.nanmin(values))
 
 
 def sum_nanhistogram(
@@ -435,7 +433,7 @@ def sum_sum(values: TypeValList) -> float:
     if len(values) == 0:
         return np.nan
 
-    return sum(values)
+    return float(np.sum(values))
 
 
 def sum_nansum(values: TypeValList) -> float:

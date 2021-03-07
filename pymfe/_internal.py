@@ -64,7 +64,6 @@ Attributes:
 """
 import typing as t
 import inspect
-import collections
 import warnings
 import shutil
 import time
@@ -75,6 +74,7 @@ import numpy as np
 import sklearn.preprocessing
 import sklearn.tree
 import patsy
+import tqdm.auto
 
 import pymfe._summary as _summary
 import pymfe.general as general
@@ -186,7 +186,12 @@ _TYPE_NUMERIC = (
 )
 """Tuple with generic numeric types."""
 
-TypeNumeric = t.TypeVar("TypeNumeric", int, float, np.number,)
+TypeNumeric = t.TypeVar(
+    "TypeNumeric",
+    int,
+    float,
+    np.number,
+)
 """Typing alias of generic numeric types for static code checking."""
 
 
@@ -213,34 +218,34 @@ _EXCEPTIONS = (
 """Common exceptions of metafeature extraction."""
 
 
-def warning_format(
-    message: str,
-    category: t.Type[Warning],
-    filename: str,
-    lineno: int,
-    line: str = None,
-) -> str:
-    """Change warnings format to a simpler one.
-
-    Args:
-        message (:obj:`str`): warning message to print.
-
-        category: not used. Just to maintain consistency with warnings API.
-
-        filename: not used. Just to maintain consistency with warnings API.
-
-        lineno: not used. Just to maintain consistency with warnings API.
-
-        line: not used. Just to maintain consistency with warnings API.
-
-    Return:
-        str: formated warning message.
-    """
-    # pylint: disable=W0613
-    return " {} Warning: {}\n".format(VERBOSE_WARNING_SYMBOL, message)
-
-
-warnings.formatwarning = warning_format
+# def warning_format(
+#     message: str,
+#     category: t.Type[Warning],
+#     filename: str,
+#     lineno: int,
+#     line: str = None,
+# ) -> str:
+#     """Change warnings format to a simpler one.
+#
+#     Args:
+#         message (:obj:`str`): warning message to print.
+#
+#         category: not used. Just to maintain consistency with warnings API.
+#
+#         filename: not used. Just to maintain consistency with warnings API.
+#
+#         lineno: not used. Just to maintain consistency with warnings API.
+#
+#         line: not used. Just to maintain consistency with warnings API.
+#
+#     Return:
+#         str: formated warning message.
+#     """
+#     # pylint: disable=W0613
+#     return " {} Warning: {}\n".format(VERBOSE_WARNING_SYMBOL, message)
+#
+#
+# warnings.formatwarning = warning_format
 
 
 def _check_values_in_group(
@@ -272,7 +277,7 @@ def _check_values_in_group(
             are not a :obj:`str` type.
     """
 
-    if not isinstance(value, collections.Iterable):
+    if not hasattr(value, "__len__"):
         raise TypeError(
             "Parameter type is not consistent ({0}).".format(type(value))
         )
@@ -513,14 +518,14 @@ def _extract_mtd_args(
 
 
 def summarize(
-    features: t.Union[np.ndarray, t.Sequence],
+    features: t.Union[np.ndarray, t.List],
     callable_sum: t.Callable,
     callable_args: t.Optional[t.Dict[str, t.Any]] = None,
-) -> t.Union[t.Sequence, TypeNumeric]:
+) -> t.Union[t.List, TypeNumeric]:
     """Returns ``feature`` values summarized by ``callable_sum``.
 
     Args:
-        features (:obj:`Sequence` of numerics): Sequence containing values
+        features (:obj:`List` of numerics): List containing values
             to summarize.
 
         callable_sum (:obj:`callable`): callable of the method which im-
@@ -599,8 +604,8 @@ def get_feat_value(
 
         if not suppress_warnings:
             warnings.warn(
-                "Can't extract feature '{0}'.\n Exception message: {1}.{2}"
-                .format(
+                "Can't extract feature '{0}'.\n "
+                "Exception message: {1}.{2}".format(
                     mtd_name,
                     repr(type_e),
                     "\n Will set it as 'np.nan' for all summary functions."
@@ -703,14 +708,14 @@ def build_mtd_kwargs(
 
 
 def check_summary_warnings(
-    value: t.Union[TypeNumeric, t.Sequence, np.ndarray],
+    value: t.Union[TypeNumeric, t.List, np.ndarray],
     name_feature: str,
     name_summary: str,
 ) -> None:
     """Check if there is :obj:`np.nan` within summarized values.
 
     Args:
-        value (numeric or :obj:`Sequence`): summarized values.
+        value (numeric or :obj:`List`): summarized values.
 
         name_feature (:obj:`str`): name of the feature-extraction
             method used to generate the values which was summarized.
@@ -719,7 +724,7 @@ def check_summary_warnings(
             used to produce `value`.
     """
 
-    if not isinstance(value, collections.Iterable):
+    if not hasattr(value, "__len__"):
         value = [value]
 
     if any(np.isnan(value)):
@@ -929,8 +934,8 @@ def process_generic_option(
 
     if value is not None and not isinstance(value, str):
         raise TypeError(
-            '"value" (group name {}) must be a string-type object (got {}).'
-            .format(group_name, type(value))
+            '"value" (group name {}) must be a string-type '
+            "object (got {}).".format(group_name, type(value))
         )
 
     processed_value = process_generic_set(
@@ -991,8 +996,8 @@ def process_summary(
 
     if not_in_group:
         raise ValueError(
-            "Unknown summary function '{0}'. Please select values in {1}."
-            .format(not_in_group, VALID_SUMMARY)
+            "Unknown summary function '{0}'. "
+            "Please select values in {1}.".format(not_in_group, VALID_SUMMARY)
         )
 
     summary_methods = []  # type: t.List[TypeExtMtdTuple]
@@ -1218,10 +1223,10 @@ def process_precomp_groups(
 
     processed_precomp_groups = _preprocess_iterable_arg(
         precomp_groups
-    )  # type: t.Sequence[str]
+    )  # type: t.List[str]
 
     if wildcard in processed_precomp_groups:
-        processed_precomp_groups = groups
+        processed_precomp_groups = list(groups)
 
     elif custom_class_ is None:
         if not suppress_warnings:
@@ -1236,7 +1241,7 @@ def process_precomp_groups(
                     UserWarning,
                 )
 
-        processed_precomp_groups = tuple(
+        processed_precomp_groups = list(
             set(processed_precomp_groups).intersection(groups)
         )
 
@@ -1256,8 +1261,9 @@ def process_precomp_groups(
 
     error_count = 0
     _prev_precomp_len = 0
+    _iterator = tqdm.auto.tqdm(precomp_mtds_filtered, disable=verbose != 1)
 
-    for ind, precomp_mtd_tuple in enumerate(precomp_mtds_filtered, 1):
+    for precomp_mtd_tuple in _iterator:
         precomp_mtd_name, precomp_mtd_callable = precomp_mtd_tuple
 
         if verbose >= 2:
@@ -1305,14 +1311,6 @@ def process_precomp_groups(
                 **new_precomp_vals,
             }
 
-        if verbose > 0:
-            print_verbose_progress(
-                cur_progress=100 * ind / len(precomp_mtds_filtered),
-                cur_mtf_name=precomp_mtd_name,
-                item_type="precomputation",
-                verbose=verbose,
-            )
-
     if verbose == 1:
         _t_num_cols, _ = shutil.get_terminal_size()
         print(
@@ -1335,7 +1333,7 @@ def process_precomp_groups(
 
 
 def check_data(
-    X: t.Union[np.ndarray, list], y: t.Union[np.ndarray, list]
+    X: t.Union[np.ndarray, list], y: t.Optional[t.Union[np.ndarray, list]]
 ) -> t.Tuple[np.ndarray, t.Optional[np.ndarray]]:
     """Checks ``X`` and ``y`` data type and shape and transform it if necessary.
 
@@ -1373,11 +1371,11 @@ def check_data(
     # Object
     # >>>np.array(['test', 1], dtype=np.object)
     if not isinstance(X, np.ndarray):
-        X = np.array(X, dtype=np.object)
+        X = np.array(X, dtype=object)
 
     if y is not None:
         if not isinstance(y, np.ndarray):
-            y = np.array(y, dtype=np.object)
+            y = np.array(y, dtype=object)
 
         y = y.flatten()
 
@@ -1420,7 +1418,7 @@ def isnumeric(value: t.Any, check_subtype: bool = True) -> bool:
     """
     if (
         check_subtype
-        and isinstance(value, (collections.Iterable, np.ndarray))
+        and hasattr(value, "__len__")
         and not isinstance(value, str)
     ):
 
@@ -1526,7 +1524,9 @@ def transform_cat_onehot(
 
     _drop = None if use_all_columns else "first"
 
-    ohe = sklearn.preprocessing.OneHotEncoder(drop=_drop, sparse=False)
+    ohe = sklearn.preprocessing.OneHotEncoder(
+        drop=_drop, sparse=False, handle_unknown="error"
+    )
 
     one_cat_attrs = []  # type: t.List[np.ndarray]
 
@@ -1541,16 +1541,7 @@ def transform_cat_onehot(
                 "or select another encoding strategy.".format(attr_ind + 1)
             )
 
-        try:
-            one_cat_attrs.append(ohe.fit_transform(cur_attr))
-
-        except ValueError as err:
-            raise ValueError(
-                "Categorical data encoding of type 'one-hot' has "
-                "no support for missing values. Please handle the"
-                " missing data manually before fitting it into "
-                "the MFE model."
-            ) from err
+        one_cat_attrs.append(ohe.fit_transform(cur_attr))
 
     return np.hstack(one_cat_attrs)
 
@@ -1741,7 +1732,7 @@ def check_group_dependencies(groups: t.Iterable[str]) -> t.Set[str]:
 
 
 def select_results_by_classes(
-    mtf_names: t.Sequence[str],
+    mtf_names: t.List[str],
     class_names: t.Union[str, t.Iterable[str]],
     include_dependencies: bool = False,
 ) -> t.List[int]:
@@ -1814,7 +1805,9 @@ def post_processing(
             ds.
     """
     mtds_metadata = _get_all_prefixed_mtds(
-        prefix=POSTPROCESS_PREFIX, groups=groups, custom_class_=custom_class_,
+        prefix=POSTPROCESS_PREFIX,
+        groups=groups,
+        custom_class_=custom_class_,
     )  # type: t.Dict[str, t.Tuple]
 
     postprocess_mtds = mtds_metadata.get(
@@ -1872,39 +1865,3 @@ def post_processing(
 
     if remove_groups:
         kwargs.pop("groups")
-
-
-def print_verbose_progress(
-    cur_progress: float, cur_mtf_name: str, item_type: str, verbose: int = 0
-) -> None:
-    """Print messages about extraction progress based on ``verbose``."""
-    if verbose <= 0:
-        return
-
-    if verbose >= 2:
-        print(
-            "Done with '{}' {} (progress of {:.2f}%).".format(
-                cur_mtf_name, item_type, cur_progress
-            )
-        )
-        return
-
-    _t_num_cols, _ = shutil.get_terminal_size()
-    _t_num_cols -= 9
-
-    if _t_num_cols <= 0:
-        return
-
-    _total_prog_symb = int(cur_progress * _t_num_cols / 100)
-
-    print(
-        "".join(
-            [
-                "\r[",
-                _total_prog_symb * "#",
-                (_t_num_cols - _total_prog_symb) * ".",
-                "]{:.2f}%".format(cur_progress),
-            ]
-        ),
-        end="",
-    )

@@ -35,7 +35,7 @@ class MFERelativeLandmarking:
        type, via kwargs argument of ``extract`` method of MFE class.
 
     4. The return value of all feature extraction methods should be a single
-       value or a generic Sequence (preferably a :obj:`np.ndarray`) type with
+       value or a generic List (preferably a :obj:`np.ndarray`) type with
        numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -58,7 +58,7 @@ class MFERelativeLandmarking:
         mtf_names: t.List[str],
         mtf_vals: t.List[float],
         mtf_time: t.List[float],
-        class_indexes: t.Sequence[int],
+        class_indexes: t.List[int],
         groups: t.Tuple[str, ...],
         inserted_group_dep: t.FrozenSet[str],
         **kwargs
@@ -160,7 +160,7 @@ class MFERelativeLandmarking:
         cls,
         mtf_names: t.List[str],
         mtf_vals: t.List[float],
-        class_indexes: t.Sequence[int],
+        class_indexes: t.List[int],
     ) -> t.Tuple[t.Dict[str, t.List[float]], t.Dict[str, t.List[int]]]:
         """Group metafeatures by its correspondent summary method.
 

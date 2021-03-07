@@ -40,7 +40,7 @@ class MFEStatistical:
        ``extract`` method of MFE class.
 
     4. The return value of all feature-extraction methods should be a single
-       value or a generic Sequence (preferably an np.ndarray)
+       value or a generic List (preferably an np.ndarray)
        type with numeric values.
 
     There is another type of method adopted for automatic detection. It is
@@ -82,7 +82,7 @@ class MFEStatistical:
                 * ``class_freqs`` (:obj:`np.ndarray`): absolute class
                   frequencies of ``y``, if ``y`` is not :obj:`NoneType`.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if y is not None and not {"classes", "class_freqs"}.issubset(kwargs):
             classes, class_freqs = np.unique(y, return_counts=True)
@@ -123,7 +123,7 @@ class MFEStatistical:
                     - ``can_cor_eigvals`` (:obj:`np.ndarray`): eigenvalues
                       related to the canonical correlations.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if (
             y is not None
@@ -170,7 +170,7 @@ class MFEStatistical:
                       correlation matrix of ``N``, if ``N`` is not
                       :obj:`NoneType`.
         """
-        precomp_vals = {}
+        precomp_vals = {}  # type: t.Dict[str, t.Any]
 
         if N is not None and N.size:
             if "cov_mat" not in kwargs:
@@ -209,8 +209,10 @@ class MFEStatistical:
 
     @classmethod
     def _calc_can_cors(
-        cls, N: np.ndarray, y: np.ndarray,
-    ) -> t.Union[np.ndarray, t.Tuple[np.ndarray, np.ndarray]]:
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+    ) -> np.ndarray:
         """Calculate the Canonical Correlations between ``N`` and ``y.``
 
         Note that the canonical correlations are calculated using the
@@ -220,7 +222,8 @@ class MFEStatistical:
         kept.
         """
         y_bin = sklearn.preprocessing.OneHotEncoder(
-            sparse=False
+            sparse=False,
+            drop="first",
         ).fit_transform(y.reshape(-1, 1))
 
         num_classes, num_attr = y_bin.shape[1], N.shape[1]
@@ -234,9 +237,17 @@ class MFEStatistical:
         # those warnings.
         warnings.filterwarnings("ignore", category=UserWarning)
 
-        N_tf, y_tf = sklearn.cross_decomposition.CCA(
-            n_components=n_components
-        ).fit_transform(N, y_bin)
+        cca_model = sklearn.cross_decomposition.CCA(
+            n_components=n_components, max_iter=500
+        )
+
+        try:
+            cca_model.fit(N, y_bin)
+
+        except StopIteration:
+            pass
+
+        N_tf, y_tf = cca_model.transform(N, y_bin)
 
         warnings.filterwarnings("default", category=UserWarning)
 
@@ -367,13 +378,16 @@ class MFEStatistical:
         if classes is None or class_freqs is None:
             classes, class_freqs = np.unique(y, return_counts=True)
 
-        ind_cls_maj = np.argmax(class_freqs)
-        class_maj = classes[ind_cls_maj]
+        _classes = np.asarray(classes)  # type: np.ndarray
+        _class_freqs = np.asarray(class_freqs, dtype=int)  # type: np.ndarray
 
-        classes = np.delete(classes, ind_cls_maj)
-        class_freqs = np.delete(class_freqs, ind_cls_maj)
+        ind_cls_maj = np.argmax(_class_freqs)
+        class_maj = _classes[ind_cls_maj]
 
-        ind_cls_min = np.argmin(class_freqs)
+        _classes = np.delete(_classes, ind_cls_maj)
+        _class_freqs = np.delete(_class_freqs, ind_cls_maj)
+
+        ind_cls_min = np.argmin(_class_freqs)
 
         if cls_inds is not None:
             insts_cls_maj = N[cls_inds[ind_cls_maj, :], :]
@@ -382,7 +396,7 @@ class MFEStatistical:
             insts_cls_min = N[cls_inds[ind_cls_min, :], :]
 
         else:
-            class_min = classes[ind_cls_min]
+            class_min = _classes[ind_cls_min]
             insts_cls_maj = N[y == class_maj, :]
             insts_cls_min = N[y == class_min, :]
 
@@ -750,7 +764,9 @@ class MFEStatistical:
            selection for classification. Applied Soft Computing,
            6(2):119 – 138, 2006.
         """
-        return scipy.stats.median_absolute_deviation(x=N, axis=0, scale=factor)
+        return scipy.stats.median_abs_deviation(
+            x=N, axis=0, scale=1.0 / factor
+        )
 
     @classmethod
     def ft_max(cls, N: np.ndarray) -> np.ndarray:
@@ -773,7 +789,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return N.max(axis=0)
+        return np.asfarray(N.max(axis=0))
 
     @classmethod
     def ft_mean(cls, N: np.ndarray) -> np.ndarray:
@@ -796,7 +812,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return N.mean(axis=0)
+        return np.asfarray(N.mean(axis=0))
 
     @classmethod
     def ft_median(cls, N: np.ndarray) -> np.ndarray:
@@ -819,7 +835,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return np.median(N, axis=0)
+        return np.asfarray(np.median(N, axis=0))
 
     @classmethod
     def ft_min(cls, N: np.ndarray) -> np.ndarray:
@@ -842,7 +858,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return N.min(axis=0)
+        return np.asfarray(N.min(axis=0))
 
     @classmethod
     def ft_nr_cor_attr(
@@ -892,7 +908,7 @@ class MFEStatistical:
 
         _, num_attr = N.shape
 
-        norm_factor = 1
+        norm_factor = 1.0
 
         if normalize:
             norm_factor = 2.0 / (num_attr * (num_attr - 1.0))
@@ -1047,7 +1063,7 @@ class MFEStatistical:
         else:
             attr_is_normal = np.all(test_results, axis=0)
 
-        return np.sum(attr_is_normal)
+        return float(np.sum(attr_is_normal))
 
     @classmethod
     def ft_nr_outliers(cls, N: np.ndarray, whis: float = 1.5) -> int:
@@ -1115,7 +1131,7 @@ class MFEStatistical:
            to automatic kernel selection for support vector machines.
            Neurocomputing, 70(1):173 – 186, 2006.
         """
-        return np.ptp(N, axis=0)
+        return np.asfarray(np.ptp(N, axis=0))
 
     @classmethod
     def ft_sd(cls, N: np.ndarray, ddof: int = 1) -> np.ndarray:
@@ -1141,7 +1157,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return N.std(axis=0, ddof=ddof)
+        return np.asfarray(N.std(axis=0, ddof=ddof))
 
     @classmethod
     def ft_sd_ratio(
@@ -1228,7 +1244,7 @@ class MFEStatistical:
                 ]
             ).sum(axis=0) / (num_inst - num_classes)
 
-            return pooled_cov_mat
+            return np.asfarray(pooled_cov_mat)
 
         def calc_gamma_factor(num_col, num_classes, num_inst):
             """Calculate the gamma factor which adjust the output."""
@@ -1248,12 +1264,12 @@ class MFEStatistical:
         ) -> float:
             """Calculate the M factor."""
             vec_logdet = [
-                np.math.log(np.linalg.det(S_i)) for S_i in sample_cov_matrices
+                np.log(np.linalg.det(S_i)) for S_i in sample_cov_matrices
             ]
 
             m_factor = gamma * (
                 (num_inst - num_classes)
-                * np.math.log(np.linalg.det(pooled_cov_mat))
+                * np.log(np.linalg.det(pooled_cov_mat))
                 - np.dot(vec_weight, vec_logdet)
             )
 
@@ -1264,11 +1280,12 @@ class MFEStatistical:
         if classes is None or class_freqs is None:
             classes, class_freqs = np.unique(y, return_counts=True)
 
-        num_classes = classes.size
+        _classes = np.asarray(classes)
+        _class_freqs = np.asarray(class_freqs, dtype=int)
 
+        num_classes = _classes.size
         sample_cov_matrices = calc_sample_cov_mat(N, y, ddof)
-
-        vec_weight = class_freqs - 1.0
+        vec_weight = _class_freqs - 1.0
 
         pooled_cov_mat = calc_pooled_cov_mat(
             sample_cov_matrices, vec_weight, num_inst, num_classes
@@ -1285,7 +1302,10 @@ class MFEStatistical:
             vec_weight,
         )
 
-        return np.exp(m_factor / (num_col * (num_inst - num_classes)))
+        if np.isinf(m_factor):
+            return np.nan
+
+        return float(np.exp(m_factor / (num_col * (num_inst - num_classes))))
 
     @classmethod
     def ft_skewness(
@@ -1440,7 +1460,7 @@ class MFEStatistical:
            In 2nd International Conference on Modeling Decisions for
            Artificial Intelligence (MDAI), pages 457–468, 2005.
         """
-        return N.var(axis=0, ddof=ddof)
+        return np.asfarray(N.var(axis=0, ddof=ddof))
 
     @classmethod
     def ft_w_lambda(
@@ -1515,7 +1535,8 @@ class MFEStatistical:
         if can_cor_eigvals.size == 0:
             return np.nan
 
-        return np.prod(1 / (1 + can_cor_eigvals))
+        # return float(np.prod(1 / (1 + can_cor_eigvals)))
+        return float(np.exp(-np.sum(np.log1p(can_cor_eigvals))))
 
     @classmethod
     def ft_p_trace(
@@ -1559,7 +1580,7 @@ class MFEStatistical:
         if can_cors.size == 0:  # type: ignore
             return np.nan
 
-        return np.sum(np.square(can_cors))
+        return float(np.sum(np.square(can_cors)))
 
     @classmethod
     def ft_lh_trace(
@@ -1635,7 +1656,7 @@ class MFEStatistical:
         if can_cor_eigvals.size == 0:  # type: ignore
             return np.nan
 
-        return np.sum(can_cor_eigvals)
+        return float(np.sum(can_cor_eigvals))
 
     @classmethod
     def ft_roy_root(
@@ -1751,4 +1772,4 @@ class MFEStatistical:
         if values.size == 0:  # type: ignore
             return np.nan
 
-        return np.max(values)
+        return float(np.max(values))

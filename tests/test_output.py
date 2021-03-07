@@ -63,22 +63,6 @@ class TestOutput:
 
         assert len(vals) == len(names) == len(time)
 
-    @pytest.mark.parametrize("verbosity, msg_expected", [
-        (0, False),
-        (1, True),
-        (2, True),
-    ])
-    def test_verbosity_1(self, verbosity, msg_expected, capsys):
-        _internal.print_verbose_progress(
-            cur_progress=0,
-            cur_mtf_name="foo",
-            item_type="test",
-            verbose=verbosity)
-
-        captured = capsys.readouterr().out
-
-        assert ((not msg_expected) and (not captured)) or (msg_expected and captured)
-
     def test_verbosity_2(self, capsys):
         X, y = load_xy(0)
 
