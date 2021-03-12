@@ -1175,9 +1175,9 @@ class MFE:
         verbose: int = 0,
         enable_parallel: bool = False,
         suppress_warnings: bool = False,
-        out_type: t.Any = list,
+        out_type: t.Type = tuple,
         **kwargs,
-    ) -> t.Union[t.Tuple[t.List, ...], t.Dict[str, t.Any]]:
+    ) -> t.Union[t.Tuple[t.List, ...], t.Dict[str, t.List]]:
         """Extracts metafeatures from the previously fitted dataset.
 
         Parameters
@@ -1213,10 +1213,14 @@ class MFE:
 
             For more information see Examples.
 
+        out_type:  :obj:`Type`, optional
+            If tuple, then the returned value is a tuple. If dict, then the
+            returned value is a dictionary. Otherwise, an Type Error is raised.
+
         Returns
         -------
         :obj:`tuple`(:obj:`list`, :obj:`list`)
-            A tuple containing two lists (if ``measure_time`` is None.)
+            A tuple containing two lists (if ``measure_time`` is None).
 
             The first field is the identifiers of each summarized value in the
             form ``feature_name.summary_mtd_name`` (i.e., the feature
@@ -1229,11 +1233,22 @@ class MFE:
             (i.e., the value at index ``i`` in the second list has its
             identifier at the same index in the first list and vice-versa).
 
+        :obj:`dict`(:obj:`str`, :obj:`list`)
+            A dictionary containing two fields (if ``measure_time`` is None).
+            The filds are: `mtf_names`, `mtf_vals` (if ``measure_time``, the
+            there is `mtf_time`).
+
             Example:
                 ([``attr_ent.mean``, ``attr_ent.sd``], [``0.983``, ``0.344``])
                 is the return value for the feature ``attr_end`` summarized by
                 both ``mean`` and ``sd`` (standard deviation), giving the valu-
                 es ``0.983`` and ``0.344``, respectively.
+
+                {
+                    ``mtf_names``: [``attr_ent.mean``, ``attr_ent.sd``],
+                    ``mtf_values``: [``0.983``, ``0.344``]
+                }
+                is the return value when ``out_type`` is set to `dict`.
 
             if ``measure_time`` is given during the model instantiation, a
             third list will be returned with the time spent during the
@@ -1337,26 +1352,18 @@ class MFE:
                 sep="\n",
             )
 
-        if out_type == list:
-            if self.timeopt:
-                return res_names, res_vals, res_times
+        _deal_types = {
+            tuple: lambda names, vals, times = []:
+                (names, vals, times) if self.timeopt else (names, vals),
+            dict: lambda names, vals, times = []:
+                {'mf_names': names, 'mtf_vals': vals} if self.timeopt else
+                {'mf_names': names, 'mtf_vals': vals, 'mtf_time': times}
+        }
 
-            return res_names, res_vals
-
-        if out_type == dict:
-            res_dict = {
-                'mf_names': res_names,
-                'mtf_vals': res_vals
-            }
-            if self.timeopt:
-                res_dict['mtf_time'] = res_times
-                return res_dict
-
-            return res_dict
-
-        raise TypeError(
-            'Unknown output type.'
-        )
+        try:
+            return _deal_types[out_type](res_names, res_vals, res_times)
+        except KeyError as out_not_defined:
+            raise TypeError('Unknown output type.') from out_not_defined
 
     def extract_metafeature_names(
         self, supervised: bool = True
@@ -1377,7 +1384,8 @@ class MFE:
         Returns
         -------
         tuple
-            Tuple with meta-feature names to be extracted as values.
+            If Tuple with meta-feature names to be extracted as values.
+
         """
         if self.X is not None:
             custom_args_ft = self._custom_args_ft
@@ -1593,7 +1601,8 @@ class MFE:
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
-    ) -> t.Tuple[np.ndarray, ...]:
+        # out_type: t.Type = tuple,
+    ) -> t.Union[t.Tuple[np.ndarray, ...], t.Dict[str, np.ndarray]]:
         """Extract metafeatures with confidence intervals.
 
         To build the confidence intervals, each metafeature is extracted
@@ -1640,6 +1649,10 @@ class MFE:
             performed within this method must be controlled separately
             using, respectively, ``arguments_fit`` and ``arguments_extract``
             parameters.
+
+        out_type:  :obj:`Type`, optional
+            If tuple, then the returned value is a tuple. If dict, then the
+            returned value is a dictionary. Otherwise, an Type Error is raised.
 
         Returns
         -------
@@ -1733,7 +1746,7 @@ class MFE:
             verbose=verbose,
             arguments_fit=arguments_fit,
             arguments_extract=arguments_extract,
-        )
+        )  # Returns a t.Tuple[t.ndarray,...]
 
         if verbose > 0:
             print("Finished metafeature extract with _confidence interval.")
@@ -1763,7 +1776,7 @@ class MFE:
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
-    ) -> t.Union[t.Tuple[t.List, ...], t.Dict[str, t.Any]]:
+    ) -> t.Union[t.Tuple[t.List, ...], t.Dict[str, t.List]]:
         """Extract model-based metafeatures from given model.
 
         The random seed used by the new internal model is the same random
@@ -1797,7 +1810,8 @@ class MFE:
 
         Returns
         -------
-        :obj:`tuple`(:obj:`list`, :obj:`list`)
+        :obj:`tuple`(:obj:`list`, :obj:`list`) or
+        :obj:`dict`(:obj:`str`, :obj:`any`)
             See `.extract` method return value for more information.
 
         Notes
