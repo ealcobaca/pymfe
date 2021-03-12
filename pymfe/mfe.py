@@ -1175,8 +1175,9 @@ class MFE:
         verbose: int = 0,
         enable_parallel: bool = False,
         suppress_warnings: bool = False,
+        out_type: t.Any = list,
         **kwargs,
-    ) -> t.Tuple[t.List, ...]:
+    ) -> t.Union[t.Tuple[t.List, ...], t.Dict[str, t.Any]]:
         """Extracts metafeatures from the previously fitted dataset.
 
         Parameters
@@ -1336,10 +1337,26 @@ class MFE:
                 sep="\n",
             )
 
-        if self.timeopt:
-            return res_names, res_vals, res_times
+        if out_type == list:
+            if self.timeopt:
+                return res_names, res_vals, res_times
 
-        return res_names, res_vals
+            return res_names, res_vals
+
+        if out_type == dict:
+            res_dict = {
+                'mf_names': res_names,
+                'mtf_vals': res_vals
+            }
+            if self.timeopt:
+                res_dict['mtf_time'] = res_times
+                return res_dict
+
+            return res_dict
+
+        raise TypeError(
+            'Unknown output type.'
+        )
 
     def extract_metafeature_names(
         self, supervised: bool = True
@@ -1480,17 +1497,22 @@ class MFE:
 
         def _handle_extract_ret(
             res: t.Tuple[np.ndarray, ...],
-            args: t.Tuple[t.List, ...],
+            args: t.Union[t.Tuple[t.List, ...], t.Dict[str, t.Any]],
             it_num: int,
         ) -> t.Tuple[np.ndarray, ...]:
             """Handle each .extraction method return value."""
             mtf_names, mtf_vals, mtf_time = res
 
-            if not self.timeopt:
-                cur_mtf_names, cur_mtf_vals = args
-
+            if isinstance(args, tuple):
+                if not self.timeopt:
+                    cur_mtf_names, cur_mtf_vals = args
+                else:
+                    cur_mtf_names, cur_mtf_vals, cur_mtf_time = args
             else:
-                cur_mtf_names, cur_mtf_vals, cur_mtf_time = args
+                cur_mtf_names = args["mrf_names"]
+                cur_mtf_vals = args["mrf_vals"]
+                if self.timeopt:
+                    cur_mtf_time = args["mrf_time"]
 
             if mtf_names.size:
                 mtf_vals[:, it_num] = cur_mtf_vals
@@ -1741,7 +1763,7 @@ class MFE:
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
-    ) -> t.Tuple[t.List, ...]:
+    ) -> t.Union[t.Tuple[t.List, ...], t.Dict[str, t.Any]]:
         """Extract model-based metafeatures from given model.
 
         The random seed used by the new internal model is the same random
