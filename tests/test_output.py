@@ -129,6 +129,27 @@ class TestOutput:
         captured = capsys.readouterr().out
         assert ((not msg_expected) and (not captured)) or (msg_expected and captured)
 
+    def test_extract_output_default(self):
+        X, y = load_xy(2)
+        extractor = MFE(groups="general").fit(X.values, y.values)
+        res = extractor.extract()
+        assert isinstance(res, tuple)
+        assert len(res) == 2
+
+    def test_extract_output_default_unsupervised(self):
+        X, _ = load_xy(2)
+        extractor = MFE(groups="general").fit(X.values)
+        res = extractor.extract()
+        assert isinstance(res, tuple)
+        assert len(res) == 2
+
+    def test_extract_output_tuple(self):
+        X, y = load_xy(2)
+        extractor = MFE(groups="general").fit(X.values, y.values)
+        res = extractor.extract(out_type=tuple)
+        assert isinstance(res, tuple)
+        assert len(res) == 2
+
     def test_extract_output_dictionary(self):
         X, y = load_xy(2)
         extractor = MFE(groups="general").fit(X.values, y.values)
