@@ -1843,13 +1843,13 @@ class MFE:
                 {
                     "mtf_names": names,
                     "mtf_vals": vals,
-                    "confidance": conf,
+                    "confidence": conf,
                     "mtf_time": times
                 } if self.timeopt else
                 {
                     "mtf_names": names,
                     "mtf_vals": vals,
-                    "confidance": conf
+                    "confidence": conf
                 },
         }
 
