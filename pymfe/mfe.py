@@ -7,6 +7,7 @@ import warnings
 
 import texttable
 import numpy as np
+import pandas as pd
 import sklearn.utils
 import sklearn.exceptions
 import tqdm.auto
@@ -17,6 +18,11 @@ _TypeSeqExt = t.List[
     t.Tuple[str, t.Callable, t.Tuple[str, ...], t.Tuple[str, ...]]
 ]
 """Type annotation for a sequence of TypeExtMtdTuple objects."""
+
+_TypeExtract = t.Union[
+    t.Tuple[t.List, ...], t.Dict[str, t.List], pd.DataFrame
+]
+"""Type annotation for the possible output types of the extract."""
 
 
 class MFE:
@@ -1175,8 +1181,9 @@ class MFE:
         verbose: int = 0,
         enable_parallel: bool = False,
         suppress_warnings: bool = False,
+        out_type: t.Any = tuple,
         **kwargs,
-    ) -> t.Tuple[t.List, ...]:
+    ) -> _TypeExtract:
         """Extracts metafeatures from the previously fitted dataset.
 
         Parameters
@@ -1212,10 +1219,16 @@ class MFE:
 
             For more information see Examples.
 
+        out_type:  :obj:`Any`, optional
+            If tuple, then the returned value is a tuple. If dict, then the
+            returned value is a dictionary. If pd.DataFrame the the returned
+            value is a pandas.core.DataFrame. Otherwise, an Type Error
+            is raised.
+
         Returns
         -------
         :obj:`tuple`(:obj:`list`, :obj:`list`)
-            A tuple containing two lists (if ``measure_time`` is None.)
+            A tuple containing two lists (if ``measure_time`` is None).
 
             The first field is the identifiers of each summarized value in the
             form ``feature_name.summary_mtd_name`` (i.e., the feature
@@ -1228,11 +1241,50 @@ class MFE:
             (i.e., the value at index ``i`` in the second list has its
             identifier at the same index in the first list and vice-versa).
 
+        :obj:`dict`(:obj:`str`, :obj:`list`)
+            A dictionary containing two fields (if ``measure_time`` is None).
+            The fields are: `mtf_names`, `mtf_vals` (if ``measure_time``, the
+            there is `mtf_time`).
+
+            The first field is the identifiers of each summarized value in the
+            form ``feature_name.summary_mtd_name`` (i.e., the feature
+            extraction name concatenated by the summary method name, separated
+            by a dot).
+
+            The second field is the summarized values.
+
+            Both lists of each field have a 1-1 correspondence by the index of
+            each elemen (i.e., the value at index ``i`` in the second list has
+            its identifier at the same index in the first list and vice-versa).
+
+        :obj:`pandas.core.frame.DataFrame`
+            A pandas DataFrame instance.
+
+            Each column is a summarized value. The column is identified by the
+            name of the meta-feature in the form
+            ``feature_name.summary_mtd_name`` (i.e., the featur extraction name
+            concatenated by the summary method name, separate by a dot).
+
+            The rows store the summarized values (if ``measure_time``, there
+            is a row with the time taken to calculate each value).
+
             Example:
                 ([``attr_ent.mean``, ``attr_ent.sd``], [``0.983``, ``0.344``])
                 is the return value for the feature ``attr_end`` summarized by
                 both ``mean`` and ``sd`` (standard deviation), giving the valu-
                 es ``0.983`` and ``0.344``, respectively.
+
+                {
+                    ``mtf_names``: [``attr_ent.mean``, ``attr_ent.sd``],
+                    ``mtf_values``: [``0.983``, ``0.344``]
+                }
+                is the return value when ``out_type`` is set to `dict`.
+
+                [pandas.core.DataFrame]
+                    ``attr_ent.mean``       ``attr_ent.sd``
+                0           ``0.983``              ``0.344``
+
+                is the return value when ``out_type`` is set to `pd.DataFrame`.
 
             if ``measure_time`` is given during the model instantiation, a
             third list will be returned with the time spent during the
@@ -1242,6 +1294,9 @@ class MFE:
         ------
         TypeError
             If calling ``extract`` method before ``fit`` method.
+
+        TypeError
+            If calling ``extract`` method with invalid ``out_type``.
 
         Examples
         --------
@@ -1336,10 +1391,35 @@ class MFE:
                 sep="\n",
             )
 
-        if self.timeopt:
-            return res_names, res_vals, res_times
+        _deal_types = {
+            tuple: lambda names, vals, times = []:
+                (names, vals, times) if self.timeopt else (names, vals),
+            dict: lambda names, vals, times = []:
+                {
+                    "mtf_names": names,
+                    "mtf_vals": vals,
+                    "mtf_time": times
+                } if self.timeopt else
+                {
+                    "mtf_names": names,
+                    "mtf_vals": vals
+                },
+            pd.DataFrame: lambda names, vals, times = []:
+                pd.DataFrame(
+                    data=(vals, times),
+                    columns=names,
+                    index=("values", "time")
+                ) if self.timeopt else
+                pd.DataFrame(
+                    data=(vals,),
+                    columns=names
+                )
+        }
 
-        return res_names, res_vals
+        try:
+            return _deal_types[out_type](res_names, res_vals, res_times)
+        except KeyError as out_not_defined:
+            raise TypeError("Output type not supported.") from out_not_defined
 
     def extract_metafeature_names(
         self, supervised: bool = True
@@ -1360,7 +1440,8 @@ class MFE:
         Returns
         -------
         tuple
-            Tuple with meta-feature names to be extracted as values.
+            If Tuple with meta-feature names to be extracted as values.
+
         """
         if self.X is not None:
             custom_args_ft = self._custom_args_ft
@@ -1480,17 +1561,41 @@ class MFE:
 
         def _handle_extract_ret(
             res: t.Tuple[np.ndarray, ...],
-            args: t.Tuple[t.List, ...],
+            args: t.Union[t.Tuple[t.List, ...], t.Dict[str, t.Any]],
             it_num: int,
         ) -> t.Tuple[np.ndarray, ...]:
             """Handle each .extraction method return value."""
             mtf_names, mtf_vals, mtf_time = res
 
-            if not self.timeopt:
-                cur_mtf_names, cur_mtf_vals = args
+            _handle_output = {
+                tuple: lambda args: args,
+                dict: lambda args:
+                    (
+                        args["mtf_names"],
+                        args["mtf_vals"],
+                        args["mtf_time"]
+                    ) if self.timeopt else
+                    (
+                        args["mtf_names"],
+                        args["mtf_vals"],
+                    ),
+                pd.DataFrame: lambda args:
+                    (
+                        list(args.columns),
+                        args.values[0],
+                        args.values[1]
+                    ) if self.timeopt else
+                    (
+                        list(args.columns),
+                        args.values[0],
+                    )
+            }
 
+            if self.timeopt:
+                cur_mtf_names, cur_mtf_vals, cur_mtf_time = \
+                    _handle_output[type(args)](args)
             else:
-                cur_mtf_names, cur_mtf_vals, cur_mtf_time = args
+                cur_mtf_names, cur_mtf_vals = _handle_output[type(args)](args)
 
             if mtf_names.size:
                 mtf_vals[:, it_num] = cur_mtf_vals
@@ -1571,7 +1676,7 @@ class MFE:
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
-    ) -> t.Tuple[np.ndarray, ...]:
+    ) -> _TypeExtract:
         """Extract metafeatures with confidence intervals.
 
         To build the confidence intervals, each metafeature is extracted
@@ -1711,7 +1816,7 @@ class MFE:
             verbose=verbose,
             arguments_fit=arguments_fit,
             arguments_extract=arguments_extract,
-        )
+        )  # Returns a t.Tuple[t.List,...]
 
         if verbose > 0:
             print("Finished metafeature extract with _confidence interval.")
@@ -1727,13 +1832,42 @@ class MFE:
         if return_avg_val:
             mtf_vals = np.nanmean(mtf_vals, axis=1)
 
-        if self.timeopt:
-            if return_avg_val:
-                mtf_time /= sample_num
+        if self.timeopt and return_avg_val:
+            mtf_time /= sample_num
 
-            return mtf_names, mtf_vals, mtf_time, mtf_conf_int
+        _deal_types = {
+            tuple: lambda names, vals, conf, times = []:
+                (names, vals, times, conf) if self.timeopt
+                else (names, vals, conf),
+            dict: lambda names, vals, conf, times = []:
+                {
+                    "mtf_names": names,
+                    "mtf_vals": vals,
+                    "confidence": conf,
+                    "mtf_time": times
+                } if self.timeopt else
+                {
+                    "mtf_names": names,
+                    "mtf_vals": vals,
+                    "confidence": conf
+                },
+        }
 
-        return mtf_names, mtf_vals, mtf_conf_int
+        # Check if the type was defined previously
+        if "out_type" in arguments_extract:
+            out_type = arguments_extract["out_type"]
+        else:
+            out_type = tuple
+
+        try:
+            return _deal_types[out_type](
+                mtf_names,
+                mtf_vals,
+                mtf_conf_int,
+                mtf_time
+            )
+        except KeyError as out_not_defined:
+            raise TypeError("Unknown output type.") from out_not_defined
 
     def extract_from_model(
         self,
@@ -1741,7 +1875,7 @@ class MFE:
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
-    ) -> t.Tuple[t.List, ...]:
+    ) -> _TypeExtract:
         """Extract model-based metafeatures from given model.
 
         The random seed used by the new internal model is the same random
@@ -1775,7 +1909,9 @@ class MFE:
 
         Returns
         -------
-        :obj:`tuple`(:obj:`list`, :obj:`list`)
+        :obj:`tuple`(:obj:`list`, :obj:`list`) or
+        :obj:`dict`(:obj:`str`, :obj:`any`) or
+        :obj:`pandas.core.DataFrame`
             See `.extract` method return value for more information.
 
         Notes
