@@ -12,6 +12,9 @@ clean: ## Clean all undesired files such as .so, .pyc, build files and etc.
 	rm -rf docs/_build
 	rm -rf docs/source/generated
 	rm -rf docs/source/auto_examples
+	rm -rf .pytest_cache/
+	rm -rf .mypy_cache/
+	rm -rf pymfe.egg-info/ 
 	cd docs ; make clean_all
 
 cl: clean ## Shortcut to clean
@@ -59,3 +62,5 @@ h: help ## Shortcut to help
 
 format: ## format all the package using black
 	@black --line-length 79 pymfe/
+	@black --line-length 79 tests/
+	@black --line-length 79 docs/
