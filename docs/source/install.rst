@@ -8,11 +8,12 @@ The PyMFE package requires the following dependencies:
 
 * numpy
 * scipy
-* sklearn
-* pandas
+* scikit-learn
 * patsy
+* pandas
 * statsmodels
 * texttable
+* tqdm
 
 
 Install
