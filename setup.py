@@ -46,7 +46,7 @@ CLASSIFIERS = ['Intended Audience :: Science/Research',
 
 
 INSTALL_REQUIRES = ['numpy', 'scipy', 'scikit-learn', 'patsy', 'pandas',
-                    'statsmodels', 'texttable']
+                    'statsmodels', 'texttable', 'tqdm']
 
 
 EXTRAS_REQUIRE = {
