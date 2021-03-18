@@ -34,7 +34,6 @@ def load_xy(dt_id: int):
     return DATA_[dt_id]
 
 
-def raise_memory_error(
-        size: t.Union[int, float] = 1e+20) -> np.ndarray:
+def raise_memory_error(size: t.Union[int, float] = 1e20) -> np.ndarray:
     """Try to create a huge array, raising a MemoryError."""
     return np.zeros(int(size), dtype=np.float64)
