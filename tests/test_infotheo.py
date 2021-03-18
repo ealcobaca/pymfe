@@ -18,21 +18,21 @@ class TestInfoTheo:
             # Mixed data
             ###################
             (0, "attr_conc", [2.098425e-01, 2.139363e-01], False),
-            (0, "attr_ent", [1.953155e+00, 4.258227e-01], False),
+            (0, "attr_ent", [1.953155e00, 4.258227e-01], False),
             (0, "class_conc", [7.803121e-03, 1.075977e-02], False),
             (0, "class_ent", 1, False),
-            (0, "eq_num_attr", 8.894722e+01, False),
-            (0, "joint_ent", [2.941912e+00, 4.388859e-01], False),
+            (0, "eq_num_attr", 8.894722e01, False),
+            (0, "joint_ent", [2.941912e00, 4.388859e-01], False),
             (0, "mut_inf", [1.124262e-02, 1.548654e-02], False),
-            (0, "ns_ratio", 1.727277e+02, False),
+            (0, "ns_ratio", 1.727277e02, False),
             (0, "attr_conc", [2.098425e-01, 2.139363e-01], True),
-            (0, "attr_ent", [1.953155e+00, 4.258227e-01], True),
+            (0, "attr_ent", [1.953155e00, 4.258227e-01], True),
             (0, "class_conc", [7.803121e-03, 1.075977e-02], True),
             (0, "class_ent", 1, True),
-            (0, "eq_num_attr", 8.894722e+01, True),
-            (0, "joint_ent", [2.941912e+00, 4.388859e-01], True),
+            (0, "eq_num_attr", 8.894722e01, True),
+            (0, "joint_ent", [2.941912e00, 4.388859e-01], True),
             (0, "mut_inf", [1.124262e-02, 1.548654e-02], True),
-            (0, "ns_ratio", 1.727277e+02, True),
+            (0, "ns_ratio", 1.727277e02, True),
             ###################
             # Categorical data
             ###################
@@ -71,15 +71,15 @@ class TestInfoTheo:
             (2, "joint_ent", [3.02198491, 0.38738119], True),
             (2, "mut_inf", [0.84198804, 0.42518056], True),
             (2, "ns_ratio", 1.70670169, True),
-        ])
+        ],
+    )
     def test_ft_methods_infotheo(self, dt_id, ft_name, exp_value, precompute):
-        """Function to test each meta-feature belongs to info-theory group.
-        """
+        """Function to test each meta-feature belongs to info-theory group."""
         precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
-        mfe = MFE(
-            groups=[GNAME], features=[ft_name], random_state=1234).fit(
-                X.values, y.values, precomp_groups=precomp_group)
+        mfe = MFE(groups=[GNAME], features=[ft_name], random_state=1234).fit(
+            X.values, y.values, precomp_groups=precomp_group
+        )
         value = mfe.extract()[1]
 
         if exp_value is np.nan:
@@ -87,7 +87,8 @@ class TestInfoTheo:
 
         else:
             assert np.allclose(
-                value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
+                value, exp_value, atol=0.001, rtol=0.05, equal_nan=True
+            )
 
     @pytest.mark.parametrize(
         "dt_id, exp_value, precompute",
@@ -95,34 +96,74 @@ class TestInfoTheo:
             ###################
             # Mixed data
             ###################
-            (0, [
-                2.098425e-01, 1.953155e+00, 7.803121e-03, 1, 8.894722e+01,
-                2.941912e+00, 1.124262e-02, 1.727277e+02
-            ], False),
-            (0, [
-                2.098425e-01, 1.953155e+00, 7.803121e-03, 1, 8.894722e+01,
-                2.941912e+00, 1.124262e-02, 1.727277e+02
-            ], True),
+            (
+                0,
+                [
+                    2.098425e-01,
+                    1.953155e00,
+                    7.803121e-03,
+                    1,
+                    8.894722e01,
+                    2.941912e00,
+                    1.124262e-02,
+                    1.727277e02,
+                ],
+                False,
+            ),
+            (
+                0,
+                [
+                    2.098425e-01,
+                    1.953155e00,
+                    7.803121e-03,
+                    1,
+                    8.894722e01,
+                    2.941912e00,
+                    1.124262e-02,
+                    1.727277e02,
+                ],
+                True,
+            ),
             ###################
             # Numerical data
             ###################
-            (2, [
-                0.20922253, 2.27901045, 0.27232600, 1.58496250, 1.88240501,
-                3.02198491, 0.84198804, 1.70670169
-            ], False),
-            (2, [
-                0.20922253, 2.27901045, 0.27232600, 1.58496250, 1.88240501,
-                3.02198491, 0.84198804, 1.70670169
-            ], True),
-        ])
+            (
+                2,
+                [
+                    0.20922253,
+                    2.27901045,
+                    0.27232600,
+                    1.58496250,
+                    1.88240501,
+                    3.02198491,
+                    0.84198804,
+                    1.70670169,
+                ],
+                False,
+            ),
+            (
+                2,
+                [
+                    0.20922253,
+                    2.27901045,
+                    0.27232600,
+                    1.58496250,
+                    1.88240501,
+                    3.02198491,
+                    0.84198804,
+                    1.70670169,
+                ],
+                True,
+            ),
+        ],
+    )
     def test_integration_infotheo(self, dt_id, exp_value, precompute):
-        """Function to test all info-theory meta-features.
-        """
+        """Function to test all info-theory meta-features."""
         precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
-        mfe = MFE(
-            groups=[GNAME], summary="mean").fit(
-                X.values, y.values, precomp_groups=precomp_group)
+        mfe = MFE(groups=[GNAME], summary="mean").fit(
+            X.values, y.values, precomp_groups=precomp_group
+        )
         value = mfe.extract()[1]
 
         np.allclose(value, exp_value, atol=0.001, rtol=0.05, equal_nan=True)
@@ -130,7 +171,8 @@ class TestInfoTheo:
     def test_threshold_attr_conc(self):
         X, y = load_xy(1)
         mfe = MFE(features="attr_conc", random_state=1234).fit(
-                X.values, y.values, precomp_groups=False)
+            X.values, y.values, precomp_groups=False
+        )
 
         value = mfe.extract(attr_conc={"max_attr_num": 25})[1]
 
