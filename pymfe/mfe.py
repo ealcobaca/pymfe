@@ -45,9 +45,10 @@ class MFE:
         meta-feature extraction, from selected metafeatures groups and features
         listed at instantiation.
 
-        summary : :obj:`tuple` of :obj:`str`
-            Tuple object which contains summary functions names for features
-            summarization.
+    summary : :obj:`tuple` of :obj:`str`
+        Tuple object which contains summary functions names for features
+        summarization.
+
     """
 
     groups_alias = [("default", _internal.DEFAULT_GROUP)]
