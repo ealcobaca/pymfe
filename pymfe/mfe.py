@@ -1267,24 +1267,6 @@ class MFE:
             The rows store the summarized values (if ``measure_time``, there
             is a row with the time taken to calculate each value).
 
-            Example:
-                ([``attr_ent.mean``, ``attr_ent.sd``], [``0.983``, ``0.344``])
-                is the return value for the feature ``attr_end`` summarized by
-                both ``mean`` and ``sd`` (standard deviation), giving the valu-
-                es ``0.983`` and ``0.344``, respectively.
-
-                {
-                    ``mtf_names``: [``attr_ent.mean``, ``attr_ent.sd``],
-                    ``mtf_values``: [``0.983``, ``0.344``]
-                }
-                is the return value when ``out_type`` is set to `dict`.
-
-                [pandas.core.DataFrame]
-                    ``attr_ent.mean``       ``attr_ent.sd``
-                0           ``0.983``              ``0.344``
-
-                is the return value when ``out_type`` is set to `pd.DataFrame`.
-
             if ``measure_time`` is given during the model instantiation, a
             third list will be returned with the time spent during the
             calculations for the corresponding (by index) metafeature.
