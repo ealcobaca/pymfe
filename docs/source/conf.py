@@ -22,7 +22,7 @@ import sphinx_gallery
 # General information about the project.
 
 project = "pymfe"
-copyright = "2018-2020, Edesio Alcobaça, Felipe Siqueira"
+copyright = "2018-2021, Edesio Alcobaça, Felipe Siqueira"
 author = "Edesio Alcobaça, Felipe Siqueira"
 
 # The full version, including alpha/beta/rc tags.
