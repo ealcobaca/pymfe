@@ -156,11 +156,12 @@ class TestComplexity:
             (2, "t2", 0.026666667, False),
             (2, "t3", 0.013333333, False),
             (2, "t4", 0.500000000, False),
-        ])
-    def test_ft_methods_complexity(self, dt_id, ft_name, exp_value,
-                                   precompute):
-        """Function to test each meta-feature belongs to complexity group.
-        """
+        ],
+    )
+    def test_ft_methods_complexity(
+        self, dt_id, ft_name, exp_value, precompute
+    ):
+        """Function to test each meta-feature belongs to complexity group."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
@@ -181,109 +182,125 @@ class TestComplexity:
             ###################
             # Mixed data
             ###################
-            (0, [
-                1.00000000,
-                0.00000000,
-                1.0,
-                1.0,
-                0.98658602,
-                0.46012273,
-                0.18336850,
-                0.76000000,
-                0.66000000,
-                0.98,
-                0.14747055,
-                0.28,
-                0.24,
-                0.98000000,
-                1.00000000,
-                0.90155035,
-                1.00000000,
-                0.48,
-                0.02000000,
-                0.22000000,
-                0.02000000,
-                0.09090909,
-            ], False),
-            (0, [
-                1.00000000,
-                0.00000000,
-                1.0,
-                1.0,
-                0.98658602,
-                0.46012273,
-                0.18336850,
-                0.76000000,
-                0.66000000,
-                0.98,
-                0.14747055,
-                0.28,
-                0.24,
-                0.98000000,
-                1.00000000,
-                0.90155035,
-                1.00000000,
-                0.48,
-                0.02000000,
-                0.22000000,
-                0.02000000,
-                0.09090909,
-            ], True),
+            (
+                0,
+                [
+                    1.00000000,
+                    0.00000000,
+                    1.0,
+                    1.0,
+                    0.98658602,
+                    0.46012273,
+                    0.18336850,
+                    0.76000000,
+                    0.66000000,
+                    0.98,
+                    0.14747055,
+                    0.28,
+                    0.24,
+                    0.98000000,
+                    1.00000000,
+                    0.90155035,
+                    1.00000000,
+                    0.48,
+                    0.02000000,
+                    0.22000000,
+                    0.02000000,
+                    0.09090909,
+                ],
+                False,
+            ),
+            (
+                0,
+                [
+                    1.00000000,
+                    0.00000000,
+                    1.0,
+                    1.0,
+                    0.98658602,
+                    0.46012273,
+                    0.18336850,
+                    0.76000000,
+                    0.66000000,
+                    0.98,
+                    0.14747055,
+                    0.28,
+                    0.24,
+                    0.98000000,
+                    1.00000000,
+                    0.90155035,
+                    1.00000000,
+                    0.48,
+                    0.02000000,
+                    0.22000000,
+                    0.02000000,
+                    0.09090909,
+                ],
+                True,
+            ),
             ###################
             # Numerical data
             ###################
-            (2, [
-                1.000000000,
-                0.000000000,
-                0.9028535395287962,
-                0.8491275167785235,
-                0.279814645,
-                0.026773189,
-                0.006381766,
-                0.123333333,
-                0.043333333,
-                0.9551023,
-                0.004335693,
-                0.013333333,
-                0.003333333,
-                0.816400000,
-                0.1,
-                0.21094362,
-                0.046666667,
-                0.013333334,
-                0.015151516,
-                0.026666667,
-                0.013333333,
-                0.500000000,
-            ], False),
-            (2, [
-                1.000000000,
-                0.000000000,
-                0.9028535395287962,
-                0.8491275167785235,
-                0.279814645,
-                0.026773189,
-                0.006381766,
-                0.123333333,
-                0.043333333,
-                0.9551023,
-                0.004335693,
-                0.013333333,
-                0.003333333,
-                0.816400000,
-                0.1,
-                0.21094362,
-                0.046666667,
-                0.013333334,
-                0.015151516,
-                0.026666667,
-                0.013333333,
-                0.500000000,
-            ], True),
-        ])
+            (
+                2,
+                [
+                    1.000000000,
+                    0.000000000,
+                    0.9028535395287962,
+                    0.8491275167785235,
+                    0.279814645,
+                    0.026773189,
+                    0.006381766,
+                    0.123333333,
+                    0.043333333,
+                    0.9551023,
+                    0.004335693,
+                    0.013333333,
+                    0.003333333,
+                    0.816400000,
+                    0.1,
+                    0.21094362,
+                    0.046666667,
+                    0.013333334,
+                    0.015151516,
+                    0.026666667,
+                    0.013333333,
+                    0.500000000,
+                ],
+                False,
+            ),
+            (
+                2,
+                [
+                    1.000000000,
+                    0.000000000,
+                    0.9028535395287962,
+                    0.8491275167785235,
+                    0.279814645,
+                    0.026773189,
+                    0.006381766,
+                    0.123333333,
+                    0.043333333,
+                    0.9551023,
+                    0.004335693,
+                    0.013333333,
+                    0.003333333,
+                    0.816400000,
+                    0.1,
+                    0.21094362,
+                    0.046666667,
+                    0.013333334,
+                    0.015151516,
+                    0.026666667,
+                    0.013333333,
+                    0.500000000,
+                ],
+                True,
+            ),
+        ],
+    )
     def test_integration_complexity(self, dt_id, exp_value, precompute):
-        """Function to test each meta-feature belongs to complexity group.
-        """
+        """Function to test each meta-feature belongs to complexity group."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
@@ -295,36 +312,44 @@ class TestComplexity:
 
         assert np.allclose(value, exp_value, equal_nan=True, rtol=0.025)
 
-    @pytest.mark.parametrize("num_inst_1, num_inst_2, expected_val", (
-        (4, 0, (0, 0)),
-        (0, 5, (0, 0)),
-        (4, 6, (7, 6)),
-    ))
+    @pytest.mark.parametrize(
+        "num_inst_1, num_inst_2, expected_val",
+        (
+            (4, 0, (0, 0)),
+            (0, 5, (0, 0)),
+            (4, 6, (7, 6)),
+        ),
+    )
     def test_overlapping_area(self, num_inst_1, num_inst_2, expected_val):
-        N_cls_1 = np.asarray([
-            [0, 0],
-            [1, 1],
-            [1, 0],
-            [0, 1],
-        ])[:num_inst_1, :]
+        N_cls_1 = np.asarray(
+            [
+                [0, 0],
+                [1, 1],
+                [1, 0],
+                [0, 1],
+            ]
+        )[:num_inst_1, :]
 
-        N_cls_2 = np.asarray([
-            [2, 0.5],
-            [0.5, 0.5],
-            [0, 0],
-            [-1, -1],
-            [-1, 0],
-            [0, -1],
-        ])[:num_inst_2, :]
+        N_cls_2 = np.asarray(
+            [
+                [2, 0.5],
+                [0.5, 0.5],
+                [0, 0],
+                [-1, -1],
+                [-1, 0],
+                [0, -1],
+            ]
+        )[:num_inst_2, :]
 
-        ind_less_overlap, feat_overlap_num, _ = (
-            MFEComplexity._calc_overlap(
-                N=np.vstack((N_cls_1, N_cls_2)),
-                minmax=MFEComplexity._calc_minmax(N_cls_1, N_cls_2),
-                maxmin=MFEComplexity._calc_maxmin(N_cls_1, N_cls_2)))
+        ind_less_overlap, feat_overlap_num, _ = MFEComplexity._calc_overlap(
+            N=np.vstack((N_cls_1, N_cls_2)),
+            minmax=MFEComplexity._calc_minmax(N_cls_1, N_cls_2),
+            maxmin=MFEComplexity._calc_maxmin(N_cls_1, N_cls_2),
+        )
 
-        assert (ind_less_overlap == np.argmin(feat_overlap_num) and
-                np.allclose(feat_overlap_num, expected_val))
+        assert ind_less_overlap == np.argmin(feat_overlap_num) and np.allclose(
+            feat_overlap_num, expected_val
+        )
 
     def test_empty_minmin(self):
         arr = np.empty(shape=(0, 4))
@@ -336,12 +361,15 @@ class TestComplexity:
         res = MFEComplexity._calc_maxmax(arr, arr)
         assert res.size == arr.shape[1] and np.all(np.isinf(res))
 
-    @pytest.mark.parametrize("orig_dist_mat_min, orig_dist_mat_ptp", [
-        (True, True),
-        (True, False),
-        (False, True),
-        (False, False),
-    ])
+    @pytest.mark.parametrize(
+        "orig_dist_mat_min, orig_dist_mat_ptp",
+        [
+            (True, True),
+            (True, False),
+            (False, True),
+            (False, False),
+        ],
+    )
     def test_t1_arguments(self, orig_dist_mat_min, orig_dist_mat_ptp):
         exp_val = [0.015151516, 0.024628395]
         X, y = load_xy(2)
