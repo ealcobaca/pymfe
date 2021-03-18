@@ -9,8 +9,9 @@ import numpy as np
 
 
 def test_get_summary():
-    assert (not set(pymfe.mfe.MFE.valid_summary()).symmetric_difference(
-        pymfe._internal.VALID_SUMMARY))
+    assert not set(pymfe.mfe.MFE.valid_summary()).symmetric_difference(
+        pymfe._internal.VALID_SUMMARY
+    )
 
 
 def test_sum_histogram():
@@ -77,56 +78,78 @@ def test_ddof():
     assert np.isnan(pymfe._summary.sum_nanvar(sing_val, ddof=2))
 
 
-@pytest.mark.parametrize("summary_func", [
-    "nanmean",
-    "nansd",
-    "nanvar",
-    "nanhistogram",
-    "naniq_range",
-    "nankurtosis",
-    "nanmax",
-    "nanmedian",
-    "nanmin",
-    "nanquantiles",
-    "nanrange",
-    "nanskewness",
-])
+@pytest.mark.parametrize(
+    "summary_func",
+    [
+        "nanmean",
+        "nansd",
+        "nanvar",
+        "nanhistogram",
+        "naniq_range",
+        "nankurtosis",
+        "nanmax",
+        "nanmedian",
+        "nanmin",
+        "nanquantiles",
+        "nanrange",
+        "nanskewness",
+    ],
+)
 def test_nansummary(summary_func):
-    values = np.array([
-        1, np.nan, np.nan, 2, -4, np.nan, 9, -11, 1, 5, 6.4, 2.3, 4.5, np.nan,
-        0
-    ])
+    values = np.array(
+        [
+            1,
+            np.nan,
+            np.nan,
+            2,
+            -4,
+            np.nan,
+            9,
+            -11,
+            1,
+            5,
+            6.4,
+            2.3,
+            4.5,
+            np.nan,
+            0,
+        ]
+    )
     clean_values = values[~np.isnan(values)]
     summary_nan = pymfe._summary.SUMMARY_METHODS[summary_func]
     summary_reg = pymfe._summary.SUMMARY_METHODS[summary_func[3:]]
 
-    assert np.allclose(summary_nan(list(values)),
-                       summary_reg(list(clean_values)))
+    assert np.allclose(
+        summary_nan(list(values)), summary_reg(list(clean_values))
+    )
 
 
 def test_nancount():
-    values = np.array([
-        1,
-        np.nan,
-        np.nan,
-        2,
-        -4,
-        np.nan,
-        9,
-        -11,
-        1,
-        5,
-        6.4,
-        2.3,
-        4.5,
-        np.nan,
-        0,
-    ])
+    values = np.array(
+        [
+            1,
+            np.nan,
+            np.nan,
+            2,
+            -4,
+            np.nan,
+            9,
+            -11,
+            1,
+            5,
+            6.4,
+            2.3,
+            4.5,
+            np.nan,
+            0,
+        ]
+    )
     summary_nan = pymfe._summary.SUMMARY_METHODS["nancount"]
     summary_reg = pymfe._summary.SUMMARY_METHODS["count"]
     assert np.allclose(
         summary_nan(list(values)),
-        summary_reg(list(values)) - np.count_nonzero(np.isnan(values)))
+        summary_reg(list(values)) - np.count_nonzero(np.isnan(values)),
+    )
 
 
 @pytest.mark.parametrize("p", [-1, 0, 1, 2, 3, 4])
@@ -187,8 +210,11 @@ def test_nanpnorm_scalar(p: t.Union[int, float]):
     values = [0, np.nan, -1, np.nan, -10, -5, 8, 2.5, 0.1, -0.2, np.nan]
 
     res_a = pymfe._summary.sum_nanpnorm(values, p)
-    res_b = np.linalg.norm(pymfe._summary._remove_nan(values),
-                           p) if p >= 0 else np.nan
+    res_b = (
+        np.linalg.norm(pymfe._summary._remove_nan(values), p)
+        if p >= 0
+        else np.nan
+    )
 
     assert np.isclose(res_a, res_b, equal_nan=True)
 
@@ -212,7 +238,9 @@ def test_nanpnorm_array(p: t.Sequence[t.Union[int, float]]):
     res_a = pymfe._summary.sum_nanpnorm(values, p)
     res_b = [
         np.linalg.norm(pymfe._summary._remove_nan(values), cur_p)
-        if cur_p >= 0 else np.nan for cur_p in p
+        if cur_p >= 0
+        else np.nan
+        for cur_p in p
     ]
 
     assert len(res_a) == len(p) and np.allclose(res_a, res_b, equal_nan=True)
@@ -228,118 +256,104 @@ def test_sum_nansum():
     assert np.isclose(np.nansum(values), pymfe._summary.sum_nansum(values))
 
 
-@pytest.mark.parametrize("summary, sum_args, exp_len", (
-    ("mean", None, 1),
-    ("nanmean", None, 1),
-    ("sd", None, 1),
-    ("nansd", None, 1),
-    ("var", None, 1),
-    ("nanvar", None, 1),
-    ("histogram", {
-        "bins": 7
-    }, 7),
-    ("nanhistogram", {
-        "bins": 7
-    }, 7),
-    ("iq_range", None, 1),
-    ("naniq_range", None, 1),
-    ("kurtosis", None, 1),
-    ("nankurtosis", None, 1),
-    ("max", None, 1),
-    ("nanmax", None, 1),
-    ("median", None, 1),
-    ("nanmedian", None, 1),
-    ("min", None, 1),
-    ("nanmin", None, 1),
-    ("quantiles", None, 5),
-    ("nanquantiles", None, 5),
-    ("range", None, 1),
-    ("nanrange", None, 1),
-    ("skewness", None, 1),
-    ("nanskewness", None, 1),
-    ("sum", None, 1),
-    ("nansum", None, 1),
-    ("powersum", None, 1),
-    ("powersum", {
-        "p": [-1, 0, 1, 2]
-    }, 4),
-    ("pnorm", None, 1),
-    ("pnorm", {
-        "p": [-1, 0, 1, 2]
-    }, 4),
-    ("nanpowersum", None, 1),
-    ("nanpowersum", {
-        "p": [-1, 0, 1, 2]
-    }, 4),
-    ("nanpnorm", None, 1),
-    ("nanpnorm", {
-        "p": [-1, 0, 1, 2]
-    }, 4),
-))
-def test_summary_empty_slice(summary: str, sum_args: t.Dict[str, t.Any],
-                             exp_len: int):
+@pytest.mark.parametrize(
+    "summary, sum_args, exp_len",
+    (
+        ("mean", None, 1),
+        ("nanmean", None, 1),
+        ("sd", None, 1),
+        ("nansd", None, 1),
+        ("var", None, 1),
+        ("nanvar", None, 1),
+        ("histogram", {"bins": 7}, 7),
+        ("nanhistogram", {"bins": 7}, 7),
+        ("iq_range", None, 1),
+        ("naniq_range", None, 1),
+        ("kurtosis", None, 1),
+        ("nankurtosis", None, 1),
+        ("max", None, 1),
+        ("nanmax", None, 1),
+        ("median", None, 1),
+        ("nanmedian", None, 1),
+        ("min", None, 1),
+        ("nanmin", None, 1),
+        ("quantiles", None, 5),
+        ("nanquantiles", None, 5),
+        ("range", None, 1),
+        ("nanrange", None, 1),
+        ("skewness", None, 1),
+        ("nanskewness", None, 1),
+        ("sum", None, 1),
+        ("nansum", None, 1),
+        ("powersum", None, 1),
+        ("powersum", {"p": [-1, 0, 1, 2]}, 4),
+        ("pnorm", None, 1),
+        ("pnorm", {"p": [-1, 0, 1, 2]}, 4),
+        ("nanpowersum", None, 1),
+        ("nanpowersum", {"p": [-1, 0, 1, 2]}, 4),
+        ("nanpnorm", None, 1),
+        ("nanpnorm", {"p": [-1, 0, 1, 2]}, 4),
+    ),
+)
+def test_summary_empty_slice(
+    summary: str, sum_args: t.Dict[str, t.Any], exp_len: int
+):
     if sum_args is None:
         sum_args = {}
 
     X = np.asarray([1, 2, 3], dtype=str)
 
-    extractor = pymfe.mfe.MFE(features="mean",
-                              summary=summary).fit(X, transform_cat=None)
+    extractor = pymfe.mfe.MFE(features="mean", summary=summary).fit(
+        X, transform_cat=None
+    )
 
     res = extractor.extract(suppress_warnings=True, **{summary: sum_args})[1]
 
     assert len(res) == exp_len and np.all(np.isnan(res))
 
-@pytest.mark.parametrize("summary, sum_args, exp_len", (
-    ("mean", None, 1),
-    ("nanmean", None, 1),
-    ("sd", None, 1),
-    ("nansd", None, 1),
-    ("var", None, 1),
-    ("nanvar", None, 1),
-    ("histogram", {
-        "bins": 7
-    }, 7),
-    ("nanhistogram", {
-        "bins": 7
-    }, 7),
-    ("iq_range", None, 1),
-    ("naniq_range", None, 1),
-    ("kurtosis", None, 1),
-    ("nankurtosis", None, 1),
-    ("max", None, 1),
-    ("nanmax", None, 1),
-    ("median", None, 1),
-    ("nanmedian", None, 1),
-    ("min", None, 1),
-    ("nanmin", None, 1),
-    ("quantiles", None, 5),
-    ("nanquantiles", None, 5),
-    ("range", None, 1),
-    ("nanrange", None, 1),
-    ("skewness", None, 1),
-    ("nanskewness", None, 1),
-    ("sum", None, 1),
-    ("nansum", None, 1),
-    ("powersum", None, 1),
-    ("powersum", {
-        "p": [-1, 0, 1, 2]
-    }, 4),
-    ("pnorm", None, 1),
-    ("pnorm", {
-        "p": [-1, 0, 1, 2]
-    }, 4),
-    ("nanpowersum", None, 1),
-    ("nanpowersum", {
-        "p": [-1, 0, 1, 2]
-    }, 4),
-    ("nanpnorm", None, 1),
-    ("nanpnorm", {
-        "p": [-1, 0, 1, 2]
-    }, 4),
-))
-def test_summary_all_nan(summary: str, sum_args: t.Dict[str, t.Any],
-                         exp_len: int):
+
+@pytest.mark.parametrize(
+    "summary, sum_args, exp_len",
+    (
+        ("mean", None, 1),
+        ("nanmean", None, 1),
+        ("sd", None, 1),
+        ("nansd", None, 1),
+        ("var", None, 1),
+        ("nanvar", None, 1),
+        ("histogram", {"bins": 7}, 7),
+        ("nanhistogram", {"bins": 7}, 7),
+        ("iq_range", None, 1),
+        ("naniq_range", None, 1),
+        ("kurtosis", None, 1),
+        ("nankurtosis", None, 1),
+        ("max", None, 1),
+        ("nanmax", None, 1),
+        ("median", None, 1),
+        ("nanmedian", None, 1),
+        ("min", None, 1),
+        ("nanmin", None, 1),
+        ("quantiles", None, 5),
+        ("nanquantiles", None, 5),
+        ("range", None, 1),
+        ("nanrange", None, 1),
+        ("skewness", None, 1),
+        ("nanskewness", None, 1),
+        ("sum", None, 1),
+        ("nansum", None, 1),
+        ("powersum", None, 1),
+        ("powersum", {"p": [-1, 0, 1, 2]}, 4),
+        ("pnorm", None, 1),
+        ("pnorm", {"p": [-1, 0, 1, 2]}, 4),
+        ("nanpowersum", None, 1),
+        ("nanpowersum", {"p": [-1, 0, 1, 2]}, 4),
+        ("nanpnorm", None, 1),
+        ("nanpnorm", {"p": [-1, 0, 1, 2]}, 4),
+    ),
+)
+def test_summary_all_nan(
+    summary: str, sum_args: t.Dict[str, t.Any], exp_len: int
+):
     if sum_args is None:
         sum_args = {}
 
