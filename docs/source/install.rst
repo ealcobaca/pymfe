@@ -43,8 +43,3 @@ You want to test/test-coverage the code before to install::
 
   $ make install-dev
   $ make test-cov
-
-Or::
-
-  $ make install-dev
-  $ pytest --cov=pymfe/ tests/
