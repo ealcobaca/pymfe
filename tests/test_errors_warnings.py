@@ -292,3 +292,8 @@ class TestErrorsWarnings:
         with pytest.raises(ValueError):
             mfe = MFE()
             mfe.fit(X.values, y.values, transform_cat="invalid")
+
+    def test_extract_with_confidence_without_data(self):
+        mfe = MFE()
+        with pytest.raises(TypeError):
+            mfe.extract_with_confidence()
