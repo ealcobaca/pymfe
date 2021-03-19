@@ -3,6 +3,7 @@ import typing as t
 
 import numpy as np
 import pandas as pd
+import tqdm
 
 import pymfe._internal as _internal
 
@@ -53,6 +54,7 @@ class BootstrapExtractor:
         self._mtf_vals = []  # type: t.List[float]
         self._mtf_time = []  # type: t.List[float]
 
+        self.confidence = _confidence
         _half_sig_level = 0.5 * (1.0 - _confidence)
         self._crit_points_inds = np.hstack(
             (1.0 - _half_sig_level, _half_sig_level)
@@ -97,17 +99,12 @@ class BootstrapExtractor:
             else np.random.randint(2 ** 20 - 1)
         )
 
-        for it_num in np.arange(self.sample_num):
-            if self.verbose > 0:
-                print(
-                    "Extracting from sample dataset {} of {} ({:.2f}%)..."
-                    "".format(
-                        1 + it_num,
-                        self.sample_num,
-                        100.0 * (1 + it_num) / self.sample_num,
-                    )
-                )
+        if self.verbose >= 1:
+            print("Now extracting metafeatures from resampled data.")
 
+        for it_num in tqdm.auto.tqdm(
+            np.arange(self.sample_num), disable=self.verbose <= 0
+        ):
             # Note: setting random state to prevent same sample indices due
             # to random states set during fit/extraction
             np.random.seed(bootstrap_random_state)
@@ -126,12 +123,8 @@ class BootstrapExtractor:
             cur_mtf_vals = self._handle_output[type(args)](args)[1]
             mtf_vals[:, it_num] = cur_mtf_vals
 
-            if self.verbose > 0:
-                print(
-                    "Done extracting from sample dataset {}.\n".format(
-                        1 + it_num
-                    )
-                )
+        if self.verbose >= 1:
+            print("Done extracting metafeatures from resampled data.")
 
         return mtf_vals
 
@@ -139,6 +132,14 @@ class BootstrapExtractor:
         self, X: np.ndarray, y: t.Optional[np.ndarray] = None
     ) -> "BootstrapExtractor":
         """Fit data into the model."""
+
+        if self.verbose >= 1:
+            print(
+                "Began the metafeature extraction with confidence intervals "
+                "process."
+            )
+            print("Now extracting metafeatures from original sample.")
+
         self._extractor.fit(X, y, **self._arguments_fit)
         ret_type = self._arguments_extract.get("out_type")
         self._arguments_extract["out_type"] = tuple
@@ -150,6 +151,12 @@ class BootstrapExtractor:
 
         else:
             self._arguments_extract.pop("out_type")
+
+        if self.verbose >= 1:
+            print(
+                "Done extracting metafeatures from original sample "
+                "(total of {} metafeatures).".format(len(mtf_names))
+            )
 
         self._mtf_names = mtf_names
         self._mtf_vals = mtf_vals
@@ -220,17 +227,35 @@ class BootstrapExtractor:
             )
 
         if self.verbose > 0:
-            print("Started metafeature extract with confidence interval.")
-            print("Random seed:")
             print(
-                " {} For extractor model: {}".format(
-                    _internal.VERBOSE_BLOCK_END_SYMBOL,
+                "Started data resampling with bootstrap with the following "
+                "configurations:"
+            )
+
+            print(
+                "{} Total data resamples: {}".format(
+                    _internal.VERBOSE_BLOCK_MID_SYMBOL, self.sample_num
+                )
+            )
+            print(
+                "{} Confidence levels used: {} (total of {}).".format(
+                    _internal.VERBOSE_BLOCK_MID_SYMBOL,
+                    self.confidence,
+                    len(self.confidence),
+                )
+            )
+            print(
+                "{} Random seeds:".format(_internal.VERBOSE_BLOCK_END_SYMBOL)
+            )
+            print(
+                "   {} For extractor model: {}".format(
+                    _internal.VERBOSE_BLOCK_MID_SYMBOL,
                     self._extractor.random_state,
                 )
             )
 
             print(
-                " {} For bootstrapping: {}".format(
+                "   {} For bootstrapping: {}".format(
                     _internal.VERBOSE_BLOCK_END_SYMBOL, self.random_state
                 )
             )
@@ -240,8 +265,8 @@ class BootstrapExtractor:
         )
 
         if self.verbose > 0:
-            print("Finished metafeature extract with confidence interval.")
-            print("Now getting confidence intervals...", end=" ")
+            print("Finished data resampling with bootstrap.")
+            print("Now calculating confidence intervals...", end=" ")
 
         mtf_conf_int = self.calc_conf_intervals(bootstrap_vals)
 
