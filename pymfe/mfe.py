@@ -1644,8 +1644,6 @@ class MFE:
         )
 
         bootstrap_extractor = _bootstrap.BootstrapExtractor(
-            X=self.X,
-            y=self.y,
             extractor=surrogate_extractor,
             sample_num=sample_num,
             confidence=confidence,
@@ -1655,15 +1653,14 @@ class MFE:
             random_state=self.random_state,
         )
 
+        bootstrap_extractor.fit(self.X, self.y)
+
         (
             mtf_names,
             mtf_vals,
             mtf_time,
             mtf_conf_int,
         ) = bootstrap_extractor.extract_with_confidence()
-
-        if self.timeopt:
-            mtf_time = list(np.asfarray(mtf_time) / sample_num)
 
         _deal_types = {
             tuple: lambda names, vals, conf, times=[]: (
