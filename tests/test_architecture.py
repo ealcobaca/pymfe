@@ -460,9 +460,15 @@ class TestArchitecture:
         X, y = utils.load_xy(2)
 
         mtf_names, mtf_vals, mtf_conf_int = (
-            MFE(groups="all", features=["mean", "best_node", "sil"], random_state=1234)
+            MFE(
+                groups="all",
+                features=["mean", "best_node", "sil"],
+                random_state=1234,
+            )
             .fit(X=X.values, y=y.values, precomp_groups=None)
-            .extract_with_confidence(sample_num=64, confidence=confidence, verbose=0)
+            .extract_with_confidence(
+                sample_num=64, confidence=confidence, verbose=0
+            )
         )
 
         in_range = np.zeros(len(mtf_names), dtype=bool)
@@ -483,13 +489,17 @@ class TestArchitecture:
         X, y = utils.load_xy(2)
 
         with pytest.raises(ValueError):
-            MFE().fit(X.values, y.values).extract_with_confidence(confidence=-0.0001)
+            MFE().fit(X.values, y.values).extract_with_confidence(
+                confidence=-0.0001
+            )
 
     def test_extract_with_confidence_invalid3(self):
         X, y = utils.load_xy(2)
 
         with pytest.raises(ValueError):
-            MFE().fit(X.values, y.values).extract_with_confidence(confidence=1.0001)
+            MFE().fit(X.values, y.values).extract_with_confidence(
+                confidence=1.0001
+            )
 
     def test_extract_with_confidence_time(self):
         X, y = utils.load_xy(2)
@@ -502,7 +512,12 @@ class TestArchitecture:
 
         mtf_names, mtf_vals, mtf_time, mtf_conf_int = res
 
-        assert len(mtf_names) == len(mtf_vals) == len(mtf_time) == len(mtf_conf_int)
+        assert (
+            len(mtf_names)
+            == len(mtf_vals)
+            == len(mtf_time)
+            == len(mtf_conf_int)
+        )
 
     def test_extract_with_confidence_multiple_conf_level(self):
         X, y = utils.load_xy(2)
@@ -589,7 +604,9 @@ class TestArchitecture:
         extractor.fit(X=X.values, y=y.values, transform_num=False)
         mtf_name2, mtf_vals2 = extractor.extract()
 
-        assert np.all(mtf_name == mtf_name2) and np.allclose(mtf_vals, mtf_vals2)
+        assert np.all(mtf_name == mtf_name2) and np.allclose(
+            mtf_vals, mtf_vals2
+        )
 
     def test_extract_from_model_invalid1(self):
         X, y = utils.load_xy(2)
