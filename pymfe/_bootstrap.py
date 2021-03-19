@@ -23,6 +23,11 @@ class BootstrapExtractor:
         random_state: t.Optional[int] = None,
     ):
         """TODO."""
+        if not isinstance(X, np.ndarray):
+            raise TypeError(
+                "Please provide a numpy array as X to perform bootstrap."
+            )
+
         _confidence = np.asfarray(confidence)
 
         if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
