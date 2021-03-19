@@ -5,9 +5,6 @@ import numpy as np
 import pandas as pd
 
 
-_TypeExtract = t.Union[t.Tuple[t.List, ...], t.Dict[str, t.List], pd.DataFrame]
-
-
 class BootstrapExtractor:
     """TODO."""
 
@@ -17,14 +14,16 @@ class BootstrapExtractor:
         y: t.Optional[np.ndarray],
         extractor,
         sample_num: int,
-        confidence: np.ndarray,
+        confidence: t.Union[float, t.Sequence[float]],
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
         random_state: t.Optional[int] = None,
     ):
         """TODO."""
-        if np.any(np.logical_or(confidence <= 0.0, confidence >= 1.0)):
+        _confidence = np.asfarray(confidence)
+
+        if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
             raise ValueError(
                 "'confidence' must be in (0.0, 1.0) range (got {}.)".format(
                     confidence
@@ -38,10 +37,12 @@ class BootstrapExtractor:
         self.random_state = random_state
 
         self._extractor = extractor
-        self._arguments_fit = arguments_fit
-        self._arguments_extract = arguments_extract
+        self._arguments_fit = arguments_fit if arguments_fit else {}
+        self._arguments_extract = (
+            arguments_extract if arguments_extract else {}
+        )
 
-        _half_sig_level = 0.5 * (1.0 - confidence)
+        _half_sig_level = 0.5 * (1.0 - _confidence)
         self._crit_points_inds = np.hstack(
             (1.0 - _half_sig_level, _half_sig_level)
         )
@@ -173,7 +174,9 @@ class BootstrapExtractor:
 
         return mtf_conf_int
 
-    def extract(self) -> _TypeExtract:
+    def extract(
+        self,
+    ) -> t.Tuple[t.List[str], t.List[float], t.List[float], np.ndarray]:
         """TODO."""
         self._extractor.fit(self.X, self.y, **self._arguments_fit)
         ret_type = self._arguments_extract.get("out_type")

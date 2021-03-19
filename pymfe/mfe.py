@@ -1619,16 +1619,8 @@ class MFE:
         dataset is instantiated within this method and, therefore, this
         method does not affect the current model (if any) by any means.
         """
-        _confidence = np.asarray(confidence, dtype=float)
-
         if self.random_state is not None:
             np.random.seed(self.random_state)
-
-        if arguments_fit is None:
-            arguments_fit = {}
-
-        if arguments_extract is None:
-            arguments_extract = {}
 
         # Note: the metafeature extraction random seed will be fixed due
         # to the random indices while bootstrapping the fitted data.
@@ -1664,7 +1656,7 @@ class MFE:
             y=self.y,
             extractor=surrogate_extractor,
             sample_num=sample_num,
-            confidence=_confidence,
+            confidence=confidence,
             arguments_fit=arguments_fit,
             arguments_extract=arguments_extract,
             verbose=verbose,
@@ -1679,7 +1671,7 @@ class MFE:
         ) = bootstrap_extractor.extract()
 
         if self.timeopt:
-            mtf_time /= sample_num
+            mtf_time = list(np.asfarray(mtf_time) / sample_num)
 
         _deal_types = {
             tuple: lambda names, vals, conf, times=[]: (
@@ -1705,7 +1697,7 @@ class MFE:
         }
 
         # Check if the type was defined previously
-        if "out_type" in arguments_extract:
+        if arguments_extract and "out_type" in arguments_extract:
             out_type = arguments_extract["out_type"]
         else:
             out_type = tuple
