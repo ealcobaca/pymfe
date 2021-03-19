@@ -107,11 +107,12 @@ class TestModelBased:
             (2, "tree_imbalance", [0.19491705, 0.1330071], False),
             (2, "tree_shape", [0.27083334, 0.107119605], False),
             (2, "var_importance", [0.24999999, 0.27823895], False),
-        ])
-    def test_ft_methods_model_based_01(self, dt_id, ft_name, exp_value,
-                                       precompute):
-        """Function to test each meta-feature belongs to model-based group.
-        """
+        ],
+    )
+    def test_ft_methods_model_based_01(
+        self, dt_id, ft_name, exp_value, precompute
+    ):
+        """Function to test each meta-feature belongs to model-based group."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
@@ -223,11 +224,12 @@ class TestModelBased:
             (2, "tree_imbalance", [0.2524478, 0.1236233], False),
             (2, "tree_shape", [0.35416666, 0.094096586], False),
             (2, "var_importance", [0.25, 0.31985083], False),
-        ])
-    def test_ft_methods_model_based_02(self, dt_id, ft_name, exp_value,
-                                       precompute):
-        """Function to test each meta-feature belongs to model-based group.
-        """
+        ],
+    )
+    def test_ft_methods_model_based_02(
+        self, dt_id, ft_name, exp_value, precompute
+    ):
+        """Function to test each meta-feature belongs to model-based group."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
@@ -239,7 +241,8 @@ class TestModelBased:
                 "min_samples_split": 10,
                 "criterion": "entropy",
             },
-            random_state=1234)
+            random_state=1234,
+        )
 
         mfe.fit(X.values, y.values, precomp_groups=precomp_group)
 
@@ -264,33 +267,93 @@ class TestModelBased:
             ###################
             # Mixed data
             ###################
-            (0, [
-                13, 4.6153846, 0.07692308, 84.933334, 0.5, 12,
-                1.0909090909090908, 0.24, 2.0, 3.0, 3.84, 0.16146065,
-                0.20192307, 0.09090909
-            ], False),
-            (0, [
-                13, 4.6153846, 0.07692308, 84.933334, 0.5, 12,
-                1.0909090909090908, 0.24, 2.0, 3.0, 3.84, 0.16146065,
-                0.20192307, 0.09090909
-            ], True),
+            (
+                0,
+                [
+                    13,
+                    4.6153846,
+                    0.07692308,
+                    84.933334,
+                    0.5,
+                    12,
+                    1.0909090909090908,
+                    0.24,
+                    2.0,
+                    3.0,
+                    3.84,
+                    0.16146065,
+                    0.20192307,
+                    0.09090909,
+                ],
+                False,
+            ),
+            (
+                0,
+                [
+                    13,
+                    4.6153846,
+                    0.07692308,
+                    84.933334,
+                    0.5,
+                    12,
+                    1.0909090909090908,
+                    0.24,
+                    2.0,
+                    3.0,
+                    3.84,
+                    0.16146065,
+                    0.20192307,
+                    0.09090909,
+                ],
+                True,
+            ),
             ###################
             # Numerical data
             ###################
-            (2, [
-                9, 3.7777777, 0.11111111, 37.466667, 0.33333334, 8, 2.0,
-                0.05333333333333334, 1.6, 2.0, 3.0588236, 0.19491705,
-                0.27083334, 0.24999999
-            ], False),
-            (2, [
-                9, 3.7777777, 0.11111111, 37.466667, 0.33333334, 8, 2.0,
-                0.05333333333333334, 1.6, 2.0, 3.0588236, 0.19491705,
-                0.27083334, 0.24999999
-            ], True),
-        ])
+            (
+                2,
+                [
+                    9,
+                    3.7777777,
+                    0.11111111,
+                    37.466667,
+                    0.33333334,
+                    8,
+                    2.0,
+                    0.05333333333333334,
+                    1.6,
+                    2.0,
+                    3.0588236,
+                    0.19491705,
+                    0.27083334,
+                    0.24999999,
+                ],
+                False,
+            ),
+            (
+                2,
+                [
+                    9,
+                    3.7777777,
+                    0.11111111,
+                    37.466667,
+                    0.33333334,
+                    8,
+                    2.0,
+                    0.05333333333333334,
+                    1.6,
+                    2.0,
+                    3.0588236,
+                    0.19491705,
+                    0.27083334,
+                    0.24999999,
+                ],
+                True,
+            ),
+        ],
+    )
     def test_integration_model_based(self, dt_id, exp_value, precompute):
-        """Function to test all model-based meta-features.
-        """
+        """Function to test all model-based meta-features."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)

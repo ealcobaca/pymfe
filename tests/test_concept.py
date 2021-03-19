@@ -47,11 +47,12 @@ class TestConcept:
             (2, "conceptvar", [0.4956224, 0.07772438], False),
             (2, "impconceptvar", [42.626667, 5.358048], False),
             (2, "wg_dist", [0.46218988, 0.05621875], False),
-        ])
-    def test_ft_methods_complexity(self, dt_id, ft_name, exp_value,
-                                   precompute):
-        """Function to test each meta-feature belongs to concept group.
-        """
+        ],
+    )
+    def test_ft_methods_complexity(
+        self, dt_id, ft_name, exp_value, precompute
+    ):
+        """Function to test each meta-feature belongs to concept group."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
@@ -79,10 +80,10 @@ class TestConcept:
             ###################
             (2, [67.12, 0.4956224, 42.626667, 0.46218988], False),
             (2, [67.12, 0.4956224, 42.626667, 0.46218988], True),
-        ])
+        ],
+    )
     def test_integration_concept(self, dt_id, exp_value, precompute):
-        """Function to test each all concept meta-features.
-        """
+        """Function to test each all concept meta-features."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)

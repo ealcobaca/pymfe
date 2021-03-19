@@ -82,11 +82,12 @@ class TestLandmarking:
             (2, "one_nn", [1.0, 0.0], False, 0.5),
             (2, "worst_node", [0.5696429, 0.1032528], False, 0.5),
             (2, "random_node", [0.5982143, 0.02823461], False, 0.5),
-        ])
-    def test_ft_methods_landmarking(self, dt_id, ft_name, exp_value,
-                                    precompute, lm_sample_frac):
-        """Function to test each meta-feature belongs to landmarking group.
-        """
+        ],
+    )
+    def test_ft_methods_landmarking(
+        self, dt_id, ft_name, exp_value, precompute, lm_sample_frac
+    ):
+        """Function to test each meta-feature belongs to landmarking group."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
@@ -94,7 +95,8 @@ class TestLandmarking:
             groups=[GNAME],
             features=[ft_name],
             lm_sample_frac=lm_sample_frac,
-            random_state=1234)
+            random_state=1234,
+        )
 
         mfe.fit(X.values, y.values, precomp_groups=precomp_group)
 
@@ -112,35 +114,86 @@ class TestLandmarking:
             ###################
             # Mixed data
             ###################
-            (0, [0.64, 0.56000006, 0.52, 0.66, 0.26000002, 0.4, 0.4], False,
-             1.0),
-            (0, [0.64, 0.56000006, 0.52, 0.66, 0.26000002, 0.4, 0.4], True,
-             1.0),
+            (
+                0,
+                [0.64, 0.56000006, 0.52, 0.66, 0.26000002, 0.4, 0.4],
+                False,
+                1.0,
+            ),
+            (
+                0,
+                [0.64, 0.56000006, 0.52, 0.66, 0.26000002, 0.4, 0.4],
+                True,
+                1.0,
+            ),
             ###################
             # Numerical data
             ###################
-            (2, [
-                0.6666666, 0.88, 0.98, 0.9533334, 0.96000004, 0.66666663, 0.6
-            ], False, 1.0),
-            (2, [
-                0.6666666, 0.88, 0.98, 0.9533334, 0.96000004, 0.66666663, 0.6
-            ], True, 1.0),
+            (
+                2,
+                [
+                    0.6666666,
+                    0.88,
+                    0.98,
+                    0.9533334,
+                    0.96000004,
+                    0.66666663,
+                    0.6,
+                ],
+                False,
+                1.0,
+            ),
+            (
+                2,
+                [
+                    0.6666666,
+                    0.88,
+                    0.98,
+                    0.9533334,
+                    0.96000004,
+                    0.66666663,
+                    0.6,
+                ],
+                True,
+                1.0,
+            ),
             #######################################
             # Numerical data - Relative landmarking
             #######################################
-            (2, [
-                0.5982143, 0.9196428, 0.9732143, 0.9464285, 1.0, 0.5982143,
-                0.5696429
-            ], False, 0.5),
-            (2, [
-                0.5982143, 0.9196428, 0.9732143, 0.9464285, 1.0, 0.5982143,
-                0.5696429
-            ], True, 0.5),
-        ])
-    def test_integration_landmarking(self, dt_id, exp_value, precompute,
-                                     lm_sample_frac):
-        """Function to test all landmarking meta-features.
-        """
+            (
+                2,
+                [
+                    0.5982143,
+                    0.9196428,
+                    0.9732143,
+                    0.9464285,
+                    1.0,
+                    0.5982143,
+                    0.5696429,
+                ],
+                False,
+                0.5,
+            ),
+            (
+                2,
+                [
+                    0.5982143,
+                    0.9196428,
+                    0.9732143,
+                    0.9464285,
+                    1.0,
+                    0.5982143,
+                    0.5696429,
+                ],
+                True,
+                0.5,
+            ),
+        ],
+    )
+    def test_integration_landmarking(
+        self, dt_id, exp_value, precompute, lm_sample_frac
+    ):
+        """Function to test all landmarking meta-features."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
@@ -148,7 +201,8 @@ class TestLandmarking:
             groups=[GNAME],
             summary="mean",
             lm_sample_frac=lm_sample_frac,
-            random_state=1234)
+            random_state=1234,
+        )
 
         mfe.fit(X.values, y.values, precomp_groups=precomp_group)
 

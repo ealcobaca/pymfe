@@ -25,7 +25,7 @@ X = data.data
 #
 # Extracting three information theoretical measures.
 
-mfe = MFE(features=["attr_ent", "joint_ent"],
+mfe = MFE(groups="all", features=["attr_ent", "joint_ent"],
           summary=["median", "min", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()
@@ -38,7 +38,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 #
 # Extracting two statistical measures.
 
-mfe = MFE(features=["can_cor", "cor", "iq_range"],
+mfe = MFE(groups="all", features=["can_cor", "cor", "iq_range"],
           summary=["median", "min", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()
@@ -51,7 +51,7 @@ print("\n".join("{:50} {:30}".format(x, y) for x, y in zip(ft[0], ft[1])))
 #
 # Extracting five measures.
 
-mfe = MFE(features=["attr_ent", "joint_ent", "can_cor", "cor", "iq_range"],
+mfe = MFE(groups="all", features=["attr_ent", "joint_ent", "can_cor", "cor", "iq_range"],
           summary=["median", "min", "max"])
 mfe.fit(X, y)
 ft = mfe.extract()

@@ -33,10 +33,12 @@ Meta-feature Description Table
 
 def meta_features_description():
     """Automatically create the meta-feature description file."""
-    data, _ = MFE.metafeature_description(sort_by_group=True,
-                                          sort_by_mtf=True,
-                                          print_table=False,
-                                          include_references=True)
+    data, _ = MFE.metafeature_description(
+        sort_by_group=True,
+        sort_by_mtf=True,
+        print_table=False,
+        include_references=True,
+    )
 
     if not os.path.exists(AUTO_PAGES_PATH):
         os.makedirs(AUTO_PAGES_PATH)
@@ -45,13 +47,13 @@ def meta_features_description():
     del data[0]
     df = pd.DataFrame(data, columns=col)
 
-    df.to_csv(AUTO_PAGES_PATH+"/meta_features_description.csv", index=False)
+    df.to_csv(AUTO_PAGES_PATH + "/meta_features_description.csv", index=False)
 
     notes = NOTE_REL_SUB + "\n" + NOTE_OTHER_INFO
 
     table_str = TABLE_CONF
-    f = open(AUTO_PAGES_PATH+"/meta_features_description.rst", "w")
-    f.write(TITLE + '\n' + table_str + '\n' + notes)
+    f = open(AUTO_PAGES_PATH + "/meta_features_description.rst", "w")
+    f.write(TITLE + "\n" + table_str + "\n" + notes)
     f.close()
 
 

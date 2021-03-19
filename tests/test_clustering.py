@@ -72,16 +72,18 @@ class TestClustering:
             (2, "sil", 0.5032506980366624, True),
             (2, "vdb", 0.7517428073901388, True),
             (2, "vdu", 2.3392212797698888e-05, True),
-        ])
-    def test_ft_methods_clustering(self, dt_id, ft_name, exp_value,
-                                   precompute):
+        ],
+    )
+    def test_ft_methods_clustering(
+        self, dt_id, ft_name, exp_value, precompute
+    ):
         """Function to test each meta-feature belongs to clustering group."""
 
         precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
-        mfe = MFE(
-            groups=[GNAME], features=[ft_name]).fit(
-                X.values, y.values, precomp_groups=precomp_group)
+        mfe = MFE(groups=[GNAME], features=[ft_name]).fit(
+            X.values, y.values, precomp_groups=precomp_group
+        )
         value = mfe.extract()[1]
 
         if exp_value is np.nan:
@@ -94,10 +96,9 @@ class TestClustering:
     def test_silhouette_subsampling(self, precompute):
         X, y = load_xy(0)
         precomp_group = GNAME if precompute else None
-        mfe = MFE(
-            groups="clustering",
-            features="sil", random_state=1234).fit(
-                X.values, y.values, precomp_groups=precomp_group)
+        mfe = MFE(groups="clustering", features="sil", random_state=1234).fit(
+            X.values, y.values, precomp_groups=precomp_group
+        )
         value = mfe.extract(sil={"sample_frac": 0.5})[1]
 
         assert np.allclose(value, -0.07137712254830314)
@@ -107,7 +108,8 @@ class TestClustering:
         N = np.array([[1, 2, 3], [4, 5, 6]])
         y = np.array([1, 2])
         aux = MFEClustering.precompute_nearest_neighbors(
-            N, y, class_freqs=None)
+            N, y, class_freqs=None
+        )
 
         assert isinstance(aux, dict)
         assert len(aux) == 1
@@ -129,38 +131,75 @@ class TestClustering:
             ###################
             # Mixed data
             ###################
-            (0, [
-                0.008469636865711082, 5728840.510362266, 0.6931471805599453,
-                0.016754815003958073, 0, -0.03842692011975991,
-                58.22425419399301, 1.698593922818614e-08
-            ], False),
-            (0, [
-                0.008469636865711082, 5728840.510362266, 0.6931471805599453,
-                0.016754815003958073, 0, -0.03842692011975991,
-                58.22425419399301, 1.698593922818614e-08
-            ], True),
+            (
+                0,
+                [
+                    0.008469636865711082,
+                    5728840.510362266,
+                    0.6931471805599453,
+                    0.016754815003958073,
+                    0,
+                    -0.03842692011975991,
+                    58.22425419399301,
+                    1.698593922818614e-08,
+                ],
+                False,
+            ),
+            (
+                0,
+                [
+                    0.008469636865711082,
+                    5728840.510362266,
+                    0.6931471805599453,
+                    0.016754815003958073,
+                    0,
+                    -0.03842692011975991,
+                    58.22425419399301,
+                    1.698593922818614e-08,
+                ],
+                True,
+            ),
             ###################
             # Numerical data
             ###################
-            (2, [
-                486.32083931855703, 3.321079768101941, 1.0986122886681096,
-                -0.6798579850365509, 0, 0.5032506980366624, 0.7517428073901388,
-                2.3392212797698888e-05
-            ], False),
-            (2, [
-                486.32083931855703, 3.321079768101941, 1.0986122886681096,
-                -0.6798579850365509, 0, 0.5032506980366624, 0.7517428073901388,
-                2.3392212797698888e-05
-            ], True),
-        ])
+            (
+                2,
+                [
+                    486.32083931855703,
+                    3.321079768101941,
+                    1.0986122886681096,
+                    -0.6798579850365509,
+                    0,
+                    0.5032506980366624,
+                    0.7517428073901388,
+                    2.3392212797698888e-05,
+                ],
+                False,
+            ),
+            (
+                2,
+                [
+                    486.32083931855703,
+                    3.321079768101941,
+                    1.0986122886681096,
+                    -0.6798579850365509,
+                    0,
+                    0.5032506980366624,
+                    0.7517428073901388,
+                    2.3392212797698888e-05,
+                ],
+                True,
+            ),
+        ],
+    )
     def test_integration_clustering(self, dt_id, exp_value, precompute):
         """Function to test each all clustering meta-features."""
 
         precomp_group = GNAME if precompute else None
         X, y = load_xy(dt_id)
-        mfe = MFE(
-            groups=[GNAME], summary="mean").fit(
-                X.values, y.values, precomp_groups=precomp_group)
+        mfe = MFE(groups=[GNAME], summary="mean").fit(
+            X.values, y.values, precomp_groups=precomp_group
+        )
         value = mfe.extract()[1]
 
         assert np.allclose(value, exp_value, equal_nan=True)

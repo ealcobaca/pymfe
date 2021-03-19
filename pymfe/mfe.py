@@ -19,9 +19,7 @@ _TypeSeqExt = t.List[
 ]
 """Type annotation for a sequence of TypeExtMtdTuple objects."""
 
-_TypeExtract = t.Union[
-    t.Tuple[t.List, ...], t.Dict[str, t.List], pd.DataFrame
-]
+_TypeExtract = t.Union[t.Tuple[t.List, ...], t.Dict[str, t.List], pd.DataFrame]
 """Type annotation for the possible output types of the extract."""
 
 
@@ -45,9 +43,10 @@ class MFE:
         meta-feature extraction, from selected metafeatures groups and features
         listed at instantiation.
 
-        summary : :obj:`tuple` of :obj:`str`
-            Tuple object which contains summary functions names for features
-            summarization.
+    summary : :obj:`tuple` of :obj:`str`
+        Tuple object which contains summary functions names for features
+        summarization.
+
     """
 
     groups_alias = [("default", _internal.DEFAULT_GROUP)]
@@ -1268,24 +1267,6 @@ class MFE:
             The rows store the summarized values (if ``measure_time``, there
             is a row with the time taken to calculate each value).
 
-            Example:
-                ([``attr_ent.mean``, ``attr_ent.sd``], [``0.983``, ``0.344``])
-                is the return value for the feature ``attr_end`` summarized by
-                both ``mean`` and ``sd`` (standard deviation), giving the valu-
-                es ``0.983`` and ``0.344``, respectively.
-
-                {
-                    ``mtf_names``: [``attr_ent.mean``, ``attr_ent.sd``],
-                    ``mtf_values``: [``0.983``, ``0.344``]
-                }
-                is the return value when ``out_type`` is set to `dict`.
-
-                [pandas.core.DataFrame]
-                    ``attr_ent.mean``       ``attr_ent.sd``
-                0           ``0.983``              ``0.344``
-
-                is the return value when ``out_type`` is set to `pd.DataFrame`.
-
             if ``measure_time`` is given during the model instantiation, a
             third list will be returned with the time spent during the
             calculations for the corresponding (by index) metafeature.
@@ -1392,28 +1373,21 @@ class MFE:
             )
 
         _deal_types = {
-            tuple: lambda names, vals, times = []:
-                (names, vals, times) if self.timeopt else (names, vals),
-            dict: lambda names, vals, times = []:
-                {
-                    "mtf_names": names,
-                    "mtf_vals": vals,
-                    "mtf_time": times
-                } if self.timeopt else
-                {
-                    "mtf_names": names,
-                    "mtf_vals": vals
-                },
-            pd.DataFrame: lambda names, vals, times = []:
-                pd.DataFrame(
-                    data=(vals, times),
-                    columns=names,
-                    index=("values", "time")
-                ) if self.timeopt else
-                pd.DataFrame(
-                    data=(vals,),
-                    columns=names
-                )
+            tuple: lambda names, vals, times=[]: (names, vals, times)
+            if self.timeopt
+            else (names, vals),
+            dict: lambda names, vals, times=[]: {
+                "mtf_names": names,
+                "mtf_vals": vals,
+                "mtf_time": times,
+            }
+            if self.timeopt
+            else {"mtf_names": names, "mtf_vals": vals},
+            pd.DataFrame: lambda names, vals, times=[]: pd.DataFrame(
+                data=(vals, times), columns=names, index=("values", "time")
+            )
+            if self.timeopt
+            else pd.DataFrame(data=(vals,), columns=names),
         }
 
         try:
@@ -1569,31 +1543,32 @@ class MFE:
 
             _handle_output = {
                 tuple: lambda args: args,
-                dict: lambda args:
-                    (
-                        args["mtf_names"],
-                        args["mtf_vals"],
-                        args["mtf_time"]
-                    ) if self.timeopt else
-                    (
-                        args["mtf_names"],
-                        args["mtf_vals"],
-                    ),
-                pd.DataFrame: lambda args:
-                    (
-                        list(args.columns),
-                        args.values[0],
-                        args.values[1]
-                    ) if self.timeopt else
-                    (
-                        list(args.columns),
-                        args.values[0],
-                    )
+                dict: lambda args: (
+                    args["mtf_names"],
+                    args["mtf_vals"],
+                    args["mtf_time"],
+                )
+                if self.timeopt
+                else (
+                    args["mtf_names"],
+                    args["mtf_vals"],
+                ),
+                pd.DataFrame: lambda args: (
+                    list(args.columns),
+                    args.values[0],
+                    args.values[1],
+                )
+                if self.timeopt
+                else (
+                    list(args.columns),
+                    args.values[0],
+                ),
             }
 
             if self.timeopt:
-                cur_mtf_names, cur_mtf_vals, cur_mtf_time = \
-                    _handle_output[type(args)](args)
+                cur_mtf_names, cur_mtf_vals, cur_mtf_time = _handle_output[
+                    type(args)
+                ](args)
             else:
                 cur_mtf_names, cur_mtf_vals = _handle_output[type(args)](args)
 
@@ -1836,21 +1811,22 @@ class MFE:
             mtf_time /= sample_num
 
         _deal_types = {
-            tuple: lambda names, vals, conf, times = []:
-                (names, vals, times, conf) if self.timeopt
-                else (names, vals, conf),
-            dict: lambda names, vals, conf, times = []:
-                {
-                    "mtf_names": names,
-                    "mtf_vals": vals,
-                    "confidence": conf,
-                    "mtf_time": times
-                } if self.timeopt else
-                {
-                    "mtf_names": names,
-                    "mtf_vals": vals,
-                    "confidence": conf
-                },
+            tuple: lambda names, vals, conf, times=[]: (
+                names,
+                vals,
+                times,
+                conf,
+            )
+            if self.timeopt
+            else (names, vals, conf),
+            dict: lambda names, vals, conf, times=[]: {
+                "mtf_names": names,
+                "mtf_vals": vals,
+                "confidence": conf,
+                "mtf_time": times,
+            }
+            if self.timeopt
+            else {"mtf_names": names, "mtf_vals": vals, "confidence": conf},
         }
 
         # Check if the type was defined previously
@@ -1861,10 +1837,7 @@ class MFE:
 
         try:
             return _deal_types[out_type](
-                mtf_names,
-                mtf_vals,
-                mtf_conf_int,
-                mtf_time
+                mtf_names, mtf_vals, mtf_conf_int, mtf_time
             )
         except KeyError as out_not_defined:
             raise TypeError("Unknown output type.") from out_not_defined

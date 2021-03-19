@@ -36,10 +36,10 @@ class TestItemset:
             (2, "two_itemset", [0.32, 0.084694475], True),
             (2, "one_itemset", [0.2, 0.049322903], False),
             (2, "two_itemset", [0.32, 0.084694475], False),
-        ])
+        ],
+    )
     def test_ft_methods_itemset(self, dt_id, ft_name, exp_value, precompute):
-        """Function to test each meta-feature belongs to itemset group.
-        """
+        """Function to test each meta-feature belongs to itemset group."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
@@ -58,12 +58,35 @@ class TestItemset:
         """In this test we use the toy dataset and results used by the authors"
         paper.
         """
-        C = np.array([[0, 2, 3], [2, 5, 0], [1, 4, 1], [0, 2, 2], [3, 3, 3],
-                      [3, 2, 3], [0, 2, 0], [1, 3, 1], [2, 4, 3], [1, 5, 2]])
+        C = np.array(
+            [
+                [0, 2, 3],
+                [2, 5, 0],
+                [1, 4, 1],
+                [0, 2, 2],
+                [3, 3, 3],
+                [3, 2, 3],
+                [0, 2, 0],
+                [1, 3, 1],
+                [2, 4, 3],
+                [1, 5, 2],
+            ]
+        )
 
         value = MFEItemset.ft_one_itemset(C=C)
         exp_value = [
-            0.3, 0.3, 0.2, 0.2, 0.4, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.4
+            0.3,
+            0.3,
+            0.2,
+            0.2,
+            0.4,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.2,
+            0.4,
         ]
 
         assert np.allclose(value, exp_value, equal_nan=True)
@@ -89,10 +112,10 @@ class TestItemset:
             ###################
             (2, [0.2, 0.32], False),
             (2, [0.2, 0.32], True),
-        ])
+        ],
+    )
     def test_integration_itemset(self, dt_id, exp_value, precompute):
-        """Function to test all itemset meta-features.
-        """
+        """Function to test all itemset meta-features."""
         precomp_group = GNAME if precompute else None
 
         X, y = load_xy(dt_id)
