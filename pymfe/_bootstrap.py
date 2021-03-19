@@ -99,7 +99,7 @@ class BootstrapExtractor:
         bootstrap_random_state = (
             self.random_state
             if self.random_state is not None
-            else np.random.randint(2 ** 20 - 1)
+            else np.random.randint(np.iinfo(np.uint32).max + 1)
         )
 
         if self.verbose >= 1:
