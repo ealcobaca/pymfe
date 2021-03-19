@@ -13,6 +13,7 @@ import sklearn.exceptions
 import tqdm.auto
 
 import pymfe._internal as _internal
+import pymfe._bootstrap as _bootstrap
 
 _TypeSeqExt = t.List[
     t.Tuple[str, t.Callable, t.Tuple[str, ...], t.Tuple[str, ...]]
@@ -1536,130 +1537,6 @@ class MFE:
 
         return tuple(sorted(metafeat_names))
 
-    def _extract_with_bootstrap(
-        self,
-        extractor: "MFE",
-        sample_num: int,
-        arguments_fit: t.Dict[str, t.Any],
-        arguments_extract: t.Dict[str, t.Any],
-        verbose: int = 0,
-    ) -> t.Tuple[np.ndarray, ...]:
-        """Extract metafeatures using bootstrapping."""
-        if self.X is None:
-            raise TypeError(
-                "Fitted data not found. Please call 'fit' method first."
-            )
-
-        def _handle_extract_ret(
-            res: t.Tuple[np.ndarray, ...],
-            args: t.Union[t.Tuple[t.List, ...], t.Dict[str, t.Any]],
-            it_num: int,
-        ) -> t.Tuple[np.ndarray, ...]:
-            """Handle each .extraction method return value."""
-            mtf_names, mtf_vals, mtf_time = res
-
-            _handle_output = {
-                tuple: lambda args: args,
-                dict: lambda args: (
-                    args["mtf_names"],
-                    args["mtf_vals"],
-                    args["mtf_time"],
-                )
-                if self.timeopt
-                else (
-                    args["mtf_names"],
-                    args["mtf_vals"],
-                ),
-                pd.DataFrame: lambda args: (
-                    list(args.columns),
-                    args.values[0],
-                    args.values[1],
-                )
-                if self.timeopt
-                else (
-                    list(args.columns),
-                    args.values[0],
-                ),
-            }
-
-            if self.timeopt:
-                cur_mtf_names, cur_mtf_vals, cur_mtf_time = _handle_output[
-                    type(args)
-                ](args)
-            else:
-                cur_mtf_names, cur_mtf_vals = _handle_output[type(args)](args)
-
-            if mtf_names.size:
-                mtf_vals[:, it_num] = cur_mtf_vals
-
-                if self.timeopt:
-                    mtf_time += cur_mtf_time
-
-            else:
-                mtf_names = np.asarray(cur_mtf_names, dtype=str)
-                mtf_vals = np.zeros(
-                    (len(cur_mtf_vals), sample_num), dtype=float
-                )
-                mtf_vals[:, 0] = cur_mtf_vals
-
-                if self.timeopt:
-                    mtf_time = np.asarray(cur_mtf_time, dtype=float)
-
-            return mtf_names, mtf_vals, mtf_time
-
-        res = 3 * (np.array([]),)
-
-        if self.random_state is None:
-            # Enforce pseudo-random behaviour to avoid previously set
-            # random seeds out of this context
-            np.random.seed()
-
-        bootstrap_random_state = (
-            self.random_state
-            if self.random_state is not None
-            else np.random.randint(2 ** 20 - 1)
-        )
-
-        for it_num in np.arange(sample_num):
-            if verbose > 0:
-                print(
-                    "Extracting from sample dataset {} of {} ({:.2f}%)..."
-                    "".format(
-                        1 + it_num,
-                        sample_num,
-                        100.0 * (1 + it_num) / sample_num,
-                    )
-                )
-
-            # Note: setting random state to prevent same sample indices due
-            # to random states set during fit/extraction
-            np.random.seed(bootstrap_random_state)
-            bootstrap_random_state += 1
-
-            sample_inds = np.random.randint(
-                self.X.shape[0], size=self.X.shape[0]
-            )
-
-            X_sample = self.X[sample_inds, :]
-            y_sample = self.y[sample_inds] if self.y is not None else None
-
-            extractor.fit(X_sample, y_sample, **arguments_fit)
-
-            res = _handle_extract_ret(
-                res=res,
-                args=extractor.extract(**arguments_extract),
-                it_num=it_num,
-            )
-
-            if verbose > 0:
-                print(
-                    "Done extracting from sample dataset {}.\n".format(
-                        1 + it_num
-                    )
-                )
-
-        return res
-
     def extract_with_confidence(
         self,
         sample_num: int = 128,
@@ -1744,13 +1621,6 @@ class MFE:
         """
         _confidence = np.asarray(confidence, dtype=float)
 
-        if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
-            raise ValueError(
-                "'confidence' must be in (0.0, 1.0) range (got {}.)".format(
-                    _confidence
-                )
-            )
-
         if self.random_state is not None:
             np.random.seed(self.random_state)
 
@@ -1781,7 +1651,7 @@ class MFE:
                 )
             )
 
-        extractor = MFE(
+        surrogate_extractor = MFE(
             features=self.features,
             groups=self.groups,
             summary=self.summary,
@@ -1789,39 +1659,24 @@ class MFE:
             random_state=_random_state,
         )
 
-        mtf_names, bootstrap_vals, mtf_time = self._extract_with_bootstrap(
-            extractor=extractor,
+        bootstrap_extractor = _bootstrap.BootstrapExtractor(
+            X=self.X,
+            y=self.y,
+            extractor=surrogate_extractor,
             sample_num=sample_num,
-            verbose=verbose,
+            confidence=_confidence,
             arguments_fit=arguments_fit,
             arguments_extract=arguments_extract,
-        )  # Returns a t.Tuple[t.List,...]
+            verbose=verbose,
+            random_state=_random_state,
+        )
 
-        extractor.fit(self.X, self.y, **arguments_fit)
-        ret_type = arguments_extract.get("out_type")
-        arguments_extract["out_type"] = tuple
-        mtf_vals = extractor.extract(**arguments_extract)[1]  # type: ignore
-        arguments_extract.pop("out_type")
-
-        if ret_type is not None:
-            arguments_extract["out_type"] = ret_type
-
-        mtf_vals = np.expand_dims(mtf_vals, axis=1)
-
-        if verbose > 0:
-            print("Finished metafeature extract with confidence interval.")
-            print("Now getting confidence intervals...", end=" ")
-
-        _half_sig_level = 0.5 * (1.0 - _confidence)
-        critical_points = np.hstack((1.0 - _half_sig_level, _half_sig_level))
-        diff_conf_int = np.quantile(
-            a=bootstrap_vals - mtf_vals, q=critical_points, axis=1
-        ).T
-
-        mtf_conf_int = -diff_conf_int + mtf_vals
-
-        if verbose > 0:
-            print("Done.")
+        (
+            mtf_names,
+            mtf_vals,
+            mtf_time,
+            mtf_conf_int,
+        ) = bootstrap_extractor.extract()
 
         if self.timeopt:
             mtf_time /= sample_num
