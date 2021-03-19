@@ -1798,7 +1798,14 @@ class MFE:
         )  # Returns a t.Tuple[t.List,...]
 
         extractor.fit(self.X, self.y, **arguments_fit)
-        mtf_vals = extractor.extract(**arguments_extract)[1]
+        ret_type = arguments_extract.get("out_type")
+        arguments_extract["out_type"] = tuple
+        mtf_vals = extractor.extract(**arguments_extract)[1]  # type: ignore
+        arguments_extract.pop("out_type")
+
+        if ret_type is not None:
+            arguments_extract["out_type"] = ret_type
+
         mtf_vals = np.expand_dims(mtf_vals, axis=1)
 
         if verbose > 0:
