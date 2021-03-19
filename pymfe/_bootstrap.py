@@ -78,11 +78,6 @@ class BootstrapExtractor:
 
     def _extract_with_bootstrap(self, mtf_num: int) -> np.ndarray:
         """Extract metafeatures using bootstrapping."""
-        if self.X is None:
-            raise TypeError(
-                "Fitted data not found. Please call 'fit' method first."
-            )
-
         mtf_vals = np.zeros((mtf_num, self.sample_num), dtype=float)
 
         if self.random_state is None:
