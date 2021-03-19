@@ -5,3 +5,4 @@ mypy
 liac-arff
 flake8
 pylint
+black

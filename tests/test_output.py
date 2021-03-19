@@ -36,7 +36,11 @@ class TestOutput:
     )
     def test_output_lengths_2(self, dt_id, measure_time):
         X, y = load_xy(dt_id)
-        res = MFE(measure_time=measure_time).fit(X=X.values, y=y.values).extract()
+        res = (
+            MFE(measure_time=measure_time)
+            .fit(X=X.values, y=y.values)
+            .extract()
+        )
         vals, names, time = res
 
         assert len(vals) == len(names) == len(time)
@@ -107,10 +111,14 @@ class TestOutput:
     def test_verbosity_with_confidence(self, verbosity, msg_expected, capsys):
         X, y = load_xy(2)
 
-        MFE().fit(X.values, y.values).extract_with_confidence(verbose=verbosity)
+        MFE().fit(X.values, y.values).extract_with_confidence(
+            verbose=verbosity
+        )
 
         captured = capsys.readouterr().out
-        assert ((not msg_expected) and (not captured)) or (msg_expected and captured)
+        assert ((not msg_expected) and (not captured)) or (
+            msg_expected and captured
+        )
 
     @pytest.mark.parametrize(
         "verbosity, msg_expected",
@@ -127,7 +135,9 @@ class TestOutput:
         MFE().extract_from_model(model, verbose=verbosity)
 
         captured = capsys.readouterr().out
-        assert ((not msg_expected) and (not captured)) or (msg_expected and captured)
+        assert ((not msg_expected) and (not captured)) or (
+            msg_expected and captured
+        )
 
     def test_extract_output_default(self):
         X, y = load_xy(2)
@@ -159,7 +169,9 @@ class TestOutput:
 
     def test_extract_with_time_output_dictionary(self):
         X, y = load_xy(2)
-        extractor = MFE(groups="general", measure_time="total").fit(X.values, y.values)
+        extractor = MFE(groups="general", measure_time="total").fit(
+            X.values, y.values
+        )
         res = extractor.extract(out_type=dict)
         assert isinstance(res, dict)
         assert len(res) == 3
@@ -182,7 +194,9 @@ class TestOutput:
 
     def test_extract_with_time_and_with_confidence_output_dictionary(self):
         X, y = load_xy(2)
-        extractor = MFE(groups="general", measure_time="total").fit(X.values, y.values)
+        extractor = MFE(groups="general", measure_time="total").fit(
+            X.values, y.values
+        )
         res = extractor.extract_with_confidence(
             3, arguments_extract=dict(out_type=dict)
         )
@@ -220,7 +234,9 @@ class TestOutput:
 
     def test_extract_with_time_output_pandas_dataframe(self):
         X, y = load_xy(2)
-        extractor = MFE(measure_time="total", groups="general").fit(X.values, y.values)
+        extractor = MFE(measure_time="total", groups="general").fit(
+            X.values, y.values
+        )
         expected_mtfs = extractor.extract_metafeature_names()
         res = extractor.extract(out_type=pd.DataFrame)
         assert isinstance(res, pd.DataFrame)

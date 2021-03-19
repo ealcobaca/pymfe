@@ -14,23 +14,35 @@ class TestSystem:
     metafeatures from other groups.
     """
 
-    @pytest.mark.parametrize("dt_id, precompute, supervised", [
-        (0, False, True),
-        (0, True, True),
-        (2, False, True),
-        (2, True, True),
-        (0, False, False),
-        (0, True, False),
-        (2, False, False),
-        (2, True, False),
-    ])
+    @pytest.mark.parametrize(
+        "dt_id, precompute, supervised",
+        [
+            (0, False, True),
+            (0, True, True),
+            (2, False, True),
+            (2, True, True),
+            (0, False, False),
+            (0, True, False),
+            (2, False, False),
+            (2, True, False),
+        ],
+    )
     def test_system_testing(self, dt_id, precompute, supervised):
         precomp_group = "all" if precompute else None
         X, y = load_xy(dt_id)
 
-        mtf_groups = ("landmarking", "general", "statistical", "model-based",
-                      "info-theory", "relative", "clustering", "complexity",
-                      "itemset", "concept")
+        mtf_groups = (
+            "landmarking",
+            "general",
+            "statistical",
+            "model-based",
+            "info-theory",
+            "relative",
+            "clustering",
+            "complexity",
+            "itemset",
+            "concept",
+        )
 
         def extract_mtf_by_group():
             all_mtf_names = []
@@ -40,8 +52,12 @@ class TestSystem:
                 cur_precomp_group = cur_group if precompute else None
 
                 mfe = MFE(
-                    groups=cur_group, summary="mean", random_state=1234).fit(
-                        X.values, y.values if supervised else None, precomp_groups=cur_precomp_group)
+                    groups=cur_group, summary="mean", random_state=1234
+                ).fit(
+                    X.values,
+                    y.values if supervised else None,
+                    precomp_groups=cur_precomp_group,
+                )
 
                 cur_names, cur_vals = mfe.extract()
 
@@ -50,15 +66,20 @@ class TestSystem:
 
             _, all_mtf_vals = zip(
                 *sorted(
-                    zip(all_mtf_names, all_mtf_vals),
-                    key=lambda item: item[0]))
+                    zip(all_mtf_names, all_mtf_vals), key=lambda item: item[0]
+                )
+            )
 
             return all_mtf_vals
 
         def extract_all_mtf():
             mfe = MFE(
-                groups=mtf_groups, summary="mean", random_state=1234).fit(
-                    X.values, y.values if supervised else None, precomp_groups=precomp_group)
+                groups=mtf_groups, summary="mean", random_state=1234
+            ).fit(
+                X.values,
+                y.values if supervised else None,
+                precomp_groups=precomp_group,
+            )
 
             all_mtf_vals = mfe.extract()[1]
 
@@ -69,4 +90,5 @@ class TestSystem:
             extract_mtf_by_group(),
             equal_nan=True,
             rtol=0.05,
-            atol=0.001)
+            atol=0.001,
+        )

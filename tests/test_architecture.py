@@ -12,7 +12,9 @@ from . import utils
 GNAME = "framework-testing"
 
 
-def summary_exception(values: np.ndarray, raise_exception: bool = False) -> int:
+def summary_exception(
+    values: np.ndarray, raise_exception: bool = False
+) -> int:
     """Returns the length of ``values`` or raise a ValueError exception."""
     if raise_exception:
         raise ValueError("Summary exception raised.")
@@ -20,7 +22,9 @@ def summary_exception(values: np.ndarray, raise_exception: bool = False) -> int:
     return len(values)
 
 
-def summary_memory_error(values: np.ndarray, raise_mem_err: bool = False) -> int:
+def summary_memory_error(
+    values: np.ndarray, raise_mem_err: bool = False
+) -> int:
     """Returns the length of ``values`` or raise a MemoryError exception."""
     if raise_mem_err:
         utils.raise_memory_error()
@@ -93,7 +97,9 @@ class MFETestClass:
         return precomp_vals
 
     @classmethod
-    def precompute_memory_error(cls, raise_mem_err: bool = False, **kwargs) -> None:
+    def precompute_memory_error(
+        cls, raise_mem_err: bool = False, **kwargs
+    ) -> None:
         """Precompute: memory error."""
         precomp_vals = {}
 
@@ -123,7 +129,9 @@ class MFETestClass:
         return -1.0
 
     @classmethod
-    def ft_memory_error(cls, raise_mem_err: bool = False, **kwargs) -> np.ndarray:
+    def ft_memory_error(
+        cls, raise_mem_err: bool = False, **kwargs
+    ) -> np.ndarray:
         """Metafeature: memory error."""
         if raise_mem_err:
             return utils.raise_memory_error()
@@ -137,14 +145,18 @@ class TestArchitecture:
     def test_summary_valid1(self):
         vals = np.arange(5)
 
-        res = _internal.summarize(features=vals, callable_sum=summary_exception)
+        res = _internal.summarize(
+            features=vals, callable_sum=summary_exception
+        )
 
         assert res == len(vals)
 
     def test_summary_valid2(self):
         vals = np.arange(5)
 
-        res = _internal.summarize(features=vals, callable_sum=summary_memory_error)
+        res = _internal.summarize(
+            features=vals, callable_sum=summary_memory_error
+        )
 
         assert res == len(vals)
 
@@ -283,7 +295,9 @@ class TestArchitecture:
         mfe = MFE(groups=groups, summary=summary)
 
         mtf_names_1 = mfe.extract_metafeature_names(supervised=True)
-        mtf_names_2 = mfe.fit(X.values, y.values).extract(suppress_warnings=True)[0]
+        mtf_names_2 = mfe.fit(X.values, y.values).extract(
+            suppress_warnings=True
+        )[0]
 
         assert mtf_names_1 == tuple(mtf_names_2)
 
@@ -373,7 +387,9 @@ class TestArchitecture:
         """Check the length of valid metafeatures per group."""
         X, y = utils.load_xy(0)
 
-        mfe = MFE(groups="all", summary=None, lm_sample_frac=0.5, random_state=1234)
+        mfe = MFE(
+            groups="all", summary=None, lm_sample_frac=0.5, random_state=1234
+        )
 
         mfe.fit(X.values, y.values)
 
