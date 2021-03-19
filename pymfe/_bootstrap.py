@@ -1,4 +1,4 @@
-"""TODO."""
+"""Metafeature extraction with empirical bootstrap confidence intervals."""
 import typing as t
 
 import numpy as np
@@ -8,7 +8,7 @@ import pymfe._internal as _internal
 
 
 class BootstrapExtractor:
-    """TODO."""
+    """Extract metafeatures with empirical bootstrap confidence intervals."""
 
     def __init__(
         self,
@@ -20,7 +20,13 @@ class BootstrapExtractor:
         verbose: int = 0,
         random_state: t.Optional[int] = None,
     ):
-        """TODO."""
+        """Extract metafeatures with confidence intervals.
+
+        The method used is the Empirical Bootstrap.
+
+        Please refer to 'MFE.extract_with_confidence' documentation for
+        more details.
+        """
         _confidence = np.asfarray(confidence)
 
         if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
@@ -132,7 +138,7 @@ class BootstrapExtractor:
     def fit(
         self, X: np.ndarray, y: t.Optional[np.ndarray] = None
     ) -> "BootstrapExtractor":
-        """TODO."""
+        """Fit data into the model."""
         self._extractor.fit(X, y, **self._arguments_fit)
         ret_type = self._arguments_extract.get("out_type")
         self._arguments_extract["out_type"] = tuple
@@ -159,7 +165,26 @@ class BootstrapExtractor:
         return self
 
     def calc_conf_intervals(self, bootstrap_vals: np.ndarray) -> np.ndarray:
-        """TODO."""
+        """Calculate bootstrap confidence intervals.
+
+        Parameters
+        ----------
+        bootstrap_vals : :obj:`np.ndarray`
+            Metafeatures extracted from bootstrap resampling (check
+            `BootstrapExtractor.extract_with_confidence` method
+            documentation for more information). Must have shape
+            (metafeature_num, resample_num).
+
+        Returns
+        -------
+        :obj:`np.ndarray`
+            Confidence interval for the data sample metafeatures. Will
+            have shape (metafeature_num, 2 * C), where C is the number
+            of distinct confidence levels fitted in this model. For each
+            column, the even indices (starting from 0) are the confidence
+            intervals lower bounds, while the odd indices are confidence
+            intervals upper bounds.
+        """
         mtf_vals = np.expand_dims(self._mtf_vals, axis=1)
 
         diff_conf_int = np.quantile(
@@ -175,7 +200,19 @@ class BootstrapExtractor:
     ) -> t.Tuple[
         t.Sequence[str], t.Sequence[float], t.Sequence[float], np.ndarray
     ]:
-        """TODO."""
+        """Extract metafeatures with empirical bootstrap confidence intervals.
+
+        Returns
+        -------
+        tuple of sequences
+            The sequences of values are organized as follows:
+            Metafeature names, metafeature values, metafeature extraction time
+            (if provided by the fitted MFE extractor. Otherwise, return an
+            empty list) and the confidence intervals.
+            Check the `Bootstrap.calc_conf_intervals` method documentation for
+            a more detailed explanation about the confidence intervals data
+            shape.
+        """
         if not self._fit:
             raise TypeError(
                 "Please call BootstrapExtractor.fit() method before "
