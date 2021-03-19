@@ -1660,7 +1660,7 @@ class MFE:
             arguments_fit=arguments_fit,
             arguments_extract=arguments_extract,
             verbose=verbose,
-            random_state=_random_state,
+            random_state=self.random_state,
         )
 
         (
