@@ -37,6 +37,9 @@ class BootstrapExtractor:
                 )
             )
 
+        if _confidence.ndim == 0:
+            _confidence = np.expand_dims(_confidence, axis=0)
+
         self.sample_num = sample_num
         self.verbose = verbose
         self.random_state = random_state
