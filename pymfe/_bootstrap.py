@@ -4,6 +4,8 @@ import typing as t
 import numpy as np
 import pandas as pd
 
+import pymfe._internal as _internal
+
 
 class BootstrapExtractor:
     """TODO."""
@@ -13,8 +15,8 @@ class BootstrapExtractor:
         X: np.ndarray,
         y: t.Optional[np.ndarray],
         extractor,
-        sample_num: int,
-        confidence: t.Union[float, t.Sequence[float]],
+        sample_num: int = 256,
+        confidence: t.Union[float, t.Sequence[float]] = 0.95,
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
@@ -174,9 +176,9 @@ class BootstrapExtractor:
 
         return mtf_conf_int
 
-    def extract(
+    def extract_original_metafeatures(
         self,
-    ) -> t.Tuple[t.List[str], t.List[float], t.List[float], np.ndarray]:
+    ) -> t.Tuple[t.Sequence[str], t.Sequence[float]]:
         """TODO."""
         self._extractor.fit(self.X, self.y, **self._arguments_fit)
         ret_type = self._arguments_extract.get("out_type")
@@ -192,6 +194,33 @@ class BootstrapExtractor:
 
         else:
             self._arguments_extract.pop("out_type")
+
+        return mtf_names, mtf_vals
+
+    def extract_with_confidence(
+        self,
+    ) -> t.Tuple[
+        t.Sequence[str], t.Sequence[float], t.Sequence[float], np.ndarray
+    ]:
+        """TODO."""
+
+        if self.verbose > 0:
+            print("Started metafeature extract with confidence interval.")
+            print("Random seed:")
+            print(
+                " {} For extractor model: {}".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL,
+                    self._extractor.random_state,
+                )
+            )
+
+            print(
+                " {} For bootstrapping: {}".format(
+                    _internal.VERBOSE_BLOCK_END_SYMBOL, self.random_state
+                )
+            )
+
+        mtf_names, mtf_vals = self.extract_original_metafeatures()
 
         bootstrap_vals, mtf_time = self._extract_with_bootstrap(
             mtf_num=len(mtf_names)

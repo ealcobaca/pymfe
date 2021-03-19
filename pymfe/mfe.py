@@ -1613,35 +1613,27 @@ class MFE:
         ValueError
             If ``confidence`` is not in (0.0, 1.0) range.
 
+        TypeError
+            If no data was fit into the model previously.
+
         Notes
         -----
         The model used to fit and extract metafeatures for each sampled
         dataset is instantiated within this method and, therefore, this
         method does not affect the current model (if any) by any means.
         """
+        if not isinstance(self.X, np.ndarray):
+            raise TypeError(
+                "Data not found. Please use MFE.fit() method "
+                "before MFE.extract_with_confidence()."
+            )
+
         if self.random_state is not None:
             np.random.seed(self.random_state)
 
         # Note: the metafeature extraction random seed will be fixed due
         # to the random indices while bootstrapping the fitted data.
         _random_state = self.random_state if self.random_state else 1234
-
-        if verbose > 0:
-            print("Started metafeature extract with confidence interval.")
-            print("Random seed:")
-            print(
-                " {} For extractor model: {}{}".format(
-                    _internal.VERBOSE_BLOCK_END_SYMBOL,
-                    _random_state,
-                    "" if self.random_state else " (chosen by default)",
-                )
-            )
-
-            print(
-                " {} For bootstrapping: {}".format(
-                    _internal.VERBOSE_BLOCK_END_SYMBOL, self.random_state
-                )
-            )
 
         surrogate_extractor = MFE(
             features=self.features,
@@ -1668,7 +1660,7 @@ class MFE:
             mtf_vals,
             mtf_time,
             mtf_conf_int,
-        ) = bootstrap_extractor.extract()
+        ) = bootstrap_extractor.extract_with_confidence()
 
         if self.timeopt:
             mtf_time = list(np.asfarray(mtf_time) / sample_num)
