@@ -19,9 +19,7 @@ _TypeSeqExt = t.List[
 ]
 """Type annotation for a sequence of TypeExtMtdTuple objects."""
 
-_TypeExtract = t.Union[
-    t.Tuple[t.List, ...], t.Dict[str, t.List], pd.DataFrame
-]
+_TypeExtract = t.Union[t.Tuple[t.List, ...], t.Dict[str, t.List], pd.DataFrame]
 """Type annotation for the possible output types of the extract."""
 
 
@@ -1392,28 +1390,21 @@ class MFE:
             )
 
         _deal_types = {
-            tuple: lambda names, vals, times = []:
-                (names, vals, times) if self.timeopt else (names, vals),
-            dict: lambda names, vals, times = []:
-                {
-                    "mtf_names": names,
-                    "mtf_vals": vals,
-                    "mtf_time": times
-                } if self.timeopt else
-                {
-                    "mtf_names": names,
-                    "mtf_vals": vals
-                },
-            pd.DataFrame: lambda names, vals, times = []:
-                pd.DataFrame(
-                    data=(vals, times),
-                    columns=names,
-                    index=("values", "time")
-                ) if self.timeopt else
-                pd.DataFrame(
-                    data=(vals,),
-                    columns=names
-                )
+            tuple: lambda names, vals, times=[]: (names, vals, times)
+            if self.timeopt
+            else (names, vals),
+            dict: lambda names, vals, times=[]: {
+                "mtf_names": names,
+                "mtf_vals": vals,
+                "mtf_time": times,
+            }
+            if self.timeopt
+            else {"mtf_names": names, "mtf_vals": vals},
+            pd.DataFrame: lambda names, vals, times=[]: pd.DataFrame(
+                data=(vals, times), columns=names, index=("values", "time")
+            )
+            if self.timeopt
+            else pd.DataFrame(data=(vals,), columns=names),
         }
 
         try:
@@ -1569,31 +1560,32 @@ class MFE:
 
             _handle_output = {
                 tuple: lambda args: args,
-                dict: lambda args:
-                    (
-                        args["mtf_names"],
-                        args["mtf_vals"],
-                        args["mtf_time"]
-                    ) if self.timeopt else
-                    (
-                        args["mtf_names"],
-                        args["mtf_vals"],
-                    ),
-                pd.DataFrame: lambda args:
-                    (
-                        list(args.columns),
-                        args.values[0],
-                        args.values[1]
-                    ) if self.timeopt else
-                    (
-                        list(args.columns),
-                        args.values[0],
-                    )
+                dict: lambda args: (
+                    args["mtf_names"],
+                    args["mtf_vals"],
+                    args["mtf_time"],
+                )
+                if self.timeopt
+                else (
+                    args["mtf_names"],
+                    args["mtf_vals"],
+                ),
+                pd.DataFrame: lambda args: (
+                    list(args.columns),
+                    args.values[0],
+                    args.values[1],
+                )
+                if self.timeopt
+                else (
+                    list(args.columns),
+                    args.values[0],
+                ),
             }
 
             if self.timeopt:
-                cur_mtf_names, cur_mtf_vals, cur_mtf_time = \
-                    _handle_output[type(args)](args)
+                cur_mtf_names, cur_mtf_vals, cur_mtf_time = _handle_output[
+                    type(args)
+                ](args)
             else:
                 cur_mtf_names, cur_mtf_vals = _handle_output[type(args)](args)
 
@@ -1672,16 +1664,24 @@ class MFE:
         self,
         sample_num: int = 128,
         confidence: t.Union[float, t.List[float]] = 0.95,
-        return_avg_val: bool = True,
         arguments_fit: t.Optional[t.Dict[str, t.Any]] = None,
         arguments_extract: t.Optional[t.Dict[str, t.Any]] = None,
         verbose: int = 0,
     ) -> _TypeExtract:
         """Extract metafeatures with confidence intervals.
 
-        To build the confidence intervals, each metafeature is extracted
-        ``sample_num`` times from a distinct dataset built from the
-        fitted data using bootstrap.
+        To build the confidence intervals, the empirical bootstrap algorithm
+        is used, which is as follows:
+        1. All selected metafeatures are extracted from the fitted data, `M`
+        2. Then, each metafeature is extracted ``sample_num`` times from a
+            resampled dataset using bootstrap from the fitted data, `M_i`.
+        3. Then, the differences `delta_i` = `M_i` - `M` are calculated
+        4. From the differences `delta_i`, the quantiles related to the given
+            confidence levels (confidence = 1 - Type I error rate) are
+            calculated.
+        5. The confidence intervals are centered in `M` and the width of
+            interval is given by the quantiles of the differences previously
+            calculated.
 
         All configuration used by this method are from the configuration
         while instantiating the current model.
@@ -1695,19 +1695,7 @@ class MFE:
         confidence : float or sequence of floats, optional
             Confidence level of the interval. Must be in (0.0, 1.0) range.
             If a sequence of confidence levels is given, a confidence
-            interval will be extracted for all values. Each confidence
-            interval will be calculated as [confidence/2, 1 - confidence/2].
-
-        return_avg_vals : bool, optional
-            If True, return the average value for both the metafeature
-            values and the time elapsed for its extraction (if any
-            ``measure_time`` option was chosen.) If False, then all
-            extracted metafeature values are returned as a 2D numpy array
-            of shape (`metafeature_num`, `sample_num`) (i.e., each row
-            represents a distinct metafeature, and each column is the
-            value of the corresponding metafeature extracted from a
-            distinct sample dataset) and the time elapsed will be the
-            sum of all extractions for each metafeature.
+            interval will be extracted for each value.
 
         arguments_fit : dict, optional
             Extra arguments for the fit method for each sampled dataset.
@@ -1743,15 +1731,6 @@ class MFE:
             (lower_0.80, lower_0.90, lower_0.99, upper_0.80, upper_0.90,
             upper_0.99).
 
-            if ``return_avg_val`` is True, the metafeature values and the
-            time elapsed for extraction for each item (if any ``measure_time``
-            options was chosen) will be the average value between all
-            extractions. Otherwise, all extracted metafeature values will be
-            returned as a 2D numpy array (where each columns is from a distinct
-            sampled dataset, and each row is a distinct metafeature), and the
-            time elapsed will be the sum of all extractions for the
-            corresponding metafeature.
-
         Raises
         ------
         ValueError
@@ -1767,7 +1746,7 @@ class MFE:
 
         if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
             raise ValueError(
-                "'_confidence' must be in (0.0, 1.0) range (got {}.)".format(
+                "'confidence' must be in (0.0, 1.0) range (got {}.)".format(
                     _confidence
                 )
             )
@@ -1786,7 +1765,7 @@ class MFE:
         _random_state = self.random_state if self.random_state else 1234
 
         if verbose > 0:
-            print("Started metafeature extract with _confidence interval.")
+            print("Started metafeature extract with confidence interval.")
             print("Random seed:")
             print(
                 " {} For extractor model: {}{}".format(
@@ -1810,7 +1789,7 @@ class MFE:
             random_state=_random_state,
         )
 
-        mtf_names, mtf_vals, mtf_time = self._extract_with_bootstrap(
+        mtf_names, bootstrap_vals, mtf_time = self._extract_with_bootstrap(
             extractor=extractor,
             sample_num=sample_num,
             verbose=verbose,
@@ -1818,39 +1797,49 @@ class MFE:
             arguments_extract=arguments_extract,
         )  # Returns a t.Tuple[t.List,...]
 
+        extractor.fit(self.X, self.y, **arguments_fit)
+        mtf_vals = extractor.extract(**arguments_extract)[1]
+        mtf_vals = np.expand_dims(mtf_vals, axis=1)
+
         if verbose > 0:
-            print("Finished metafeature extract with _confidence interval.")
-            print("Now getting _confidence intervals...", end=" ")
+            print("Finished metafeature extract with confidence interval.")
+            print("Now getting confidence intervals...", end=" ")
 
         _half_sig_level = 0.5 * (1.0 - _confidence)
-        quantiles = np.hstack((_half_sig_level, 1.0 - _half_sig_level))
-        mtf_conf_int = np.quantile(a=mtf_vals, q=quantiles, axis=1).T
+        critical_points = np.hstack((1.0 - _half_sig_level, _half_sig_level))
+        diff_conf_int = np.quantile(
+            a=bootstrap_vals - mtf_vals, q=critical_points, axis=1
+        ).T
+
+        mtf_conf_int = -diff_conf_int + mtf_vals
 
         if verbose > 0:
             print("Done.")
 
-        if return_avg_val:
-            mtf_vals = np.nanmean(mtf_vals, axis=1)
-
-        if self.timeopt and return_avg_val:
+        if self.timeopt:
             mtf_time /= sample_num
 
         _deal_types = {
-            tuple: lambda names, vals, conf, times = []:
-                (names, vals, times, conf) if self.timeopt
-                else (names, vals, conf),
-            dict: lambda names, vals, conf, times = []:
-                {
-                    "mtf_names": names,
-                    "mtf_vals": vals,
-                    "confidence": conf,
-                    "mtf_time": times
-                } if self.timeopt else
-                {
-                    "mtf_names": names,
-                    "mtf_vals": vals,
-                    "confidence": conf
-                },
+            tuple: lambda names, vals, conf, times=[]: (
+                names,
+                vals,
+                times,
+                conf,
+            )
+            if self.timeopt
+            else (names, vals, conf),
+            dict: lambda names, vals, conf, times=[]: {
+                "mtf_names": names,
+                "bootstrap_vals": vals,
+                "confidence": conf,
+                "mtf_time": times,
+            }
+            if self.timeopt
+            else {
+                "mtf_names": names,
+                "bootstrap_vals": vals,
+                "confidence": conf,
+            },
         }
 
         # Check if the type was defined previously
@@ -1861,10 +1850,7 @@ class MFE:
 
         try:
             return _deal_types[out_type](
-                mtf_names,
-                mtf_vals,
-                mtf_conf_int,
-                mtf_time
+                mtf_names, mtf_vals, mtf_conf_int, mtf_time
             )
         except KeyError as out_not_defined:
             raise TypeError("Unknown output type.") from out_not_defined
