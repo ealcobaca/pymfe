@@ -50,7 +50,7 @@ def sum_histogram(
     try:
         freqs, _ = np.histogram(values, bins=bins)
 
-    except ValueError:
+    except (ValueError, IndexError):
         return np.full(bins, fill_value=np.nan)
 
     if normalize:
