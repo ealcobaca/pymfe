@@ -1138,8 +1138,10 @@ def process_features(
         for unknown_ft in processed_ft:
             warnings.warn(
                 "Unknown feature '{}'. You can check available "
-                "feature names with either 'valid_metafeatures()'"
-                " or 'metafeature_description()' methods.".format(unknown_ft),
+                "feature names with either 'MFE.valid_metafeatures()'"
+                " or 'MFE.metafeature_description()' methods.".format(
+                    unknown_ft
+                ),
                 UserWarning,
             )
 

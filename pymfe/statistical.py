@@ -212,6 +212,7 @@ class MFEStatistical:
         cls,
         N: np.ndarray,
         y: np.ndarray,
+        max_iter: int = 500,
     ) -> np.ndarray:
         """Calculate the Canonical Correlations between ``N`` and ``y.``
 
@@ -235,21 +236,20 @@ class MFEStatistical:
         # whenever less than 'n_components' are got. However, this is
         # already taken into account in this function, so no need for
         # those warnings.
-        warnings.filterwarnings("ignore", category=UserWarning)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
 
-        cca_model = sklearn.cross_decomposition.CCA(
-            n_components=n_components, max_iter=500
-        )
+            cca_model = sklearn.cross_decomposition.CCA(
+                n_components=n_components, max_iter=max_iter
+            )
 
-        try:
-            cca_model.fit(N, y_bin)
+            try:
+                cca_model.fit(N, y_bin)
 
-        except StopIteration:
-            pass
+            except StopIteration:
+                pass
 
-        N_tf, y_tf = cca_model.transform(N, y_bin)
-
-        warnings.filterwarnings("default", category=UserWarning)
+            N_tf, y_tf = cca_model.transform(N, y_bin)
 
         ind = 0
         can_cors = np.zeros(n_components, dtype=float)

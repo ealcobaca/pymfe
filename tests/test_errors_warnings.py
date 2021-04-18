@@ -4,6 +4,7 @@ import numpy as np
 
 from pymfe.mfe import MFE
 from pymfe import _internal
+from pymfe import _bootstrap
 from tests.utils import load_xy
 
 GNAME = "errors-warnings"
@@ -328,3 +329,14 @@ class TestErrorsWarnings:
         with pytest.raises(ValueError):
             mfe = MFE()
             mfe.fit(X.values, y.values, transform_cat="invalid")
+
+    def test_extract_with_confidence_without_data(self):
+        mfe = MFE()
+        with pytest.raises(TypeError):
+            mfe.extract_with_confidence()
+
+    def test_bootstrap_extractor_extract_with_confidence_without_data(self):
+        mfe = MFE()
+        bootstrap_extractor = _bootstrap.BootstrapExtractor(extractor=mfe)
+        with pytest.raises(TypeError):
+            mfe.extract_with_confidence()

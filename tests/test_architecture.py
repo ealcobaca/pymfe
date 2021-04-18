@@ -467,24 +467,19 @@ class TestArchitecture:
             )
             .fit(X=X.values, y=y.values, precomp_groups=None)
             .extract_with_confidence(
-                sample_num=64,
-                return_avg_val=False,
-                confidence=confidence,
-                verbose=0,
+                sample_num=64, confidence=confidence, verbose=0
             )
         )
 
-        in_range_prop = np.zeros(len(mtf_names), dtype=float)
+        in_range = np.zeros(len(mtf_names), dtype=bool)
 
         for mtf_ind, cur_mtf_vals in enumerate(mtf_vals):
             int_low, int_high = mtf_conf_int[mtf_ind, :]
-            in_range_prop[mtf_ind] = np.sum(
-                np.logical_and(
-                    int_low <= cur_mtf_vals, cur_mtf_vals <= int_high
-                )
-            ) / len(cur_mtf_vals)
+            in_range[mtf_ind] = np.logical_and(
+                int_low <= cur_mtf_vals, cur_mtf_vals <= int_high
+            )
 
-        assert np.all(confidence - 0.05 <= in_range_prop)
+        assert np.all(in_range)
 
     def test_extract_with_confidence_invalid1(self):
         with pytest.raises(TypeError):
@@ -506,16 +501,13 @@ class TestArchitecture:
                 confidence=1.0001
             )
 
-    @pytest.mark.parametrize("return_avg_val", (True, False))
-    def test_extract_with_confidence_time(self, return_avg_val):
+    def test_extract_with_confidence_time(self):
         X, y = utils.load_xy(2)
 
         res = (
             MFE(features=["mean", "nr_inst", "unknown"], measure_time="avg")
             .fit(X=X.values, y=y.values)
-            .extract_with_confidence(
-                sample_num=3, return_avg_val=return_avg_val
-            )
+            .extract_with_confidence(sample_num=3)
         )
 
         mtf_names, mtf_vals, mtf_time, mtf_conf_int = res
@@ -574,7 +566,7 @@ class TestArchitecture:
             .extract_with_confidence(sample_num=3)
         )
 
-        assert np.any(~np.isclose(mtf_vals_1, mtf_vals_2)) and np.any(
+        assert np.allclose(mtf_vals_1, mtf_vals_2) and np.any(
             ~np.isclose(mtf_conf_int_1, mtf_conf_int_2)
         )
 
@@ -595,7 +587,7 @@ class TestArchitecture:
             .extract_with_confidence(sample_num=3)
         )
 
-        assert np.any(~np.isclose(mtf_vals_1, mtf_vals_2)) and np.any(
+        assert np.allclose(mtf_vals_1, mtf_vals_2) and np.any(
             ~np.isclose(mtf_conf_int_1, mtf_conf_int_2)
         )
 
