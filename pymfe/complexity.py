@@ -8,6 +8,7 @@ import sklearn
 import sklearn.pipeline
 import scipy.spatial
 import igraph
+import gower
 
 from pymfe.general import MFEGeneral
 from pymfe.clustering import MFEClustering
@@ -227,11 +228,7 @@ class MFEComplexity:
 
     @classmethod
     def precompute_norm_dist_mat(
-        cls,
-        N: np.ndarray,
-        metric: str = "minkowski",
-        p: t.Union[int, float] = 2,
-        **kwargs
+        cls, N: np.ndarray, metric: str = "gower", p: t.Union[int, float] = 2, **kwargs
     ) -> t.Dict[str, np.ndarray]:
         """Precompute normalized ``N`` and pairwise distance among instances.
 
@@ -308,7 +305,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: t.Optional[np.ndarray] = None,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: t.Union[int, float] = 2,
         **kwargs
     ) -> t.Dict[str, np.ndarray]:
@@ -395,7 +392,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: t.Optional[np.ndarray] = None,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: float = 2.0,
         n_jobs: t.Optional[int] = None,
         **kwargs
@@ -478,14 +475,21 @@ class MFEComplexity:
         if N_scaled is None:
             N_scaled = cls._scale_N(N=N)
 
+        if metric == "gower":
+            norm_dist_mat = gower.gower_matrix(N_scaled)
+            return norm_dist_mat, 0.0, 1.0
+
         norm_dist_mat = scipy.spatial.distance.cdist(
-            N_scaled, N_scaled, metric=metric, p=p
+            N_scaled,
+            N_scaled,
+            metric=metric,
+            p=p,
         )
 
         orig_dist_mat_min = float(np.min(norm_dist_mat))
         orig_dist_mat_ptp = float(np.ptp(norm_dist_mat))
 
-        if normalize and np.not_equal(0.0, orig_dist_mat_ptp):
+        if metric != "gower" and normalize and np.not_equal(0.0, orig_dist_mat_ptp):
             norm_dist_mat = (norm_dist_mat - orig_dist_mat_min) / orig_dist_mat_ptp
 
         return norm_dist_mat, orig_dist_mat_min, orig_dist_mat_ptp
@@ -495,7 +499,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: float = 2.0,
         radius_frac: float = 0.15,
         n_jobs: t.Optional[int] = None,
@@ -503,7 +507,7 @@ class MFEComplexity:
         N_scaled: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
     ):
-        """Build a adjacency graph for nearest neighbors of a same class.""" 
+        """Build a adjacency graph for nearest neighbors of a same class."""
         if cls_inds is None:
             cls_inds = _utils.calc_cls_inds(y)
 
@@ -654,7 +658,7 @@ class MFEComplexity:
         if random_state is not None:
             np.random.seed(random_state)
 
-        N_interpol = np.zeros(N.shape, dtype=N.dtype)
+        N_interpol = np.atleast_2d(np.zeros(N.shape, dtype=N.dtype))
         y_interpol = np.zeros(y.shape, dtype=y.dtype)
 
         ind_cur = 0
@@ -719,7 +723,7 @@ class MFEComplexity:
                 feature_range=(0, 1)
             ).fit_transform(N)
 
-        return N_scaled
+        return np.atleast_2d(N_scaled)
 
     @classmethod
     def ft_f1(
@@ -1537,7 +1541,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: t.Union[int, float] = 2,
         N_scaled: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
@@ -1629,7 +1633,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: t.Union[int, float] = 2,
         class_freqs: t.Optional[np.ndarray] = None,
         cls_inds: t.Optional[np.ndarray] = None,
@@ -1747,7 +1751,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: t.Union[int, float] = 2,
         N_scaled: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
@@ -1825,7 +1829,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: t.Union[int, float] = 2,
         n_neighbors: int = 1,
         random_state: t.Optional[int] = None,
@@ -1930,9 +1934,16 @@ class MFEComplexity:
             n_neighbors=n_neighbors, metric="precomputed"
         ).fit(norm_dist_mat, y)
 
-        test_dist = scipy.spatial.distance.cdist(
-            N_interpol, N_scaled, metric=metric, p=p
-        )
+        if metric == "gower":
+            test_dist = gower.gower_matrix(N_interpol, N_scaled)
+
+        else:
+            test_dist = scipy.spatial.distance.cdist(
+                N_interpol,
+                N_scaled,
+                metric=metric,
+                p=p,
+            )
 
         # Note: normalizing test data distances with original data
         # information in order to provide unbiased predictions (i.e.
@@ -2034,7 +2045,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: t.Union[int, float] = 2,
         cls_inds: t.Optional[np.ndarray] = None,
         N_scaled: t.Optional[np.ndarray] = None,
@@ -2384,7 +2395,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: t.Union[int, float] = 2,
         cls_inds: t.Optional[np.ndarray] = None,
         N_scaled: t.Optional[np.ndarray] = None,
@@ -2487,7 +2498,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: float = 2.0,
         radius_frac: t.Union[int, float] = 0.15,
         n_jobs: t.Optional[int] = None,
@@ -2580,7 +2591,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: float = 2.0,
         radius_frac: t.Union[int, float] = 0.15,
         n_jobs: t.Optional[int] = None,
@@ -2672,7 +2683,7 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        metric: str = "minkowski",
+        metric: str = "gower",
         p: float = 2.0,
         radius_frac: t.Union[int, float] = 0.15,
         n_jobs: t.Optional[int] = None,
