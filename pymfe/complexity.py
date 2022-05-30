@@ -7,6 +7,7 @@ import numpy as np
 import sklearn
 import sklearn.pipeline
 import scipy.spatial
+import igraph
 
 from pymfe.general import MFEGeneral
 from pymfe.clustering import MFEClustering
@@ -294,9 +295,7 @@ class MFEComplexity:
                 norm_dist_mat,
                 orig_dist_mat_min,
                 orig_dist_mat_ptp,
-            ) = cls._calc_norm_dist_mat(
-                N=N, metric=metric, p=p, N_scaled=N_scaled
-            )
+            ) = cls._calc_norm_dist_mat(N=N, metric=metric, p=p, N_scaled=N_scaled)
 
             precomp_vals["norm_dist_mat"] = norm_dist_mat
             precomp_vals["orig_dist_mat_min"] = orig_dist_mat_min
@@ -366,18 +365,14 @@ class MFEComplexity:
         if (
             y is not None
             and N.size
-            and not {"nearest_enemy_dist", "nearest_enemy_ind"}.issubset(
-                kwargs
-            )
+            and not {"nearest_enemy_dist", "nearest_enemy_ind"}.issubset(kwargs)
         ):
             norm_dist_mat = kwargs.get("norm_dist_mat")
             cls_inds = kwargs.get("cls_inds")
 
             if norm_dist_mat is None:
                 precomp_vals.update(
-                    cls.precompute_norm_dist_mat(
-                        N=N, metric=metric, p=p, **kwargs
-                    )
+                    cls.precompute_norm_dist_mat(N=N, metric=metric, p=p, **kwargs)
                 )
                 norm_dist_mat = precomp_vals["norm_dist_mat"]
 
@@ -392,6 +387,65 @@ class MFEComplexity:
 
             precomp_vals["nearest_enemy_dist"] = nearest_enemy_dist
             precomp_vals["nearest_enemy_ind"] = nearest_enemy_ind
+
+        return precomp_vals
+
+    @classmethod
+    def precompute_adjacency_graph(
+        cls,
+        N: np.ndarray,
+        y: t.Optional[np.ndarray] = None,
+        metric: str = "minkowski",
+        p: float = 2.0,
+        n_jobs: t.Optional[int] = None,
+        **kwargs
+    ) -> t.Dict[str, np.ndarray]:
+        """Precompute instances nearest enemy related values.
+
+        The instance nearest enemy is the nearest instance from a
+        different class.
+
+        Parameters
+        ----------
+        N : :obj:`np.ndarray`
+            Numerical fitted data.
+
+        y : :obj:`np.ndarray`
+            Target attribute.
+
+        **kwargs
+            Additional arguments. May have previously precomputed before this
+            method from other precomputed methods, so they can help speed up
+            this precomputation.
+
+        Returns
+        -------
+        :obj:`dict`
+            With following precomputed items:
+        """
+        precomp_vals = {}
+
+        if y is not None and N.size and "adj_graph" not in kwargs:
+            norm_dist_mat = kwargs.get("norm_dist_mat")
+            N_scaled = kwargs.get("N_scaled")
+            cls_inds = kwargs.get("cls_inds")
+
+            try:
+                adj_graph = cls._build_adjacency_graph(
+                    N=N,
+                    y=y,
+                    cls_inds=cls_inds,
+                    n_jobs=n_jobs,
+                    metric=metric,
+                    norm_dist_mat=norm_dist_mat,
+                    N_scaled=N_scaled,
+                    p=p,
+                )
+            except Exception as err:
+                print(err)
+                raise Exception from err
+
+            precomp_vals["adj_graph"] = adj_graph
 
         return precomp_vals
 
@@ -432,11 +486,63 @@ class MFEComplexity:
         orig_dist_mat_ptp = float(np.ptp(norm_dist_mat))
 
         if normalize and np.not_equal(0.0, orig_dist_mat_ptp):
-            norm_dist_mat = (
-                norm_dist_mat - orig_dist_mat_min
-            ) / orig_dist_mat_ptp
+            norm_dist_mat = (norm_dist_mat - orig_dist_mat_min) / orig_dist_mat_ptp
 
         return norm_dist_mat, orig_dist_mat_min, orig_dist_mat_ptp
+
+    @classmethod
+    def _build_adjacency_graph(
+        cls,
+        N: np.ndarray,
+        y: np.ndarray,
+        metric: str = "minkowski",
+        p: float = 2.0,
+        radius_frac: float = 0.15,
+        n_jobs: t.Optional[int] = None,
+        cls_inds: t.Optional[np.ndarray] = None,
+        N_scaled: t.Optional[np.ndarray] = None,
+        norm_dist_mat: t.Optional[np.ndarray] = None,
+    ):
+        """Build a adjacency graph for nearest neighbors of a same class.""" 
+        if cls_inds is None:
+            cls_inds = _utils.calc_cls_inds(y)
+
+        if norm_dist_mat is None:
+            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
+                N=N,
+                metric=metric,
+                p=p,
+                N_scaled=N_scaled,
+            )
+
+        num_inst, _ = N.shape
+        adj_mat = np.zeros((num_inst, num_inst), dtype=float)
+
+        n_neighbors = int(
+            round(num_inst * radius_frac) if 0 < radius_frac < 1.0 else radius_frac
+        )
+        n_neighbors = max(n_neighbors, 1)
+
+        for inds_cur_cls in cls_inds:
+            cls_inds = np.flatnonzero(inds_cur_cls)
+            cur_inds = tuple(np.meshgrid(cls_inds, cls_inds, copy=False))
+
+            same_cls_neighbor_dist = sklearn.neighbors.kneighbors_graph(
+                norm_dist_mat[cur_inds],
+                n_neighbors=n_neighbors,
+                mode="distance",
+                include_self=False,
+                n_jobs=n_jobs,
+                metric="precomputed",
+            ).toarray()
+
+            adj_mat[cur_inds] = same_cls_neighbor_dist
+
+        adj_graph = igraph.GraphBase.Weighted_Adjacency(
+            adj_mat.tolist(), mode="undirected"
+        )
+
+        return adj_graph
 
     @staticmethod
     def _calc_ovo_comb(classes: np.ndarray) -> np.ndarray:
@@ -679,9 +785,7 @@ class MFEComplexity:
             dtype=float,
         )
 
-        _numer = np.sum(
-            np.square(centroids - mean_global).T * class_freqs, axis=1
-        )
+        _numer = np.sum(np.square(centroids - mean_global).T * class_freqs, axis=1)
 
         _denom = np.sum(
             [
@@ -774,15 +878,13 @@ class MFEComplexity:
 
         for cls_ind, inds_cur_cls in enumerate(_cls_inds):
             cur_cls_inst = N[inds_cur_cls, :]
-            mat_scatter_within.append(
-                np.cov(cur_cls_inst, rowvar=False, ddof=1)
-            )
+            mat_scatter_within.append(np.cov(cur_cls_inst, rowvar=False, ddof=1))
             centroids[cls_ind, :] = cur_cls_inst.mean(axis=0)
 
         for ind, (cls_id_1, cls_id_2) in enumerate(_ovo_comb):
-            centroid_diff = (
-                centroids[cls_id_1, :] - centroids[cls_id_2, :]
-            ).reshape(-1, 1)
+            centroid_diff = (centroids[cls_id_1, :] - centroids[cls_id_2, :]).reshape(
+                -1, 1
+            )
 
             total_inst_num = _class_freqs[cls_id_1] + _class_freqs[cls_id_2]
 
@@ -879,9 +981,7 @@ class MFEComplexity:
             minmax = cls._calc_minmax(N_cls_1, N_cls_2)
             maxmin = cls._calc_maxmin(N_cls_1, N_cls_2)
 
-            f2[ind] = np.prod(
-                np.maximum(0.0, minmax - maxmin) / (maxmax - minmin)
-            )
+            f2[ind] = np.prod(np.maximum(0.0, minmax - maxmin) / (maxmax - minmin))
 
         return f2
 
@@ -1042,11 +1142,7 @@ class MFEComplexity:
 
                 # Note: 'feat_overlapped_region' is a boolean vector with
                 # True values if the example is in the overlapping region
-                (
-                    ind_less_overlap,
-                    _,
-                    feat_overlapped_region,
-                ) = cls._calc_overlap(
+                (ind_less_overlap, _, feat_overlapped_region,) = cls._calc_overlap(
                     N=N_view,
                     minmax=cls._calc_minmax(N_cls_1, N_cls_2),
                     maxmin=cls._calc_maxmin(N_cls_1, N_cls_2),
@@ -1070,9 +1166,7 @@ class MFEComplexity:
 
             subset_size = N_subset.shape[0]
 
-            f4[ind] = subset_size / (
-                _class_freqs[cls_id_1] + _class_freqs[cls_id_2]
-            )
+            f4[ind] = subset_size / (_class_freqs[cls_id_1] + _class_freqs[cls_id_2])
 
         # The measure is computed in the literature using the mean. However, it
         # is formulated here as a meta-feature. Therefore, the post-processing
@@ -1189,9 +1283,7 @@ class MFEComplexity:
             misclassified_insts = N_subset[y_pred != y_subset, :]
 
             if misclassified_insts.size:
-                insts_dists = svc_pipeline.decision_function(
-                    misclassified_insts
-                )
+                insts_dists = svc_pipeline.decision_function(misclassified_insts)
 
             else:
                 insts_dists = np.array([0.0], dtype=float)
@@ -1624,12 +1716,8 @@ class MFEComplexity:
         cur_ind = 0
 
         for cls_ind, inds_cur_cls in enumerate(cls_inds):
-            norm_dist_mat_intracls = norm_dist_mat[inds_cur_cls, :][
-                :, inds_cur_cls
-            ]
-            norm_dist_mat_intercls = norm_dist_mat[~inds_cur_cls, :][
-                :, inds_cur_cls
-            ]
+            norm_dist_mat_intracls = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
+            norm_dist_mat_intercls = norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
 
             norm_dist_mat_intracls[
                 np.diag_indices_from(norm_dist_mat_intracls)
@@ -1832,9 +1920,7 @@ class MFEComplexity:
                 norm_dist_mat,
                 orig_dist_mat_min,
                 orig_dist_mat_ptp,
-            ) = cls._calc_norm_dist_mat(
-                N=N, metric=metric, p=p, N_scaled=N_scaled
-            )
+            ) = cls._calc_norm_dist_mat(N=N, metric=metric, p=p, N_scaled=N_scaled)
 
         N_interpol, y_interpol = cls._interpolate(
             N=N_scaled, y=y, cls_inds=cls_inds, random_state=random_state
@@ -1864,9 +1950,7 @@ class MFEComplexity:
         return misclassifications
 
     @classmethod
-    def ft_c1(
-        cls, y: np.ndarray, class_freqs: t.Optional[np.ndarray] = None
-    ) -> float:
+    def ft_c1(cls, y: np.ndarray, class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute the entropy of class proportions.
 
         This measure is in [0, 1] range.
@@ -1900,16 +1984,12 @@ class MFEComplexity:
 
         # Note: calling 'ft_nre' just to make explicity the link
         # between this metafeature and 'C1'.
-        c1 = MFEClustering.ft_nre(y=y, class_freqs=class_freqs) / np.log(
-            num_class
-        )
+        c1 = MFEClustering.ft_nre(y=y, class_freqs=class_freqs) / np.log(num_class)
 
         return c1
 
     @classmethod
-    def ft_c2(
-        cls, y: np.ndarray, class_freqs: t.Optional[np.ndarray] = None
-    ) -> float:
+    def ft_c2(cls, y: np.ndarray, class_freqs: t.Optional[np.ndarray] = None) -> float:
         """Compute the imbalance ratio.
 
         This measure is in [0, 1] range.
@@ -2066,15 +2146,11 @@ class MFEComplexity:
 
                 radius_enemy = _recurse_radius_calc(ind_inst=ind_enemy)
 
-                radius[ind_inst] = abs(
-                    nearest_enemy_dist[ind_inst] - radius_enemy
-                )
+                radius[ind_inst] = abs(nearest_enemy_dist[ind_inst] - radius_enemy)
 
                 return radius[ind_inst]
 
-            radius = np.full(
-                nearest_enemy_ind.size, fill_value=-1.0, dtype=float
-            )
+            radius = np.full(nearest_enemy_ind.size, fill_value=-1.0, dtype=float)
 
             for ind in np.arange(radius.size):
                 if radius[ind] < 0.0:
@@ -2092,9 +2168,7 @@ class MFEComplexity:
             upper_a, lower_a = center_a + radius_a, center_a - radius_a
             upper_b, lower_b = center_b + radius_b, center_b - radius_b
             for ind in np.arange(center_a.size):
-                if (upper_a[ind] > upper_b[ind]) or (
-                    lower_a[ind] < lower_b[ind]
-                ):
+                if (upper_a[ind] > upper_b[ind]) or (lower_a[ind] < lower_b[ind]):
                     return False
 
             return True
@@ -2120,9 +2194,7 @@ class MFEComplexity:
                         radius_b=radius[ind_sphere_b],
                     ):
 
-                        sphere_inst_num[ind_sphere_b] += sphere_inst_num[
-                            ind_sphere_a
-                        ]
+                        sphere_inst_num[ind_sphere_b] += sphere_inst_num[ind_sphere_a]
                         sphere_inst_num[ind_sphere_a] = 0
                         break
 
@@ -2144,9 +2216,7 @@ class MFEComplexity:
             )
 
         else:
-            orig_dist_mat = (
-                norm_dist_mat * orig_dist_mat_ptp + orig_dist_mat_min
-            )
+            orig_dist_mat = norm_dist_mat * orig_dist_mat_ptp + orig_dist_mat_min
 
         # Note: using the original pairwise distances between instances,
         # instead of the normalized ones, to preserve geometrical/spatial
@@ -2162,13 +2232,11 @@ class MFEComplexity:
             nearest_enemy_dist=nearest_enemy_dist,
         )
 
-        sphere_inst_count = _agglomerate_hyperspheres(
-            centers=N_scaled, radius=radius
-        )
+        sphere_inst_count = _agglomerate_hyperspheres(centers=N_scaled, radius=radius)
 
         # Note: in the reference paper, just the fraction of
         # remaining hyperspheres to the size of the dataset is
-        # calculated. However, just like the R mfe package,
+        # calculated. However, just like the R ECoL package,
         # we return the fraction of the number of instances in
         # each remaining hypersphere to provide more informative
         # summarization values.
@@ -2410,7 +2478,7 @@ class MFEComplexity:
                 cls_inds=cls_inds,
             )
 
-        lsc = 1.0 - np.sum(_norm_dist_mat < nearest_enemy_dist) / (y.size ** 2)
+        lsc = 1.0 - np.sum(_norm_dist_mat < nearest_enemy_dist) / (y.size**2)
 
         return lsc
 
@@ -2419,12 +2487,13 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        radius: t.Union[int, float] = 0.15,
         metric: str = "minkowski",
-        p: t.Union[int, float] = 2,
+        p: float = 2.0,
+        radius_frac: t.Union[int, float] = 0.15,
+        n_jobs: t.Optional[int] = None,
         cls_inds: t.Optional[np.ndarray] = None,
-        N_scaled: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
+        adj_graph: t.Optional[igraph.GraphBase.Weighted_Adjacency] = None,
     ) -> float:
         """Average density of the network.
 
@@ -2490,26 +2559,19 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if cls_inds is None:
-            cls_inds = _utils.calc_cls_inds(y)
-
-        if norm_dist_mat is None:
-            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
-                N=N, metric=metric, p=p, N_scaled=N_scaled
+        if adj_graph is None:
+            adj_graph = cls._build_adjacency_graph(
+                N=N,
+                y=y,
+                n_jobs=n_jobs,
+                cls_inds=cls_inds,
+                metric=metric,
+                p=p,
+                radius_frac=radius_frac,
+                norm_dist_mat=norm_dist_mat,
             )
 
-        # Note: -y.size to discount self-loops
-        total_edges = -y.size
-
-        for inds_cur_cls in cls_inds:
-            dist_mat_subset = norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            total_edges += np.sum(dist_mat_subset < radius)
-
-        # Note: dividing 'total_edges' by 2 (i.e., omitting the '2 *' factor
-        # in the formula below) to discount the symmetry of the adjacency
-        # matrix, as the underlying 'Same-class Radius Nearest Neighbors'
-        # graph is undirected.
-        density = 1.0 - total_edges / (y.size * (y.size - 1))
+        density = 1.0 - np.asfarray(adj_graph.density())
 
         return density
 
@@ -2518,12 +2580,13 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        radius: t.Union[int, float] = 0.15,
         metric: str = "minkowski",
-        p: t.Union[int, float] = 2,
+        p: float = 2.0,
+        radius_frac: t.Union[int, float] = 0.15,
+        n_jobs: t.Optional[int] = None,
         cls_inds: t.Optional[np.ndarray] = None,
-        N_scaled: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
+        adj_graph: t.Optional[igraph.GraphBase.Weighted_Adjacency] = None,
     ) -> float:
         """Clustering coefficient.
 
@@ -2588,45 +2651,19 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if cls_inds is None:
-            cls_inds = _utils.calc_cls_inds(y)
-
-        if norm_dist_mat is None:
-            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
-                N=N, metric=metric, p=p, N_scaled=N_scaled
+        if adj_graph is None:
+            adj_graph = cls._build_adjacency_graph(
+                N=N,
+                y=y,
+                n_jobs=n_jobs,
+                cls_inds=cls_inds,
+                metric=metric,
+                p=p,
+                radius_frac=radius_frac,
+                norm_dist_mat=norm_dist_mat,
             )
 
-        _norm_dist_mat = np.asfarray(norm_dist_mat)
-
-        # Note: -1 to discount self-loops
-        neighbor_edges = np.full(y.size, fill_value=-1, dtype=int)
-
-        for inds_cur_cls in cls_inds:
-            dist_mat_subset = _norm_dist_mat[inds_cur_cls, :][:, inds_cur_cls]
-            neigh_num = np.sum(dist_mat_subset < radius, axis=1)
-            neighbor_edges[inds_cur_cls] += neigh_num
-
-        # Note: also including the node itself to calculate the total
-        # possible edges between 'k' nodes, as the formula presented
-        # in the original paper is not supposed to work with only the
-        # number of the node neighbors, as the paper seems to claim.
-        total_nodes = np.sum(_norm_dist_mat < radius, axis=1)
-
-        cls_coef = 1.0 - 2.0 * float(
-            np.mean(neighbor_edges / (1e-8 + total_nodes * (total_nodes - 1)))
-        )
-
-        # Note: the R mfe implementation calculates cls_coef as:
-        # cls_coef = 1 - transitivity(g), like the code below:
-
-        # import networkx
-        # adj_mat = ...  # Calculate adjacency matrix
-        # g = networkx.Graph(adj_mat)
-        # cls_coef = 1 - networkx.transitivity(g)
-        # print(cls_coef)
-
-        # Whether one implementation should be preferred over another is
-        # up to discussion.
+        cls_coef = 1.0 - np.asfarray(adj_graph.transitivity_undirected(mode="zero"))
 
         return cls_coef
 
@@ -2635,12 +2672,13 @@ class MFEComplexity:
         cls,
         N: np.ndarray,
         y: np.ndarray,
-        radius: t.Union[int, float] = 0.15,
         metric: str = "minkowski",
-        p: t.Union[int, float] = 2,
+        p: float = 2.0,
+        radius_frac: t.Union[int, float] = 0.15,
+        n_jobs: t.Optional[int] = None,
         cls_inds: t.Optional[np.ndarray] = None,
-        N_scaled: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
+        adj_graph: t.Optional[igraph.GraphBase.Weighted_Adjacency] = None,
     ) -> np.ndarray:
         """Hub score.
 
@@ -2661,38 +2699,38 @@ class MFEComplexity:
         y : :obj:`np.ndarray`
             Target attribute.
 
-        radius : float or int, optional
-            Maximum distance between each pair of instances of the same
-            class to both be considered neighbors of each other. Note that
-            each feature of ``N`` is first normalized into the [0, 1]
-            range before the neighbor calculations.
-
         metric : str, optional
             Metric used to calculate the distances between the instances.
             Check the ``scipy.spatial.distance.cdist`` documentation to
-            get a list of all available metrics. This argument is used
-            only if ``norm_dist_mat`` is None.
+            get a list of all available metrics. Used only if `adj_graph` is None.
 
         p : int, optional
             Power parameter for the Minkowski metric. When p = 1, this is
             equivalent to using Manhattan distance (l1), and Euclidean
             distance (l2) for p = 2. For arbitrary p, Minkowski distance
-            (l_p) is used. Used only if ``norm_dist_mat`` is None.
+            (l_p) is used. Used only if `adj_graph` is None.
+
+        radius_frac : float or int, optional
+            If `int`, maximum number of neighbors of the same class for each instance.
+            If `float`, the maximum number of neighbors is computed as `radius_frac * len(N)`.
+            Used only if `adj_graph` is None.
+
+        n_jobs : int or None, optional
+            Number of parallel processes to compute nearest neighbors.
+            Used only if `adj_graph` is None.
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
             The rows corresponds to each distinct class, and the columns
-            corresponds to the instances.
+            corresponds to the instances. Used only if `adj_graph` is None.
 
-        N_scaled : :obj:`np.ndarray`, optional
-            Numerical data ``N`` with each feature normalized  in [0, 1]
-            range. Used only if ``norm_dist_mat`` is None. Used to take
-            advantage of precomputations.
+        norm_dist_mat: :obj:`np.ndarray`, optional
+            Normalized distance matrix
 
-        norm_dist_mat : :obj:`np.ndarray`, optional
-            Square matrix with the pairwise distances between each
-            instance in ``N_scaled``, i.e., between the normalized
-            instances. Used to take advantage of precomputations.
+        adj_graph : :obj:`igraph.GraphBase.Weighted_Adjacency`, optional
+            Undirected and Weighted adjacency graph for the dataset. Only instances
+            belonging to the same class must be connected. If not provided, will
+            compute using `metric`, `p`, `radius_frac`
 
         Returns
         -------
@@ -2707,34 +2745,18 @@ class MFEComplexity:
            (Cited on page 9). Published in ACM Computing Surveys (CSUR),
            Volume 52 Issue 5, October 2019, Article No. 107.
         """
-        if cls_inds is None:
-            cls_inds = _utils.calc_cls_inds(y)
-
-        if norm_dist_mat is None:
-            norm_dist_mat, _, _ = cls._calc_norm_dist_mat(
-                N=N, metric=metric, p=p, N_scaled=N_scaled
+        if adj_graph is None:
+            adj_graph = cls._build_adjacency_graph(
+                N=N,
+                y=y,
+                n_jobs=n_jobs,
+                cls_inds=cls_inds,
+                metric=metric,
+                p=p,
+                radius_frac=radius_frac,
+                norm_dist_mat=norm_dist_mat,
             )
 
-        _norm_dist_mat = np.asfarray(norm_dist_mat)
-
-        adj_mat = np.zeros_like(_norm_dist_mat, dtype=_norm_dist_mat.dtype)
-
-        for inds_cur_cls in cls_inds:
-            _inds = np.flatnonzero(
-                inds_cur_cls
-            )  # type: t.Union[t.Tuple, np.ndarray]
-            _inds = tuple(np.meshgrid(_inds, _inds, copy=False, sparse=True))
-            dist_mat_subset = _norm_dist_mat[_inds]
-            adj_mat[_inds] = dist_mat_subset * (dist_mat_subset < radius)
-
-        # Note: 'adj_mat' is symmetric because the underlying graph is
-        # undirected. Also, A^t * A = A * A^t, with 'A' = adj_mat.
-        _, eigvecs = np.linalg.eigh(np.dot(adj_mat.T, adj_mat))
-
-        # Note: in the reference paper, it is used the average value of
-        # the principal eigenvector. However, to enable summarization,
-        # and just like the R mfe package, here we chose to return all
-        # complement of the hub scores for every node.
-        hubs = 1.0 - np.abs(eigvecs[:, -1])
+        hubs = 1.0 - np.asfarray(adj_graph.hub_score())
 
         return hubs
