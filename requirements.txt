@@ -6,3 +6,4 @@ pandas
 statsmodels
 texttable
 tqdm
+igraph
