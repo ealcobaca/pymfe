@@ -489,7 +489,7 @@ class MFEComplexity:
         orig_dist_mat_min = float(np.min(norm_dist_mat))
         orig_dist_mat_ptp = float(np.ptp(norm_dist_mat))
 
-        if metric != "gower" and normalize and np.not_equal(0.0, orig_dist_mat_ptp):
+        if normalize and np.not_equal(0.0, orig_dist_mat_ptp):
             norm_dist_mat = (norm_dist_mat - orig_dist_mat_min) / orig_dist_mat_ptp
 
         return norm_dist_mat, orig_dist_mat_min, orig_dist_mat_ptp
