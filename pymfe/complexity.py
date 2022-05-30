@@ -525,7 +525,7 @@ class MFEComplexity:
 
         for inds_cur_cls in cls_inds:
             cls_inds = np.flatnonzero(inds_cur_cls)
-            cur_inds = tuple(np.meshgrid(cls_inds, cls_inds, copy=False))
+            cur_inds = tuple(np.meshgrid(cls_inds, cls_inds, copy=False, indexing="ij"))
 
             same_cls_neighbor_dist = sklearn.neighbors.kneighbors_graph(
                 norm_dist_mat[cur_inds],
