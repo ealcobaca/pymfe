@@ -542,9 +542,9 @@ class MFEComplexity:
 
             adj_mat[cur_inds] = same_cls_neighbor_dist
 
-        adj_graph = igraph.GraphBase.Weighted_Adjacency(
-            adj_mat.tolist(), mode="undirected"
-        )
+        # Note: element-wise maximum to turn adj_mat symmetric
+        np.maximum(adj_mat, adj_mat.T, out=adj_mat)
+        adj_graph = igraph.Graph.Weighted_Adjacency(adj_mat, mode="undirected")
 
         return adj_graph
 
@@ -2504,7 +2504,7 @@ class MFEComplexity:
         n_jobs: t.Optional[int] = None,
         cls_inds: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
-        adj_graph: t.Optional[igraph.GraphBase.Weighted_Adjacency] = None,
+        adj_graph: t.Optional[igraph.Graph.Weighted_Adjacency] = None,
     ) -> float:
         """Average density of the network.
 
@@ -2597,7 +2597,7 @@ class MFEComplexity:
         n_jobs: t.Optional[int] = None,
         cls_inds: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
-        adj_graph: t.Optional[igraph.GraphBase.Weighted_Adjacency] = None,
+        adj_graph: t.Optional[igraph.Graph.Weighted_Adjacency] = None,
     ) -> float:
         """Clustering coefficient.
 
@@ -2689,7 +2689,7 @@ class MFEComplexity:
         n_jobs: t.Optional[int] = None,
         cls_inds: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
-        adj_graph: t.Optional[igraph.GraphBase.Weighted_Adjacency] = None,
+        adj_graph: t.Optional[igraph.Graph.Weighted_Adjacency] = None,
     ) -> np.ndarray:
         """Hub score.
 
@@ -2738,7 +2738,7 @@ class MFEComplexity:
         norm_dist_mat: :obj:`np.ndarray`, optional
             Normalized distance matrix
 
-        adj_graph : :obj:`igraph.GraphBase.Weighted_Adjacency`, optional
+        adj_graph : :obj:`igraph.Graph.Weighted_Adjacency`, optional
             Undirected and Weighted adjacency graph for the dataset. Only instances
             belonging to the same class must be connected. If not provided, will
             compute using `metric`, `p`, `radius_frac`
