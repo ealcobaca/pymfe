@@ -25,16 +25,16 @@ documentation.
 
 In the Meta-learning (MtL) literature, meta-features are measures used to
 characterize data sets and/or their relations with algorithm bias.
-According to Brazdil et al. (2008), "Meta-learning is the study of principled
-methods that exploit meta-knowledge to obtain efficient models and solutions by
-adapting the machine learning and data mining process".
+
+> "Meta-learning is the study of principled methods that exploit meta-knowledge to obtain efficient models and solutions by adapting the machine learning and data mining process." - ([Brazdil et al. (2008)](https://www.springer.com/gp/book/9783540732624)).
 
 Meta-features are used in MtL and AutoML tasks in general, to
 represent/understand a dataset,  to understanding a learning bias, to create
 machine learning (or data mining) recommendations systems, and to create
 surrogates models, to name a few.
 
-Pinto et al. (2016) and Rivolli et al. (2018) defined a meta-feature as
+[Pinto et al. (2016)](https://link.springer.com/chapter/10.1007/978-3-319-31753-3_18) and
+[Rivolli et al. (2018)](https://arxiv.org/abs/1808.10406v2) defined a meta-feature as
 follows. Let $D \in \mathcal{D}$ be a dataset, $m\colon \mathcal{D} \to \mathbb{R}^{k'}$
 be a characterization measure, and $\sigma\colon \mathbb{R}^{k'} \to \mathbb{R}^{k}$
 be a summarization function. Both $m$ and $\sigma$ have also hyperparameters associated,
