@@ -35,7 +35,7 @@ machine learning (or data mining) recommendations systems, and to create
 surrogates models, to name a few.
 
 Pinto et al. (2016) and Rivolli et al. (2018) defined a meta-feature as
-follows. Let <img src="https://render.githubusercontent.com/render/math?math=D \in \mathcal{D}">
+follows. Let $D \in \mathcal{D}$ <img src="https://render.githubusercontent.com/render/math?math=D \in \mathcal{D}">
 be a dataset, <img src="https://render.githubusercontent.com/render/math?math=m\colon \mathcal{D} \to \mathbb{R}^{k'}">
 be a characterization measure, and
 <img src="https://render.githubusercontent.com/render/math?math=\sigma\colon \mathbb{R}^{k'} \to \mathbb{R}^{k}">
