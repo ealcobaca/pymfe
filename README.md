@@ -42,7 +42,7 @@ $h_m$ and $h_\sigma$ respectively. Thus, a meta-feature $f\colon \mathcal{D} \to
 for a given dataset $D$ is
 
 $$
-    $f\big(D\big) = \sigma\big(m(D,h_m), h_\sigma\big)$.
+    f\big(D\big) = \sigma\big(m(D,h_m), h_\sigma\big).
 $$
 
 The measure $m$ can extract more than one value from each data set, i.e.,
@@ -87,22 +87,22 @@ The main `pymfe` requirement is:
 
 The installation process is similar to other packages available on pip:
 
-```python
+```bash
 pip install -U pymfe
 ```
 
 It is possible to install the development version using:
 
-```python
+```bash
 pip install -U git+https://github.com/ealcobaca/pymfe
 ```
 
 or
 
-```
+```bash
 git clone https://github.com/ealcobaca/pymfe.git
 cd pymfe
-python3 setup.py install
+python setup.py install
 ```
 
 ## Example of use
