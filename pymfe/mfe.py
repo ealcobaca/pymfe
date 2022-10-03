@@ -1532,16 +1532,17 @@ class MFE:
 
         To build the confidence intervals, the empirical bootstrap algorithm
         is used, which is as follows:
-        1. All selected metafeatures are extracted from the fitted data, `M`
+
+        1. All selected metafeatures are extracted from the fitted data, `M`.
         2. Then, each metafeature is extracted ``sample_num`` times from a
-            resampled dataset using bootstrap from the fitted data, `M_i`.
+           resampled dataset using bootstrap from the fitted data, `M_i`.
         3. Then, the differences `delta_i` = `M_i` - `M` are calculated
         4. From the differences `delta_i`, the quantiles related to the given
-            confidence levels (confidence = 1 - Type I error rate) are
-            calculated.
+           confidence levels (confidence = 1 - Type I error rate) are
+           calculated.
         5. The confidence intervals are centered in `M` and the width of
-            interval is given by the quantiles of the differences previously
-            calculated.
+           interval is given by the quantiles of the differences previously
+           calculated.
 
         All configuration used by this method are from the configuration
         while instantiating the current model.

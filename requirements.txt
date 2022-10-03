@@ -6,5 +6,5 @@ pandas
 statsmodels
 texttable
 tqdm
-igraph
+igraph>=0.10.1
 gower
