@@ -1,6 +1,6 @@
 """
 Plotting elapsed time in a meta-feature extraction
-================================
+==================================================
 
 In this example, we will show you how the default value `max_attr_num` of
 meta-feature `attr_conc` was defined based on the total elapsed time of
