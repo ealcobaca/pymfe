@@ -6,16 +6,19 @@ Requirements
 
 The PyMFE package requires the following dependencies:
 
-* numpy
-* scipy
-* scikit-learn
-* patsy
-* pandas
-* statsmodels
-* texttable
-* tqdm
-* gower
-* igraph
+.. list-table::
+   :widths: 50 50
+
+   * - numpy
+     - scipy
+   * - scikit-learn
+     - patsy
+   * - pandas
+     - statsmodels
+   * - texttable
+     - tqdm
+   * - gower
+     - igraph
 
 
 Install
