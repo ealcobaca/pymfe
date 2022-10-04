@@ -14,6 +14,8 @@ The PyMFE package requires the following dependencies:
 * statsmodels
 * texttable
 * tqdm
+* gower
+* igraph
 
 
 Install
