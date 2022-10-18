@@ -537,7 +537,9 @@ class MFEComplexity:
 
         for inds_cur_cls in cls_inds:
             # Note: filtering out neighbors of distinct classes.
-            # 'inds_cur_cls' is a boolean array.
+            # 'inds_cur_cls' is a boolean array of shape (num_inst,), where:
+            #  inds_cur_cls[i] = 1: i-th instance belongs to the current class;
+            #  inds_cur_cls[i] = 0: otherwise.
             adj_mat[inds_cur_cls] *= inds_cur_cls.astype(float)
 
         # Note: element-wise maximum to turn 'adj_mat' symmetric
