@@ -520,29 +520,27 @@ class MFEComplexity:
             )
 
         num_inst, _ = N.shape
-        adj_mat = np.zeros((num_inst, num_inst), dtype=float)
 
         n_neighbors = int(
             round(num_inst * radius_frac) if 0 < radius_frac < 1.0 else radius_frac
         )
         n_neighbors = max(n_neighbors, 1)
 
+        adj_mat = sklearn.neighbors.kneighbors_graph(
+            norm_dist_mat,
+            n_neighbors=n_neighbors,
+            mode="distance",
+            include_self=False,
+            n_jobs=n_jobs,
+            metric="precomputed",
+        ).toarray()
+
         for inds_cur_cls in cls_inds:
-            cls_inds = np.flatnonzero(inds_cur_cls)
-            cur_inds = tuple(np.meshgrid(cls_inds, cls_inds, copy=False, indexing="ij"))
+            # Note: filtering out neighbors of distinct classes.
+            # 'inds_cur_cls' is a boolean array.
+            adj_mat[inds_cur_cls] *= inds_cur_cls.astype(float)
 
-            same_cls_neighbor_dist = sklearn.neighbors.kneighbors_graph(
-                norm_dist_mat[cur_inds],
-                n_neighbors=n_neighbors,
-                mode="distance",
-                include_self=False,
-                n_jobs=n_jobs,
-                metric="precomputed",
-            ).toarray()
-
-            adj_mat[cur_inds] = same_cls_neighbor_dist
-
-        # Note: element-wise maximum to turn adj_mat symmetric
+        # Note: element-wise maximum to turn 'adj_mat' symmetric
         np.maximum(adj_mat, adj_mat.T, out=adj_mat)
         adj_graph = igraph.Graph.Weighted_Adjacency(adj_mat, mode="undirected")
 
