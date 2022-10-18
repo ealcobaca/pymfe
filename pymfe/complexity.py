@@ -438,8 +438,8 @@ class MFEComplexity:
                     N_scaled=N_scaled,
                     p=p,
                 )
+
             except Exception as err:
-                print(err)
                 raise Exception from err
 
             precomp_vals["adj_graph"] = adj_graph
@@ -2489,7 +2489,7 @@ class MFEComplexity:
 
         lsc = 1.0 - np.sum(_norm_dist_mat < nearest_enemy_dist) / (y.size**2)
 
-        return lsc
+        return float(lsc)
 
     @classmethod
     def ft_density(
@@ -2580,9 +2580,9 @@ class MFEComplexity:
                 norm_dist_mat=norm_dist_mat,
             )
 
-        density = 1.0 - np.asfarray(adj_graph.density())
+        density = 1.0 - adj_graph.density()
 
-        return density
+        return float(density)
 
     @classmethod
     def ft_cls_coef(
@@ -2672,9 +2672,9 @@ class MFEComplexity:
                 norm_dist_mat=norm_dist_mat,
             )
 
-        cls_coef = 1.0 - np.asfarray(adj_graph.transitivity_undirected(mode="zero"))
+        cls_coef = 1.0 - adj_graph.transitivity_undirected(mode="zero")
 
-        return cls_coef
+        return float(cls_coef)
 
     @classmethod
     def ft_hubs(
