@@ -438,8 +438,8 @@ class MFEComplexity:
                     N_scaled=N_scaled,
                     p=p,
                 )
+
             except Exception as err:
-                print(err)
                 raise Exception from err
 
             precomp_vals["adj_graph"] = adj_graph
@@ -520,29 +520,29 @@ class MFEComplexity:
             )
 
         num_inst, _ = N.shape
-        adj_mat = np.zeros((num_inst, num_inst), dtype=float)
 
         n_neighbors = int(
             round(num_inst * radius_frac) if 0 < radius_frac < 1.0 else radius_frac
         )
         n_neighbors = max(n_neighbors, 1)
 
+        adj_mat = sklearn.neighbors.kneighbors_graph(
+            norm_dist_mat,
+            n_neighbors=n_neighbors,
+            mode="distance",
+            include_self=False,
+            n_jobs=n_jobs,
+            metric="precomputed",
+        ).toarray()
+
         for inds_cur_cls in cls_inds:
-            cls_inds = np.flatnonzero(inds_cur_cls)
-            cur_inds = tuple(np.meshgrid(cls_inds, cls_inds, copy=False, indexing="ij"))
+            # Note: filtering out neighbors of distinct classes.
+            # 'inds_cur_cls' is a boolean array of shape (num_inst,), where:
+            #  inds_cur_cls[i] = 1: i-th instance belongs to the current class;
+            #  inds_cur_cls[i] = 0: otherwise.
+            adj_mat[inds_cur_cls] *= inds_cur_cls.astype(float)
 
-            same_cls_neighbor_dist = sklearn.neighbors.kneighbors_graph(
-                norm_dist_mat[cur_inds],
-                n_neighbors=n_neighbors,
-                mode="distance",
-                include_self=False,
-                n_jobs=n_jobs,
-                metric="precomputed",
-            ).toarray()
-
-            adj_mat[cur_inds] = same_cls_neighbor_dist
-
-        # Note: element-wise maximum to turn adj_mat symmetric
+        # Note: element-wise maximum to turn 'adj_mat' symmetric
         np.maximum(adj_mat, adj_mat.T, out=adj_mat)
         adj_graph = igraph.Graph.Weighted_Adjacency(adj_mat, mode="undirected")
 
@@ -2491,7 +2491,7 @@ class MFEComplexity:
 
         lsc = 1.0 - np.sum(_norm_dist_mat < nearest_enemy_dist) / (y.size**2)
 
-        return lsc
+        return float(lsc)
 
     @classmethod
     def ft_density(
@@ -2582,9 +2582,9 @@ class MFEComplexity:
                 norm_dist_mat=norm_dist_mat,
             )
 
-        density = 1.0 - np.asfarray(adj_graph.density())
+        density = 1.0 - adj_graph.density()
 
-        return density
+        return float(density)
 
     @classmethod
     def ft_cls_coef(
@@ -2674,9 +2674,9 @@ class MFEComplexity:
                 norm_dist_mat=norm_dist_mat,
             )
 
-        cls_coef = 1.0 - np.asfarray(adj_graph.transitivity_undirected(mode="zero"))
+        cls_coef = 1.0 - adj_graph.transitivity_undirected(mode="zero")
 
-        return cls_coef
+        return float(cls_coef)
 
     @classmethod
     def ft_hubs(
