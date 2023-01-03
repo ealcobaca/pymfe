@@ -696,7 +696,13 @@ class MFEClustering:
 
         References
         ----------
-        .. [1] Bezdek, J. C.; Pal, N. R. (1998a). Some new indexes of
+        .. [1] SOUZA, Bruno Feres de. Meta-aprendizagem aplicada à
+           classificação de dados de expressão gênica. 2010. Tese
+           (Doutorado em Ciências de Computação e Matemática Computacional),
+           Instituto de Ciências Matemáticas e de Computação, Universidade
+           de São Paulo, São Carlos, 2010.
+           doi:10.11606/T.55.2010.tde-04012011-142551.
+        .. [2] Bezdek, J. C.; Pal, N. R. (1998a). Some new indexes of
            cluster validity. IEEE Transactions on Systems, Man, and
            Cybernetics, Part B, v.28, n.3, p.301–315.
 
