@@ -611,7 +611,8 @@ class MFE:
                     100 * skipped_count / len(self._metadata_mtd_ft),
                 )
             )
-
+        print(metafeat_names, metafeat_vals, metafeat_times)
+        
         return metafeat_names, metafeat_vals, metafeat_times
 
     def _fill_col_ind_by_type(
