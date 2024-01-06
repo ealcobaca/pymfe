@@ -2054,7 +2054,7 @@ class MFEComplexity:
         norm_dist_mat: t.Optional[np.ndarray] = None,
         orig_dist_mat_min: t.Optional[float] = None,
         orig_dist_mat_ptp: t.Optional[float] = None,
-    ) -> np.ndarray:
+    ) -> float:
         """Fraction of hyperspheres covering data.
 
         This measure uses a process that builds hyperspheres centered
@@ -2115,9 +2115,8 @@ class MFEComplexity:
 
         Returns
         -------
-        :obj:`np.ndarray`
-            Array with the fraction of instances inside each remaining
-            hypersphere.
+        float
+            T1 measure (ratio of hyperspheres / length(y)).
 
         References
         ----------
@@ -2247,13 +2246,7 @@ class MFEComplexity:
 
         sphere_inst_count = _agglomerate_hyperspheres(centers=N_scaled, radius=radius)
 
-        # Note: in the reference paper, just the fraction of
-        # remaining hyperspheres to the size of the dataset is
-        # calculated. However, just like the R ECoL package,
-        # we return the fraction of the number of instances in
-        # each remaining hypersphere to provide more informative
-        # summarization values.
-        t1 = sphere_inst_count[sphere_inst_count > 0] / y.size
+        t1 = int(np.sum(sphere_inst_count > 0)) / y.size
 
         return t1
 
