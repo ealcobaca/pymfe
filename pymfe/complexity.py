@@ -689,25 +689,27 @@ class MFEComplexity:
         norm_dist_mat: np.ndarray,
         cls_inds: np.ndarray,
     ) -> t.Tuple[np.ndarray, np.ndarray]:
-        """Calculate each instances nearest enemies.
+        """Search for the nearest enemy of each instance.
 
-        Returns the nearest enemies distance and its indices.
+        Return the nearest enemy distances and their indices.
         """
         num_inst = norm_dist_mat.shape[0]
 
         # Note: 'n_en' stands for 'nearest_enemy'
         n_en_dist = np.full(num_inst, fill_value=np.inf, dtype=float)
-
         n_en_inds = np.full(num_inst, fill_value=-1, dtype=int)
 
         for inds_cur_cls in cls_inds:
-            norm_dist_en = norm_dist_mat[~inds_cur_cls, :][:, inds_cur_cls]
+            inds_not_cur_cls = np.flatnonzero(~inds_cur_cls)
+            inds_cur_cls = np.flatnonzero(inds_cur_cls)
 
-            en_inds = np.argmin(norm_dist_en, axis=0)
-            _aux = np.arange(norm_dist_en.shape[1])
+            norm_dist_en = norm_dist_mat[inds_not_cur_cls, :][:, inds_cur_cls]
+            n_inst_cur_cls = norm_dist_en.shape[1]
+
+            en_inds = inds_not_cur_cls[np.argmin(norm_dist_en, axis=0)]
 
             n_en_inds[inds_cur_cls] = en_inds
-            n_en_dist[inds_cur_cls] = norm_dist_en[en_inds, _aux]
+            n_en_dist[inds_cur_cls] = norm_dist_mat[en_inds, inds_cur_cls]
 
         return n_en_dist, n_en_inds
 
