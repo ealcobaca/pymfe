@@ -2234,10 +2234,10 @@ class MFEComplexity:
         ref_dists = (
             radiuses
             if agglomeration_reference == "center"
-            else (radiuses - radiuses[:, np.newaxis] + np.diag(radiuses))
+            else (radiuses - radiuses[:, np.newaxis])
         )
 
-        within_hyperspheres = orig_dist_mat < ref_dists
+        within_hyperspheres = orig_dist_mat <= ref_dists
         agg_priority_metric = np.sum(within_hyperspheres, axis=0) if agglomeration_metric == "mass" else radiuses
         sorted_sphere_inds = np.argsort(-agg_priority_metric)
         sphere_inst_count = np.ones(radiuses.size, dtype=int)
