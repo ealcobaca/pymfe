@@ -2049,24 +2049,26 @@ class MFEComplexity:
         y: np.ndarray,
         metric: str = "gower",
         p: t.Union[int, float] = 2,
+        agglomeration_metric: str = "mass",
+        agglomeration_reference: str = "center",
         cls_inds: t.Optional[np.ndarray] = None,
         N_scaled: t.Optional[np.ndarray] = None,
         norm_dist_mat: t.Optional[np.ndarray] = None,
         orig_dist_mat_min: t.Optional[float] = None,
         orig_dist_mat_ptp: t.Optional[float] = None,
     ) -> float:
-        """Fraction of hyperspheres covering data.
+        """Fraction of hyperspheres centered at instances required to cover all data points.
 
-        This measure uses a process that builds hyperspheres centered
-        at each one of the examples. In this implementation, we stop the
-        growth of the hypersphere when the hyperspheres centered at two
-        points of opposite classes just start to touch.
+        Hyperspheres are recursively built centered at every instance, with radiuses determined
+        by the distances to their "nearest enemy" (nearest instances of a different class).
+        Afterward, hyperspheres lying "within" "larger" hyperspheres are absorbed. The precise
+        definition of either "within" and "larger" are defined by the ``agglomeration_reference``
+        and ``agglomeration_metric`` parameters, respectively.
 
-        Once the radiuses of all hyperspheres are found, a post-processing
-        step can be applied to verify which hyperspheres must be absorbed
-        (all hyperspheres completely within larger hyperspheres.)
+        This metric computes the ratio of remaining hyperspheres to the number of original
+        hyperspheres (i.e., the number of instances in the dataset).
 
-        This measure is in [0, 1] range.
+        This measure is in the [0, 1] range.
 
         Parameters
         ----------
@@ -2087,6 +2089,27 @@ class MFEComplexity:
             equivalent to using Manhattan distance (l1), and Euclidean
             distance (l2) for p = 2. For arbitrary p, Minkowski distance
             (l_p) is used. Used only if ``norm_dist_mat`` is None.
+
+        agglomeration_metric : {"mass", "radius"}, optional
+            Determines the definition of "larger" hyperspheres for agglomeration.
+
+            - If `agglomeration_metric="mass"`, then "larger" refers to hyperspheres containing
+              the most hyperspheres.
+
+            - If `agglomeration_metric="radius"`, then "larger" refers to hyperspheres with
+              larger radiuses.
+
+        agglomeration_reference : {"center", "whole"}, optional
+            Determines the definition of a hypersphere being "within" a second hypersphere during
+            agglomeration.
+
+            - If `agglomeration_reference="center"`, smaller hyperspheres are considered to be
+              "within" larger hyperspheres if their centers are contained in the larger
+              hypersphere. This method does not consider radiuses of smaller hyperspheres.
+
+            - If `agglomeration_reference="whole"`, smaller hyperspheres are considered to be
+              "within" larger hyperspheres only if they are completely contained in the larger
+              hypersphere. This method does consider radiuses of smaller hyperspheres.
 
         cls_inds : :obj:`np.ndarray`, optional
             Boolean array which indicates the examples of each class.
@@ -2116,7 +2139,7 @@ class MFEComplexity:
         Returns
         -------
         float
-            T1 measure (ratio of hyperspheres / length(y)).
+            T1 measure (ratio of remaining hyperspheres / length(y)).
 
         References
         ----------
@@ -2130,7 +2153,13 @@ class MFEComplexity:
            Machine Intelligence, 24(3):289–300, 2002.
         """
 
-        def _calc_hyperspheres_radius(
+        if agglomeration_reference not in {"center", "whole"}:
+            raise ValueError("'agglomeration_reference' must be either 'center or 'whole'.")
+
+        if agglomeration_metric not in {"mass", "radius"}:
+            raise ValueError("'agglomeration_metric' must be either 'mass or 'radius'.")
+
+        def _calc_hypersphere_radiuses(
             nearest_enemy_ind: np.ndarray, nearest_enemy_dist: np.ndarray
         ) -> np.ndarray:
             """Get the radius of hyperspheres which cover the given dataset."""
@@ -2170,48 +2199,6 @@ class MFEComplexity:
 
             return radius
 
-        def _is_hypersphere_in(
-            center_a: np.ndarray,
-            center_b: np.ndarray,
-            radius_a: float,
-            radius_b: float,
-        ) -> bool:
-            """Checks if a hypersphere `a` is in a hypersphere `b`."""
-            upper_a, lower_a = center_a + radius_a, center_a - radius_a
-            upper_b, lower_b = center_b + radius_b, center_b - radius_b
-            for ind in np.arange(center_a.size):
-                if (upper_a[ind] > upper_b[ind]) or (lower_a[ind] < lower_b[ind]):
-                    return False
-
-            return True
-
-        def _agglomerate_hyperspheres(
-            centers: np.ndarray, radius: np.ndarray
-        ) -> np.ndarray:
-            """Agglomerate internal hyperspheres into outer hyperspheres.
-
-            Returns the number of training instances within each
-            remaining hypersphere. Interal hyperspheres will have
-            zero instances within.
-            """
-            sorted_sphere_inds = np.argsort(radius)
-            sphere_inst_num = np.ones(radius.size, dtype=int)
-
-            for ind_a, ind_sphere_a in enumerate(sorted_sphere_inds[:-1]):
-                for ind_sphere_b in sorted_sphere_inds[:ind_a:-1]:
-                    if _is_hypersphere_in(
-                        center_a=centers[ind_sphere_a, :],
-                        center_b=centers[ind_sphere_b, :],
-                        radius_a=radius[ind_sphere_a],
-                        radius_b=radius[ind_sphere_b],
-                    ):
-
-                        sphere_inst_num[ind_sphere_b] += sphere_inst_num[ind_sphere_a]
-                        sphere_inst_num[ind_sphere_a] = 0
-                        break
-
-            return sphere_inst_num
-
         if N_scaled is None:
             N_scaled = cls._scale_N(N=N)
 
@@ -2239,16 +2226,35 @@ class MFEComplexity:
             norm_dist_mat=orig_dist_mat, cls_inds=cls_inds
         )
 
-        radius = _calc_hyperspheres_radius(
+        radiuses = _calc_hypersphere_radiuses(
             nearest_enemy_ind=nearest_enemy_ind,
             nearest_enemy_dist=nearest_enemy_dist,
         )
 
-        sphere_inst_count = _agglomerate_hyperspheres(centers=N_scaled, radius=radius)
+        ref_dists = (
+            radiuses
+            if agglomeration_reference == "center"
+            else (radiuses - radiuses[:, np.newaxis] + np.diag(radiuses))
+        )
+
+        within_hyperspheres = orig_dist_mat < ref_dists
+        agg_priority_metric = np.sum(within_hyperspheres, axis=0) if agglomeration_metric == "mass" else radiuses
+        sorted_sphere_inds = np.argsort(-agg_priority_metric)
+        sphere_inst_count = np.ones(radiuses.size, dtype=int)
+
+        for i in sorted_sphere_inds:
+            if sphere_inst_count[i] <= 0:
+                continue
+
+            within_hypersphere_inds = np.flatnonzero(within_hyperspheres[:, i])
+            within_hypersphere_count = int(np.sum(sphere_inst_count[within_hypersphere_inds]))
+
+            sphere_inst_count[within_hypersphere_inds] = 0
+            sphere_inst_count[i] = within_hypersphere_count
 
         t1 = int(np.sum(sphere_inst_count > 0)) / y.size
 
-        return t1
+        return float(t1)
 
     @classmethod
     def ft_t2(cls, N: np.ndarray) -> float:
