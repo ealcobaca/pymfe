@@ -88,6 +88,7 @@ import pymfe.complexity as complexity
 import pymfe.itemset as itemset
 import pymfe.concept as concept
 import pymfe.scoring as scoring
+import pymfe._utils as _utils
 
 VALID_VALUE_PREFIX = "VALID_"
 
@@ -1526,9 +1527,7 @@ def transform_cat_onehot(
 
     _drop = None if use_all_columns else "first"
 
-    ohe = sklearn.preprocessing.OneHotEncoder(
-        drop=_drop, sparse=False, handle_unknown="error"
-    )
+    ohe = _utils.get_one_hot_encoder(handle_unknown="error", drop=_drop)
 
     one_cat_attrs = []  # type: t.List[np.ndarray]
 

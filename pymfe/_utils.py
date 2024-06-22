@@ -1,7 +1,9 @@
 """Keeps generic utility functions."""
 import typing as t
+import inspect
 
 import numpy as np
+import sklearn.preprocessing
 
 
 def calc_cls_inds(
@@ -22,3 +24,12 @@ def calc_cls_inds(
     )
 
     return cls_inds
+
+
+def get_one_hot_encoder(**kwargs: t.Any) -> sklearn.preprocessing.OneHotEncoder:
+    ohe_kwarg_names = inspect.getfullargspec(sklearn.preprocessing.OneHotEncoder).kwonlyargs
+    ohe_kwargs = {"drop": "first"}
+    ohe_kwargs["sparse_output" if "sparse_output" in ohe_kwarg_names else "sparse"] = False
+    ohe_kwargs.update(kwargs)
+    return sklearn.preprocessing.OneHotEncoder(**ohe_kwargs)
+

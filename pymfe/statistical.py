@@ -8,6 +8,7 @@ import sklearn.preprocessing
 import sklearn.cross_decomposition
 
 import pymfe._summary as _summary
+import pymfe._utils as _utils
 
 
 class MFEStatistical:
@@ -222,10 +223,8 @@ class MFEStatistical:
         At most min(num_classes, num_attr) canonical correlations are
         kept.
         """
-        y_bin = sklearn.preprocessing.OneHotEncoder(
-            sparse=False,
-            drop="first",
-        ).fit_transform(y.reshape(-1, 1))
+        ohe = _utils.get_one_hot_encoder()
+        y_bin = ohe.fit_transform(y.reshape(-1, 1))
 
         num_classes, num_attr = y_bin.shape[1], N.shape[1]
         # Note: 'n_components' is a theoretical upper bound, so it is not
