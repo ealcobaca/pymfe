@@ -28,7 +28,7 @@ class BootstrapExtractor:
         Please refer to 'MFE.extract_with_confidence' documentation for
         more details.
         """
-        _confidence = np.asfarray(confidence)
+        _confidence = np.asarray(confidence)
 
         if np.any(np.logical_or(_confidence <= 0.0, _confidence >= 1.0)):
             raise ValueError(

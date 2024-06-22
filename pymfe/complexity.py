@@ -1600,7 +1600,7 @@ class MFEComplexity:
                 N=N, metric=metric, p=p, N_scaled=N_scaled
             )
 
-        _norm_dist_mat = np.asfarray(norm_dist_mat)
+        _norm_dist_mat = np.asarray(norm_dist_mat)
 
         # Compute the minimum spanning tree using Kruskal's Minimum
         # Spanning Tree algorithm.
@@ -2479,7 +2479,7 @@ class MFEComplexity:
                 N=N, metric=metric, p=p, N_scaled=N_scaled
             )
 
-        _norm_dist_mat = np.asfarray(norm_dist_mat)
+        _norm_dist_mat = np.asarray(norm_dist_mat)
 
         if nearest_enemy_dist is None:
             if cls_inds is None:
@@ -2769,6 +2769,6 @@ class MFEComplexity:
                 norm_dist_mat=norm_dist_mat,
             )
 
-        hubs = 1.0 - np.asfarray(adj_graph.hub_score())
+        hubs = 1.0 - np.asarray(adj_graph.hub_score())
 
         return hubs

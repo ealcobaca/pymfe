@@ -788,7 +788,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return np.asfarray(N.max(axis=0))
+        return np.asarray(N.max(axis=0))
 
     @classmethod
     def ft_mean(cls, N: np.ndarray) -> np.ndarray:
@@ -811,7 +811,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return np.asfarray(N.mean(axis=0))
+        return np.asarray(N.mean(axis=0))
 
     @classmethod
     def ft_median(cls, N: np.ndarray) -> np.ndarray:
@@ -834,7 +834,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return np.asfarray(np.median(N, axis=0))
+        return np.asarray(np.median(N, axis=0))
 
     @classmethod
     def ft_min(cls, N: np.ndarray) -> np.ndarray:
@@ -857,7 +857,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return np.asfarray(N.min(axis=0))
+        return np.asarray(N.min(axis=0))
 
     @classmethod
     def ft_nr_cor_attr(
@@ -1130,7 +1130,7 @@ class MFEStatistical:
            to automatic kernel selection for support vector machines.
            Neurocomputing, 70(1):173 – 186, 2006.
         """
-        return np.asfarray(np.ptp(N, axis=0))
+        return np.asarray(np.ptp(N, axis=0))
 
     @classmethod
     def ft_sd(cls, N: np.ndarray, ddof: int = 1) -> np.ndarray:
@@ -1156,7 +1156,7 @@ class MFEStatistical:
            Conference on on Artificial Intelligence (ECAI), pages 430 – 434,
            1998.
         """
-        return np.asfarray(N.std(axis=0, ddof=ddof))
+        return np.asarray(N.std(axis=0, ddof=ddof))
 
     @classmethod
     def ft_sd_ratio(
@@ -1243,7 +1243,7 @@ class MFEStatistical:
                 ]
             ).sum(axis=0) / (num_inst - num_classes)
 
-            return np.asfarray(pooled_cov_mat)
+            return np.asarray(pooled_cov_mat)
 
         def calc_gamma_factor(num_col, num_classes, num_inst):
             """Calculate the gamma factor which adjust the output."""
@@ -1459,7 +1459,7 @@ class MFEStatistical:
            In 2nd International Conference on Modeling Decisions for
            Artificial Intelligence (MDAI), pages 457–468, 2005.
         """
-        return np.asfarray(N.var(axis=0, ddof=ddof))
+        return np.asarray(N.var(axis=0, ddof=ddof))
 
     @classmethod
     def ft_w_lambda(
