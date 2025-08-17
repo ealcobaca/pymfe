@@ -1056,7 +1056,7 @@ class MFEComplexity:
             N_cls_2 = N[_cls_inds[cls_id_2, :], :]
 
             ind_less_overlap, feat_overlap_num, _ = cls._calc_overlap(
-                N=N,
+                N=np.vstack((N_cls_1, N_cls_2)),
                 minmax=cls._calc_minmax(N_cls_1, N_cls_2),
                 maxmin=cls._calc_maxmin(N_cls_1, N_cls_2),
             )
