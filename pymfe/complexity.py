@@ -909,7 +909,7 @@ class MFEComplexity:
             _numen = np.matmul(direc.T, np.matmul(mat_scatter_between, direc))
             _denom = np.matmul(direc.T, np.matmul(W_mat, direc))
 
-            df[ind] = _numen / _denom
+            df[ind] = (_numen / _denom).item()
 
         f1v = 1.0 / (1.0 + df)
 
