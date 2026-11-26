@@ -71,6 +71,7 @@ import sys
 import re
 
 import numpy as np
+import pandas as pd
 import sklearn.preprocessing
 import sklearn.tree
 import patsy
@@ -1354,10 +1355,15 @@ def check_data(
         tuple(np.ndarray, np.ndarray): ``X`` and ``y`` possibly reshaped and
             casted to :obj:`np.ndarray` type.
     """
-    if not isinstance(X, (np.ndarray, list)):
+    # ``Series.values`` is a pandas extension array (not a np.ndarray) for
+    # columns with the string or categorical dtype, which is the default dtype
+    # of string columns in pandas 3.
+    array_types = (np.ndarray, list, pd.api.extensions.ExtensionArray)
+
+    if not isinstance(X, array_types):
         raise TypeError('"X" is neither "list" nor "np.array".')
 
-    if y is not None and not isinstance(y, (np.ndarray, list)):
+    if y is not None and not isinstance(y, array_types):
         raise TypeError('"y" is neither "list" nor "np.array".')
 
     # We force numpy array to assume ``dtype=np.object`` because sometimes
