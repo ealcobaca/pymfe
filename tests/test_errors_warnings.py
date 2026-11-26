@@ -1,6 +1,7 @@
 """Test module for MFE class errors and warnings."""
 import pytest
 import numpy as np
+import pandas as pd
 
 from pymfe.mfe import MFE
 from pymfe import _internal
@@ -20,6 +21,19 @@ class TestErrorsWarnings:
     def test_error_sample_size(self):
         with pytest.raises(ValueError):
             MFE(lm_sample_frac=-1)
+
+    def test_check_data_accepts_pandas_extension_arrays(self):
+        # ``Series.values`` is an extension array, not a np.ndarray, for the
+        # string dtype (the default string dtype in pandas 3)
+        X, y = load_xy(0)
+        y_ext = pd.array(y.astype(str).tolist(), dtype="string")
+        assert not isinstance(y_ext, np.ndarray)
+
+        X_out, y_out = _internal.check_data(X.values, y_ext)
+
+        assert isinstance(y_out, np.ndarray)
+        assert y_out.tolist() == y.astype(str).tolist()
+        assert X_out.shape == X.values.shape
 
     def test_error_empty_data_2(self):
         with pytest.raises(TypeError):
